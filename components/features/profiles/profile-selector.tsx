@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -144,6 +145,8 @@ export function ProfileSelector() {
 
 // ─── Screen A: ¿Quién está viendo? ───────────────────────────────────────────
 
+type Ripple = { x: number; y: number; size: number };
+
 function ScreenA({
   supabaseName, supabaseColor, supabaseImageUrl, supabaseIconId,
   profiles,
@@ -165,6 +168,14 @@ function ScreenA({
     (k) => COLOR_VALUES[k] === supabaseColor,
   ) ?? "green";
 
+  const [ripple, setRipple] = useState<Ripple | null>(null);
+
+  function triggerNav(rect: DOMRect, navigate: () => void) {
+    const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
+    setRipple({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, size });
+    setTimeout(navigate, 500);
+  }
+
   async function handleSignOut() {
     await getSupabaseBrowserClient().auth.signOut();
     router.push("/login");
@@ -172,6 +183,27 @@ function ScreenA({
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: "#080A0F" }}>
+
+      {/* Expanding circle overlay */}
+      {ripple && (
+        <motion.div
+          style={{
+            position: "fixed",
+            left: ripple.x,
+            top: ripple.y,
+            borderRadius: "50%",
+            background: "#22B16B",
+            x: "-50%",
+            y: "-50%",
+            zIndex: 9999,
+            pointerEvents: "none",
+          }}
+          initial={{ width: 140, height: 140 }}
+          animate={{ width: ripple.size, height: ripple.size }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        />
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between px-8 pt-7">
         <GmaLogo />
@@ -196,7 +228,7 @@ function ScreenA({
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
             <ProfileCard
-              onClick={onSelectSupabase}
+              onClick={(rect) => triggerNav(rect, onSelectSupabase)}
               onEdit={onEditSupabase}
               glowColor={supabaseColor}
               label={supabaseName}
@@ -224,7 +256,7 @@ function ScreenA({
             return (
               <ProfileCard
                 key={profile.id}
-                onClick={() => onSelectSub(profile)}
+                onClick={(rect) => triggerNav(rect, () => onSelectSub(profile))}
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
                 label={profile.name}
@@ -266,17 +298,19 @@ function ProfileCard({
   children, onClick, onEdit, glowColor, label, badge,
 }: {
   children:  React.ReactNode;
-  onClick:   () => void;
+  onClick:   (rect: DOMRect) => void;
   onEdit:    () => void;
   glowColor: string;
   label:     string;
   badge?:    string;
 }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
   return (
     <div className="group flex flex-col items-center gap-4">
       <button
+        ref={btnRef}
         type="button"
-        onClick={onClick}
+        onClick={() => btnRef.current && onClick(btnRef.current.getBoundingClientRect())}
         className="relative h-[140px] w-[140px] overflow-hidden rounded-full transition-transform duration-200 group-hover:scale-105"
         style={{ boxShadow: `0 10px 40px ${glowColor}44` }}
       >
