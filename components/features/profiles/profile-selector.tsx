@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { useTransitionStore } from "@/store/use-transition-store";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
@@ -145,8 +145,6 @@ export function ProfileSelector() {
 
 // ─── Screen A: ¿Quién está viendo? ───────────────────────────────────────────
 
-type Ripple = { x: number; y: number; size: number };
-
 function ScreenA({
   supabaseName, supabaseColor, supabaseImageUrl, supabaseIconId,
   profiles,
@@ -168,12 +166,12 @@ function ScreenA({
     (k) => COLOR_VALUES[k] === supabaseColor,
   ) ?? "green";
 
-  const [ripple, setRipple] = useState<Ripple | null>(null);
+  const startExpand = useTransitionStore((s) => s.startExpand);
 
   function triggerNav(rect: DOMRect, navigate: () => void) {
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-    setRipple({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, size });
-    setTimeout(navigate, 500);
+    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size);
+    setTimeout(navigate, 700);
   }
 
   async function handleSignOut() {
@@ -183,26 +181,6 @@ function ScreenA({
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: "#080A0F" }}>
-
-      {/* Expanding circle overlay */}
-      {ripple && (
-        <motion.div
-          style={{
-            position: "fixed",
-            left: ripple.x,
-            top: ripple.y,
-            borderRadius: "50%",
-            background: "#22B16B",
-            x: "-50%",
-            y: "-50%",
-            zIndex: 9999,
-            pointerEvents: "none",
-          }}
-          initial={{ width: 140, height: 140 }}
-          animate={{ width: ripple.size, height: ripple.size }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        />
-      )}
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-8 pt-7">

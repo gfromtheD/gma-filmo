@@ -11,6 +11,7 @@ import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useProfileStore } from "@/store/use-profile-store";
 import { renderAvatar } from "@/lib/data/profile-avatars";
 import { useIsGuest } from "@/hooks/use-is-guest";
+import { useTransitionStore } from "@/store/use-transition-store";
 
 interface NavItem {
   readonly id: string;
@@ -64,11 +65,25 @@ export function Navbar() {
   const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
   const activeProfile = useProfileStore((s) => s.activeProfile);
 
-  const isGuest = useIsGuest();
+  const isGuest    = useIsGuest();
+  const setChipPos = useTransitionStore((s) => s.setChipPos);
+  const chipBtnRef = useRef<HTMLButtonElement>(null);
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Report chip position so the transition overlay knows where to contract to
+  useEffect(() => {
+    function measure() {
+      if (!chipBtnRef.current) return;
+      const r = chipBtnRef.current.getBoundingClientRect();
+      setChipPos({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [setChipPos]);
 
   // ── Sliding pill ─────────────────────────────────────────────────────────
   const itemRefs  = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -192,6 +207,7 @@ export function Navbar() {
 
           <div ref={menuRef} className="relative ml-1.5">
             <button
+              ref={chipBtnRef}
               type="button"
               aria-label="Cuenta"
               aria-expanded={menuOpen}
