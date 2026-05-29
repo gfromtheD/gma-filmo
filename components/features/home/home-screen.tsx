@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { Hero } from "@/components/features/media/hero";
 import { Carousel } from "@/components/ui/carousel";
 import { PosterCard } from "@/components/ui/poster-card";
@@ -94,7 +95,11 @@ export function HomeScreen({ items }: HomeScreenProps) {
   }
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.55, ease: "easeOut" }}
+    >
       {/* ── Hero carousel ──────────────────────────────────────────────────── */}
       <div
         className="relative"
@@ -155,7 +160,12 @@ export function HomeScreen({ items }: HomeScreenProps) {
 
       </div>
 
-      <div className="mx-auto max-w-[1440px] px-8">
+      <motion.div
+        className="mx-auto max-w-[1440px] px-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
+      >
         {continueItems.length > 0 && (
           <Carousel title="Continuar viendo">
             {continueItems.map((item) => (
@@ -197,7 +207,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
         )}
 
         <div className="h-20" />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

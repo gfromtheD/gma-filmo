@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import type { MediaItem, MovieMedia } from "@/types/catalog";
@@ -51,10 +52,7 @@ function HeroCredits({ item }: { item: MediaItem }) {
   if (illustrator && illustrator !== director) parts.push(`Ilustrado por ${illustrator}`);
 
   return (
-    <div
-      className="mt-4 flex flex-col gap-1"
-      style={{ animation: "fadeUp 0.45s ease both", animationDelay: "0.2s" }}
-    >
+    <div className="mt-4 flex flex-col gap-1">
       {parts.map((p) => (
         <p key={p} className="text-[13px] text-[#6D7D94]">{p}</p>
       ))}
@@ -74,7 +72,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
       style={{ height: 600 }}
     >
       {/* Poster art fills the background — fadeIn on mount to crossfade between slides */}
-      <div className="absolute inset-0" style={{ animation: "fadeIn 0.8s ease both" }}>
+      <div className="absolute inset-0" style={{ animation: "fadeIn 1.1s ease both" }}>
         <PosterArt style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
       </div>
 
@@ -105,34 +103,27 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
         style={{ zIndex: 2 }}
       >
         <div className="mx-auto w-full max-w-360 px-8">
-          <div style={{ maxWidth: 580 }}>
+          <motion.div
+            style={{ maxWidth: 580 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
             {/* Eyebrow label */}
-            <div
-              className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D7D94]"
-              style={{ animation: "fadeUp 0.45s ease both" }}
-            >
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D7D94]">
               {tag ?? item.tag ?? "DESTACADO"}
             </div>
 
             {/* Title */}
             <h1
               className="font-extrabold text-white"
-              style={{
-                fontSize: 64,
-                letterSpacing: "-0.03em",
-                lineHeight: 0.96,
-                animation: "fadeUp 0.45s ease both",
-                animationDelay: "0.05s",
-              }}
+              style={{ fontSize: 64, letterSpacing: "-0.03em", lineHeight: 0.96 }}
             >
               {item.title}
             </h1>
 
             {/* Meta row */}
-            <div
-              className="my-4.5 flex flex-wrap items-center gap-3.5 text-[14px] font-semibold text-[#B8C5D4]"
-              style={{ animation: "fadeUp 0.45s ease both", animationDelay: "0.1s" }}
-            >
+            <div className="my-4.5 flex flex-wrap items-center gap-3.5 text-[14px] font-semibold text-[#B8C5D4]">
               {item.kind === "movie" && (item as MovieMedia).approvalScore != null && (
                 <span className="font-extrabold text-[#22B16B]">
                   {(item as MovieMedia).approvalScore}%
@@ -156,26 +147,15 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               ))}
             </div>
 
-            {/* Tagline / hook — only rendered when there's content */}
+            {/* Tagline / hook */}
             {(fullSynopsis ? item.synopsis : item.tagline) && (
-              <p
-                className="text-[15px] leading-[1.55] text-[#D9E2EC]"
-                style={{
-                  maxWidth: 560,
-                  marginTop: 8,
-                  animation: "fadeUp 0.45s ease both",
-                  animationDelay: "0.1s",
-                }}
-              >
+              <p className="text-[15px] leading-[1.55] text-[#D9E2EC]" style={{ maxWidth: 560, marginTop: 8 }}>
                 {fullSynopsis ? item.synopsis : item.tagline}
               </p>
             )}
 
             {/* CTAs */}
-            <div
-              className="mt-7 flex flex-wrap gap-3"
-              style={{ animation: "fadeUp 0.45s ease both", animationDelay: "0.15s" }}
-            >
+            <div className="mt-7 flex flex-wrap gap-3">
               {onPlay && (
                 <button
                   className="inline-flex items-center gap-2.5 rounded-full bg-[#22B16B] px-5.5 py-3 text-[14px] font-bold text-gma-accent-fg transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#2AC57A] active:scale-[0.96]"
@@ -243,7 +223,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
 
             {/* Credits line */}
             <HeroCredits item={item} />
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
