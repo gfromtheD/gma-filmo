@@ -66,8 +66,9 @@ export function Navbar() {
   const activeProfile = useProfileStore((s) => s.activeProfile);
 
   const isGuest    = useIsGuest();
-  const setChipPos = useTransitionStore((s) => s.setChipPos);
-  const chipBtnRef = useRef<HTMLButtonElement>(null);
+  const setChipPos  = useTransitionStore((s) => s.setChipPos);
+  const chipBtnRef  = useRef<HTMLButtonElement>(null);
+  const avatarRef   = useRef<HTMLSpanElement>(null);
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -76,8 +77,9 @@ export function Navbar() {
   // Report chip position so the transition overlay knows where to contract to
   useEffect(() => {
     function measure() {
-      if (!chipBtnRef.current) return;
-      const r = chipBtnRef.current.getBoundingClientRect();
+      const el = avatarRef.current ?? chipBtnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
       setChipPos({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
     }
     measure();
@@ -214,7 +216,9 @@ export function Navbar() {
               onClick={() => setMenuOpen((o) => !o)}
               className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
             >
-              {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
+              <span ref={avatarRef} className="inline-flex shrink-0">
+                {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
+              </span>
               <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
                 {isGuest ? "Invitado" : displayName}
               </span>

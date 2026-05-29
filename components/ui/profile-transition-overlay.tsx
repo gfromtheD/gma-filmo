@@ -63,7 +63,7 @@ export function ProfileTransitionOverlay() {
         pointerEvents: "none",
       }}
       initial={{ left: cx, top: cy, width: size, height: size }}
-      animate={{ left: chipPos.x, top: chipPos.y, width: 34, height: 34 }}
+      animate={{ left: chipPos.x, top: chipPos.y, width: 28, height: 28 }}
       transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       onAnimationComplete={reset}
     />
