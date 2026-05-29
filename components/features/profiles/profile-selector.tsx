@@ -168,9 +168,9 @@ function ScreenA({
 
   const startExpand = useTransitionStore((s) => s.startExpand);
 
-  function triggerNav(rect: DOMRect, navigate: () => void) {
+  function triggerNav(rect: DOMRect, navigate: () => void, name: string) {
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size);
+    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name);
     setTimeout(navigate, 1050);
   }
 
@@ -206,7 +206,7 @@ function ScreenA({
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
             <ProfileCard
-              onClick={(rect) => triggerNav(rect, onSelectSupabase)}
+              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "")}
               onEdit={onEditSupabase}
               glowColor={supabaseColor}
               label={supabaseName}
@@ -234,7 +234,7 @@ function ScreenA({
             return (
               <ProfileCard
                 key={profile.id}
-                onClick={(rect) => triggerNav(rect, () => onSelectSub(profile))}
+                onClick={(rect) => triggerNav(rect, () => onSelectSub(profile), profile.name)}
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
                 label={profile.name}
