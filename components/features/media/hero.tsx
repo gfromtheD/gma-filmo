@@ -105,8 +105,8 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
         <div className="mx-auto w-full max-w-360 px-8">
           <motion.div
             style={{ maxWidth: 580 }}
-            initial={{ y: 20 }}
-            animate={{ y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             {/* Eyebrow label */}
