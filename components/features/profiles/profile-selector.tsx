@@ -34,10 +34,15 @@ export function ProfileSelector() {
     isLoaded,
   } = useUserProfile();
 
+  const startExpand = useTransitionStore((s) => s.startExpand);
+
   const [editSupabase, setEditSupabase] = useState(false);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [creatingNew,  setCreatingNew]  = useState(false);
-  const [pinGate, setPinGate] = useState<{ id: string; name: string; isKids: boolean; correctPin: string } | null>(null);
+  const [pinGate, setPinGate] = useState<{
+    id: string; name: string; isKids: boolean; correctPin: string;
+    origin: { x: number; y: number };
+  } | null>(null);
 
   const editingSubProfile = profiles.find((p) => p.id === editingSubId) ?? null;
 
@@ -111,7 +116,9 @@ export function ProfileSelector() {
           correctPin={pinGate.correctPin}
           onSuccess={() => {
             setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
-            router.push("/inicio");
+            const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
+            startExpand(pinGate.origin, size, pinGate.name);
+            setTimeout(() => router.push("/inicio"), 1050);
           }}
           onCancel={() => setPinGate(null)}
         />
@@ -127,9 +134,9 @@ export function ProfileSelector() {
           setActiveProfile({ id: "__supabase__", name: supabaseName ?? "", isKids: false });
           router.push("/inicio");
         }}
-        onSelectSub={(profile) => {
+        onSelectSub={(profile, origin) => {
           if (profile.requirePin && profile.pin) {
-            setPinGate({ id: profile.id, name: profile.name, isKids: profile.isKids, correctPin: profile.pin });
+            setPinGate({ id: profile.id, name: profile.name, isKids: profile.isKids, correctPin: profile.pin, origin: origin ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 } });
           } else {
             setActiveProfile({ id: profile.id, name: profile.name, isKids: profile.isKids });
             router.push("/inicio");
@@ -156,7 +163,7 @@ function ScreenA({
   supabaseIconId:   string;
   profiles:         readonly Profile[];
   onSelectSupabase: () => void;
-  onSelectSub:      (profile: Profile) => void;
+  onSelectSub:      (profile: Profile, origin?: { x: number; y: number }) => void;
   onEditSupabase:   () => void;
   onEditSub:        (id: string) => void;
   onAddProfile:     () => void;
@@ -236,8 +243,8 @@ function ScreenA({
                 key={profile.id}
                 onClick={(rect) =>
                   profile.requirePin && profile.pin
-                    ? onSelectSub(profile)          // PIN requerido — sin animación
-                    : triggerNav(rect, () => onSelectSub(profile), profile.name)
+                    ? onSelectSub(profile, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+                    : triggerNav(rect, () => onSelectSub(profile, { x: 0, y: 0 }), profile.name)
                 }
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
