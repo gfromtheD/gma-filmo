@@ -167,16 +167,27 @@
     text-rendering: optimizeLegibility;
   }
 
-  * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  *::-webkit-scrollbar {
-    display: none;
-  }
   input, textarea {
     caret-color: #22B16B;
   }
+}
+
+/* Scrollbar — outside @layer so specificity is never overridden */
+html, body {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 @keyframes blink {
