@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTransitionStore } from "@/store/use-transition-store";
@@ -15,12 +15,20 @@ export function ProfileTransitionOverlay() {
   const startContract = useTransitionStore((s) => s.startContract);
   const reset         = useTransitionStore((s) => s.reset);
 
+  const [textFading, setTextFading] = useState(false);
+
   useEffect(() => {
-    if (phase === "expanding" && pathname === "/inicio") {
-      const t = setTimeout(startContract, 220);
-      return () => clearTimeout(t);
-    }
+    if (phase !== "expanding" || pathname !== "/inicio") return;
+    // Text starts fading immediately on landing
+    setTextFading(true);
+    // Contraction starts 380ms later — text is already well into its fade
+    const t = setTimeout(startContract, 380);
+    return () => clearTimeout(t);
   }, [phase, pathname, startContract]);
+
+  useEffect(() => {
+    if (phase === "idle") setTextFading(false);
+  }, [phase]);
 
   if (phase === "idle") return null;
 
@@ -70,9 +78,9 @@ export function ProfileTransitionOverlay() {
         />
       )}
 
-      {/* Welcome text — AnimatePresence lets it fade out when phase leaves "expanding" */}
+      {/* Welcome text — fades out before contraction starts */}
       <AnimatePresence>
-        {phase === "expanding" && (
+        {phase === "expanding" && !textFading && (
           <motion.div
             key="welcome"
             style={{
