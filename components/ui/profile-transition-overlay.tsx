@@ -19,10 +19,10 @@ export function ProfileTransitionOverlay() {
 
   useEffect(() => {
     if (phase !== "expanding" || pathname !== "/inicio") return;
-    // Text starts fading immediately on landing
+    // Text starts fading immediately on landing (fade duration: 550ms)
     setTextFading(true);
-    // Contraction starts 380ms later — text is already well into its fade
-    const t = setTimeout(startContract, 380);
+    // Contraction starts after text is fully gone + small buffer
+    const t = setTimeout(startContract, 680);
     return () => clearTimeout(t);
   }, [phase, pathname, startContract]);
 
