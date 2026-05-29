@@ -29,14 +29,18 @@ function HeroCredits({ item }: { item: MediaItem }) {
   let illustrator: string | null = null;
 
   if (movie.artistas && movie.artistas.length > 0) {
-    director    = movie.artistas.find((a) => a.role === "creador")?.name ?? null;
-    illustrator = movie.artistas.find((a) => a.role === "ilustrador")?.name ?? null;
+    director    = movie.artistas.find((a) => /creador|director/i.test(a.role))?.name
+               ?? movie.artistas[0]?.name ?? null;
+    illustrator = movie.artistas.find((a) => /ilustrador|illustrator/i.test(a.role))?.name ?? null;
   } else if (movie.author) {
-    // Fallback: parse "Creado por: X; Ilustración por: Y"
     const creado = movie.author.match(/Creado por:\s*([^;]+)/i);
     const ilustr = movie.author.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
-    director    = creado?.[1]?.trim() ?? null;
-    illustrator = ilustr?.[1]?.trim() ?? null;
+    if (creado || ilustr) {
+      director    = creado?.[1]?.trim() ?? null;
+      illustrator = ilustr?.[1]?.trim() ?? null;
+    } else {
+      director = movie.author.trim();
+    }
   }
 
   if (!director && !illustrator) return null;

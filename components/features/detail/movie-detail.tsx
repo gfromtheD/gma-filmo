@@ -143,12 +143,15 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
 // ─── Credits parser ───────────────────────────────────────────────────────────
 
 function parseAuthorField(raw: string | null | undefined, artistas?: MovieMedia["artistas"]): { director: string | null; illustrator: string | null } {
+  // 1. Structured artistas — flexible role matching
   if (artistas && artistas.length > 0) {
-    return {
-      director:    artistas.find((a) => a.role === "creador")?.name ?? null,
-      illustrator: artistas.find((a) => a.role === "ilustrador")?.name ?? null,
-    };
+    const director    = artistas.find((a) => /creador|director/i.test(a.role))?.name
+                     ?? artistas[0]?.name  // fallback: first artista is the director
+                     ?? null;
+    const illustrator = artistas.find((a) => /ilustrador|illustrator/i.test(a.role))?.name ?? null;
+    return { director, illustrator };
   }
+  // 2. Raw author string — parse "Creado por: X; Ilustración por: Y"
   if (!raw) return { director: null, illustrator: null };
   const creado = raw.match(/Creado por:\s*([^;]+)/i);
   const ilustr  = raw.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
@@ -158,6 +161,7 @@ function parseAuthorField(raw: string | null | undefined, artistas?: MovieMedia[
       illustrator: ilustr?.[1]?.trim() ?? null,
     };
   }
+  // 3. Plain name
   return { director: raw.trim(), illustrator: null };
 }
 
