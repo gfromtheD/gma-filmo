@@ -14,10 +14,10 @@ export function ProfileTransitionOverlay() {
   const startContract = useTransitionStore((s) => s.startContract);
   const reset       = useTransitionStore((s) => s.reset);
 
-  // Once we land on /inicio while the circle is still expanding → start contraction
+  // Once we land on /inicio while expanding → wait a beat, then contract
   useEffect(() => {
     if (phase === "expanding" && pathname === "/inicio") {
-      const t = setTimeout(startContract, 80);
+      const t = setTimeout(startContract, 220);
       return () => clearTimeout(t);
     }
   }, [phase, pathname, startContract]);
@@ -41,12 +41,13 @@ export function ProfileTransitionOverlay() {
         }}
         initial={{ width: 140, height: 140 }}
         animate={{ width: size, height: size }}
-        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        // ease-in: nace lento y visible, se acelera hasta cubrir la pantalla
+        transition={{ duration: 1.6, ease: [0.42, 0, 0.58, 1] }}
       />
     );
   }
 
-  // Contracting phase — starts full-screen, shrinks to chip
+  // Contracting — aparece pantalla completa, se recoge hacia el chip
   const cx = typeof window !== "undefined" ? window.innerWidth / 2  : 760;
   const cy = typeof window !== "undefined" ? window.innerHeight / 2 : 400;
 
@@ -64,7 +65,8 @@ export function ProfileTransitionOverlay() {
       }}
       initial={{ left: cx, top: cy, width: size, height: size }}
       animate={{ left: chipPos.x, top: chipPos.y, width: 28, height: 28 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      // ease-out: sale rápido de pantalla completa, aterriza suave en el chip
+      transition={{ duration: 1.2, ease: [0.34, 1, 0.64, 1] }}
       onAnimationComplete={reset}
     />
   );

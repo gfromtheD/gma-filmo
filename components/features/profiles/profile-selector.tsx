@@ -171,7 +171,7 @@ function ScreenA({
   function triggerNav(rect: DOMRect, navigate: () => void) {
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
     startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size);
-    setTimeout(navigate, 700);
+    setTimeout(navigate, 1050);
   }
 
   async function handleSignOut() {
