@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Robot pilot avatar">
+  <defs>
+    <linearGradient id="robot-pilot-body-gradient" x1="50" y1="68" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#78e4ff"/>
+      <stop offset=".55" stop-color="#2d75e8"/>
+      <stop offset="1" stop-color="#16206d"/>
+    </linearGradient>
+    <radialGradient id="robot-pilot-head-gradient" cx="38" cy="18" r="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8ffff"/>
+      <stop offset=".58" stop-color="#a9c7d7"/>
+      <stop offset="1" stop-color="#526170"/>
+    </radialGradient>
+    <linearGradient id="robot-pilot-visor-gradient" x1="50" y1="38" x2="50" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#24364f"/>
+      <stop offset=".58" stop-color="#132139"/>
+      <stop offset="1" stop-color="#070b18"/>
+    </linearGradient>
+    <radialGradient id="robot-pilot-eye-gradient" cx="40" cy="50" r="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9effff"/>
+      <stop offset=".65" stop-color="#19c8ff"/>
+      <stop offset="1" stop-color="#1762ff"/>
+    </radialGradient>
+    <linearGradient id="robot-pilot-nose-gradient" x1="50" y1="51" x2="50" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#99bac9" stop-opacity=".68"/>
+      <stop offset=".55" stop-color="#678798" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#405569" stop-opacity="1"/>
+    </linearGradient>
+    <radialGradient id="robot-pilot-antenna-gradient" cx="47" cy="4" r="9" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffc88"/>
+      <stop offset=".62" stop-color="#ffbd2e"/>
+      <stop offset="1" stop-color="#d85b14"/>
+    </radialGradient>
+    <linearGradient id="robot-pilot-ear-gradient" x1="50" y1="37" x2="50" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d8edf7"/>
+      <stop offset="1" stop-color="#6b7b8d"/>
+    </linearGradient>
+  </defs>
+  <g id="avatar-robot-pilot">
+    <path fill="url(#robot-pilot-body-gradient)" d="M12.6 100c.8-17.3 16.4-29.6 37.4-29.6S86.6 82.7 87.4 100H12.6Z"/>
+    <path fill="#0d154a" d="M36.8 74.8h26.4L50 91.2 36.8 74.8Z" opacity=".45"/>
+    <path fill="#6a7e90" d="M48.7 7.9h2.6v10.8h-2.6V7.9Z"/>
+    <circle cx="50" cy="5.2" r="4.6" fill="url(#robot-pilot-antenna-gradient)"/>
+    <rect x="17.6" y="39.4" width="12" height="18.8" rx="5.4" fill="url(#robot-pilot-ear-gradient)"/>
+    <rect x="70.4" y="39.4" width="12" height="18.8" rx="5.4" fill="url(#robot-pilot-ear-gradient)"/>
+    <path fill="url(#robot-pilot-head-gradient)" d="M23.5 33.9c0-13.8 10.2-23.1 26.5-23.1s26.5 9.3 26.5 23.1v22.4c0 12.8-9.7 20.4-26.5 20.4s-26.5-7.6-26.5-20.4V33.9Z"/>
+    <path fill="url(#robot-pilot-visor-gradient)" d="M29 44.2c0-6.1 4.9-10 11-10h20c6.1 0 11 3.9 11 10v8.6c0 7.5-6.5 12.1-21 12.1s-21-4.6-21-12.1v-8.6Z"/>
+    <ellipse cx="40.5" cy="49.9" rx="3.4" ry="4.1" fill="url(#robot-pilot-eye-gradient)"/>
+    <ellipse cx="59.5" cy="49.9" rx="3.4" ry="4.1" fill="url(#robot-pilot-eye-gradient)"/>
+    <circle cx="39.4" cy="48.2" r=".85" fill="#fff" opacity=".7"/>
+    <circle cx="58.4" cy="48.2" r=".85" fill="#fff" opacity=".7"/>
+    <path fill="url(#robot-pilot-nose-gradient)" d="M50 51c2.1 2.2 3.2 4.8 3.2 6.8 0 2.3-1.6 3.5-3.2 3.5s-3.2-1.2-3.2-3.5c0-2 1.1-4.6 3.2-6.8Z"/>
+    <path d="M43.6 68.5h12.8" fill="none" stroke="#445060" stroke-width="2.3" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Space DJ avatar">
+  <defs>
+    <linearGradient id="space-dj-jacket-gradient" x1="50" y1="67" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#202b56"/>
+      <stop offset=".55" stop-color="#151a3f"/>
+      <stop offset="1" stop-color="#08091f"/>
+    </linearGradient>
+    <linearGradient id="space-dj-shirt-gradient" x1="50" y1="72" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#62f4ff"/>
+      <stop offset="1" stop-color="#2566e8"/>
+    </linearGradient>
+    <radialGradient id="space-dj-headphone-gradient" cx="36" cy="14" r="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7fbff"/>
+      <stop offset=".58" stop-color="#b8c9e2"/>
+      <stop offset="1" stop-color="#5c647c"/>
+    </radialGradient>
+    <radialGradient id="space-dj-hair-gradient" cx="38" cy="12" r="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff73c9"/>
+      <stop offset=".58" stop-color="#c23cf4"/>
+      <stop offset="1" stop-color="#4920a4"/>
+    </radialGradient>
+    <radialGradient id="space-dj-face-gradient" cx="40" cy="39" r="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd5c0"/>
+      <stop offset=".6" stop-color="#f6a98c"/>
+      <stop offset="1" stop-color="#c56b54"/>
+    </radialGradient>
+    <radialGradient id="space-dj-ear-gradient" cx="0" cy="0" r="1">
+      <stop offset="0" stop-color="#ffd0bb"/>
+      <stop offset="1" stop-color="#e58a70"/>
+    </radialGradient>
+    <radialGradient id="space-dj-eye-gradient" cx="40" cy="51" r="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#526060"/>
+      <stop offset="1" stop-color="#263133"/>
+    </radialGradient>
+    <linearGradient id="space-dj-nose-gradient" x1="50" y1="51" x2="50" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#efa082" stop-opacity=".62"/>
+      <stop offset=".55" stop-color="#da8467" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#bd604b" stop-opacity="1"/>
+    </linearGradient>
+    <radialGradient id="space-dj-earcup-gradient" cx="0" cy="0" r="1">
+      <stop offset="0" stop-color="#48f5ff"/>
+      <stop offset=".6" stop-color="#3159f4"/>
+      <stop offset="1" stop-color="#18134f"/>
+    </radialGradient>
+  </defs>
+  <g id="avatar-space-dj">
+    <path fill="url(#space-dj-jacket-gradient)" d="M11.6 100c.8-17.5 16.3-30.6 38.4-30.6S87.6 82.5 88.4 100H11.6Z"/>
+    <path fill="url(#space-dj-shirt-gradient)" d="M36.3 74.8h27.4V100H36.3V74.8Z"/>
+    <path fill="#ffdf45" d="M28.1 72.3 38 100h-6.8l-8.5-21.5c-.9-2.4 1.8-5.3 5.4-6.2Zm43.8 0L62 100h6.8l8.5-21.5c.9-2.4-1.8-5.3-5.4-6.2Z"/>
+    <ellipse cx="23.8" cy="51.4" rx="7.4" ry="8.2" fill="url(#space-dj-ear-gradient)"/>
+    <ellipse cx="76.2" cy="51.4" rx="7.4" ry="8.2" fill="url(#space-dj-ear-gradient)"/>
+    <path fill="url(#space-dj-face-gradient)" d="M25.3 38.6c0-10.5 8.7-17.4 24.7-17.4s24.7 6.9 24.7 17.4v17.7c0 11.6-9.2 19.3-24.7 19.3s-24.7-7.7-24.7-19.3V38.6Z"/>
+    <path fill="url(#space-dj-hair-gradient)" d="M24.4 29.5C26 14 36.1 4.3 50 4.3S74 14 75.6 29.5c-7.9-4.3-15.4-6.3-25.6-6.3s-17.7 2-25.6 6.3Z"/>
+    <path fill="url(#space-dj-headphone-gradient)" d="M20.6 43.4C20.8 19.5 31.8 6.8 50 6.8s29.2 12.7 29.4 36.6h-5.8C72.9 24.1 64.5 14 50 14S27.1 24.1 26.4 43.4h-5.8Z"/>
+    <circle cx="20.4" cy="49.8" r="8.4" fill="url(#space-dj-earcup-gradient)"/>
+    <circle cx="79.6" cy="49.8" r="8.4" fill="url(#space-dj-earcup-gradient)"/>
+    <ellipse cx="39.8" cy="51.3" rx="3.3" ry="4" fill="url(#space-dj-eye-gradient)"/>
+    <ellipse cx="60.2" cy="51.3" rx="3.3" ry="4" fill="url(#space-dj-eye-gradient)"/>
+    <circle cx="38.7" cy="49.7" r=".85" fill="#fff" opacity=".43"/>
+    <circle cx="59.1" cy="49.7" r=".85" fill="#fff" opacity=".43"/>
+    <path fill="url(#space-dj-nose-gradient)" d="M50 51.3c2.1 2.2 3.2 4.8 3.2 6.8 0 2.3-1.6 3.5-3.2 3.5s-3.2-1.2-3.2-3.5c0-2 1.1-4.6 3.2-6.8Z"/>
+    <path d="M44.4 66.8c3.2 2 8 2 11.2 0" fill="none" stroke="#bd5b62" stroke-width="2.1" stroke-linecap="round"/>
+  </g>
+</svg>

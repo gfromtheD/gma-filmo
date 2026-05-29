@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Pumpkin avatar">
+  <defs>
+    <linearGradient id="pumpkin-body-gradient" x1="50" y1="72" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#bdf27d"/>
+      <stop offset=".57" stop-color="#74bf3f"/>
+      <stop offset="1" stop-color="#236e3a"/>
+    </linearGradient>
+    <radialGradient id="pumpkin-hood-gradient" cx="37" cy="15" r="57" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb13a"/>
+      <stop offset=".58" stop-color="#ff7a13"/>
+      <stop offset="1" stop-color="#d8400a"/>
+    </radialGradient>
+    <linearGradient id="pumpkin-lobe-gradient" x1="50" y1="16" x2="50" y2="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffad35"/>
+      <stop offset=".62" stop-color="#ff7412"/>
+      <stop offset="1" stop-color="#d83c0a"/>
+    </linearGradient>
+    <radialGradient id="pumpkin-face-gradient" cx="42" cy="43" r="33" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd8c6"/>
+      <stop offset=".6" stop-color="#ffbba2"/>
+      <stop offset="1" stop-color="#e98b73"/>
+    </radialGradient>
+    <radialGradient id="pumpkin-eye-gradient" cx="40" cy="53" r="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#59575a"/>
+      <stop offset="1" stop-color="#303238"/>
+    </radialGradient>
+    <linearGradient id="pumpkin-nose-gradient" x1="50" y1="54" x2="50" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#efa082" stop-opacity=".62"/>
+      <stop offset=".55" stop-color="#dc8467" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#bf624d" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="pumpkin-stem-gradient" x1="50" y1="0" x2="50" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8bdc53"/>
+      <stop offset="1" stop-color="#318f3d"/>
+    </linearGradient>
+  </defs>
+  <g id="avatar-pumpkin">
+    <path fill="url(#pumpkin-body-gradient)" d="M10.8 100c.8-17.4 17.1-30.6 39.2-30.6S88.4 82.6 89.2 100H10.8Z"/>
+    <path fill="#398447" d="M34.5 73.4c8.8 4.9 19.2 5.4 31 0L50 89.3 34.5 73.4Z" opacity=".45"/>
+    <path fill="url(#pumpkin-stem-gradient)" d="M48.5 8.3c1.2-6.1 6.2-8 11.6-4.6-1.1 6.2-6.3 8.5-11.6 4.6Z"/>
+    <path d="M47.1 6.7c-5-4.1-10.8-2-9.9 3.6 3.1-3.5 6.3-3.3 9.7.1M51.5 6.2c-2.2 3.9-.7 7 4 7.8" fill="none" stroke="#7abd42" stroke-width="1.9" stroke-linecap="round"/>
+    <path fill="url(#pumpkin-lobe-gradient)" d="M16.8 35.1c0-15 8.4-25.8 20.5-25.8 4 0 7 1.4 9.3 3.6-8.8 16.3-8.7 36.6-.9 53.9-4.6 4.7-11.3 6.8-18.1 4.1-6.9-2.7-10.8-14.5-10.8-35.8Z"/>
+    <path fill="url(#pumpkin-lobe-gradient)" d="M83.2 35.1c0-15-8.4-25.8-20.5-25.8-4 0-7 1.4-9.3 3.6 8.8 16.3 8.7 36.6.9 53.9 4.6 4.7 11.3 6.8 18.1 4.1 6.9-2.7 10.8-14.5 10.8-35.8Z"/>
+    <path fill="url(#pumpkin-hood-gradient)" d="M27.7 27.5c0-15.5 8.5-24.8 22.3-24.8s22.3 9.3 22.3 24.8v21.3c0 15-8.5 24.8-22.3 24.8s-22.3-9.8-22.3-24.8V27.5Z"/>
+    <circle cx="31.4" cy="62.5" r="3.1" fill="#ec5510" opacity=".75"/>
+    <circle cx="67.1" cy="24.3" r="3.2" fill="#f06016" opacity=".65"/>
+    <circle cx="75.3" cy="31.7" r="3.5" fill="#f06016" opacity=".65"/>
+    <circle cx="77.8" cy="47.9" r="2.7" fill="#e34b0e" opacity=".62"/>
+    <path fill="url(#pumpkin-face-gradient)" d="M28.9 48c0-7.6 5.7-11.8 12.9-11.8h16.4c7.2 0 12.9 4.2 12.9 11.8v7.7c0 10.1-8.2 16.5-21.1 16.5s-21.1-6.4-21.1-16.5V48Z"/>
+    <ellipse cx="40.1" cy="53" rx="3.3" ry="4" fill="url(#pumpkin-eye-gradient)"/>
+    <ellipse cx="59.9" cy="53" rx="3.3" ry="4" fill="url(#pumpkin-eye-gradient)"/>
+    <circle cx="39" cy="51.4" r=".85" fill="#fff" opacity=".43"/>
+    <circle cx="58.8" cy="51.4" r=".85" fill="#fff" opacity=".43"/>
+    <path fill="url(#pumpkin-nose-gradient)" d="M50 54c2.1 2.1 3.2 4.7 3.2 6.7 0 2.3-1.6 3.5-3.2 3.5s-3.2-1.2-3.2-3.5c0-2 1.1-4.6 3.2-6.7Z"/>
+  </g>
+</svg>

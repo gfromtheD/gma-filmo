@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Retro detective avatar">
+  <defs>
+    <linearGradient id="retro-detective-coat-gradient" x1="50" y1="67" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#cfa86c"/>
+      <stop offset=".58" stop-color="#9b6d35"/>
+      <stop offset="1" stop-color="#573719"/>
+    </linearGradient>
+    <radialGradient id="retro-detective-hat-gradient" cx="37" cy="13" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d7b277"/>
+      <stop offset=".58" stop-color="#9b6a34"/>
+      <stop offset="1" stop-color="#4e3017"/>
+    </radialGradient>
+    <linearGradient id="retro-detective-band-gradient" x1="50" y1="31" x2="50" y2="43" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3c2b28"/>
+      <stop offset="1" stop-color="#151111"/>
+    </linearGradient>
+    <radialGradient id="retro-detective-face-gradient" cx="40" cy="39" r="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd5c0"/>
+      <stop offset=".6" stop-color="#f1a386"/>
+      <stop offset="1" stop-color="#bf634d"/>
+    </radialGradient>
+    <radialGradient id="retro-detective-ear-gradient" cx="0" cy="0" r="1">
+      <stop offset="0" stop-color="#ffd1bc"/>
+      <stop offset="1" stop-color="#df846a"/>
+    </radialGradient>
+    <radialGradient id="retro-detective-eye-gradient" cx="40" cy="51" r="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#545d5e"/>
+      <stop offset="1" stop-color="#263033"/>
+    </radialGradient>
+    <linearGradient id="retro-detective-nose-gradient" x1="50" y1="51" x2="50" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#efa082" stop-opacity=".62"/>
+      <stop offset=".55" stop-color="#d78366" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#b85d49" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="retro-detective-mustache-gradient" x1="50" y1="62" x2="50" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5a3324"/>
+      <stop offset="1" stop-color="#2a1814"/>
+    </linearGradient>
+  </defs>
+  <g id="avatar-retro-detective">
+    <path fill="url(#retro-detective-coat-gradient)" d="M11.8 100c.8-17.3 16.2-30.1 38.2-30.1S87.4 82.7 88.2 100H11.8Z"/>
+    <path fill="#f1d5a3" d="M35.8 73.8h28.4L50 91.5 35.8 73.8Z" opacity=".55"/>
+    <ellipse cx="24.3" cy="51.8" rx="7.2" ry="8.1" fill="url(#retro-detective-ear-gradient)"/>
+    <ellipse cx="75.7" cy="51.8" rx="7.2" ry="8.1" fill="url(#retro-detective-ear-gradient)"/>
+    <path fill="url(#retro-detective-face-gradient)" d="M25.4 39.5c0-9.8 8.6-15.9 24.6-15.9s24.6 6.1 24.6 15.9v17.2c0 11.3-9.1 18.8-24.6 18.8s-24.6-7.5-24.6-18.8V39.5Z"/>
+    <path fill="url(#retro-detective-hat-gradient)" d="M25.9 25.2C29.3 11.4 38 4.4 50 4.4s20.7 7 24.1 20.8c-8.7 3.4-39.5 3.4-48.2 0Z"/>
+    <path fill="url(#retro-detective-band-gradient)" d="M27.2 26.9c9.4-2.8 36.2-2.8 45.6 0v6.6c-11.3 2.3-34.3 2.3-45.6 0v-6.6Z"/>
+    <path fill="url(#retro-detective-hat-gradient)" d="M14.6 36.4c13.3-4.7 35.5-5.7 58.4-2.2 7.2 1.1 12.3.5 15.8-1.5.8 5.7-4.8 9.5-13.1 10.2-21.9 2-44.5.8-62.2-2.3-3.1-.6-2.2-3 1.1-4.2Z"/>
+    <ellipse cx="39.6" cy="51.5" rx="3.3" ry="4" fill="url(#retro-detective-eye-gradient)"/>
+    <ellipse cx="60.4" cy="51.5" rx="3.3" ry="4" fill="url(#retro-detective-eye-gradient)"/>
+    <circle cx="38.5" cy="49.9" r=".85" fill="#fff" opacity=".43"/>
+    <circle cx="59.3" cy="49.9" r=".85" fill="#fff" opacity=".43"/>
+    <path fill="url(#retro-detective-nose-gradient)" d="M50 51.5c2.1 2.2 3.2 4.8 3.2 6.8 0 2.3-1.6 3.5-3.2 3.5s-3.2-1.2-3.2-3.5c0-2 1.1-4.6 3.2-6.8Z"/>
+    <path fill="url(#retro-detective-mustache-gradient)" d="M38.8 64.8c3.6-3 8.7-2.7 11.2.5 2.5-3.2 7.6-3.5 11.2-.5-1.8 5.2-8.5 6.4-11.2 1.8-2.7 4.6-9.4 3.4-11.2-1.8Z"/>
+  </g>
+</svg>

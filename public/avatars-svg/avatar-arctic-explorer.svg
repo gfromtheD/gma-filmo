@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Arctic explorer avatar">
+  <defs>
+    <linearGradient id="arctic-explorer-parka-gradient" x1="50" y1="67" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#76e8ff"/>
+      <stop offset=".58" stop-color="#298bd7"/>
+      <stop offset="1" stop-color="#10437b"/>
+    </linearGradient>
+    <radialGradient id="arctic-explorer-fur-gradient" cx="38" cy="13" r="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff6d7"/>
+      <stop offset=".62" stop-color="#f4d78b"/>
+      <stop offset="1" stop-color="#b78335"/>
+    </radialGradient>
+    <radialGradient id="arctic-explorer-hood-gradient" cx="37" cy="15" r="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9ff4ff"/>
+      <stop offset=".58" stop-color="#3aa9e8"/>
+      <stop offset="1" stop-color="#14558f"/>
+    </radialGradient>
+    <radialGradient id="arctic-explorer-face-gradient" cx="41" cy="43" r="35" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd8c4"/>
+      <stop offset=".6" stop-color="#f3aa8e"/>
+      <stop offset="1" stop-color="#c96f58"/>
+    </radialGradient>
+    <radialGradient id="arctic-explorer-eye-gradient" cx="40" cy="51" r="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#535e60"/>
+      <stop offset="1" stop-color="#253032"/>
+    </radialGradient>
+    <linearGradient id="arctic-explorer-nose-gradient" x1="50" y1="51" x2="50" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#efa082" stop-opacity=".62"/>
+      <stop offset=".55" stop-color="#d78366" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#b85d49" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <g id="avatar-arctic-explorer">
+    <path fill="url(#arctic-explorer-parka-gradient)" d="M10.8 100c.8-17.9 16.7-31.1 39.2-31.1S88.4 82.1 89.2 100H10.8Z"/>
+    <path fill="#10437b" d="M34.6 73.5c8.6 4.8 22.2 4.8 30.8 0L50 91.6 34.6 73.5Z" opacity=".42"/>
+    <path fill="url(#arctic-explorer-hood-gradient)" d="M17.8 40.8C17.8 18.5 30.6 4.4 50 4.4s32.2 14.1 32.2 36.4v17.5c0 14.4-12.6 23.3-32.2 23.3s-32.2-8.9-32.2-23.3V40.8Z"/>
+    <path fill="url(#arctic-explorer-fur-gradient)" d="M22.2 42.4c0-17.4 11.4-28.8 27.8-28.8s27.8 11.4 27.8 28.8v11.2c0 13.5-10.8 22-27.8 22s-27.8-8.5-27.8-22V42.4Z"/>
+    <path fill="url(#arctic-explorer-face-gradient)" d="M29 48c0-7.7 5.7-11.8 12.8-11.8h16.4c7.1 0 12.8 4.1 12.8 11.8v8.4c0 10-8 16.1-21 16.1s-21-6.1-21-16.1V48Z"/>
+    <path fill="url(#arctic-explorer-hood-gradient)" d="M22 38.2c7.3-7.6 17.3-11.1 28-11.1s20.7 3.5 28 11.1c-6-13.1-14.8-19.9-28-19.9s-22 6.8-28 19.9Z" opacity=".72"/>
+    <ellipse cx="39.8" cy="51.4" rx="3.3" ry="4" fill="url(#arctic-explorer-eye-gradient)"/>
+    <ellipse cx="60.2" cy="51.4" rx="3.3" ry="4" fill="url(#arctic-explorer-eye-gradient)"/>
+    <circle cx="38.7" cy="49.8" r=".85" fill="#fff" opacity=".43"/>
+    <circle cx="59.1" cy="49.8" r=".85" fill="#fff" opacity=".43"/>
+    <path fill="url(#arctic-explorer-nose-gradient)" d="M50 51.4c2.1 2.2 3.2 4.8 3.2 6.8 0 2.3-1.6 3.5-3.2 3.5s-3.2-1.2-3.2-3.5c0-2 1.1-4.6 3.2-6.8Z"/>
+    <path d="M44.5 66.7c3.2 2 7.8 2 11 0" fill="none" stroke="#b75b54" stroke-width="2.1" stroke-linecap="round"/>
+  </g>
+</svg>
