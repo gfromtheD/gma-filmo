@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { GuestGate } from "@/components/ui/guest-gate";
 import { useRatings } from "@/hooks/use-ratings";
-import { useCommunityRatings } from "@/hooks/use-community-ratings";
+import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community-ratings";
+import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const AVATAR_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
 const AVATAR_ICONS  = ["◆", "✦", "◐", "▲", "◇"] as const;
@@ -17,6 +19,7 @@ interface RatingsBlockProps {
 
 export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) {
   const { getRating, setRating } = useRatings();
+  const currentUserId = useSupabaseUserId();
   const existingEntry = getRating(numericId);
   const savedScore = existingEntry ? Math.round(existingEntry.rating * 2) : null;
 
@@ -104,7 +107,12 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
         ) : (
           <div className="flex flex-col gap-3">
             {reviews.map((r) => (
-              <ReviewCard key={r.userId + r.ratedAt} review={r} />
+              <ReviewCard
+                key={r.userId + r.ratedAt}
+                review={r}
+                peliculaId={numericId}
+                currentUserId={currentUserId}
+              />
             ))}
           </div>
         )}
@@ -127,20 +135,51 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
   );
 }
 
-function ReviewCard({ review }: { review: { displayName: string; score: number; comment: string; ratedAt: string } }) {
-  const { displayName, score, comment, ratedAt } = review;
+function ReviewCard({
+  review,
+  peliculaId,
+  currentUserId,
+}: {
+  review: CommunityReview;
+  peliculaId: number;
+  currentUserId: string | null;
+}) {
+  const { userId, displayName, score, comment, ratedAt } = review;
+  const [liked, setLiked] = useState(review.likedByMe);
+  const [count, setCount] = useState(review.likeCount);
+
   const colorIdx    = displayName.length % AVATAR_COLORS.length;
   const isHighScore = score >= 8;
-  const date = new Date(ratedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const isOwn       = currentUserId === userId;
+  const date        = new Date(ratedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  async function handleLike() {
+    if (!currentUserId || isOwn) return;
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setCount((c) => c + (newLiked ? 1 : -1));
+
+    try {
+      const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+      if (!session?.access_token) { setLiked(liked); setCount(count); return; }
+
+      const res = await fetch("/api/ratings/community/like", {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ reviewerUserId: userId, peliculaId }),
+      });
+      if (!res.ok) { setLiked(liked); setCount(count); }
+    } catch {
+      setLiked(liked);
+      setCount(count);
+    }
+  }
 
   return (
     <div className="flex gap-4 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px]"
-        style={{
-          background: AVATAR_COLORS[colorIdx] + "22",
-          color: AVATAR_COLORS[colorIdx],
-        }}
+        style={{ background: AVATAR_COLORS[colorIdx] + "22", color: AVATAR_COLORS[colorIdx] }}
       >
         {AVATAR_ICONS[colorIdx]}
       </div>
@@ -166,6 +205,31 @@ function ReviewCard({ review }: { review: { displayName: string; score: number; 
           </span>
         </div>
         <p className="text-[14px] leading-[1.55] text-[#D9E2EC]">{comment}</p>
+
+        {/* Like button */}
+        {!isOwn && currentUserId && (
+          <button
+            type="button"
+            onClick={() => void handleLike()}
+            className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
+            style={{ color: liked ? "#22B16B" : "#4A5568" }}
+          >
+            <GmaIcon
+              name="heart"
+              size={13}
+              strokeWidth={liked ? 0 : 1.8}
+              style={{ fill: liked ? "#22B16B" : "none" }}
+            />
+            {count > 0 && <span>{count}</span>}
+            <span>{liked ? "De acuerdo" : "De acuerdo"}</span>
+          </button>
+        )}
+        {isOwn && count > 0 && (
+          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4A5568]">
+            <GmaIcon name="heart" size={13} strokeWidth={1.8} />
+            <span>{count} {count === 1 ? "persona" : "personas"} de acuerdo</span>
+          </div>
+        )}
       </div>
     </div>
   );

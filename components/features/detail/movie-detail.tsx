@@ -60,16 +60,35 @@ export function MovieDetail({ movie, related, autoOpenRating }: MovieDetailProps
 // ─── Synopsis ─────────────────────────────────────────────────────────────────
 
 function SynopsisSection({ movie }: { movie: MovieMedia }) {
-  const [open, setOpen]   = useState(false);
-  const [text, setText]   = useState("");
-  const [sent, setSent]   = useState(false);
+  const [open,    setOpen]    = useState(false);
+  const [text,    setText]    = useState("");
+  const [sent,    setSent]    = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error,   setError]   = useState("");
 
-  function submit() {
+  async function submit() {
     if (!text.trim()) return;
-    // TODO: send to backend / email
-    setSent(true);
-    setOpen(false);
-    setText("");
+    setSending(true);
+    setError("");
+    try {
+      const { data: { session } } = await (await import("@/lib/supabase/browser")).getSupabaseBrowserClient().auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+
+      const res = await fetch("/api/synopsis-proposals", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ peliculaId: movie.numericId, proposedText: text.trim() }),
+      });
+      if (!res.ok) { setError("No se pudo enviar. Inicia sesión e inténtalo de nuevo."); return; }
+      setSent(true);
+      setOpen(false);
+      setText("");
+    } catch {
+      setError("Error de red. Inténtalo de nuevo.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -114,14 +133,15 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
                   rows={4}
                   className="w-full resize-none rounded-[8px] border border-[#262626] bg-[#111] px-3 py-2.5 text-[13px] leading-[1.6] text-[#D9E2EC] placeholder-[#3A4A5A] outline-none transition-colors focus:border-[#22B16B]/50"
                 />
+                {error && <p className="text-[11px] text-[#ff5252]">{error}</p>}
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={submit}
-                    disabled={!text.trim()}
+                    onClick={() => void submit()}
+                    disabled={!text.trim() || sending}
                     className="rounded-full bg-[#22B16B] px-4 py-1.5 text-[12px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Enviar propuesta
+                    {sending ? "Enviando…" : "Enviar propuesta"}
                   </button>
                   <button
                     type="button"
