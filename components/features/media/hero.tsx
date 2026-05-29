@@ -132,12 +132,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               <span>{item.year}</span>
               {seasons != null && <span>{seasons} temp.</span>}
               {runtime != null && <span>{runtime}</span>}
-              {item.author && (
-                <span className="rounded border border-[#262626] px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#B8C5D4]">
-                  {item.author}
-                </span>
-              )}
-              {item.tags?.slice(0, 3).map((t) => (
+                {item.tags?.slice(0, 3).map((t) => (
                 <span
                   key={t}
                   className="rounded border border-[#262626] px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#B8C5D4]"

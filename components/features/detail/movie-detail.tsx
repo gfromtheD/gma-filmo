@@ -140,13 +140,35 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
   );
 }
 
+// ─── Credits parser ───────────────────────────────────────────────────────────
+
+function parseAuthorField(raw: string | null | undefined, artistas?: MovieMedia["artistas"]): { director: string | null; illustrator: string | null } {
+  if (artistas && artistas.length > 0) {
+    return {
+      director:    artistas.find((a) => a.role === "creador")?.name ?? null,
+      illustrator: artistas.find((a) => a.role === "ilustrador")?.name ?? null,
+    };
+  }
+  if (!raw) return { director: null, illustrator: null };
+  const creado = raw.match(/Creado por:\s*([^;]+)/i);
+  const ilustr  = raw.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
+  if (creado || ilustr) {
+    return {
+      director:    creado?.[1]?.trim() ?? null,
+      illustrator: ilustr?.[1]?.trim() ?? null,
+    };
+  }
+  return { director: raw.trim(), illustrator: null };
+}
+
 // ─── Stats row ────────────────────────────────────────────────────────────────
 
 function StatsRow({ movie }: { movie: MovieMedia }) {
+  const { director } = parseAuthorField(movie.author, movie.artistas);
   const stats: Array<{ label: string; value: string }> = [
-    { label: "Estreno",      value: String(movie.year) },
-    { label: "Duración",     value: movie.runtime },
-    { label: "Director", value: movie.author ?? "—" },
+    { label: "Estreno",  value: String(movie.year) },
+    { label: "Duración", value: movie.runtime },
+    { label: "Director", value: director ?? "—" },
   ];
 
   return (
@@ -208,10 +230,18 @@ function MetaCard({ movie }: { movie: MovieMedia }) {
       </h3>
 
       <dl className="flex flex-col gap-3">
-        <MetaRow label="Año"          value={String(movie.year)} />
-        <MetaRow label="Duración"     value={movie.runtime} />
-        {movie.author && <MetaRow label="Director" value={movie.author} />}
-        {movie.tag && <MetaRow label="Producción" value={movie.tag} accent />}
+        {(() => {
+          const { director, illustrator } = parseAuthorField(movie.author, movie.artistas);
+          return (
+            <>
+              <MetaRow label="Año"      value={String(movie.year)} />
+              <MetaRow label="Duración" value={movie.runtime} />
+              {director    && <MetaRow label="Director"    value={director} />}
+              {illustrator && <MetaRow label="Ilustrador"  value={illustrator} />}
+              {movie.tag   && <MetaRow label="Producción"  value={movie.tag} accent />}
+            </>
+          );
+        })()}
 
         {/* Colección */}
         {movie.categories.filter((c) => c !== "Cortometraje").length > 0 && (
