@@ -119,12 +119,15 @@ export function HomeScreen({ items }: HomeScreenProps) {
 
         {/* Dot indicators + prev/next arrows */}
         {featuredItems.length > 1 && (
-          <div className="group absolute bottom-6 left-0 right-0 z-10 flex items-center justify-center gap-3">
+          <div
+            className="group absolute bottom-6 left-0 right-0 z-10 flex items-center justify-center gap-3"
+            style={{ animation: "fadeIn 0.55s ease both" }}
+          >
             <button
               type="button"
               aria-label="Anterior"
               onClick={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
-              className="flex items-center justify-center text-white/0 transition-colors duration-200 group-hover:text-white/50 hover:!text-white/90 active:scale-95"
+              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
@@ -149,7 +152,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
               type="button"
               aria-label="Siguiente"
               onClick={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
-              className="flex items-center justify-center text-white/0 transition-colors duration-200 group-hover:text-white/50 hover:!text-white/90 active:scale-95"
+              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
