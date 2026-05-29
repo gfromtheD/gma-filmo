@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "motion/react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
@@ -145,7 +146,12 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
     (filters.sort !== "recent" ? 1 : 0);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-8">
+    <motion.div
+      className="mx-auto max-w-[1440px] px-6 pb-20 pt-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.55, ease: "easeOut" }}
+    >
 
       {/* Collections row */}
       {colecciones && colecciones.length > 0 && (
@@ -325,7 +331,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
           </div>
         </section>
       )}
-    </div>
+    </motion.div>
   );
 }
 
