@@ -234,7 +234,11 @@ function ScreenA({
             return (
               <ProfileCard
                 key={profile.id}
-                onClick={(rect) => triggerNav(rect, () => onSelectSub(profile), profile.name)}
+                onClick={(rect) =>
+                  profile.requirePin && profile.pin
+                    ? onSelectSub(profile)          // PIN requerido — sin animación
+                    : triggerNav(rect, () => onSelectSub(profile), profile.name)
+                }
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
                 label={profile.name}
