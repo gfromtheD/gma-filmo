@@ -247,6 +247,54 @@ export type Database = {
         }
         Relationships: []
       }
+      review_likes: {
+        Row: {
+          id:               number
+          liker_user_id:    string
+          reviewer_user_id: string
+          pelicula_id:      number
+          created_at:       string
+        }
+        Insert: {
+          id?:              number
+          liker_user_id:    string
+          reviewer_user_id: string
+          pelicula_id:      number
+          created_at?:      string
+        }
+        Update: {
+          id?:              number
+          liker_user_id?:   string
+          reviewer_user_id?: string
+          pelicula_id?:     number
+          created_at?:      string
+        }
+        Relationships: []
+      }
+      synopsis_proposals: {
+        Row: {
+          id:            number
+          user_id:       string
+          pelicula_id:   number
+          proposed_text: string
+          created_at:    string
+        }
+        Insert: {
+          id?:           number
+          user_id:       string
+          pelicula_id:   number
+          proposed_text: string
+          created_at?:   string
+        }
+        Update: {
+          id?:            number
+          user_id?:       string
+          pelicula_id?:   number
+          proposed_text?: string
+          created_at?:    string
+        }
+        Relationships: []
+      }
       ratings: {
         Row: {
           comment: string
