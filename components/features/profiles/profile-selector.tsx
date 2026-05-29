@@ -118,7 +118,7 @@ export function ProfileSelector() {
             setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
             const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
             startExpand(pinGate.origin, size, pinGate.name);
-            setTimeout(() => router.push("/inicio"), 1050);
+            setTimeout(() => router.push("/inicio"), 1900);
           }}
           onCancel={() => setPinGate(null)}
         />
@@ -178,7 +178,7 @@ function ScreenA({
   function triggerNav(rect: DOMRect, navigate: () => void, name: string) {
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
     startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name);
-    setTimeout(navigate, 1050);
+    setTimeout(navigate, 1900);
   }
 
   async function handleSignOut() {

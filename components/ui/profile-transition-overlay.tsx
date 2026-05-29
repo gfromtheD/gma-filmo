@@ -59,15 +59,15 @@ export function ProfileTransitionOverlay() {
             justifyContent: "center",
             zIndex: 10000,
             pointerEvents: "none",
-            gap: 4,
+            gap: 8,
           }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.72, duration: 0.35, ease: "easeOut" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.75, duration: 0.55, ease: "easeOut" }}
         >
           <span style={{
-            color: "rgba(3,26,14,0.55)",
-            fontSize: 22,
+            color: "rgba(3,26,14,0.5)",
+            fontSize: 26,
             fontWeight: 600,
             letterSpacing: "0.01em",
           }}>
@@ -75,10 +75,10 @@ export function ProfileTransitionOverlay() {
           </span>
           <span style={{
             color: "#031A0E",
-            fontSize: 96,
+            fontSize: 120,
             fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
             fontStyle: "italic",
-            lineHeight: 1.05,
+            lineHeight: 1.0,
             fontWeight: 400,
           }}>
             {profileName}
