@@ -399,12 +399,8 @@ function PinGate({
 
 function GmaLogo() {
   return (
-    <div className="flex items-baseline gap-1">
-      <span className="text-[20px] font-extrabold uppercase tracking-[0.02em] text-white">GMA</span>
-      <span className="text-[13px] font-medium uppercase tracking-[0.04em]" style={{ color: "#22B16B" }}>
-        filmo
-      </span>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/images/logo-gma.png" alt="GMA Filmo" className="h-10 w-auto" />
   );
 }
 

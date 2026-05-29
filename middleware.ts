@@ -60,6 +60,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  // Guests cannot access profile management — redirect to register
+  const GUEST_BLOCKED = ["/perfiles", "/configurar-perfil"];
+  if (isGuest && GUEST_BLOCKED.some((p) => pathname.startsWith(p))) {
+    return NextResponse.redirect(new URL("/?register=1", request.url));
+  }
+
   if (user && pathname === "/") {
     return NextResponse.redirect(new URL("/inicio", request.url));
   }

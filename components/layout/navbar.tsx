@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, UserRound } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useProfileStore } from "@/store/use-profile-store";
 import { renderAvatar } from "@/lib/data/profile-avatars";
+import { useIsGuest } from "@/hooks/use-is-guest";
 
 interface NavItem {
   readonly id: string;
@@ -38,13 +39,20 @@ function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: st
       </div>
     );
   }
-  const initial = name[0]?.toUpperCase() ?? "U";
   return (
     <div
       className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-extrabold text-[#031A0E]"
       style={{ background: color }}
     >
-      {initial}
+      {name[0]?.toUpperCase() ?? "U"}
+    </div>
+  );
+}
+
+function GuestAvatarIcon() {
+  return (
+    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
+      <UserRound size={15} className="text-[#B8C5D4]" />
     </div>
   );
 }
@@ -55,6 +63,8 @@ export function Navbar() {
   const { email } = useUserProfile();
   const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
   const activeProfile = useProfileStore((s) => s.activeProfile);
+
+  const isGuest = useIsGuest();
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -188,9 +198,9 @@ export function Navbar() {
               onClick={() => setMenuOpen((o) => !o)}
               className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
             >
-              <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
+              {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
               <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
-                {displayName}
+                {isGuest ? "Invitado" : displayName}
               </span>
               <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94]" />
             </button>
@@ -200,21 +210,54 @@ export function Navbar() {
                 className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
                 style={{ background: "#0D0D0D" }}
               >
-                {/* Profile header */}
-                <Link
-                  href="/perfiles"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 border-b border-[#262626] px-4 py-3 transition-colors hover:bg-[#1A1A1A]"
-                >
-                  <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-extrabold text-white">{displayName}</div>
-                    {email && (
-                      <div className="truncate text-[11px] text-[#5A6A7E]">{email}</div>
-                    )}
+                {/* Profile header — guest vs auth */}
+                {isGuest ? (
+                  <div className="border-b border-[#262626] px-4 py-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
+                        <UserRound size={18} className="text-[#B8C5D4]" />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-extrabold text-white">Explorando como invitado</div>
+                        <div className="text-[11px] text-[#5A6A7E]">Acceso limitado</div>
+                      </div>
+                    </div>
+                    <p className="mb-3 text-[11.5px] leading-[1.5] text-[#6D7D94]">
+                      Crea una cuenta gratis para guardar favoritos, llevar tu historial y valorar cortos.
+                    </p>
+                    <div className="flex gap-2">
+                      <Link
+                        href="/?register=1"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex-1 rounded-full bg-[#22B16B] py-1.5 text-center text-[12px] font-bold text-[#031A0E] transition-opacity hover:opacity-90"
+                      >
+                        Registrarse
+                      </Link>
+                      <Link
+                        href="/?login=1"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex-1 rounded-full border border-[#3A4A5A] py-1.5 text-center text-[12px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A]"
+                      >
+                        Iniciar sesión
+                      </Link>
+                    </div>
                   </div>
-                  <GmaIcon name="chevronRight" size={16} className="text-[#6D7D94]" />
-                </Link>
+                ) : (
+                  <Link
+                    href="/perfiles"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 border-b border-[#262626] px-4 py-3 transition-colors hover:bg-[#1A1A1A]"
+                  >
+                    <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14px] font-extrabold text-white">{displayName}</div>
+                      {email && (
+                        <div className="truncate text-[11px] text-[#5A6A7E]">{email}</div>
+                      )}
+                    </div>
+                    <GmaIcon name="chevronRight" size={16} className="text-[#6D7D94]" />
+                  </Link>
+                )}
 
                 {/* Links */}
                 <div className="py-1">

@@ -203,7 +203,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
         onClick={async () => {
           await getSupabaseBrowserClient().auth.signOut();
           document.cookie = "gma_guest=1; path=/; max-age=86400; SameSite=Lax";
-          window.location.href = "/peliculas";
+          window.location.href = "/inicio";
         }}
         className={pillClass}
       >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayoutGroup, motion, AnimatePresence } from "motion/react";
 
 import { TextRotate } from "@/components/ui/text-rotate";
@@ -12,10 +12,13 @@ import { RegisterCard } from "@/components/ui/register-card";
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LandingHero() {
-  const [view, setView] = useState<"hero" | "login" | "register">(() => {
-    if (typeof window === "undefined") return "hero";
-    return new URLSearchParams(window.location.search).has("error") ? "login" : "hero";
-  });
+  const [view, setView] = useState<"hero" | "login" | "register">("hero");
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.has("register")) setView("register");
+    else if (p.has("login") || p.has("error")) setView("login");
+  }, []);
 
   return (
     <section className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#0A0F17] md:overflow-visible">
