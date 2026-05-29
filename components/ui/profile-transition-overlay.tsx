@@ -67,7 +67,7 @@ export function ProfileTransitionOverlay() {
         >
           <span style={{
             color: "rgba(3,26,14,0.55)",
-            fontSize: 17,
+            fontSize: 22,
             fontWeight: 600,
             letterSpacing: "0.01em",
           }}>
@@ -75,7 +75,7 @@ export function ProfileTransitionOverlay() {
           </span>
           <span style={{
             color: "#031A0E",
-            fontSize: 68,
+            fontSize: 96,
             fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
             fontStyle: "italic",
             lineHeight: 1.05,
