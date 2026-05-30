@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -111,7 +112,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
   return (
     <div className="flex w-full flex-col items-center gap-5">
       <button type="button" onClick={onBack} className="mb-2 transition-opacity hover:opacity-75">
-        <img src="/images/logo-gma.png" alt="GMA Filmo" className="h-16 w-auto" />
+        <Image src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-16 w-auto" />
       </button>
 
       <div className="text-center">

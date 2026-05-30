@@ -72,7 +72,7 @@ export default function AnimatedGradientBackground({
 
     animationFrame = requestAnimationFrame(animateGradient);
     return () => cancelAnimationFrame(animationFrame);
-  }, [startingGap, Breathing, gradientColors, gradientStops, animationSpeed, breathingRange, topOffset]);
+  }, [startingGap, Breathing, gradientColors, gradientStops, animationSpeed, breathingRange, topOffset, gradientPosition]);
 
   return (
     <motion.div

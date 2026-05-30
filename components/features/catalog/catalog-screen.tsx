@@ -147,7 +147,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
 
   return (
     <motion.div
-      className="mx-auto max-w-[1440px] px-6 pb-20 pt-8"
+      className="mx-auto max-w-360 px-6 pb-20 pt-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
@@ -396,7 +396,7 @@ function ColeccionCard({ col, filmCount }: { col: Coleccion; filmCount: number }
               </p>
             )}
           </div>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-200 group-hover:bg-[#22B16B] group-hover:text-[#03200F]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-200 group-hover:bg-[#22B16B] group-hover:text-gma-accent-fg">
             <GmaIcon name="chevronRight" size={14} />
           </span>
         </div>
@@ -438,7 +438,7 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       <button
         type="button"
         onClick={onReset}
-        className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
+        className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-gma-accent-fg transition-colors hover:bg-[#2AC57A]"
       >
         Ver todo
       </button>

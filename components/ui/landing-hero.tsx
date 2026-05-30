@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { LayoutGroup, motion, AnimatePresence } from "motion/react";
 
 import { TextRotate } from "@/components/ui/text-rotate";
@@ -83,7 +84,7 @@ export function LandingHero() {
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <div className="mb-10 self-center">
-                <img src="/images/logo-gma.png" alt="GMA Filmo" className="h-16 w-auto" />
+                <Image src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-16 w-auto" />
               </div>
 
               <h1 className="flex w-full flex-col items-center justify-center gap-2 text-center text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl md:gap-3 md:text-5xl lg:text-6xl">

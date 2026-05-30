@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface ThreeDMarqueeProps {
@@ -49,9 +50,11 @@ function MarqueeColumn({ images, direction, duration }: {
     >
       {[...images, ...images].map((src, i) => (
         <div key={i} className="relative shrink-0 w-full">
-          <img
+          <Image
             src={src}
             alt=""
+            width={640}
+            height={360}
             draggable={false}
             className="aspect-video w-full rounded-lg object-cover select-none"
           />
