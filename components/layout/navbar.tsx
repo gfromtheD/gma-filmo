@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, useAnimation } from "motion/react";
 import { ExternalLink, UserRound } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -65,11 +66,26 @@ export function Navbar() {
   const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
   const activeProfile = useProfileStore((s) => s.activeProfile);
 
-  const isGuest    = useIsGuest();
-  const setChipPos  = useTransitionStore((s) => s.setChipPos);
-  const phase       = useTransitionStore((s) => s.phase);
-  const chipBtnRef  = useRef<HTMLButtonElement>(null);
-  const avatarRef   = useRef<HTMLSpanElement>(null);
+  const isGuest      = useIsGuest();
+  const setChipPos   = useTransitionStore((s) => s.setChipPos);
+  const phase        = useTransitionStore((s) => s.phase);
+  const chipBtnRef   = useRef<HTMLButtonElement>(null);
+  const avatarRef    = useRef<HTMLSpanElement>(null);
+  const prevPhase    = useRef(phase);
+  const avatarCtrl   = useAnimation();
+  const [chipReveal, setChipReveal] = useState(false);
+
+  useEffect(() => {
+    if (prevPhase.current === "contracting" && phase === "idle") {
+      setChipReveal(true);
+      avatarCtrl.set({ clipPath: "inset(0% 0% 100% 0%)" });
+      void avatarCtrl.start({ clipPath: "inset(0% 0% 0% 0%)", transition: { duration: 0.22, ease: "linear" } });
+      const t = setTimeout(() => setChipReveal(false), 480);
+      prevPhase.current = phase;
+      return () => clearTimeout(t);
+    }
+    prevPhase.current = phase;
+  }, [phase, avatarCtrl]);
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -215,20 +231,30 @@ export function Navbar() {
               aria-label="Cuenta"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
+              className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-3"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
-                transition: phase === "contracting" ? "opacity 0.15s ease" : "opacity 0.4s ease, background-color 0.2s",
-                pointerEvents: phase === "contracting" ? "none" : "auto",
+                background: chipReveal ? "#22B16B" : "#0D0D0D",
+                borderColor: chipReveal ? "#22B16B" : "#262626",
+                transition: "background-color 0.35s ease, border-color 0.35s ease",
+                pointerEvents: (phase === "contracting" || chipReveal) ? "none" : "auto",
               }}
             >
-              <span ref={avatarRef} className="inline-flex shrink-0">
+              <motion.span ref={avatarRef} className="inline-flex shrink-0" animate={avatarCtrl}>
                 {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
-              </span>
-              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
+              </motion.span>
+              <span
+                className="max-w-[120px] truncate text-[13px] font-semibold text-white"
+                style={{ opacity: chipReveal ? 0 : 1, transition: "opacity 0.15s ease" }}
+              >
                 {isGuest ? "Invitado" : displayName}
               </span>
-              <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94]" />
+              <GmaIcon
+                name="chevronDown"
+                size={12}
+                className="text-[#6D7D94]"
+                style={{ opacity: chipReveal ? 0 : 1, transition: "opacity 0.15s ease" } as React.CSSProperties}
+              />
             </button>
 
             {menuOpen && (
