@@ -231,10 +231,15 @@ export function Navbar() {
               aria-label="Cuenta"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
+              className="flex items-center rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 hover:bg-[#1A1A1A]"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
+                paddingRight: chipReveal ? 4 : 12,
+                gap: chipReveal ? 0 : 8,
+                transition: chipReveal
+                  ? "none"
+                  : "padding-right 0.2s cubic-bezier(0.34,1,0.64,1), gap 0.2s cubic-bezier(0.34,1,0.64,1), background-color 0.2s",
               }}
             >
               {/* Avatar circle — green overlay fades out, photo fades in */}
@@ -261,10 +266,26 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
-                {isGuest ? "Invitado" : displayName}
+              {/* Name + chevron — expand rightward as chipReveal ends */}
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  maxWidth: chipReveal ? 0 : 200,
+                  opacity: chipReveal ? 0 : 1,
+                  transition: chipReveal
+                    ? "none"
+                    : "max-width 0.2s cubic-bezier(0.34,1,0.64,1), opacity 0.15s ease",
+                }}
+              >
+                <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
+                  {isGuest ? "Invitado" : displayName}
+                </span>
+                <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94] shrink-0" />
               </span>
-              <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94]" />
             </button>
 
             {menuOpen && (
