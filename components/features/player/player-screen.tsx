@@ -14,6 +14,46 @@ import { useProgress } from "@/hooks/use-progress";
 import { useCastSupport } from "@/hooks/use-cast-support";
 import type { MediaItem } from "@/types/catalog";
 
+// ─── Sprite VTT types & parser ────────────────────────────────────────────────
+
+interface SpriteCue {
+  start:    number;
+  end:      number;
+  x:        number;
+  y:        number;
+  w:        number;
+  h:        number;
+  imageUrl: string;
+}
+
+function parseVttTime(s: string): number {
+  const parts = s.trim().split(":").map(Number);
+  if (parts.length === 3) return (parts[0] ?? 0) * 3600 + (parts[1] ?? 0) * 60 + (parts[2] ?? 0);
+  return (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
+}
+
+function parseSpriteVtt(text: string, vttUrl: string): SpriteCue[] {
+  const cues: SpriteCue[] = [];
+  for (const block of text.split(/\n\n+/)) {
+    const lines     = block.trim().split("\n");
+    const timeLine  = lines.find(l => l.includes("-->"));
+    const urlLine   = lines.find(l => l.includes("#xywh="));
+    if (!timeLine || !urlLine) continue;
+    const [startStr, endStr] = timeLine.split("-->").map(s => s.trim());
+    const m = urlLine.match(/#xywh=(\d+),(\d+),(\d+),(\d+)/);
+    if (!m) continue;
+    const imgPath = urlLine.split("#")[0]!.trim();
+    cues.push({
+      start:    parseVttTime(startStr ?? ""),
+      end:      parseVttTime(endStr   ?? ""),
+      x: Number(m[1]), y: Number(m[2]),
+      w: Number(m[3]), h: Number(m[4]),
+      imageUrl: new URL(imgPath, vttUrl).toString(),
+    });
+  }
+  return cues;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const serifItalic: React.CSSProperties = {
@@ -293,6 +333,11 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
     ? toYouTubeEmbed(item.videoUrl) : null;
   const hasVideo = Boolean(mp4Url || youtubeUrl);
   const isYT     = Boolean(youtubeUrl);
+
+  // Derive sprite VTT URL from the same R2 bucket as the video
+  const spriteVttUrl = mp4Url
+    ? `${new URL(mp4Url).origin}/sprites/${item.id}.vtt`
+    : null;
 
   useEffect(() => {
     const vid = videoRef.current;
@@ -900,6 +945,7 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
                 itemStyle={item.style}
                 imageUrl={item.imageUrl}
                 videoSrc={mp4Url ?? undefined}
+                spriteVttUrl={spriteVttUrl ?? undefined}
                 onSeek={seekTo}
               />
             </div>
@@ -1063,6 +1109,7 @@ function Scrubber({
   itemStyle,
   imageUrl,
   videoSrc,
+  spriteVttUrl,
   onSeek,
 }: {
   currentTime: number;
@@ -1072,6 +1119,7 @@ function Scrubber({
   itemStyle: MediaItem["style"];
   imageUrl?: string;
   videoSrc?: string;
+  spriteVttUrl?: string;
   onSeek: (t: number) => void;
 }) {
   const trackRef       = useRef<HTMLDivElement>(null);
@@ -1079,9 +1127,31 @@ function Scrubber({
   const thumbCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging     = useRef(false);
 
-  const [isActive,   setIsActive]   = useState(false);
-  const [hoverState, setHoverState] = useState<{ time: number; pct: number } | null>(null);
-  const [frameUrl,   setFrameUrl]   = useState<string | null>(null);
+  const [isActive,    setIsActive]    = useState(false);
+  const [hoverState,  setHoverState]  = useState<{ time: number; pct: number } | null>(null);
+  const [frameUrl,    setFrameUrl]    = useState<string | null>(null);
+  const [spriteCues,  setSpriteCues]  = useState<SpriteCue[]>([]);
+  const [spriteSheet, setSpriteSheet] = useState<{ w: number; h: number } | null>(null);
+
+  // Fetch and parse sprite VTT once on mount
+  useEffect(() => {
+    if (!spriteVttUrl) return;
+    let cancelled = false;
+    fetch(spriteVttUrl)
+      .then(r => r.ok ? r.text() : Promise.reject(new Error(r.statusText)))
+      .then(text => {
+        if (cancelled) return;
+        const cues = parseSpriteVtt(text, spriteVttUrl);
+        setSpriteCues(cues);
+        if (cues.length > 0) {
+          const maxX = Math.max(...cues.map(c => c.x + c.w));
+          const maxY = Math.max(...cues.map(c => c.y + c.h));
+          setSpriteSheet({ w: maxX, h: maxY });
+        }
+      })
+      .catch(() => { /* sprite unavailable — fallback to canvas */ });
+    return () => { cancelled = true; };
+  }, [spriteVttUrl]);
 
   function pctAt(clientX: number): number {
     if (!trackRef.current) return 0;
@@ -1217,12 +1287,28 @@ function Scrubber({
           }}
         >
           <div className="relative h-20 w-35.5 overflow-hidden rounded-[6px] border border-white/15 shadow-xl">
-            {frameUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={frameUrl} alt="" draggable={false} className="h-full w-full object-cover" />
-            ) : (
-              <PosterArt style={itemStyle} title="" kind={kind} ratio="landscape" imageUrl={imageUrl} />
-            )}
+            {(() => {
+              // Sprite cue lookup
+              const cue = spriteCues.find(c => hoverState.time >= c.start && hoverState.time < c.end)
+                       ?? spriteCues[spriteCues.length - 1];
+              if (cue && spriteSheet) {
+                const scale = 142 / cue.w;
+                return (
+                  <div style={{
+                    width: 142, height: 80,
+                    backgroundImage: `url(${cue.imageUrl})`,
+                    backgroundPosition: `-${cue.x * scale}px -${cue.y * scale}px`,
+                    backgroundSize: `${spriteSheet.w * scale}px ${spriteSheet.h * scale}px`,
+                    backgroundRepeat: "no-repeat",
+                  }} />
+                );
+              }
+              // Fallback: canvas frame capture or poster
+              return frameUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={frameUrl} alt="" draggable={false} className="h-full w-full object-cover" />
+                : <PosterArt style={itemStyle} title="" kind={kind} ratio="landscape" imageUrl={imageUrl} />;
+            })()}
             <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
             <span
               className="absolute bottom-1.5 right-2 text-[10px] font-bold tabular-nums text-white/90 drop-shadow"
