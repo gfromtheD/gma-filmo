@@ -7,7 +7,7 @@ function pickGreeting(isFirstVisit: boolean): string {
   const hour = new Date().getHours();
   const morning   = ["Buenos días,", "Hola,", "Hola de nuevo,"];
   const afternoon = ["Buenas tardes,", "Hola,", "Hola de nuevo,"];
-  const night     = ["Buenas noches,", "Hola,", "Hola de nuevo,"];
+  const night     = ["Buenas noches,", "Noche de cine,", "Hola de nuevo,"];
   const pool =
     hour >= 5 && hour < 12 ? morning :
     hour >= 12 && hour < 19 ? afternoon :
