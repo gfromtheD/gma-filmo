@@ -536,6 +536,7 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
             playsInline autoPlay
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
+            onCanPlay={() => { if (playingRef.current) void videoRef.current?.play().catch(() => undefined); }}
             onWaiting={handleWaiting}
             onPlaying={handlePlaying}
             onError={handleVideoError}
