@@ -67,6 +67,7 @@ export function Navbar() {
 
   const isGuest    = useIsGuest();
   const setChipPos  = useTransitionStore((s) => s.setChipPos);
+  const phase       = useTransitionStore((s) => s.phase);
   const chipBtnRef  = useRef<HTMLButtonElement>(null);
   const avatarRef   = useRef<HTMLSpanElement>(null);
 
@@ -215,6 +216,11 @@ export function Navbar() {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
               className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
+              style={{
+                opacity: phase === "contracting" ? 0 : 1,
+                transition: phase === "contracting" ? "opacity 0.15s ease" : "opacity 0.4s ease, background-color 0.2s",
+                pointerEvents: phase === "contracting" ? "none" : "auto",
+              }}
             >
               <span ref={avatarRef} className="inline-flex shrink-0">
                 {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
