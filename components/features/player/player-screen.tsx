@@ -1118,6 +1118,15 @@ function Scrubber({
     return { spriteCues: cues, spriteSheetW: cols * SPRITE_W, spriteSheetH: rows * SPRITE_H };
   }, [spriteUrl, duration]);
 
+  // Snap seek time to the start of the nearest sprite frame so the
+  // video always lands on exactly what the thumbnail preview showed.
+  function snapToSprite(t: number): number {
+    if (!spriteCues.length) return t;
+    const cue = spriteCues.find(c => t >= c.start && t < c.end)
+             ?? spriteCues[spriteCues.length - 1];
+    return cue?.start ?? t;
+  }
+
   function pctAt(clientX: number): number {
     if (!trackRef.current) return 0;
     const rect = trackRef.current.getBoundingClientRect();
@@ -1139,19 +1148,21 @@ function Scrubber({
 
     // Initial position
     const initPct = getPct(e.clientX);
-    setHoverState({ time: (initPct / 100) * duration, pct: initPct });
-    onSeek((initPct / 100) * duration);
+    const initTime = (initPct / 100) * duration;
+    setHoverState({ time: initTime, pct: initPct });
+    onSeek(snapToSprite(initTime));
 
     let rafId: number | null = null;
 
     function onMove(ev: PointerEvent) {
       ev.preventDefault();
-      const pct = getPct(ev.clientX);
-      setHoverState({ time: (pct / 100) * duration, pct });
+      const pct  = getPct(ev.clientX);
+      const time = (pct / 100) * duration;
+      setHoverState({ time, pct });
       // RAF-throttle the seek state update
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        onSeek((pct / 100) * duration);
+        onSeek(snapToSprite(time));
         rafId = null;
       });
     }
@@ -1159,9 +1170,10 @@ function Scrubber({
     function onUp(ev: PointerEvent) {
       isDragging.current = false;
       if (rafId) cancelAnimationFrame(rafId);
-      const pct = getPct(ev.clientX);
-      setHoverState({ time: (pct / 100) * duration, pct });
-      onSeek((pct / 100) * duration);
+      const pct  = getPct(ev.clientX);
+      const time = (pct / 100) * duration;
+      setHoverState({ time, pct });
+      onSeek(snapToSprite(time));
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
     }
