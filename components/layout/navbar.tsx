@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, useAnimation } from "motion/react";
+import { motion, useAnimation, AnimatePresence } from "motion/react";
 import { ExternalLink, UserRound } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -78,9 +78,9 @@ export function Navbar() {
   useEffect(() => {
     if (prevPhase.current === "contracting" && phase === "idle") {
       setChipReveal(true);
-      avatarCtrl.set({ clipPath: "inset(0% 0% 100% 0%)" });
-      void avatarCtrl.start({ clipPath: "inset(0% 0% 0% 0%)", transition: { duration: 0.22, ease: "linear" } });
-      const t = setTimeout(() => setChipReveal(false), 480);
+      avatarCtrl.set({ opacity: 0 });
+      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.35, delay: 0.06, ease: "easeOut" } });
+      const t = setTimeout(() => setChipReveal(false), 550);
       prevPhase.current = phase;
       return () => clearTimeout(t);
     }
@@ -231,30 +231,40 @@ export function Navbar() {
               aria-label="Cuenta"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-3"
+              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 transition-colors hover:bg-[#1A1A1A]"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
-                background: chipReveal ? "#22B16B" : "#0D0D0D",
-                borderColor: chipReveal ? "#22B16B" : "#262626",
-                transition: "background-color 0.35s ease, border-color 0.35s ease",
-                pointerEvents: (phase === "contracting" || chipReveal) ? "none" : "auto",
+                pointerEvents: phase === "contracting" ? "none" : "auto",
               }}
             >
-              <motion.span ref={avatarRef} className="inline-flex shrink-0" animate={avatarCtrl}>
-                {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
-              </motion.span>
-              <span
-                className="max-w-[120px] truncate text-[13px] font-semibold text-white"
-                style={{ opacity: chipReveal ? 0 : 1, transition: "opacity 0.15s ease" }}
-              >
+              {/* Avatar circle — green overlay fades out, photo fades in */}
+              <span ref={avatarRef} style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+                <AnimatePresence>
+                  {chipReveal && (
+                    <motion.span
+                      key="green-overlay"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: "9999px",
+                        background: "#22B16B",
+                        zIndex: 1,
+                        pointerEvents: "none",
+                      }}
+                      initial={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                    />
+                  )}
+                </AnimatePresence>
+                <motion.span className="inline-flex shrink-0" animate={avatarCtrl}>
+                  {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
+                </motion.span>
+              </span>
+              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
                 {isGuest ? "Invitado" : displayName}
               </span>
-              <GmaIcon
-                name="chevronDown"
-                size={12}
-                className="text-[#6D7D94]"
-                style={{ opacity: chipReveal ? 0 : 1, transition: "opacity 0.15s ease" } as React.CSSProperties}
-              />
+              <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94]" />
             </button>
 
             {menuOpen && (
