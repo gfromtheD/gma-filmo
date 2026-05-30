@@ -16,7 +16,7 @@ import type { MediaItem } from "@/types/catalog";
 
 // ─── Sprite constants (must match generate-sprites.mjs) ──────────────────────
 
-const SPRITE_INTERVAL = 5;   // seconds per frame
+const SPRITE_INTERVAL = 2;   // seconds per frame
 const SPRITE_W        = 160; // thumbnail width px
 const SPRITE_H        = 90;  // thumbnail height px
 const SPRITE_COLS     = 10;  // grid columns
