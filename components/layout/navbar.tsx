@@ -77,16 +77,15 @@ export function Navbar() {
   const [pillExpanded, setPillExpanded] = useState(true);
 
   useEffect(() => {
-    if (prevPhase.current === "contracting" && phase === "idle") {
-      // 1. Chip snaps visible as avatar-only with green overlay
-      setChipReveal(true);
+    if (phase === "contracting") {
+      // Collapse pill while chip is still invisible — no flash on reveal
       setPillExpanded(false);
-      // 2. Photo dissolves in (120ms)
+    } else if (prevPhase.current === "contracting" && phase === "idle") {
+      // Chip snaps visible as avatar-only (clip-path already collapsed above)
+      setChipReveal(true);
       avatarCtrl.set({ opacity: 0 });
       void avatarCtrl.start({ opacity: 1, transition: { duration: 0.12, delay: 0.02, ease: "easeOut" } });
-      // 3. Green overlay removed once dissolve is done
       const revealT = setTimeout(() => setChipReveal(false), 160);
-      // 4. Pill expands after photo is fully visible
       const expandT = setTimeout(() => setPillExpanded(true), 200);
       prevPhase.current = phase;
       return () => { clearTimeout(revealT); clearTimeout(expandT); };
