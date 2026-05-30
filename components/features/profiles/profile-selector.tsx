@@ -121,7 +121,7 @@ export function ProfileSelector() {
             setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
             const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
             startExpand(pinGate.origin, size, pinGate.name, isFirstVisit);
-            setTimeout(() => router.push("/inicio"), 1600);
+            setTimeout(() => router.push("/inicio"), 950);
           }}
           onCancel={() => setPinGate(null)}
         />
@@ -184,7 +184,7 @@ function ScreenA({
     if (isFirstVisit) localStorage.setItem(key, "1");
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
     startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit);
-    setTimeout(navigate, 1600);
+    setTimeout(navigate, 950);
   }
 
   async function handleSignOut() {

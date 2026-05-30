@@ -20,10 +20,8 @@ export function ProfileTransitionOverlay() {
 
   useEffect(() => {
     if (phase !== "expanding" || pathname !== "/inicio") return;
-    // Text starts fading immediately on landing (fade duration: 550ms)
     setTextFading(true);
-    // Contraction starts after text is fully gone + small buffer
-    const t = setTimeout(startContract, 680);
+    const t = setTimeout(startContract, 380);
     return () => clearTimeout(t);
   }, [phase, pathname, startContract]);
 
@@ -55,7 +53,7 @@ export function ProfileTransitionOverlay() {
           }}
           initial={{ width: 140, height: 140 }}
           animate={{ width: size, height: size }}
-          transition={{ duration: 1.6, ease: [0.42, 0, 0.58, 1] }}
+          transition={{ duration: 0.9, ease: [0.42, 0, 0.58, 1] }}
         />
       )}
 
@@ -74,7 +72,7 @@ export function ProfileTransitionOverlay() {
           }}
           initial={{ left: cx, top: cy, width: size, height: size }}
           animate={{ left: chipPos.x, top: chipPos.y, width: 28, height: 28 }}
-          transition={{ duration: 1.2, ease: [0.34, 1, 0.64, 1] }}
+          transition={{ duration: 0.7, ease: [0.34, 1, 0.64, 1] }}
           onAnimationComplete={reset}
         />
       )}
@@ -98,7 +96,7 @@ export function ProfileTransitionOverlay() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ delay: 0.75, duration: 0.55, ease: "easeInOut" }}
+            transition={{ delay: 0.4, duration: 0.25, ease: "easeInOut" }}
           >
             {profileName ? (
               <>

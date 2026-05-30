@@ -79,8 +79,8 @@ export function Navbar() {
     if (prevPhase.current === "contracting" && phase === "idle") {
       setChipReveal(true);
       avatarCtrl.set({ opacity: 0 });
-      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.35, delay: 0.06, ease: "easeOut" } });
-      const t = setTimeout(() => setChipReveal(false), 550);
+      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.2, delay: 0.04, ease: "easeOut" } });
+      const t = setTimeout(() => setChipReveal(false), 280);
       prevPhase.current = phase;
       return () => clearTimeout(t);
     }
@@ -253,7 +253,7 @@ export function Navbar() {
                       }}
                       initial={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
                     />
                   )}
                 </AnimatePresence>
