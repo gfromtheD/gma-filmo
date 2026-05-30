@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { getSupabasePublicClient } from "@/lib/supabase/public";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
@@ -64,20 +66,26 @@ type PeliculaWithRelations = PeliculaRow & {
 type ArtistaEntry = { name: string; r2_photo_url: string | null };
 
 // ── Artista lookup map (name/slug → artista) ──────────────────────────────────
-async function fetchArtistaMap(): Promise<Map<string, ArtistaEntry>> {
-  const supabase = getSupabasePublicClient();
-  const { data } = await supabase
-    .from("artistas")
-    .select("slug, name, r2_photo_url");
+// Cached: artistas rarely change, 1h TTL is fine
+const fetchArtistaMapCached = unstable_cache(
+  async (): Promise<[string, ArtistaEntry][]> => {
+    const supabase = getSupabasePublicClient();
+    const { data } = await supabase.from("artistas").select("slug, name, r2_photo_url");
+    const entries: [string, ArtistaEntry][] = [];
+    for (const a of (data ?? [])) {
+      const entry: ArtistaEntry = { name: a.name, r2_photo_url: a.r2_photo_url };
+      entries.push([a.name.toLowerCase(), entry]);
+      entries.push([a.slug.toLowerCase(), entry]);
+      entries.push([a.slug.replace(/-/g, " ").toLowerCase(), entry]);
+    }
+    return entries;
+  },
+  ["artistas-map"],
+  { revalidate: 3600, tags: ["artistas"] },
+);
 
-  const map = new Map<string, ArtistaEntry>();
-  for (const a of (data ?? [])) {
-    const entry: ArtistaEntry = { name: a.name, r2_photo_url: a.r2_photo_url };
-    map.set(a.name.toLowerCase(), entry);
-    map.set(a.slug.toLowerCase(), entry);
-    map.set(a.slug.replace(/-/g, " ").toLowerCase(), entry);
-  }
-  return map;
+async function fetchArtistaMap(): Promise<Map<string, ArtistaEntry>> {
+  return new Map(await fetchArtistaMapCached());
 }
 
 // Normalize raw role labels to clean display names
@@ -169,31 +177,44 @@ function toMovieMedia(
 // ── Queries ───────────────────────────────────────────────────────────────────
 const SELECT_WITH_COLS = "*, peliculas_colecciones(colecciones(name)), peliculas_artistas(artistas(name, slug, r2_photo_url))";
 
+const fetchScoreMapCached = unstable_cache(
+  async (): Promise<[string, number][]> => {
+    const { data } = await getSupabasePublicClient()
+      .from("film_scores")
+      .select("slug, approval_score");
+    return (data ?? [])
+      .filter(r => r.approval_score != null)
+      .map(r => [r.slug as string, r.approval_score as number]);
+  },
+  ["film-scores"],
+  { revalidate: 300, tags: ["scores"] },
+);
+
 async function fetchScoreMap(): Promise<Map<string, number>> {
-  const { data } = await getSupabasePublicClient()
-    .from("film_scores")
-    .select("slug, approval_score");
-  const map = new Map<string, number>();
-  for (const row of (data ?? [])) {
-    if (row.approval_score != null) map.set(row.slug as string, row.approval_score as number);
-  }
-  return map;
+  return new Map(await fetchScoreMapCached());
 }
 
-export async function getPeliculas(): Promise<MovieMedia[]> {
-  const supabase = getSupabasePublicClient();
-  const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
-    supabase.from("peliculas").select(SELECT_WITH_COLS).order("created_at", { ascending: false }),
-    fetchArtistaMap(),
-    fetchScoreMap(),
-  ]);
+// Cache the full peliculas list — 1h TTL, deduped per request with React cache()
+const getPeliculasCached = unstable_cache(
+  async (): Promise<MovieMedia[]> => {
+    const supabase = getSupabasePublicClient();
+    const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
+      supabase.from("peliculas").select(SELECT_WITH_COLS).order("created_at", { ascending: false }),
+      fetchArtistaMap(),
+      fetchScoreMap(),
+    ]);
+    if (error || !data) return [];
+    return (data as PeliculaWithRelations[]).map((p) => ({
+      ...toMovieMedia(p, artistaMap),
+      approvalScore: scoreMap.get(p.slug),
+    }));
+  },
+  ["peliculas-all"],
+  { revalidate: 3600, tags: ["peliculas"] },
+);
 
-  if (error || !data) return [];
-  return (data as PeliculaWithRelations[]).map((p) => ({
-    ...toMovieMedia(p, artistaMap),
-    approvalScore: scoreMap.get(p.slug),
-  }));
-}
+// React cache() deduplicates calls within the same render tree
+export const getPeliculas = cache(getPeliculasCached);
 
 export async function getPeliculaBySlug(slug: string): Promise<MovieMedia | null> {
   const supabase = getSupabasePublicClient();
@@ -303,14 +324,20 @@ export type Coleccion = {
   r2_cover_url: string | null;
 };
 
-export async function getColecciones(): Promise<Coleccion[]> {
-  const supabase = getSupabasePublicClient();
-  const { data } = await supabase
-    .from("colecciones")
-    .select("id, slug, name, description, r2_cover_url")
-    .order("name");
-  return (data ?? []) as Coleccion[];
-}
+export const getColecciones = cache(
+  unstable_cache(
+    async (): Promise<Coleccion[]> => {
+      const supabase = getSupabasePublicClient();
+      const { data } = await supabase
+        .from("colecciones")
+        .select("id, slug, name, description, r2_cover_url")
+        .order("name");
+      return (data ?? []) as Coleccion[];
+    },
+    ["colecciones-all"],
+    { revalidate: 3600, tags: ["colecciones"] },
+  )
+);
 
 export async function getColeccionBySlug(slug: string): Promise<Coleccion | null> {
   const supabase = getSupabasePublicClient();
