@@ -271,7 +271,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       )}
 
       {/* Grid — cortos */}
-      {filtered.length > 0 ? (
+      {filtered.length > 0 && (
         <div
           className="grid gap-4"
           style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
@@ -292,7 +292,8 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
             />
           ))}
         </div>
-      ) : (
+      )}
+      {filtered.length === 0 && filteredPeliculas.length === 0 && (
         <EmptyState onReset={clearFilters} />
       )}
 

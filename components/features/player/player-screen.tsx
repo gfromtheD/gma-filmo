@@ -14,14 +14,36 @@ import { useProgress } from "@/hooks/use-progress";
 import { useCastSupport } from "@/hooks/use-cast-support";
 import type { MediaItem } from "@/types/catalog";
 
-// ─── Sprite constants (must match generate-sprites.mjs) ──────────────────────
+// ─── Sprite types ─────────────────────────────────────────────────────────────
 
-const SPRITE_INTERVAL = 2;   // seconds per frame
-const SPRITE_W        = 160; // thumbnail width px
-const SPRITE_H        = 90;  // thumbnail height px
-const SPRITE_COLS     = 10;  // grid columns
+const SPRITE_W = 160;
+const SPRITE_H = 90;
 
 interface SpriteCue { start: number; end: number; x: number; y: number; }
+
+function parseVttTime(s: string): number {
+  const p = s.trim().split(":").map(Number);
+  return p.length === 3
+    ? (p[0] ?? 0) * 3600 + (p[1] ?? 0) * 60 + (p[2] ?? 0)
+    : (p[0] ?? 0) * 60 + (p[1] ?? 0);
+}
+
+function parseSpriteVtt(text: string): { cues: SpriteCue[]; sheetW: number; sheetH: number } {
+  const cues: SpriteCue[] = [];
+  for (const block of text.split(/\n\n+/)) {
+    const lines    = block.trim().split("\n");
+    const timeLine = lines.find(l => l.includes("-->"));
+    const urlLine  = lines.find(l => l.includes("#xywh="));
+    if (!timeLine || !urlLine) continue;
+    const [a, b] = timeLine.split("-->").map(s => s.trim());
+    const m = urlLine.match(/#xywh=(\d+),(\d+),(\d+),(\d+)/);
+    if (!m) continue;
+    cues.push({ start: parseVttTime(a ?? ""), end: parseVttTime(b ?? ""), x: Number(m[1]), y: Number(m[2]) });
+  }
+  const sheetW = cues.length ? Math.max(...cues.map(c => c.x + SPRITE_W)) : 0;
+  const sheetH = cues.length ? Math.max(...cues.map(c => c.y + SPRITE_H)) : 0;
+  return { cues, sheetW, sheetH };
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -303,8 +325,10 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
   const hasVideo = Boolean(mp4Url || youtubeUrl);
   const isYT     = Boolean(youtubeUrl);
 
-  // Derive sprite sheet URL from the same R2 bucket as the video
-  const spriteUrl = mp4Url
+  // Sprite VTT served through same-origin proxy to avoid CORS
+  const spriteVttUrl = mp4Url ? `/api/sprites/${item.id}` : null;
+  // Sprite image URL (direct from R2 — images don't need CORS for CSS background-image)
+  const spriteImgUrl = mp4Url
     ? `${new URL(mp4Url).origin}/sprites/${item.id}.jpg`
     : null;
 
@@ -914,7 +938,8 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
                 itemStyle={item.style}
                 imageUrl={item.imageUrl}
                 videoSrc={mp4Url ?? undefined}
-                spriteUrl={spriteUrl ?? undefined}
+                spriteVttUrl={spriteVttUrl ?? undefined}
+                spriteImgUrl={spriteImgUrl ?? undefined}
                 onSeek={seekTo}
               />
             </div>
@@ -1078,7 +1103,8 @@ function Scrubber({
   itemStyle,
   imageUrl,
   videoSrc,
-  spriteUrl,
+  spriteVttUrl,
+  spriteImgUrl,
   onSeek,
 }: {
   currentTime: number;
@@ -1088,7 +1114,8 @@ function Scrubber({
   itemStyle: MediaItem["style"];
   imageUrl?: string;
   videoSrc?: string;
-  spriteUrl?: string;
+  spriteVttUrl?: string;
+  spriteImgUrl?: string;
   onSeek: (t: number) => void;
 }) {
   const trackRef       = useRef<HTMLDivElement>(null);
@@ -1096,27 +1123,29 @@ function Scrubber({
   const thumbCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging     = useRef(false);
 
-  const [isActive,   setIsActive]   = useState(false);
-  const [hoverState, setHoverState] = useState<{ time: number; pct: number } | null>(null);
-  const [frameUrl,   setFrameUrl]   = useState<string | null>(null);
+  const [isActive,    setIsActive]    = useState(false);
+  const [hoverState,  setHoverState]  = useState<{ time: number; pct: number } | null>(null);
+  const [frameUrl,    setFrameUrl]    = useState<string | null>(null);
+  const [spriteCues,  setSpriteCues]  = useState<SpriteCue[]>([]);
+  const [spriteSheetW, setSpriteSheetW] = useState(0);
+  const [spriteSheetH, setSpriteSheetH] = useState(0);
 
-  // Build sprite cues from known constants — no fetch, no CORS
-  const { spriteCues, spriteSheetW, spriteSheetH } = useMemo(() => {
-    if (!spriteUrl || duration <= 0) return { spriteCues: [], spriteSheetW: 0, spriteSheetH: 0 };
-    const numFrames = Math.ceil(duration / SPRITE_INTERVAL);
-    const cols      = Math.min(SPRITE_COLS, numFrames);
-    const rows      = Math.ceil(numFrames / cols);
-    const cues: SpriteCue[] = [];
-    for (let i = 0; i < numFrames; i++) {
-      cues.push({
-        start: i * SPRITE_INTERVAL,
-        end:   Math.min((i + 1) * SPRITE_INTERVAL, duration),
-        x:     (i % cols) * SPRITE_W,
-        y:     Math.floor(i / cols) * SPRITE_H,
-      });
-    }
-    return { spriteCues: cues, spriteSheetW: cols * SPRITE_W, spriteSheetH: rows * SPRITE_H };
-  }, [spriteUrl, duration]);
+  // Fetch VTT through same-origin proxy — no CORS, correct interval per video
+  useEffect(() => {
+    if (!spriteVttUrl) return;
+    let cancelled = false;
+    fetch(spriteVttUrl)
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(text => {
+        if (cancelled) return;
+        const { cues, sheetW, sheetH } = parseSpriteVtt(text);
+        setSpriteCues(cues);
+        setSpriteSheetW(sheetW);
+        setSpriteSheetH(sheetH);
+      })
+      .catch(() => { /* sprite unavailable */ });
+    return () => { cancelled = true; };
+  }, [spriteVttUrl]);
 
   // Snap seek time to the start of the nearest sprite frame so the
   // video always lands on exactly what the thumbnail preview showed.
@@ -1268,12 +1297,12 @@ function Scrubber({
               // Sprite cue lookup — no fetch, computed from duration
               const cue = spriteCues.find(c => hoverState.time >= c.start && hoverState.time < c.end)
                        ?? spriteCues[spriteCues.length - 1];
-              if (cue && spriteUrl && spriteSheetW > 0) {
+              if (cue && spriteImgUrl && spriteSheetW > 0) {
                 const scale = 142 / SPRITE_W;
                 return (
                   <div style={{
                     width: 142, height: 80,
-                    backgroundImage: `url(${spriteUrl})`,
+                    backgroundImage: `url(${spriteImgUrl})`,
                     backgroundPosition: `-${cue.x * scale}px -${cue.y * scale}px`,
                     backgroundSize: `${spriteSheetW * scale}px ${spriteSheetH * scale}px`,
                     backgroundRepeat: "no-repeat",
