@@ -84,9 +84,11 @@ export function Navbar() {
       // Chip snaps visible as avatar-only (clip-path already collapsed above)
       setChipReveal(true);
       avatarCtrl.set({ opacity: 0 });
-      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.12, delay: 0.02, ease: "easeOut" } });
-      const revealT = setTimeout(() => setChipReveal(false), 160);
-      const expandT = setTimeout(() => setPillExpanded(true), 200);
+      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.1, delay: 0.02, ease: "easeOut" } });
+      // Green overlay fades out over 100ms starting at t=120ms → fully gone at t=220ms
+      const revealT = setTimeout(() => setChipReveal(false), 120);
+      // Pill expands only after green is fully gone and photo is clearly visible
+      const expandT = setTimeout(() => setPillExpanded(true), 240);
       prevPhase.current = phase;
       return () => { clearTimeout(revealT); clearTimeout(expandT); };
     }
@@ -266,7 +268,7 @@ export function Navbar() {
                       }}
                       initial={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.12, ease: "easeInOut" }}
+                      transition={{ duration: 0.1, ease: "easeInOut" }}
                     />
                   )}
                 </AnimatePresence>
