@@ -78,17 +78,18 @@ export function Navbar() {
 
   useEffect(() => {
     if (prevPhase.current === "contracting" && phase === "idle") {
-      // Chip snaps visible as avatar-only
+      // 1. Chip snaps visible as avatar-only with green overlay
       setChipReveal(true);
       setPillExpanded(false);
-      // Photo dissolves in
+      // 2. Photo dissolves in (120ms)
       avatarCtrl.set({ opacity: 0 });
       void avatarCtrl.start({ opacity: 1, transition: { duration: 0.12, delay: 0.02, ease: "easeOut" } });
-      // Pill expansion starts simultaneously with dissolve
-      const expandT = setTimeout(() => setPillExpanded(true), 16);
+      // 3. Green overlay removed once dissolve is done
       const revealT = setTimeout(() => setChipReveal(false), 160);
+      // 4. Pill expands after photo is fully visible
+      const expandT = setTimeout(() => setPillExpanded(true), 200);
       prevPhase.current = phase;
-      return () => { clearTimeout(expandT); clearTimeout(revealT); };
+      return () => { clearTimeout(revealT); clearTimeout(expandT); };
     }
     prevPhase.current = phase;
   }, [phase, avatarCtrl]);
@@ -274,7 +275,7 @@ export function Navbar() {
                   overflow: "hidden",
                   maxWidth: pillExpanded ? 220 : 0,
                   transition: pillExpanded
-                    ? "max-width 0.32s cubic-bezier(0.22,1,0.36,1)"
+                    ? "max-width 0.38s cubic-bezier(0.22,1,0.36,1)"
                     : "none",
                 }}
               >
@@ -287,7 +288,7 @@ export function Navbar() {
                     paddingRight: 12,
                     whiteSpace: "nowrap",
                     opacity: pillExpanded ? 1 : 0,
-                    transition: pillExpanded ? "opacity 0.18s ease 0.1s" : "none",
+                    transition: pillExpanded ? "opacity 0.22s ease 0.14s" : "none",
                   }}
                 >
                   <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
