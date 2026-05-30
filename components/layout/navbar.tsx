@@ -73,16 +73,22 @@ export function Navbar() {
   const avatarRef    = useRef<HTMLSpanElement>(null);
   const prevPhase    = useRef(phase);
   const avatarCtrl   = useAnimation();
-  const [chipReveal, setChipReveal] = useState(false);
+  const [chipReveal,  setChipReveal]  = useState(false);
+  const [pillExpanded, setPillExpanded] = useState(true);
 
   useEffect(() => {
     if (prevPhase.current === "contracting" && phase === "idle") {
+      // Chip snaps visible as avatar-only
       setChipReveal(true);
+      setPillExpanded(false);
+      // Photo dissolves in
       avatarCtrl.set({ opacity: 0 });
-      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.1, delay: 0.02, ease: "easeOut" } });
-      const t = setTimeout(() => setChipReveal(false), 150);
+      void avatarCtrl.start({ opacity: 1, transition: { duration: 0.12, delay: 0.02, ease: "easeOut" } });
+      // Pill expansion starts simultaneously with dissolve
+      const expandT = setTimeout(() => setPillExpanded(true), 16);
+      const revealT = setTimeout(() => setChipReveal(false), 160);
       prevPhase.current = phase;
-      return () => clearTimeout(t);
+      return () => { clearTimeout(expandT); clearTimeout(revealT); };
     }
     prevPhase.current = phase;
   }, [phase, avatarCtrl]);
@@ -235,11 +241,11 @@ export function Navbar() {
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
-                paddingRight: chipReveal ? 4 : 12,
-                gap: chipReveal ? 0 : 8,
-                transition: chipReveal
-                  ? "none"
-                  : "padding-right 0.2s cubic-bezier(0.34,1,0.64,1), gap 0.2s cubic-bezier(0.34,1,0.64,1), background-color 0.2s",
+                paddingRight: pillExpanded ? 12 : 4,
+                gap: pillExpanded ? 8 : 0,
+                transition: pillExpanded
+                  ? "padding-right 0.3s cubic-bezier(0.22,1,0.36,1), gap 0.3s cubic-bezier(0.22,1,0.36,1), background-color 0.2s"
+                  : "none",
               }}
             >
               {/* Avatar circle — green overlay fades out, photo fades in */}
@@ -266,7 +272,7 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              {/* Name + chevron — expand rightward as chipReveal ends */}
+              {/* Name + chevron — expand rightward simultaneously with dissolve */}
               <span
                 style={{
                   display: "flex",
@@ -274,11 +280,11 @@ export function Navbar() {
                   gap: 8,
                   overflow: "hidden",
                   whiteSpace: "nowrap",
-                  maxWidth: chipReveal ? 0 : 200,
-                  opacity: chipReveal ? 0 : 1,
-                  transition: chipReveal
-                    ? "none"
-                    : "max-width 0.2s cubic-bezier(0.34,1,0.64,1), opacity 0.15s ease",
+                  maxWidth: pillExpanded ? 200 : 0,
+                  opacity: pillExpanded ? 1 : 0,
+                  transition: pillExpanded
+                    ? "max-width 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease 0.06s"
+                    : "none",
                 }}
               >
                 <span className="max-w-[120px] truncate text-[13px] font-semibold text-white">
