@@ -5,6 +5,19 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTransitionStore } from "@/store/use-transition-store";
 
+function getGreeting(isFirstVisit: boolean): string {
+  if (isFirstVisit) return "Bienvenido,";
+  const hour = new Date().getHours();
+  const morning   = ["Buenos días,", "Hola,", "Hola de nuevo,"];
+  const afternoon = ["Buenas tardes,", "Hola,", "Hola de nuevo,"];
+  const night     = ["Buenas noches,", "Hola,", "Hola de nuevo,"];
+  const pool =
+    hour >= 5 && hour < 12 ? morning :
+    hour >= 12 && hour < 19 ? afternoon :
+    night;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 export function ProfileTransitionOverlay() {
   const pathname      = usePathname();
   const phase         = useTransitionStore((s) => s.phase);
@@ -12,6 +25,7 @@ export function ProfileTransitionOverlay() {
   const size          = useTransitionStore((s) => s.size);
   const chipPos       = useTransitionStore((s) => s.chipPos);
   const profileName   = useTransitionStore((s) => s.profileName);
+  const isFirstVisit  = useTransitionStore((s) => s.isFirstVisit);
   const startContract = useTransitionStore((s) => s.startContract);
   const reset         = useTransitionStore((s) => s.reset);
 
@@ -99,24 +113,37 @@ export function ProfileTransitionOverlay() {
             exit={{ opacity: 0 }}
             transition={{ delay: 0.75, duration: 0.55, ease: "easeInOut" }}
           >
-            <span style={{
-              color: "rgba(3,26,14,0.5)",
-              fontSize: 26,
-              fontWeight: 600,
-              letterSpacing: "0.01em",
-            }}>
-              Hola de nuevo,
-            </span>
-            <span style={{
-              color: "#031A0E",
-              fontSize: 120,
-              fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
-              fontStyle: "italic",
-              lineHeight: 1.0,
-              fontWeight: 400,
-            }}>
-              {profileName}
-            </span>
+            {profileName ? (
+              <>
+                <span style={{
+                  color: "rgba(3,26,14,0.5)",
+                  fontSize: 26,
+                  fontWeight: 600,
+                  letterSpacing: "0.01em",
+                }}>
+                  {getGreeting(isFirstVisit)}
+                </span>
+                <span style={{
+                  color: "#031A0E",
+                  fontSize: 120,
+                  fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
+                  fontStyle: "italic",
+                  lineHeight: 1.0,
+                  fontWeight: 400,
+                }}>
+                  {profileName}
+                </span>
+              </>
+            ) : (
+              <span style={{
+                color: "#031A0E",
+                fontSize: 40,
+                fontWeight: 600,
+                letterSpacing: "0.01em",
+              }}>
+                Bienvenido a GMA Filmo
+              </span>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

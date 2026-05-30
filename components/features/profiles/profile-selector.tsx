@@ -115,9 +115,12 @@ export function ProfileSelector() {
           name={pinGate.name}
           correctPin={pinGate.correctPin}
           onSuccess={() => {
+            const key = `gma_profile_visited_${pinGate.id}`;
+            const isFirstVisit = !localStorage.getItem(key);
+            if (isFirstVisit) localStorage.setItem(key, "1");
             setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
             const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-            startExpand(pinGate.origin, size, pinGate.name);
+            startExpand(pinGate.origin, size, pinGate.name, isFirstVisit);
             setTimeout(() => router.push("/inicio"), 1600);
           }}
           onCancel={() => setPinGate(null)}
@@ -175,9 +178,12 @@ function ScreenA({
 
   const startExpand = useTransitionStore((s) => s.startExpand);
 
-  function triggerNav(rect: DOMRect, navigate: () => void, name: string) {
+  function triggerNav(rect: DOMRect, navigate: () => void, name: string, profileId: string) {
+    const key = `gma_profile_visited_${profileId}`;
+    const isFirstVisit = !localStorage.getItem(key);
+    if (isFirstVisit) localStorage.setItem(key, "1");
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name);
+    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit);
     setTimeout(navigate, 1600);
   }
 
@@ -213,7 +219,7 @@ function ScreenA({
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
             <ProfileCard
-              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "")}
+              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "", "__supabase__")}
               onEdit={onEditSupabase}
               glowColor={supabaseColor}
               label={supabaseName}
@@ -244,7 +250,7 @@ function ScreenA({
                 onClick={(rect) =>
                   profile.requirePin && profile.pin
                     ? onSelectSub(profile, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
-                    : triggerNav(rect, () => onSelectSub(profile, { x: 0, y: 0 }), profile.name)
+                    : triggerNav(rect, () => onSelectSub(profile, { x: 0, y: 0 }), profile.name, profile.id)
                 }
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
