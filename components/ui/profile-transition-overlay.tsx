@@ -5,19 +5,6 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTransitionStore } from "@/store/use-transition-store";
 
-function getGreeting(isFirstVisit: boolean): string {
-  if (isFirstVisit) return "Bienvenido,";
-  const hour = new Date().getHours();
-  const morning   = ["Buenos días,", "Hola,", "Hola de nuevo,"];
-  const afternoon = ["Buenas tardes,", "Hola,", "Hola de nuevo,"];
-  const night     = ["Buenas noches,", "Hola,", "Hola de nuevo,"];
-  const pool =
-    hour >= 5 && hour < 12 ? morning :
-    hour >= 12 && hour < 19 ? afternoon :
-    night;
-  return pool[Math.floor(Math.random() * pool.length)]!;
-}
-
 export function ProfileTransitionOverlay() {
   const pathname      = usePathname();
   const phase         = useTransitionStore((s) => s.phase);
@@ -25,7 +12,7 @@ export function ProfileTransitionOverlay() {
   const size          = useTransitionStore((s) => s.size);
   const chipPos       = useTransitionStore((s) => s.chipPos);
   const profileName   = useTransitionStore((s) => s.profileName);
-  const isFirstVisit  = useTransitionStore((s) => s.isFirstVisit);
+  const greeting      = useTransitionStore((s) => s.greeting);
   const startContract = useTransitionStore((s) => s.startContract);
   const reset         = useTransitionStore((s) => s.reset);
 
@@ -121,7 +108,7 @@ export function ProfileTransitionOverlay() {
                   fontWeight: 600,
                   letterSpacing: "0.01em",
                 }}>
-                  {getGreeting(isFirstVisit)}
+                  {greeting}
                 </span>
                 <span style={{
                   color: "#031A0E",
