@@ -14,8 +14,12 @@ interface HeroProps {
   readonly onAddList?: () => void;
   readonly inList?: boolean;
   readonly tag?: string;
-  readonly fullSynopsis?: boolean;
   readonly backHref?: string;
+}
+
+function shortText(synopsis: string, tagline?: string): string {
+  if (!tagline) return synopsis;
+  return tagline.length <= synopsis.length ? tagline : synopsis;
 }
 
 // ─── Credits line ─────────────────────────────────────────────────────────────
@@ -66,7 +70,7 @@ function HeroCredits({ item }: { item: MediaItem }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag, fullSynopsis = false, backHref }: HeroProps) {
+export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag, backHref }: HeroProps) {
   const seasons = item.kind === "series" ? item.seasons : undefined;
   const runtime = item.kind === "movie" ? item.runtime : undefined;
 
@@ -121,7 +125,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             {/* Title */}
             <h1
               className="font-extrabold text-white"
-              style={{ fontSize: 64, letterSpacing: "-0.03em", lineHeight: 0.96 }}
+              style={{ fontSize: 64, letterSpacing: "-0.03em", lineHeight: 1.06 }}
             >
               {item.title}
             </h1>
@@ -147,9 +151,9 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             </div>
 
             {/* Tagline / hook */}
-            {(fullSynopsis ? item.synopsis : item.tagline) && (
+            {item.synopsis && (
               <p className="text-[15px] leading-[1.55] text-[#D9E2EC]" style={{ maxWidth: 560, marginTop: 8 }}>
-                {fullSynopsis ? item.synopsis : item.tagline}
+                {shortText(item.synopsis, item.tagline)}
               </p>
             )}
 

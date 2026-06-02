@@ -117,7 +117,7 @@ function seededRandom(seed: number, i: number): number {
   return x - Math.floor(x);
 }
 
-// Seed rotates every 2 hours so home feels different across visits.
+// Recommendation seed rotates every 2 hours so home feels different across visits.
 // localStorage (not sessionStorage) so it's consistent across tabs but still expires.
 function getOrCreateSessionSeed(userId = "anon"): number {
   if (typeof localStorage === "undefined") return Math.random();
@@ -132,6 +132,19 @@ function getOrCreateSessionSeed(userId = "anon"): number {
   }
   const seed = Math.random();
   localStorage.setItem(KEY, String(seed));
+  return seed;
+}
+
+// Title seed is scoped to the browser session (sessionStorage).
+// Cleared automatically when the user closes the tab/browser, so each new
+// visit to the app gets a fresh title. Stable while navigating within the app.
+function getVisitTitleSeed(): number {
+  if (typeof sessionStorage === "undefined") return Math.random();
+  const KEY = "gma-title-seed-visit";
+  const stored = sessionStorage.getItem(KEY);
+  if (stored) return parseFloat(stored);
+  const seed = Math.random();
+  sessionStorage.setItem(KEY, String(seed));
   return seed;
 }
 
@@ -460,7 +473,15 @@ export function buildHomeRows(
     }
   }
 
-  // ── "Nuevos para ti" ───────────────────────────────────────────────────
+  // ── Fila personalizada (título rotativo) ──────────────────────────────
+  const NEW_FOR_YOU_TITLES = [
+    "Nuevos para ti",
+    "Creemos que te va a encantar",
+    "Solo para ti",
+    "Pensado para ti",
+    "Justo lo que buscas",
+  ];
+
   const recentUnseen = unseen
     .filter((item) => REC.CURRENT_YEAR - item.year <= 2)
     .sort((a, b) => b.year - a.year)
@@ -477,7 +498,9 @@ export function buildHomeRows(
   );
 
   if (newForYouItems.length > 0) {
-    rows.push({ title: "Nuevos para ti", items: newForYouItems });
+    const titleSeed = getVisitTitleSeed();
+    const newForYouTitle = NEW_FOR_YOU_TITLES[Math.floor(titleSeed * NEW_FOR_YOU_TITLES.length)];
+    rows.push({ title: newForYouTitle, items: newForYouItems });
   }
 
   // ── "Más de <dominantCategory>" ────────────────────────────────────────

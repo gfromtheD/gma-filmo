@@ -114,7 +114,6 @@ export function HomeScreen({ items }: HomeScreenProps) {
           onDetail={() => router.push(hrefFor(featured))}
           onAddList={() => toggleList(featured)}
           inList={hasMedia(featured.numericId)}
-          fullSynopsis
         />
 
         {/* Dot indicators + prev/next arrows */}
