@@ -499,7 +499,7 @@ export function buildHomeRows(
 
   if (newForYouItems.length > 0) {
     const titleSeed = getVisitTitleSeed();
-    const newForYouTitle = NEW_FOR_YOU_TITLES[Math.floor(titleSeed * NEW_FOR_YOU_TITLES.length)];
+    const newForYouTitle = NEW_FOR_YOU_TITLES[Math.floor(titleSeed * NEW_FOR_YOU_TITLES.length)] ?? NEW_FOR_YOU_TITLES[0]!;
     rows.push({ title: newForYouTitle, items: newForYouItems });
   }
 
