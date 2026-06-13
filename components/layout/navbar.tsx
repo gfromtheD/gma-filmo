@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
-import { ExternalLink, UserRound } from "lucide-react";
+import { ExternalLink, UserRound, ChevronDown } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -22,14 +22,15 @@ interface NavItem {
   readonly match: string;
 }
 
-const BASE_NAV_ITEMS: readonly NavItem[] = [
-  { id: "home",    label: "Home",       href: "/inicio",     match: "/inicio" },
-  { id: "movies",  label: "Películas",  href: "/peliculas",  match: "/peliculas" },
-  { id: "cortos",  label: "Cortos",     href: "/cortos",     match: "/cortos" },
-  { id: "space",   label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
+const NAV_ITEMS: readonly NavItem[] = [
+  { id: "home",   label: "Home",       href: "/inicio",     match: "/inicio" },
+  { id: "movies", label: "Películas",  href: "/peliculas",  match: "/peliculas" },
+  { id: "cortos", label: "Cortos",     href: "/cortos",     match: "/cortos" },
+  { id: "space",  label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
 ];
 
-const STUDIO_NAV_ITEM: NavItem = { id: "studio", label: "Mi Estudio", href: "/mi-estudio", match: "/mi-estudio" };
+// Labels for the roulette slot animation on the space tab
+const SPACE_ROULETTE = ["Mi Espacio", "Mi Estudio", "Mi Espacio"] as const;
 
 function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: string; imageUrl?: string; iconId?: string }) {
   if (imageUrl) {
@@ -72,45 +73,59 @@ export function Navbar() {
 
   const isGuest      = useIsGuest();
   const { isCreator } = useIsCreator();
-  const navItems = useMemo(
-    () => isCreator
-      ? [...BASE_NAV_ITEMS.slice(0, 3), STUDIO_NAV_ITEM, ...BASE_NAV_ITEMS.slice(3)]
-      : BASE_NAV_ITEMS,
-    [isCreator],
-  );
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
   const phase        = useTransitionStore((s) => s.phase);
   const chipBtnRef   = useRef<HTMLButtonElement>(null);
   const avatarRef    = useRef<HTMLSpanElement>(null);
   const prevPhase    = useRef(phase);
   const avatarCtrl   = useAnimation();
-  const [chipReveal,  setChipReveal]  = useState(false);
+  const [chipReveal,   setChipReveal]   = useState(false);
   const [pillExpanded, setPillExpanded] = useState(true);
+
+  // ── Space tab dropdown ───────────────────────────────────────────────────
+  const [spaceDropOpen, setSpaceDropOpen] = useState(false);
+  const spaceDropRef    = useRef<HTMLDivElement>(null);
+
+  // ── Slot-machine roulette state (0=normal, 1=studio, 2=back to espacio) ──
+  const [rouletteStep, setRouletteStep] = useState(0);
+  const rouletteLabel = SPACE_ROULETTE[rouletteStep] ?? "Mi Espacio";
 
   useEffect(() => {
     if (phase === "contracting") {
-      // Collapse pill while chip is still invisible — no flash on reveal
       setPillExpanded(false);
     } else if (prevPhase.current === "contracting" && phase === "idle") {
-      // Chip snaps visible as avatar-only (clip-path already collapsed above)
       setChipReveal(true);
       avatarCtrl.set({ opacity: 0 });
       void avatarCtrl.start({ opacity: 1, transition: { duration: 0.1, delay: 0.02, ease: "easeOut" } });
-      // Green overlay fades out over 100ms starting at t=120ms → fully gone at t=220ms
       const revealT = setTimeout(() => setChipReveal(false), 120);
-      // Pill expands only after green is fully gone and photo is clearly visible
       const expandT = setTimeout(() => setPillExpanded(true), 240);
+
+      // Trigger roulette for creators after pill has expanded
+      let r1: ReturnType<typeof setTimeout> | undefined;
+      let r2: ReturnType<typeof setTimeout> | undefined;
+      let r3: ReturnType<typeof setTimeout> | undefined;
+      if (isCreator) {
+        r1 = setTimeout(() => setRouletteStep(1), 500);
+        r2 = setTimeout(() => setRouletteStep(2), 920);
+        r3 = setTimeout(() => setRouletteStep(0), 1340);
+      }
+
       prevPhase.current = phase;
-      return () => { clearTimeout(revealT); clearTimeout(expandT); };
+      return () => {
+        clearTimeout(revealT);
+        clearTimeout(expandT);
+        if (r1) clearTimeout(r1);
+        if (r2) clearTimeout(r2);
+        if (r3) clearTimeout(r3);
+      };
     }
     prevPhase.current = phase;
-  }, [phase, avatarCtrl]);
+  }, [phase, avatarCtrl, isCreator]);
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Report chip position so the transition overlay knows where to contract to
   useEffect(() => {
     function measure() {
       const el = avatarRef.current ?? chipBtnRef.current;
@@ -124,7 +139,7 @@ export function Navbar() {
   }, [setChipPos]);
 
   // ── Sliding pill ─────────────────────────────────────────────────────────
-  const itemRefs  = useRef<(HTMLAnchorElement | null)[]>([]);
+  const itemRefs   = useRef<(HTMLElement | null)[]>([]);
   const [pill, setPill]         = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
 
@@ -136,33 +151,53 @@ export function Navbar() {
     router.refresh();
   }, [router]);
 
+  // Close profile menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
+  // Close space dropdown on outside click
+  useEffect(() => {
+    if (!spaceDropOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (spaceDropRef.current && !spaceDropRef.current.contains(e.target as Node)) setSpaceDropOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [spaceDropOpen]);
+
+  // "Mi Espacio" is active when on /mi-espacio OR (creator) /mi-estudio
+  const spaceIsActive = useMemo(() => {
+    return pathname.startsWith("/mi-espacio") || (isCreator && pathname.startsWith("/mi-estudio"));
+  }, [pathname, isCreator]);
+
   function isActive(item: NavItem): boolean {
+    if (item.id === "space") return spaceIsActive;
     if (item.match === "/") return pathname === "/";
     return pathname.startsWith(item.match);
   }
 
-  // Measure active item and move the pill
+  // Where the space tab link goes — stays on current section if already in one
+  const spaceNavHref = useMemo(() => {
+    if (!isCreator) return "/mi-espacio";
+    return pathname.startsWith("/mi-estudio") ? "/mi-estudio" : "/mi-espacio";
+  }, [pathname, isCreator]);
+
+  // Measure active pill position
   useEffect(() => {
-    const activeIdx = navItems.findIndex((item) =>
-      item.match === "/" ? pathname === "/" : pathname.startsWith(item.match)
-    );
+    const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
     if (activeIdx < 0) return;
     const el = itemRefs.current[activeIdx];
     if (!el) return;
     setPill({ left: el.offsetLeft, width: el.offsetWidth });
     setPillReady(true);
-  }, [pathname, navItems]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, spaceIsActive]);
 
   return (
     <header
@@ -208,7 +243,6 @@ export function Navbar() {
           className="relative flex gap-1 rounded-full border border-[#262626] p-1"
           style={{ background: "rgba(255,255,255,0.04)" }}
         >
-          {/* Sliding green pill — absolutely positioned behind the labels */}
           {pillReady && (
             <span
               aria-hidden="true"
@@ -217,8 +251,97 @@ export function Navbar() {
             />
           )}
 
-          {navItems.map((item, i) => {
+          {NAV_ITEMS.map((item, i) => {
             const active = isActive(item);
+            const labelColor = active ? "#051910" : "#B8C5D4";
+
+            // ── Space tab with creator dropdown ──────────────────────
+            if (item.id === "space" && isCreator) {
+              return (
+                <div
+                  key={item.id}
+                  ref={(el) => { itemRefs.current[i] = el; }}
+                  className="relative z-10 flex h-9 items-center rounded-full"
+                >
+                  {/* Label — navigates directly */}
+                  <Link
+                    href={spaceNavHref}
+                    className="flex h-9 items-center rounded-full pl-5 pr-1.5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                    style={{ color: labelColor }}
+                  >
+                    {/* Slot-machine roulette label */}
+                    <span className="inline-block overflow-hidden" style={{ height: "1.3em", verticalAlign: "middle" }}>
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={rouletteLabel}
+                          className="block"
+                          initial={{ y: "100%" }}
+                          animate={{ y: 0 }}
+                          exit={{ y: "-100%" }}
+                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                        >
+                          {rouletteLabel}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
+                  </Link>
+
+                  {/* Chevron — opens dropdown */}
+                  <button
+                    type="button"
+                    aria-label="Cambiar sección"
+                    onClick={() => setSpaceDropOpen((v) => !v)}
+                    className="flex h-9 items-center pr-3 transition-colors duration-[260ms]"
+                    style={{ color: labelColor }}
+                  >
+                    <motion.span
+                      animate={{ rotate: spaceDropOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center"
+                    >
+                      <ChevronDown size={13} />
+                    </motion.span>
+                  </button>
+
+                  {/* Dropdown */}
+                  <AnimatePresence>
+                    {spaceDropOpen && (
+                      <motion.div
+                        ref={spaceDropRef}
+                        key="space-drop"
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                        transition={{ duration: 0.16, ease: "easeOut" }}
+                        className="absolute left-0 top-[calc(100%+8px)] z-[300] w-[160px] overflow-hidden rounded-[12px] border border-[#262626] shadow-2xl"
+                        style={{ background: "#0D0D0D" }}
+                      >
+                        <Link
+                          href="/mi-espacio"
+                          onClick={() => setSpaceDropOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[#1A1A1A]"
+                          style={{ color: pathname.startsWith("/mi-espacio") ? "#22B16B" : "#B8C5D4" }}
+                        >
+                          <GmaIcon name="bookmark" size={14} />
+                          Mi Espacio
+                        </Link>
+                        <Link
+                          href="/mi-estudio"
+                          onClick={() => setSpaceDropOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[#1A1A1A]"
+                          style={{ color: pathname.startsWith("/mi-estudio") ? "#22B16B" : "#B8C5D4" }}
+                        >
+                          <GmaIcon name="film" size={14} />
+                          Mi Estudio
+                        </Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
+            // ── Normal tab ───────────────────────────────────────────
             return (
               <Link
                 key={item.id}
@@ -254,7 +377,6 @@ export function Navbar() {
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
-                // clip-path reveals left→right without moving avatar or changing layout
                 clipPath: pillExpanded
                   ? "inset(0% 0% 0% 0% round 9999px)"
                   : "inset(0% calc(100% - 32px) 0% 0% round 9999px)",
@@ -263,7 +385,6 @@ export function Navbar() {
                   : "none",
               }}
             >
-              {/* Avatar — fixed anchor, never moves */}
               <span ref={avatarRef} style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
                 <AnimatePresence>
                   {chipReveal && (
@@ -298,7 +419,6 @@ export function Navbar() {
                 className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
                 style={{ background: "#0D0D0D" }}
               >
-                {/* Profile header — guest vs auth */}
                 {isGuest ? (
                   <div className="border-b border-[#262626] px-4 py-4">
                     <div className="flex items-center gap-3 mb-3">
@@ -347,7 +467,6 @@ export function Navbar() {
                   </Link>
                 )}
 
-                {/* Links */}
                 <div className="py-1">
                   <Link
                     href="/mi-espacio"
@@ -369,7 +488,6 @@ export function Navbar() {
                   )}
                 </div>
 
-                {/* About */}
                 <div className="border-t border-[#262626] py-1">
                   <a
                     href="https://generacionmaldita.com/sobre-el-proyecto/"
@@ -383,7 +501,6 @@ export function Navbar() {
                   </a>
                 </div>
 
-                {/* Sign out */}
                 <div className="border-t border-[#262626] py-1">
                   <button
                     type="button"
