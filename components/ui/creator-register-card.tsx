@@ -5,10 +5,9 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-interface RegisterCardProps {
+interface CreatorRegisterCardProps {
   onBack?: () => void;
   onLogin?: () => void;
-  onCreatorRegister?: () => void;
 }
 
 function GoogleIcon() {
@@ -31,26 +30,18 @@ function MailIcon() {
   );
 }
 
-function GuestIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-    </svg>
-  );
-}
-
 const inputClass =
   "w-full rounded-[10px] border border-[#1E2D42] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors duration-150 focus:border-[#22B16B]";
 
 const pillClass =
-  "flex w-full items-center justify-center gap-3 rounded-full border border-[#1E2D42] bg-white/[0.04] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-50";
+  "flex w-full items-center justify-center gap-3 rounded-full border border-[#22B16B]/40 bg-[#22B16B]/[0.06] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#22B16B]/[0.12] active:scale-[0.98] disabled:opacity-50";
 
-export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCardProps) {
+export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProps) {
   const [showEmail,     setShowEmail]     = useState(false);
   const [email,         setEmail]         = useState("");
   const [password,      setPassword]      = useState("");
   const [confirm,       setConfirm]       = useState("");
+  const [creatorName,   setCreatorName]   = useState("");
   const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error,         setError]         = useState("");
@@ -63,7 +54,7 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
       provider: "google",
       options: {
         scopes: "openid email profile",
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?creator=1`,
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
@@ -75,12 +66,18 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
     setError("");
     if (password !== confirm) { setError("Las contraseñas no coinciden."); return; }
     if (password.length < 6)  { setError("La contraseña debe tener al menos 6 caracteres."); return; }
+    if (!creatorName.trim())  { setError("Introduce tu nombre de creador."); return; }
     setLoading(true);
+
     const { error: err } = await getSupabaseBrowserClient().auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { is_creator: true, creator_name: creatorName.trim() },
+      },
     });
+
     if (err) {
       setError(err.message);
       setLoading(false);
@@ -90,12 +87,6 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
     }
   }
 
-  async function handleGuest() {
-    await getSupabaseBrowserClient().auth.signOut();
-    document.cookie = "gma_guest=1; path=/; max-age=86400; SameSite=Lax";
-    window.location.href = "/inicio";
-  }
-
   return (
     <div className="flex w-full flex-col items-center gap-5">
       <button type="button" onClick={onBack} className="mb-2 transition-opacity hover:opacity-75">
@@ -103,8 +94,11 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
       </button>
 
       <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-white md:text-3xl">Únete a GMA Filmo</h1>
-        <p className="mt-1.5 text-sm text-[#B8C5D4]">Forma parte de la comunidad.</p>
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-3 py-1">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#22B16B]">Perfil Creador</span>
+        </div>
+        <h1 className="text-2xl font-extrabold text-white md:text-3xl">Únete como creador</h1>
+        <p className="mt-1.5 text-sm text-[#B8C5D4]">Comparte tu obra con la comunidad.</p>
       </div>
 
       {error && (
@@ -118,27 +112,20 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
         </div>
       )}
 
-      {/* Píldora Google */}
       <button type="button" onClick={() => void handleGoogle()} disabled={googleLoading} className={`${pillClass} mt-4`}>
         <GoogleIcon />
         {googleLoading ? "Conectando…" : "Continuar con Google"}
       </button>
 
-      {/* Píldora correo */}
-      <button
-        type="button"
-        onClick={() => setShowEmail(v => !v)}
-        className={pillClass}
-      >
+      <button type="button" onClick={() => setShowEmail(v => !v)} className={pillClass}>
         <MailIcon />
-        Registrarse con tu correo
+        Registrarse con correo
       </button>
 
-      {/* Formulario expandible */}
       <AnimatePresence>
         {showEmail && (
           <motion.div
-            key="email-form"
+            key="creator-email-form"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -146,6 +133,15 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
             className="w-full overflow-hidden"
           >
             <form onSubmit={(e) => void handleRegister(e)} className="flex flex-col gap-3 pt-1">
+              <input
+                type="text"
+                required
+                value={creatorName}
+                onChange={(e) => setCreatorName(e.target.value)}
+                placeholder="Nombre artístico o del proyecto"
+                maxLength={60}
+                className={inputClass}
+              />
               <input
                 type="email"
                 autoComplete="email"
@@ -176,32 +172,19 @@ export function RegisterCard({ onBack, onLogin, onCreatorRegister }: RegisterCar
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-black transition-[transform,background] hover:bg-[#2AC57A] active:scale-[0.98] disabled:opacity-50"
+                className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-[transform,background] hover:bg-[#2AC57A] active:scale-[0.98] disabled:opacity-50"
               >
-                {loading ? "Creando cuenta…" : "Crear cuenta"}
+                {loading ? "Creando cuenta…" : "Crear cuenta de creador"}
               </button>
             </form>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Píldora invitado */}
-      <button type="button" onClick={() => void handleGuest()} className={pillClass}>
-        <GuestIcon />
-        Continuar como invitado
-      </button>
-
       <p className="text-center text-[13px] text-[#6D7D94]">
         ¿Ya tienes cuenta?{" "}
         <button type="button" onClick={onLogin} className="font-semibold text-white transition-colors hover:text-[#22B16B]">
           Inicia sesión →
-        </button>
-      </p>
-
-      <p className="text-center text-[12px] text-[#4A5A6E]">
-        ¿Quieres aportar a la plataforma?{" "}
-        <button type="button" onClick={onCreatorRegister} className="font-semibold text-[#22B16B] transition-colors hover:underline">
-          Regístrate como creador →
         </button>
       </p>
     </div>

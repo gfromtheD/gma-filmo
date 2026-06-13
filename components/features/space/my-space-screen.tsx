@@ -479,7 +479,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
           title="Tu diario está vacío"
           body="Valora los cortometrajes que hayas visto para llenar tu diario personal."
           cta="Explorar catálogo"
-          onCta={() => router.push("/peliculas")}
+          onCta={() => router.push("/cortos")}
         />
       )}
 
@@ -492,7 +492,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
               <ContinueCard
                 key={item.id} item={item}
                 onPlay={() => router.push(`/ver/${item.id}`)}
-                onDetail={() => router.push(`/peliculas/${item.id}`)}
+                onDetail={() => router.push(`/cortos/${item.id}`)}
                 onRate={() => setRatingTarget(item)}
               />
             ))}
@@ -523,7 +523,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
                 <WatchlistCard
                   key={item.id} item={item}
                   isRated={ratingEntries[item.numericId] != null}
-                  onNavigate={() => router.push(`/peliculas/${item.id}`)}
+                  onNavigate={() => router.push(`/cortos/${item.id}`)}
                   onRemove={() => removeMedia(item.numericId)}
                   onRate={() => setRatingTarget(item)}
                 />
@@ -546,7 +546,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
           <div className="mb-14 flex flex-wrap gap-3">
             {exploredGenres.map((g) => (
               <button key={g} type="button"
-                onClick={() => router.push(`/peliculas?genre=${encodeURIComponent(g)}`)}
+                onClick={() => router.push(`/cortos?genre=${encodeURIComponent(g)}`)}
                 className="rounded-full border border-[#262626] bg-[#0D0D0D] px-5 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/50 hover:text-white">
                 {g}
               </button>

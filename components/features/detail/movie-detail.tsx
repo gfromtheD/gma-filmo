@@ -27,7 +27,7 @@ export function MovieDetail({ movie, related, autoOpenRating }: MovieDetailProps
   return (
     <div>
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <Hero item={movie} onPlay={() => router.push(`/ver/${movie.id}`)} onAddList={toggleList} inList={inList} backHref="/peliculas" />
+      <Hero item={movie} onPlay={() => router.push(`/ver/${movie.id}`)} onAddList={toggleList} inList={inList} backHref="/cortos" />
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-10">
@@ -47,7 +47,7 @@ export function MovieDetail({ movie, related, autoOpenRating }: MovieDetailProps
             {related.length > 0 && (
               <RelatedPanel
                 related={related}
-                onNavigate={(id) => router.push(`/peliculas/${id}`)}
+                onNavigate={(id) => router.push(`/cortos/${id}`)}
               />
             )}
           </aside>

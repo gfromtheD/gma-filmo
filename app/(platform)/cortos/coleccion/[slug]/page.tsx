@@ -25,7 +25,7 @@ export default async function ColeccionPage({ params }: Props) {
 
   return (
     <Suspense>
-      <CatalogScreen items={items} heading={col.name} backHref="/peliculas" />
+      <CatalogScreen items={items} heading={col.name} backHref="/cortos" />
     </Suspense>
   );
 }

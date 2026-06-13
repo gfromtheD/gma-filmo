@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 interface LoginCardProps {
   onBack?: () => void;
   onRegister?: () => void;
+  onCreatorRegister?: () => void;
 }
 
 function GoogleIcon() {
@@ -46,7 +47,7 @@ const inputClass =
 const pillClass =
   "flex w-full items-center justify-center gap-3 rounded-full border border-[#1E2D42] bg-white/[0.04] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-50";
 
-function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
+function LoginCardInner({ onBack, onRegister, onCreatorRegister }: LoginCardProps) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [showEmail,     setShowEmail]     = useState(false);
@@ -218,14 +219,21 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
           Regístrate
         </button>
       </p>
+
+      <p className="text-center text-[12px] text-[#4A5A6E]">
+        ¿Quieres aportar a la plataforma?{" "}
+        <button type="button" onClick={onCreatorRegister} className="font-semibold text-[#22B16B] transition-colors hover:underline">
+          Regístrate como creador →
+        </button>
+      </p>
     </div>
   );
 }
 
-export function LoginCard({ onBack, onRegister }: LoginCardProps) {
+export function LoginCard({ onBack, onRegister, onCreatorRegister }: LoginCardProps) {
   return (
     <Suspense fallback={<div />}>
-      <LoginCardInner onBack={onBack} onRegister={onRegister} />
+      <LoginCardInner onBack={onBack} onRegister={onRegister} onCreatorRegister={onCreatorRegister} />
     </Suspense>
   );
 }

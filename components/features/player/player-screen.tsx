@@ -856,7 +856,7 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
             navigatedRef.current = true;
             countdownDismissRef.current = true;
             setCountdownSecs(null);
-            router.push(`/peliculas/${item.id}?valorar=1`);
+            router.push(`/cortos/${item.id}?valorar=1`);
           }}
         />
       )}

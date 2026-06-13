@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
 import { ExternalLink, UserRound } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -12,6 +12,7 @@ import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useProfileStore } from "@/store/use-profile-store";
 import { renderAvatar } from "@/lib/data/profile-avatars";
 import { useIsGuest } from "@/hooks/use-is-guest";
+import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
 
 interface NavItem {
@@ -21,11 +22,14 @@ interface NavItem {
   readonly match: string;
 }
 
-const NAV_ITEMS: readonly NavItem[] = [
-  { id: "home",   label: "Home",       href: "/inicio",     match: "/inicio" },
-  { id: "movies", label: "Cortos",     href: "/peliculas",  match: "/peliculas" },
-  { id: "space",  label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
+const BASE_NAV_ITEMS: readonly NavItem[] = [
+  { id: "home",    label: "Home",       href: "/inicio",     match: "/inicio" },
+  { id: "movies",  label: "Películas",  href: "/peliculas",  match: "/peliculas" },
+  { id: "cortos",  label: "Cortos",     href: "/cortos",     match: "/cortos" },
+  { id: "space",   label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
 ];
+
+const STUDIO_NAV_ITEM: NavItem = { id: "studio", label: "Mi Estudio", href: "/mi-estudio", match: "/mi-estudio" };
 
 function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: string; imageUrl?: string; iconId?: string }) {
   if (imageUrl) {
@@ -67,6 +71,13 @@ export function Navbar() {
   const activeProfile = useProfileStore((s) => s.activeProfile);
 
   const isGuest      = useIsGuest();
+  const { isCreator } = useIsCreator();
+  const navItems = useMemo(
+    () => isCreator
+      ? [...BASE_NAV_ITEMS.slice(0, 3), STUDIO_NAV_ITEM, ...BASE_NAV_ITEMS.slice(3)]
+      : BASE_NAV_ITEMS,
+    [isCreator],
+  );
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
   const phase        = useTransitionStore((s) => s.phase);
   const chipBtnRef   = useRef<HTMLButtonElement>(null);
@@ -143,7 +154,7 @@ export function Navbar() {
 
   // Measure active item and move the pill
   useEffect(() => {
-    const activeIdx = NAV_ITEMS.findIndex((item) =>
+    const activeIdx = navItems.findIndex((item) =>
       item.match === "/" ? pathname === "/" : pathname.startsWith(item.match)
     );
     if (activeIdx < 0) return;
@@ -151,7 +162,7 @@ export function Navbar() {
     if (!el) return;
     setPill({ left: el.offsetLeft, width: el.offsetWidth });
     setPillReady(true);
-  }, [pathname]);
+  }, [pathname, navItems]);
 
   return (
     <header
@@ -206,7 +217,7 @@ export function Navbar() {
             />
           )}
 
-          {NAV_ITEMS.map((item, i) => {
+          {navItems.map((item, i) => {
             const active = isActive(item);
             return (
               <Link

@@ -15,11 +15,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: movie?.title ?? "Cortometraje" };
 }
 
-export default async function MovieDetailPage({ params, searchParams }: Props) {
+export default async function CortoDetailPage({ params, searchParams }: Props) {
   const movie = await getPeliculaBySlug(params.id);
   if (!movie) notFound();
 
-  const related = await getRelatedPeliculas(movie.id, movie.categories, 4, { author: movie.author, year: movie.year });
+  const related = await getRelatedPeliculas(movie.id, movie.categories, 4, {
+    author: movie.author,
+    year: movie.year,
+  });
 
   return (
     <MovieDetail

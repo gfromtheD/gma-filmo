@@ -173,7 +173,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
                   <li key={item.id}>
                     <button
                       type="button"
-                      onMouseDown={(e) => { e.preventDefault(); router.push(`/peliculas/${item.id}`); }}
+                      onMouseDown={(e) => { e.preventDefault(); router.push(`/cortos/${item.id}`); }}
                       className="flex w-full items-center justify-between rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[#1A1A1A]"
                     >
                       <span className="truncate text-[13px] font-semibold text-white">
@@ -213,7 +213,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
                     item={item}
                     ratio="portrait"
                     fluid
-                    href={`/peliculas/${item.id}`}
+                    href={`/cortos/${item.id}`}
                   />
                 ))}
               </div>
@@ -264,7 +264,7 @@ function BrowseByGenre({ items }: { items: readonly MovieMedia[] }) {
               <button
                 key={g}
                 type="button"
-                onClick={() => router.push(`/peliculas?genre=${encodeURIComponent(g)}`)}
+                onClick={() => router.push(`/cortos?genre=${encodeURIComponent(g)}`)}
                 className="rounded-full border border-[#262626] bg-[#1A1A1A] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/40 hover:text-white"
               >
                 {g}
@@ -287,7 +287,7 @@ function BrowseByGenre({ items }: { items: readonly MovieMedia[] }) {
                 item={item}
                 ratio="portrait"
                 fluid
-                href={`/peliculas/${item.id}`}
+                href={`/cortos/${item.id}`}
               />
             ))}
           </div>

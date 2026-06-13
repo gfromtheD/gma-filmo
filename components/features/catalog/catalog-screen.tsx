@@ -282,7 +282,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               item={item}
               ratio="landscape"
               fluid
-              href={`/peliculas/${item.id}`}
+              href={`/cortos/${item.id}`}
               onAddList={() =>
                 hasMedia(item.numericId)
                   ? removeMedia(item.numericId)
@@ -320,7 +320,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
                 item={item}
                 ratio="landscape"
                 fluid
-                href={`/peliculas/${item.id}`}
+                href={`/cortos/${item.id}`}
                 onAddList={() =>
                   hasMedia(item.numericId)
                     ? removeMedia(item.numericId)
@@ -346,7 +346,7 @@ function ColeccionCard({ col, filmCount }: { col: Coleccion; filmCount: number }
   const displayName = COLECCION_NAME_OVERRIDES[col.slug] ?? col.name;
   return (
     <Link
-      href={`/peliculas/coleccion/${col.slug}`}
+      href={`/cortos/coleccion/${col.slug}`}
       className="group relative block aspect-video overflow-hidden rounded-xl"
     >
       {/* Cover image or gradient fallback */}

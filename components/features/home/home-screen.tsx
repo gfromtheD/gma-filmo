@@ -21,7 +21,7 @@ interface HomeScreenProps {
 }
 
 function hrefFor(item: MovieMedia) {
-  return `/peliculas/${item.id}`;
+  return `/cortos/${item.id}`;
 }
 
 export function HomeScreen({ items }: HomeScreenProps) {

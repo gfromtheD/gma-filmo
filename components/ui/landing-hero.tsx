@@ -9,11 +9,12 @@ import AnimatedGradientBackground from "@/components/ui/animated-gradient-backgr
 import { ThreeDMarquee } from "@/components/ui/three-d-marquee";
 import { LoginCard } from "@/components/ui/login-card";
 import { RegisterCard } from "@/components/ui/register-card";
+import { CreatorRegisterCard } from "@/components/ui/creator-register-card";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function LandingHero() {
-  const [view, setView] = useState<"hero" | "login" | "register">("hero");
+  const [view, setView] = useState<"hero" | "login" | "register" | "creator-register">("hero");
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -142,6 +143,7 @@ export function LandingHero() {
               <LoginCard
                 onBack={() => setView("hero")}
                 onRegister={() => setView("register")}
+                onCreatorRegister={() => setView("creator-register")}
               />
             </motion.div>
           )}
@@ -155,6 +157,23 @@ export function LandingHero() {
               transition={{ duration: 0.35, ease: "easeInOut" }}
             >
               <RegisterCard
+                onBack={() => setView("hero")}
+                onLogin={() => setView("login")}
+                onCreatorRegister={() => setView("creator-register")}
+              />
+            </motion.div>
+          )}
+
+          {view === "creator-register" && (
+            <motion.div
+              key="creator-register-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="w-full"
+            >
+              <CreatorRegisterCard
                 onBack={() => setView("hero")}
                 onLogin={() => setView("login")}
               />

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      creator_profiles: {
+        Row: {
+          user_id: string
+          creator_name: string
+          bio: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          creator_name: string
+          bio?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          creator_name?: string
+          bio?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       artistas: {
         Row: {
           bio: string | null
