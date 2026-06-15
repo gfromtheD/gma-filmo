@@ -95,7 +95,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
       </div>
 
       {/* ── Identity row (overlaps banner) ────────────────────────── */}
-      <div className="mx-auto max-w-[1100px] px-6">
+      <div className="relative z-10 mx-auto max-w-[1100px] px-6">
         <div className="-mt-10 flex flex-wrap items-end gap-5">
           {/* Avatar */}
           <div className="shrink-0 rounded-full ring-2 ring-[#22B16B] ring-offset-2 ring-offset-[#0A0F17]">
