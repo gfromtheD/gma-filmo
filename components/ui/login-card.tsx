@@ -47,7 +47,7 @@ const inputClass =
 const pillClass =
   "flex w-full items-center justify-center gap-3 rounded-full border border-[#1E2D42] bg-white/[0.04] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-50";
 
-function LoginCardInner({ onBack, onRegister, onCreatorRegister }: LoginCardProps) {
+function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [showEmail,     setShowEmail]     = useState(false);
@@ -220,12 +220,6 @@ function LoginCardInner({ onBack, onRegister, onCreatorRegister }: LoginCardProp
         </button>
       </p>
 
-      <p className="text-center text-[12px] text-[#4A5A6E]">
-        ¿Quieres aportar a la plataforma?{" "}
-        <button type="button" onClick={onCreatorRegister} className="font-semibold text-[#22B16B] transition-colors hover:underline">
-          Regístrate como creador →
-        </button>
-      </p>
     </div>
   );
 }

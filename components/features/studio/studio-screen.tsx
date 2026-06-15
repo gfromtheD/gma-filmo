@@ -1,155 +1,119 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MySpaceScreen } from "@/components/features/space/my-space-screen";
-import { GmaIcon } from "@/components/ui/gma-icon";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
-import type { MovieMedia } from "@/types/catalog";
+import { useState } from "react";
+import { Home, Film, Upload, BarChart2, User, Check, AlertTriangle } from "lucide-react";
+import { DashboardView } from "./studio-dashboard-view";
+import { TitlesView }    from "./studio-titles-view";
+import { UploadView }    from "./studio-upload-view";
+import { StatsView }     from "./studio-stats-view";
+import { ProfileView }   from "./studio-profile-view";
+import { EditModal }     from "./studio-edit-modal";
+import { C, row }        from "./studio-ui";
+import { STUDIO_DATA }   from "./studio-data";
+import type { StudioTitle, StudioTabId } from "./studio-types";
+export type { StudioTabId };
 
-interface StudioScreenProps {
-  readonly items: readonly MovieMedia[];
-}
+const TABS: { id: StudioTabId; label: string; icon: React.ReactNode }[] = [
+  { id: "inicio",       label: "Inicio",         icon: <Home size={15} /> },
+  { id: "titulos",      label: "Mis títulos",     icon: <Film size={15} /> },
+  { id: "subir",        label: "Subir",           icon: <Upload size={15} /> },
+  { id: "estadisticas", label: "Estadísticas",    icon: <BarChart2 size={15} /> },
+  { id: "perfil",       label: "Perfil",          icon: <User size={15} /> },
+];
 
-type StudioTab = "spectator" | "creator";
+export function StudioScreen() {
+  const [active,    setActive]    = useState<StudioTabId>("inicio");
+  const [editTitle, setEditTitle] = useState<StudioTitle | null>(null);
+  const [openTitle, setOpenTitle] = useState<StudioTitle | null>(null);
+  const [focusTitle, setFocusTitle] = useState<StudioTitle | null>(null);
+  const [toast,     setToast]     = useState<{ msg: string; error?: boolean; key: number } | null>(null);
 
-function getInitialTab(): StudioTab {
-  if (typeof window === "undefined") return "creator";
-  return (sessionStorage.getItem("studio-tab") as StudioTab) ?? "creator";
-}
+  const data = STUDIO_DATA;
 
-export function StudioScreen({ items }: StudioScreenProps) {
-  const [tab,         setTab]         = useState<StudioTab>(getInitialTab);
-  const [creatorName, setCreatorName] = useState("");
-  const [bio,         setBio]         = useState("");
-  const [saving,      setSaving]      = useState(false);
-  const [saveMsg,     setSaveMsg]     = useState("");
-  const userId = useSupabaseUserId();
+  function showToast(msg: string, opts?: { error?: boolean }) {
+    setToast({ msg, error: opts?.error, key: Date.now() });
+    setTimeout(() => setToast(null), 3200);
+  }
 
-  useEffect(() => {
-    sessionStorage.setItem("studio-tab", tab);
-  }, [tab]);
+  function nav(id: StudioTabId, payload?: StudioTitle) {
+    if (id === "estadisticas" && payload) setFocusTitle(payload);
+    setActive(id);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-  useEffect(() => {
-    if (!userId) return;
-    getSupabaseBrowserClient()
-      .from("creator_profiles")
-      .select("creator_name, bio")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setCreatorName(data.creator_name);
-          setBio(data.bio ?? "");
-        }
-      });
-  }, [userId]);
-
-  async function handleSaveProfile(e: React.FormEvent) {
-    e.preventDefault();
-    if (!userId) return;
-    setSaving(true);
-    setSaveMsg("");
-    const { error } = await getSupabaseBrowserClient()
-      .from("creator_profiles")
-      .update({ creator_name: creatorName.trim(), bio: bio.trim() || null })
-      .eq("user_id", userId);
-    setSaving(false);
-    setSaveMsg(error ? "Error al guardar." : "Guardado.");
-    setTimeout(() => setSaveMsg(""), 2500);
+  function openTitleAndGoToTitles(t: StudioTitle) {
+    setActive("titulos");
+    setTimeout(() => setOpenTitle(t), 60);
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-10">
-      {/* Header + Toggle */}
-      <div className="mb-10 flex items-center justify-between gap-4">
-        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-white">Mi Estudio</h1>
-        <div className="flex items-center rounded-full border border-[#262626] bg-[#0D0D0D] p-1">
-          <button
-            type="button"
-            onClick={() => setTab("spectator")}
-            className="rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
-            style={{
-              background: tab === "spectator" ? "#22B16B" : "transparent",
-              color: tab === "spectator" ? "#031A0E" : "#B8C5D4",
-            }}
-          >
-            Espectador
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("creator")}
-            className="rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
-            style={{
-              background: tab === "creator" ? "#22B16B" : "transparent",
-              color: tab === "creator" ? "#031A0E" : "#B8C5D4",
-            }}
-          >
-            Creador
-          </button>
+    <div style={{ animation: "fadeIn 0.55s ease both" }}>
+      {/* Internal tab nav */}
+      <div style={{ borderBottom: `1px solid ${C.border1}`, marginBottom: 0 }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 28px" }}>
+          <div style={row(4)}>
+            {TABS.map(t => {
+              const isActive = active === t.id;
+              return (
+                <button key={t.id} onClick={() => nav(t.id)}
+                  style={{
+                    ...row(7),
+                    height: 48, padding: "0 16px", border: "none", cursor: "pointer",
+                    fontSize: 13.5, fontWeight: 700, fontFamily: "inherit",
+                    transition: "all 0.18s ease",
+                    background: "transparent",
+                    color: isActive ? C.accentH : C.textMuted,
+                    borderBottom: `2px solid ${isActive ? C.accent : "transparent"}`,
+                    borderRadius: 0,
+                    marginBottom: -1,
+                  }}>
+                  {t.icon}
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Spectator view */}
-      {tab === "spectator" && <MySpaceScreen items={items} />}
+      {/* View content */}
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "38px 28px 80px" }}>
+        {active === "inicio" && (
+          <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} />
+        )}
+        {active === "titulos" && (
+          <TitlesView data={data} onNav={nav} onEditTitle={setEditTitle}
+            onToast={showToast} openTitle={openTitle} setOpenTitle={setOpenTitle} />
+        )}
+        {active === "subir" && (
+          <UploadView data={data} onToast={showToast} onNav={nav} />
+        )}
+        {active === "estadisticas" && (
+          <StatsView data={data} onToast={showToast} focusTitle={focusTitle} />
+        )}
+        {active === "perfil" && (
+          <ProfileView data={data} onToast={showToast} />
+        )}
+      </div>
 
-      {/* Creator view */}
-      {tab === "creator" && (
-        <div className="flex flex-col gap-8">
-          {/* Profile editor */}
-          <section className="rounded-[14px] border border-[#1E1E1E] bg-[#0D0D0D] p-6">
-            <h2 className="mb-5 text-[16px] font-bold text-white">Perfil de creador</h2>
-            <form onSubmit={(e) => void handleSaveProfile(e)} className="flex flex-col gap-4">
-              <div>
-                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
-                  Nombre artístico
-                </label>
-                <input
-                  type="text"
-                  value={creatorName}
-                  onChange={(e) => setCreatorName(e.target.value)}
-                  placeholder="Tu nombre de creador"
-                  maxLength={60}
-                  required
-                  className="w-full rounded-[10px] border border-[#1E2D42] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors focus:border-[#22B16B]"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
-                  Bio <span className="normal-case text-[#3A4A5E]">(opcional)</span>
-                </label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Cuéntanos sobre tu proyecto..."
-                  maxLength={300}
-                  rows={3}
-                  className="w-full resize-none rounded-[10px] border border-[#1E2D42] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors focus:border-[#22B16B]"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={saving || !creatorName.trim()}
-                  className="rounded-full bg-[#22B16B] px-6 py-2.5 text-[13px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:opacity-50"
-                >
-                  {saving ? "Guardando…" : "Guardar"}
-                </button>
-                {saveMsg && (
-                  <span className="text-[13px] text-[#22B16B]">{saveMsg}</span>
-                )}
-              </div>
-            </form>
-          </section>
+      {/* Edit modal */}
+      <EditModal title={editTitle} onClose={() => setEditTitle(null)} onToast={showToast} data={data} />
 
-          {/* Upload placeholder */}
-          <section className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-[#262626] py-16 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A1A1A] text-[#3A3A3A]">
-              <GmaIcon name="film" size={24} />
-            </div>
-            <p className="mb-1 text-[15px] font-bold text-white">Subir contenido</p>
-            <p className="text-[13px] text-[#5A6A7E]">Próximamente podrás subir tus cortos y largometrajes.</p>
-          </section>
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 200, pointerEvents: "none" }}>
+          <div key={toast.key} style={{
+            display: "flex", alignItems: "center", gap: 11, animation: "dropIn 0.16s ease both",
+            background: "#101820", border: `1px solid ${C.border2}`, borderRadius: 12,
+            padding: "13px 18px", boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)", maxWidth: 440,
+          }}>
+            <span style={{ display: "grid", placeItems: "center", width: 26, height: 26, borderRadius: 999,
+              background: toast.error ? "rgba(255,82,82,0.14)" : C.accent15,
+              color: toast.error ? C.errorFg : C.accentH }}>
+              {toast.error ? <AlertTriangle size={15} strokeWidth={2.4} /> : <Check size={15} strokeWidth={2.4} />}
+            </span>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>{toast.msg}</span>
+          </div>
         </div>
       )}
     </div>

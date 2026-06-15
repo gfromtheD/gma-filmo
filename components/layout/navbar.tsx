@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
-import { ExternalLink, UserRound, ChevronDown } from "lucide-react";
+import { ExternalLink, UserRound } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -29,8 +29,6 @@ const NAV_ITEMS: readonly NavItem[] = [
   { id: "space",  label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
 ];
 
-// Labels for the roulette slot animation on the space tab
-const SPACE_ROULETTE = ["Mi Espacio", "Mi Estudio", "Mi Espacio"] as const;
 
 function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: string; imageUrl?: string; iconId?: string }) {
   if (imageUrl) {
@@ -82,13 +80,10 @@ export function Navbar() {
   const [chipReveal,   setChipReveal]   = useState(false);
   const [pillExpanded, setPillExpanded] = useState(true);
 
-  // ── Space tab dropdown ───────────────────────────────────────────────────
-  const [spaceDropOpen, setSpaceDropOpen] = useState(false);
-  const spaceDropRef    = useRef<HTMLDivElement>(null);
-
-  // ── Slot-machine roulette state (0=normal, 1=studio, 2=back to espacio) ──
-  const [rouletteStep, setRouletteStep] = useState(0);
-  const rouletteLabel = SPACE_ROULETTE[rouletteStep] ?? "Mi Espacio";
+  // ── Slot-machine roulette state (0=Mi Espacio, 1=Mi Estudio) ─────────────
+  const [rouletteStep, setRouletteStep] = useState(
+    () => (pathname.startsWith("/mi-estudio") ? 1 : 0)
+  );
 
   useEffect(() => {
     if (phase === "contracting") {
@@ -103,11 +98,9 @@ export function Navbar() {
       // Trigger roulette for creators after pill has expanded
       let r1: ReturnType<typeof setTimeout> | undefined;
       let r2: ReturnType<typeof setTimeout> | undefined;
-      let r3: ReturnType<typeof setTimeout> | undefined;
       if (isCreator) {
-        r1 = setTimeout(() => setRouletteStep(1), 500);
-        r2 = setTimeout(() => setRouletteStep(2), 920);
-        r3 = setTimeout(() => setRouletteStep(0), 1340);
+        r1 = setTimeout(() => setRouletteStep(1), 500);   // → Mi Estudio
+        r2 = setTimeout(() => setRouletteStep(0), 1900);  // → Mi Espacio
       }
 
       prevPhase.current = phase;
@@ -116,7 +109,6 @@ export function Navbar() {
         clearTimeout(expandT);
         if (r1) clearTimeout(r1);
         if (r2) clearTimeout(r2);
-        if (r3) clearTimeout(r3);
       };
     }
     prevPhase.current = phase;
@@ -161,16 +153,6 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
-  // Close space dropdown on outside click
-  useEffect(() => {
-    if (!spaceDropOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (spaceDropRef.current && !spaceDropRef.current.contains(e.target as Node)) setSpaceDropOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [spaceDropOpen]);
-
   // "Mi Espacio" is active when on /mi-espacio OR (creator) /mi-estudio
   const spaceIsActive = useMemo(() => {
     return pathname.startsWith("/mi-espacio") || (isCreator && pathname.startsWith("/mi-estudio"));
@@ -182,11 +164,23 @@ export function Navbar() {
     return pathname.startsWith(item.match);
   }
 
-  // Where the space tab link goes — stays on current section if already in one
-  const spaceNavHref = useMemo(() => {
-    if (!isCreator) return "/mi-espacio";
-    return pathname.startsWith("/mi-estudio") ? "/mi-estudio" : "/mi-espacio";
-  }, [pathname, isCreator]);
+  // Sync roulette label with current route (only when no animation is running)
+  useEffect(() => {
+    if (phase !== "idle") return;
+    setRouletteStep(pathname.startsWith("/mi-estudio") ? 1 : 0);
+  }, [pathname, phase]);
+
+  // Toggle between Mi Espacio ↔ Mi Estudio with roulette animation on the pill
+  function handleSpacePillClick() {
+    if (!isCreator || !spaceIsActive) {
+      router.push("/mi-espacio");
+      return;
+    }
+    const targetHref = pathname.startsWith("/mi-estudio") ? "/mi-espacio" : "/mi-estudio";
+    const targetStep = targetHref === "/mi-estudio" ? 1 : 0;
+    setRouletteStep(targetStep);
+    setTimeout(() => router.push(targetHref), 420);
+  }
 
   // Measure active pill position
   useEffect(() => {
@@ -255,88 +249,29 @@ export function Navbar() {
             const active = isActive(item);
             const labelColor = active ? "#051910" : "#B8C5D4";
 
-            // ── Space tab with creator dropdown ──────────────────────
+            // ── Space tab (creator: click toggles Mi Espacio ↔ Mi Estudio) ──
             if (item.id === "space" && isCreator) {
               return (
                 <div
                   key={item.id}
                   ref={(el) => { itemRefs.current[i] = el; }}
-                  className="relative z-10 flex h-9 items-center rounded-full"
+                  className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
+                  onClick={handleSpacePillClick}
                 >
-                  {/* Label — navigates directly */}
-                  <Link
-                    href={spaceNavHref}
-                    className="flex h-9 items-center rounded-full pl-5 pr-1.5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                    style={{ color: labelColor }}
-                  >
-                    {/* Slot-machine roulette label */}
-                    <span className="inline-block overflow-hidden" style={{ height: "1.3em", verticalAlign: "middle" }}>
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        <motion.span
-                          key={rouletteLabel}
-                          className="block"
-                          initial={{ y: "100%" }}
-                          animate={{ y: 0 }}
-                          exit={{ y: "-100%" }}
-                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                        >
-                          {rouletteLabel}
-                        </motion.span>
-                      </AnimatePresence>
-                    </span>
-                  </Link>
-
-                  {/* Chevron — opens dropdown */}
-                  <button
-                    type="button"
-                    aria-label="Cambiar sección"
-                    onClick={() => setSpaceDropOpen((v) => !v)}
-                    className="flex h-9 items-center pr-3 transition-colors duration-[260ms]"
-                    style={{ color: labelColor }}
+                  {/* Slot-machine roulette — two labels stacked, clip to one row */}
+                  <span
+                    className="inline-block overflow-hidden text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                    style={{ height: "1.2em", lineHeight: "1.2em", color: labelColor }}
                   >
                     <motion.span
-                      animate={{ rotate: spaceDropOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center"
+                      className="flex flex-col"
+                      animate={{ y: rouletteStep === 0 ? "0em" : "-1.2em" }}
+                      transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <ChevronDown size={13} />
+                      <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Espacio</span>
+                      <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
                     </motion.span>
-                  </button>
-
-                  {/* Dropdown */}
-                  <AnimatePresence>
-                    {spaceDropOpen && (
-                      <motion.div
-                        ref={spaceDropRef}
-                        key="space-drop"
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                        transition={{ duration: 0.16, ease: "easeOut" }}
-                        className="absolute left-0 top-[calc(100%+8px)] z-[300] w-[160px] overflow-hidden rounded-[12px] border border-[#262626] shadow-2xl"
-                        style={{ background: "#0D0D0D" }}
-                      >
-                        <Link
-                          href="/mi-espacio"
-                          onClick={() => setSpaceDropOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[#1A1A1A]"
-                          style={{ color: pathname.startsWith("/mi-espacio") ? "#22B16B" : "#B8C5D4" }}
-                        >
-                          <GmaIcon name="bookmark" size={14} />
-                          Mi Espacio
-                        </Link>
-                        <Link
-                          href="/mi-estudio"
-                          onClick={() => setSpaceDropOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold transition-colors hover:bg-[#1A1A1A]"
-                          style={{ color: pathname.startsWith("/mi-estudio") ? "#22B16B" : "#B8C5D4" }}
-                        >
-                          <GmaIcon name="film" size={14} />
-                          Mi Estudio
-                        </Link>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  </span>
                 </div>
               );
             }

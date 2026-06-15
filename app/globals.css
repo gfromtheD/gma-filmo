@@ -248,6 +248,83 @@ body::-webkit-scrollbar {
   to   { width: 0%; }
 }
 
+@keyframes dropIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes studioSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* === Mi Estudio utility classes === */
+.st-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border-radius: 999px; cursor: pointer; font-size: 13.5px;
+  font-weight: 700; height: 36px; padding: 0 16px;
+  border: none; font-family: inherit;
+  transition: background 0.16s, color 0.16s, opacity 0.16s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.st-btn-accent { background: #22B16B; color: #031A0E; }
+.st-btn-accent:hover:not(:disabled) { background: #2AC57A; }
+.st-btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
+.st-btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid #262626 !important;
+  color: #B8C5D4;
+}
+.st-btn-secondary:hover { background: rgba(255,255,255,0.11); color: #fff; }
+.st-btn-ghost { background: transparent; color: #5A6A7E; }
+.st-btn-ghost:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.st-btn-sm { height: 30px; padding: 0 12px; font-size: 12.5px; gap: 5px; }
+.st-btn-icon { width: 34px; height: 34px; padding: 0 !important;
+  display: grid !important; place-items: center; gap: 0 !important; border-radius: 8px !important; }
+.st-btn-danger { color: #ff5252 !important; }
+.st-btn-danger:hover { color: #ff7b7b !important; background: rgba(255,82,82,0.10) !important; }
+.st-input, .st-textarea, .st-select {
+  width: 100%; background: rgba(255,255,255,0.04);
+  border: 1px solid #1E2D42; border-radius: 10px;
+  padding: 10px 14px; color: #fff; font-size: 14px; font-weight: 500;
+  outline: none; transition: border-color 0.18s; font-family: inherit;
+  appearance: none;
+}
+.st-textarea { resize: vertical; min-height: 80px; }
+.st-select { cursor: pointer; }
+.st-input:focus, .st-textarea:focus, .st-select:focus { border-color: #22B16B; }
+.st-input::placeholder, .st-textarea::placeholder { color: #3A4A5E; }
+.st-sep { height: 1px; background: #1A1A1A; flex-shrink: 0; }
+.st-poster-wrap:hover .st-poster-play { opacity: 1 !important; }
+.studio-spin { animation: studioSpin 0.85s linear infinite; display: inline-block; }
+.st-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 5px; border-radius: 999px;
+  outline: none; cursor: pointer; border: none;
+}
+.st-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #22B16B; cursor: pointer;
+  border: 2px solid #031A0E;
+  box-shadow: 0 0 0 3px rgba(34,177,107,0.22);
+  transition: box-shadow 0.15s, transform 0.12s;
+}
+.st-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(34,177,107,0.28);
+  transform: scale(1.12);
+}
+.st-slider::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #22B16B; cursor: pointer; border: 2px solid #031A0E;
+}
+.st-slider::-moz-range-track { height: 5px; border-radius: 999px; }
+
 /* ── Micro-animations ──────────────────────────────────────────────────────── */
 
 /* Icon swap: + → ✓ and back — scale+rotate spring */
@@ -270,3 +347,244 @@ body::-webkit-scrollbar {
   65%  { transform: scale(1.12); }
   100% { transform: scale(1);   opacity: 1; }
 }
+
+/* ── GMA splash intro (pre-playback animation, Netflix-tudum style) ─────────────
+   Adapted from a styled-components loader. All keyframes/classes are namespaced
+   with `gsp-`/`gsp*` so they never collide with existing animations. Colour is
+   GMA green; size scales up via the root font-size on `.gsp-loader`. */
+.gsp-loader {
+  --c: #22B16B;
+  position: relative;
+  width: 12em;
+  height: 12em;
+  font-size: clamp(22px, 5.5vw, 38px);
+  color: var(--c);
+}
+
+.gsp-ph1 {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  animation: gspPh1 4.5s ease 1 forwards;
+  clip-path: polygon(-4em -1.6em, 7em -1.6em, 7em 1.6em, -4em 1.6em);
+}
+
+.gsp-record {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.1em;
+  height: 1.1em;
+  background: var(--c);
+  border-radius: 999px;
+  box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c);
+  animation: gspBlink 1s step-end infinite;
+  transform: translate(-2.7em, -50%);
+}
+
+.gsp-record-text {
+  position: absolute;
+  color: var(--c);
+  font-size: 1.8em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  left: 50%;
+  top: 50%;
+  transform: translate(-0.5em, -50%);
+  width: 4em;
+  height: 1.5em;
+  white-space: nowrap;
+}
+
+@keyframes gspBlink {
+  50% { opacity: 0; }
+  75% { opacity: 1; }
+}
+
+@keyframes gspPh1 {
+  0% {
+    translate: 0 0;
+    clip-path: polygon(-4em -1.6em, 7em -1.6em, 7em 1.6em, -4em 1.6em);
+    opacity: 1;
+  }
+  25.5% {
+    translate: 0 0;
+    clip-path: polygon(-4em -1.6em, 7em -1.6em, 7em 1.6em, -4em 1.6em);
+    opacity: 1;
+  }
+  30% {
+    translate: 0 3em;
+    clip-path: polygon(-4em 1.6em, 7em 1.6em, 7em 1.6em, -4em 1.6em);
+    opacity: 1;
+  }
+  30.1% {
+    opacity: 0;
+    translate: 0 3em;
+  }
+  99% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.gsp-ph2 {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -4em);
+  width: 11em;
+  height: 7em;
+  perspective: 150px;
+  perspective-origin: 50% 0%;
+  transform-style: preserve-3d;
+  animation: gspPh2 4.5s ease-in-out 1 forwards;
+}
+
+@keyframes gspPh2 {
+  0%, 15%  { translate: 0 4em; }
+  0%, 29%  { opacity: 0; }
+  30%      { opacity: 1; }
+  40%      { translate: 0 0; }
+  50%      { translate: 0 0.5em; opacity: 1; }
+  50.1%, to { opacity: 0; }
+}
+
+.gsp-laptop-b {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.5em;
+  background: var(--c);
+  border-bottom-left-radius: 2em;
+  border-bottom-right-radius: 2em;
+  animation: gspPh2b 4.5s ease 1 forwards;
+}
+
+.gsp-laptop-t {
+  margin: 0 1.25em;
+  color: var(--c);
+  transform-origin: 50% 100%;
+  animation: gspPh2t 4.5s ease 1 forwards;
+}
+
+@keyframes gspPh2t {
+  0%, 29%   { transform: rotateX(-10deg); }
+  0%, 41.9% { stroke-dasharray: unset; }
+  42%       { transform: rotateX(4deg); stroke-dasharray: 0 0 100; }
+  50%       { transform: rotateX(-20deg); stroke-dasharray: 0 50 0 100; }
+}
+
+@keyframes gspPh2b {
+  42% { scale: 1 1; }
+  50% { scale: 0 1; }
+}
+
+.gsp-icon {
+  position: absolute;
+  width: 4em;
+  height: 4em;
+  background: var(--c);
+  border-radius: 999px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: gspIcon 4.5s ease-in-out 1 forwards;
+  isolation: isolate;
+  border-color: var(--c);
+  border-style: solid;
+  z-index: -1;
+}
+
+@keyframes gspIcon {
+  0%, 15% { translate: 0 4.5em; width: 0; height: 0; }
+  0%, 29% { opacity: 0; }
+  30%     { opacity: 1; }
+  40%     { translate: 0 -0.75em; width: 4em; height: 4em; }
+  50%     { translate: 0 0em; opacity: 1; background: var(--c); border-width: 0; }
+  50.1%   { background: black; border-width: 0; }
+  56%     { border-width: 2em; }
+  65%     { width: 4em; height: 4em; transform: translate(-2em, -2em); border-width: 4px; background: black; }
+  79.9%   { background: black; border-width: 4px; }
+  80%     { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 1; }
+  86%     { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 1; }
+  86.1%   { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 0; }
+  92%     { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 0; }
+  92.1%   { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 1; }
+  100%    { width: 1.1em; height: 1.1em; translate: 0 0; transform: translate(-2.7em, -0.55em); border-width: 0; background: var(--c); box-shadow: 0 0 0 0.15em #000, 0 0 0 0.28em var(--c); opacity: 1; }
+}
+
+.gsp-icon::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 0.8em solid black;
+  box-sizing: border-box;
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  transform: translate(-50%, 2.5em) rotate(-45deg);
+  transform-origin: center;
+  animation: gspIconb 4.5s ease-in-out 1 forwards;
+  z-index: -1;
+}
+
+@keyframes gspIconb {
+  20% { transform: translate(-50%, 2.5em) rotate(-45deg); }
+  50% { transform: translate(-50%, -25%) rotate(-45deg); border-color: black; }
+  65% { transform: translateY(0) scale(1) scaleX(1.5) translate(-60%, -50%) rotate(45deg); border-color: var(--c); }
+  80%, 100% { transform: translate(-40%, -50%) scale(0) scaleX(1.5) translate(-75%, -50%) rotate(45deg); }
+}
+
+.gsp-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: black;
+  width: 1em;
+  height: 2em;
+  box-sizing: border-box;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  animation: gspIcona 4.5s ease-in-out 1 forwards;
+}
+
+@keyframes gspIcona {
+  20% { transform: translate(-50%, 2.5em); }
+  50% { transform: translate(-50%, 0.4em); }
+  65%, to { transform: translate(-50%, 2.5em); }
+}
+
+/* FILMO — appears independently (no clip-path), same ~30% window as GMA */
+.gsp-word-b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-0.5em, -50%);
+  color: var(--c);
+  font-size: 1.8em;
+  font-weight: 700;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  font-kerning: none;
+  white-space: nowrap;
+  opacity: 0;
+  animation: gspWordB 4.5s ease 1 forwards;
+}
+@keyframes gspWordB {
+  0%, 80%  { opacity: 0; }
+  85%      { opacity: 1; }
+  100%     { opacity: 1; }
+}
+
+

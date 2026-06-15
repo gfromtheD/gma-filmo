@@ -46,30 +46,83 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error,         setError]         = useState("");
   const [success,       setSuccess]       = useState("");
+  // Set when an existing viewer account is detected and must confirm the switch to creator
+  const [pendingUpgrade, setPendingUpgrade] = useState<{ userId: string } | null>(null);
 
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
+    // Flag stored in cookie — query params in redirectTo are rejected by Supabase
+    document.cookie = "gma_creator_pending=1; path=/; max-age=300; SameSite=Lax";
     const { error: err } = await getSupabaseBrowserClient().auth.signInWithOAuth({
       provider: "google",
       options: {
         scopes: "openid email profile",
-        redirectTo: `${window.location.origin}/auth/callback?creator=1`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
     if (err) { setError(err.message); setGoogleLoading(false); }
   }
 
-  async function handleRegister(e: React.FormEvent) {
+  async function confirmUpgrade() {
+    if (!pendingUpgrade) return;
+    setLoading(true);
+    setError("");
+
+    const supabase = getSupabaseBrowserClient();
+    const { error: err } = await supabase
+      .from("creator_profiles")
+      .insert({ user_id: pendingUpgrade.userId, creator_name: creatorName.trim() });
+
+    if (err) {
+      setError("No se pudo convertir la cuenta. Inténtalo de nuevo.");
+      setLoading(false);
+      setPendingUpgrade(null);
+      return;
+    }
+    window.location.href = "/mi-estudio";
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password !== confirm) { setError("Las contraseñas no coinciden."); return; }
-    if (password.length < 6)  { setError("La contraseña debe tener al menos 6 caracteres."); return; }
-    if (!creatorName.trim())  { setError("Introduce tu nombre de creador."); return; }
+
+    if (!creatorName.trim()) { setError("Introduce tu nombre de creador."); return; }
     setLoading(true);
 
-    const { error: err } = await getSupabaseBrowserClient().auth.signUp({
+    const supabase = getSupabaseBrowserClient();
+
+    // ── Try sign-in first — covers existing users wanting creator status ──
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (!signInErr && signInData.user) {
+      document.cookie = "gma_guest=; path=/; max-age=0; SameSite=Lax";
+
+      const { data: existingCreator } = await supabase
+        .from("creator_profiles")
+        .select("user_id")
+        .eq("user_id", signInData.user.id)
+        .maybeSingle();
+
+      // Already a creator → go straight to studio
+      if (existingCreator) {
+        window.location.href = "/mi-estudio";
+        return;
+      }
+
+      // Existing viewer account, no creator profile yet → ask before switching
+      setPendingUpgrade({ userId: signInData.user.id });
+      setLoading(false);
+      return;
+    }
+
+    // ── Sign-in failed → treat as new user registration ──────────────────
+    if (!confirm) { setError("Por favor confirma tu contraseña."); setLoading(false); return; }
+    if (password !== confirm) { setError("Las contraseñas no coinciden."); setLoading(false); return; }
+    if (password.length < 6)  { setError("La contraseña debe tener al menos 6 caracteres."); setLoading(false); return; }
+
+    const { error: signUpErr } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -78,8 +131,8 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
       },
     });
 
-    if (err) {
-      setError(err.message);
+    if (signUpErr) {
+      setError(signUpErr.message);
       setLoading(false);
     } else {
       setSuccess("Cuenta creada. Revisa tu correo para confirmar.");
@@ -112,6 +165,38 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
         </div>
       )}
 
+      {pendingUpgrade && (
+        <div className="w-full rounded-2xl border border-[#22B16B]/30 bg-[#22B16B]/[0.06] p-5">
+          <h2 className="text-[16px] font-extrabold text-white">Convertir tu cuenta en creador</h2>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#B8C5D4]">
+            El correo <span className="font-semibold text-white">{email}</span> ya tiene una cuenta de
+            espectador. Si continúas, se convertirá <span className="font-semibold text-white">también</span>{" "}
+            en cuenta de creador: conservarás todo tu acceso actual y se desbloqueará{" "}
+            <span className="font-semibold text-[#22B16B]">Mi Estudio</span>.
+          </p>
+          <div className="mt-5 flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={() => void confirmUpgrade()}
+              disabled={loading}
+              className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-[transform,background] hover:bg-[#2AC57A] active:scale-[0.98] disabled:opacity-50"
+            >
+              {loading ? "Convirtiendo…" : "Sí, convertir mi cuenta"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPendingUpgrade(null); setError(""); }}
+              disabled={loading}
+              className="w-full rounded-full border border-[#1E2D42] py-3 text-[14px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.04] disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!pendingUpgrade && (
+       <>
       <button type="button" onClick={() => void handleGoogle()} disabled={googleLoading} className={`${pillClass} mt-4`}>
         <GoogleIcon />
         {googleLoading ? "Conectando…" : "Continuar con Google"}
@@ -119,7 +204,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
 
       <button type="button" onClick={() => setShowEmail(v => !v)} className={pillClass}>
         <MailIcon />
-        Registrarse con correo
+        Continuar con correo
       </button>
 
       <AnimatePresence>
@@ -132,7 +217,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="w-full overflow-hidden"
           >
-            <form onSubmit={(e) => void handleRegister(e)} className="flex flex-col gap-3 pt-1">
+            <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3 pt-1">
               <input
                 type="text"
                 required
@@ -153,28 +238,30 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
               />
               <input
                 type="password"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contraseña (mínimo 6 caracteres)"
+                placeholder="Contraseña"
                 className={inputClass}
               />
               <input
                 type="password"
                 autoComplete="new-password"
-                required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Confirmar contraseña"
+                placeholder="Confirmar contraseña (solo si es cuenta nueva)"
                 className={inputClass}
               />
+              <p className="text-[11px] text-[#4A5A6E]">
+                Si ya tienes cuenta, deja la confirmación vacía e introduce tus credenciales.
+              </p>
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-[transform,background] hover:bg-[#2AC57A] active:scale-[0.98] disabled:opacity-50"
               >
-                {loading ? "Creando cuenta…" : "Crear cuenta de creador"}
+                {loading ? "Verificando…" : "Continuar como creador"}
               </button>
             </form>
           </motion.div>
@@ -187,6 +274,8 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
           Inicia sesión →
         </button>
       </p>
+       </>
+      )}
     </div>
   );
 }

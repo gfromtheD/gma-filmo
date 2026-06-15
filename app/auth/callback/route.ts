@@ -11,9 +11,8 @@ function hasRealName(name: string | null | undefined): boolean {
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  const code           = searchParams.get("code");
-  const next           = searchParams.get("next") ?? "/perfiles";
-  const isCreatorOAuth = searchParams.get("creator") === "1";
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/perfiles";
 
   if (code) {
     const cookieStore = cookies();
@@ -39,6 +38,8 @@ export async function GET(request: NextRequest) {
         },
       },
     );
+
+    const isCreatorOAuth = cookieStore.getAll().some((c) => c.name === "gma_creator_pending");
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
             response.cookies.set(name, value, options),
           );
           response.cookies.set("gma_guest", "", { path: "/", maxAge: 0, sameSite: "lax" });
+          response.cookies.set("gma_creator_pending", "", { path: "/", maxAge: 0, sameSite: "lax" });
           return response;
         }
       }
@@ -115,6 +117,7 @@ export async function GET(request: NextRequest) {
         response.cookies.set(name, value, options),
       );
       response.cookies.set("gma_guest", "", { path: "/", maxAge: 0, sameSite: "lax" });
+      response.cookies.set("gma_creator_pending", "", { path: "/", maxAge: 0, sameSite: "lax" });
       return response;
     }
   }

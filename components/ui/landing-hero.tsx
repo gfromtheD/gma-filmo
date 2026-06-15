@@ -129,6 +129,17 @@ export function LandingHero() {
                   Registrarse
                 </motion.button>
               </div>
+
+              <div className="mt-5 flex flex-col items-center gap-1">
+                <span className="text-[12px] text-[#4A5A6E]">¿Quieres aportar a la plataforma?</span>
+                <button
+                  type="button"
+                  onClick={() => setView("creator-register")}
+                  className="text-[12px] font-semibold text-[#22B16B] transition-colors hover:underline"
+                >
+                  Regístrate como creador →
+                </button>
+              </div>
             </motion.div>
           )}
 

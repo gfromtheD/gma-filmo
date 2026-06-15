@@ -87,7 +87,7 @@ export function FilterTriggerButton({
       <SlidersHorizontal size={14} strokeWidth={1.75} />
       Filtros
       {activeCount > 0 && (
-        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#22B16B] px-1 text-[10px] font-bold text-[#03200F]">
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#22B16B] px-1 text-[10px] font-bold text-gma-accent-fg">
           {activeCount}
         </span>
       )}
@@ -200,7 +200,7 @@ export function CatalogFilterDrawer({
           onClick={onBackdrop}
         >
           <div
-            className="relative flex h-full w-[440px] flex-col overflow-hidden border-l border-[#1E1E1E]"
+            className="relative flex h-full w-110 flex-col overflow-hidden border-l border-[#1E1E1E]"
             style={{ background: "#0D0D0D" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -210,7 +210,7 @@ export function CatalogFilterDrawer({
               <h2 className="flex-1 text-[17px] font-bold text-white">Filtros</h2>
               {draftActiveCount > 0 && (
                 <span
-                  className="text-[10.5px] font-bold uppercase tracking-[.1em] text-[#22B16B]"
+                  className="text-[10.5px] font-bold uppercase tracking-widest text-[#22B16B]"
                   style={MONO}
                 >
                   {draftActiveCount} {draftActiveCount === 1 ? "activo" : "activos"}
@@ -297,7 +297,7 @@ export function CatalogFilterDrawer({
                         }`}
                       >
                         {draft.languages.includes(l) && (
-                          <Check size={10} strokeWidth={3} className="text-[#03200F]" />
+                          <Check size={10} strokeWidth={3} className="text-gma-accent-fg" />
                         )}
                       </span>
                       <span
@@ -371,7 +371,7 @@ export function CatalogFilterDrawer({
                 <button
                   type="button"
                   onClick={apply}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#22B16B] py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#22B16B] py-2.5 text-[13px] font-bold text-gma-accent-fg transition-colors hover:bg-[#2AC57A]"
                 >
                   Ver {draftResultCount} {draftResultCount === 1 ? "resultado" : "resultados"}
                 </button>
@@ -413,7 +413,7 @@ function DrawerChip({
       type="button"
       onClick={onClick}
       disabled={muted}
-      className={`inline-flex items-center rounded-full border px-3.5 py-[7px] text-[12.5px] font-semibold transition-[color,border-color,background-color] duration-150 ${
+      className={`inline-flex items-center rounded-full border px-3.5 py-1.75 text-[12.5px] font-semibold transition-[color,border-color,background-color] duration-150 ${
         muted
           ? "cursor-default border-[#232323] bg-transparent text-[#5A6A7E]"
           : active
@@ -431,13 +431,13 @@ function DrawerChip({
 function ToggleSwitch({ on }: { on: boolean }) {
   return (
     <div
-      className={`relative h-[22px] w-[38px] rounded-full transition-colors duration-200 ${
+      className={`relative h-5.5 w-9.5 rounded-full transition-colors duration-200 ${
         on ? "bg-[#22B16B]" : "bg-[#2A2A2A]"
       }`}
     >
       <div
-        className={`absolute top-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          on ? "translate-x-[18px]" : "translate-x-[3px]"
+        className={`absolute top-0.75 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          on ? "translate-x-4.5" : "translate-x-0.75"
         }`}
       />
     </div>
@@ -594,7 +594,7 @@ function YearBox({
         const n = parseInt(e.target.value);
         if (!isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
       }}
-      className="w-[76px] rounded-lg border border-[#2A2A2A] bg-[#141414] py-2 text-center text-[14px] font-semibold text-white focus:border-[#22B16B]/50 focus:outline-none"
+      className="w-19 rounded-lg border border-[#2A2A2A] bg-[#141414] py-2 text-center text-[14px] font-semibold text-white focus:border-[#22B16B]/50 focus:outline-none"
       style={MONO}
     />
   );

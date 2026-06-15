@@ -328,7 +328,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
         <ProfileEditModal onClose={() => setEditModalOpen(false)} />
       )
     )}
-    <div className="mx-auto max-w-[1440px] px-6 pb-24 pt-8">
+    <div className="mx-auto max-w-[1440px] px-6 pb-24 pt-8" style={{ animation: "fadeIn 0.55s ease both" }}>
 
       {/* ── Profile header ────────────────────────────────────────────────── */}
       <div
