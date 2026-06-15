@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getSupabasePublicClient } from "@/lib/supabase/public";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
+import type { CreatorProfile } from "@/types/creator";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
 
 // ── Deterministic visual style from slug ─────────────────────────────────────
@@ -63,7 +64,7 @@ type PeliculaWithRelations = PeliculaRow & {
   }[];
 };
 
-type ArtistaEntry = { name: string; r2_photo_url: string | null };
+type ArtistaEntry = { name: string; r2_photo_url: string | null; slug: string };
 
 // ── Artista lookup map (name/slug → artista) ──────────────────────────────────
 // Cached: artistas rarely change, 1h TTL is fine
@@ -73,7 +74,7 @@ const fetchArtistaMapCached = unstable_cache(
     const { data } = await supabase.from("artistas").select("slug, name, r2_photo_url");
     const entries: [string, ArtistaEntry][] = [];
     for (const a of (data ?? [])) {
-      const entry: ArtistaEntry = { name: a.name, r2_photo_url: a.r2_photo_url };
+      const entry: ArtistaEntry = { name: a.name, r2_photo_url: a.r2_photo_url, slug: a.slug };
       entries.push([a.name.toLowerCase(), entry]);
       entries.push([a.slug.toLowerCase(), entry]);
       entries.push([a.slug.replace(/-/g, " ").toLowerCase(), entry]);
@@ -138,6 +139,7 @@ function toMovieMedia(
       name:     pa.artistas!.name,
       role:     roleByName.get(pa.artistas!.name.toLowerCase()) ?? "",
       photoUrl: pa.artistas!.r2_photo_url,
+      slug:     pa.artistas!.slug ?? null,
     }));
 
   // Fallback: match author field against artistas table, preserving each role
@@ -145,7 +147,7 @@ function toMovieMedia(
     for (const credit of parseAuthorCredits(p.author)) {
       const match = artistaMap.get(credit.name.toLowerCase());
       if (match) {
-        artistas.push({ name: match.name, role: credit.role, photoUrl: match.r2_photo_url });
+        artistas.push({ name: match.name, role: credit.role, photoUrl: match.r2_photo_url, slug: match.slug ?? null });
       }
     }
   }
@@ -171,6 +173,23 @@ function toMovieMedia(
     style: deriveStyle(p.slug),
     author: p.author ?? undefined,
     artistas: artistas.length > 0 ? artistas : undefined,
+  };
+}
+
+// ── Creator profile mapper ────────────────────────────────────────────────────
+function mapCreatorRow(data: Record<string, unknown>): CreatorProfile {
+  return {
+    slug:             data.slug as string,
+    nombre:           data.nombre as string,
+    foto_perfil:      (data.foto_perfil as string | null)      ?? null,
+    imagen_portada:   (data.imagen_portada as string | null)   ?? null,
+    nacionalidad:     (data.nacionalidad as string | null)     ?? null,
+    bio:              (data.bio as string | null)              ?? null,
+    redes_sociales:   (data.redes_sociales as { platform: string; url: string }[]) ?? [],
+    donacion_paypal:  (data.donacion_paypal as string | null)  ?? null,
+    donacion_patreon: (data.donacion_patreon as string | null) ?? null,
+    donacion_bitcoin: (data.donacion_bitcoin as string | null) ?? null,
+    titulos:          (data.titulos as string[])               ?? [],
   };
 }
 
@@ -376,4 +395,47 @@ export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[
 
   if (error || !data) return [];
   return (data as PeliculaWithRelations[]).map((p) => toMovieMedia(p, artistaMap));
+}
+
+// ── Creator public profiles ───────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyClient = ReturnType<typeof getSupabasePublicClient> & { from: (t: string) => any };
+
+export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
+  return unstable_cache(
+    async () => {
+      const supabase = getSupabasePublicClient() as AnyClient;
+      const { data } = await supabase
+        .from("creator_public_profiles")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!data) return null;
+      return mapCreatorRow(data as Record<string, unknown>);
+    },
+    [`creator-${slug}`],
+    { revalidate: 3600 },
+  )();
+}
+
+export async function getCreatorFilmsByTitulos(titulos: readonly string[]): Promise<MovieMedia[]> {
+  if (!titulos.length) return [];
+  const all = await getPeliculas();
+  return all.filter((m) => titulos.includes(m.id));
+}
+
+export async function getCreatorByArtistaSlugs(slugs: string[]): Promise<CreatorProfile | null> {
+  if (!slugs.length) return null;
+  const supabase = getSupabasePublicClient() as AnyClient;
+  const { data } = await supabase
+    .from("creator_public_profiles")
+    .select("*")
+    .in("slug", slugs);
+  if (!data?.length) return null;
+  for (const s of slugs) {
+    const found = (data as Record<string, unknown>[]).find((r) => r["slug"] === s);
+    if (found) return mapCreatorRow(found);
+  }
+  return null;
 }
