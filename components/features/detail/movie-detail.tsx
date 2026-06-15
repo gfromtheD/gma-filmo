@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Hero } from "@/components/features/media/hero";
 import { PosterCard } from "@/components/ui/poster-card";
 import { RatingsBlock } from "@/components/features/ratings/ratings-block";
@@ -162,42 +163,45 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
 
 // ─── Credits parser ───────────────────────────────────────────────────────────
 
-function parseAuthorField(raw: string | null | undefined, artistas?: MovieMedia["artistas"]): { director: string | null; illustrator: string | null } {
-  // 1. Structured artistas — flexible role matching
+function parseAuthorField(
+  raw: string | null | undefined,
+  artistas?: MovieMedia["artistas"],
+): { director: string | null; illustrator: string | null; directorSlug: string | null; illustratorSlug: string | null } {
   if (artistas && artistas.length > 0) {
-    const director    = artistas.find((a) => /creador|director/i.test(a.role))?.name
-                     ?? artistas[0]?.name  // fallback: first artista is the director
-                     ?? null;
-    const illustrator = artistas.find((a) => /ilustrador|illustrator/i.test(a.role))?.name ?? null;
-    return { director, illustrator };
+    const directorArtist    = artistas.find((a) => /creador|director/i.test(a.role)) ?? artistas[0];
+    const illustratorArtist = artistas.find((a) => /ilustrador|illustrator/i.test(a.role));
+    return {
+      director:        directorArtist?.name    ?? null,
+      illustrator:     illustratorArtist?.name ?? null,
+      directorSlug:    directorArtist?.slug    ?? null,
+      illustratorSlug: illustratorArtist?.slug ?? null,
+    };
   }
-  // 2. Raw author string — parse "Creado por: X; Ilustración por: Y"
-  if (!raw) return { director: null, illustrator: null };
+  if (!raw) return { director: null, illustrator: null, directorSlug: null, illustratorSlug: null };
   const creado = raw.match(/Creado por:\s*([^;]+)/i);
   const ilustr  = raw.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
   if (creado || ilustr) {
     return {
-      director:    creado?.[1]?.trim() ?? null,
-      illustrator: ilustr?.[1]?.trim() ?? null,
+      director:        creado?.[1]?.trim() ?? null,
+      illustrator:     ilustr?.[1]?.trim()  ?? null,
+      directorSlug:    null,
+      illustratorSlug: null,
     };
   }
-  // 3. Plain name
-  return { director: raw.trim(), illustrator: null };
+  return { director: raw.trim(), illustrator: null, directorSlug: null, illustratorSlug: null };
 }
 
 // ─── Stats row ────────────────────────────────────────────────────────────────
 
 function StatsRow({ movie }: { movie: MovieMedia }) {
-  const { director } = parseAuthorField(movie.author, movie.artistas);
-  const stats: Array<{ label: string; value: string }> = [
-    { label: "Estreno",  value: String(movie.year) },
-    { label: "Duración", value: movie.runtime },
-    { label: "Director", value: director ?? "—" },
-  ];
+  const { director, directorSlug } = parseAuthorField(movie.author, movie.artistas);
 
   return (
     <div className="grid grid-cols-3 gap-4">
-      {stats.map(({ label, value }) => (
+      {[
+        { label: "Estreno",  value: String(movie.year) },
+        { label: "Duración", value: movie.runtime },
+      ].map(({ label, value }) => (
         <div
           key={label}
           className="flex flex-col items-center justify-center rounded-[12px] border border-[#262626] bg-[#0D0D0D] py-5 text-center"
@@ -210,6 +214,23 @@ function StatsRow({ movie }: { movie: MovieMedia }) {
           </span>
         </div>
       ))}
+      <div className="flex flex-col items-center justify-center rounded-[12px] border border-[#262626] bg-[#0D0D0D] py-5 text-center">
+        <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6D7D94]">
+          Director
+        </span>
+        {director && directorSlug ? (
+          <Link
+            href={`/creadores/${directorSlug}`}
+            className="text-[22px] font-extrabold tracking-[-0.02em] text-white transition-colors hover:text-[#22B16B] hover:underline"
+          >
+            {director}
+          </Link>
+        ) : (
+          <span className="text-[22px] font-extrabold tracking-[-0.02em] text-white">
+            {director ?? "—"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -255,14 +276,14 @@ function MetaCard({ movie }: { movie: MovieMedia }) {
 
       <dl className="flex flex-col gap-3">
         {(() => {
-          const { director, illustrator } = parseAuthorField(movie.author, movie.artistas);
+          const { director, illustrator, directorSlug, illustratorSlug } = parseAuthorField(movie.author, movie.artistas);
           return (
             <>
               <MetaRow label="Año"      value={String(movie.year)} />
               <MetaRow label="Duración" value={movie.runtime} />
-              {director    && <MetaRow label="Director"    value={director} />}
-              {illustrator && <MetaRow label="Ilustrador"  value={illustrator} />}
-              {movie.tag   && <MetaRow label="Producción"  value={movie.tag} accent />}
+              {director    && <MetaRow label="Director"   value={director}   linkHref={directorSlug    ? `/creadores/${directorSlug}`    : undefined} />}
+              {illustrator && <MetaRow label="Ilustrador" value={illustrator} linkHref={illustratorSlug ? `/creadores/${illustratorSlug}` : undefined} />}
+              {movie.tag   && <MetaRow label="Producción" value={movie.tag} accent />}
             </>
           );
         })()}
@@ -293,12 +314,21 @@ function MetaCard({ movie }: { movie: MovieMedia }) {
   );
 }
 
-function MetaRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function MetaRow({ label, value, accent, linkHref }: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  linkHref?: string;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <dt className="shrink-0 text-[12px] text-[#6D7D94]">{label}</dt>
       <dd className={`text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
-        {value}
+        {linkHref ? (
+          <Link href={linkHref} className="transition-colors hover:text-[#22B16B] hover:underline">
+            {value}
+          </Link>
+        ) : value}
       </dd>
     </div>
   );
