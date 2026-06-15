@@ -2,6 +2,7 @@ export interface ArtistCredit {
   readonly name: string;
   readonly role: string;
   readonly photoUrl: string | null;
+  readonly slug?: string | null;
 }
 
 export type MotifName =
