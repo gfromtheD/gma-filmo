@@ -222,10 +222,10 @@ export default function DonaTestPage() {
   return (
     <>
       <main
-        className="flex min-h-screen flex-col items-center justify-start"
+        className="min-h-screen w-full"
         style={{ background: "#080B11" }}
       >
-        <div className="w-full max-w-[390px] px-4 py-10">
+        <div className="mx-auto w-full max-w-[600px] px-4 py-10 sm:px-6">
 
           {/* ── Creator card ───────────────────────────────────────────── */}
           <div
