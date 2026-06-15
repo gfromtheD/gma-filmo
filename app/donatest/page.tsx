@@ -14,9 +14,7 @@ const P_PATH =
 function PayPalLogo() {
   return (
     <svg width={26} height={26} viewBox="0 0 24 24" aria-hidden="true">
-      {/* Back P — light blue, offset right */}
       <path d={P_PATH} fill="#009cde" transform="translate(3,0)" />
-      {/* Front P — dark navy */}
       <path d={P_PATH} fill="#003087" />
     </svg>
   );
@@ -24,7 +22,6 @@ function PayPalLogo() {
 
 function PatreonLogo() {
   return (
-    // Circle (head) + vertical bar (stem) — Patreon's iconic mark
     <svg width={26} height={26} viewBox="0 0 28 28" aria-hidden="true">
       <circle cx="17" cy="11.5" r="7.5" fill="#FF424D" />
       <rect x="2.5" y="2.5" width="4.5" height="23" rx="1.5" fill="#FF424D" />
@@ -129,7 +126,7 @@ function LoginGate({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 24 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[390px] overflow-hidden rounded-2xl border border-white/10 p-6"
+        className="w-full overflow-hidden rounded-2xl border border-white/10 p-6"
         style={{
           background: "rgba(8,11,17,0.99)",
           boxShadow: "0 -24px 80px rgba(0,0,0,0.7)",
@@ -188,7 +185,6 @@ export default function DonaTestPage() {
     const supabase = getSupabaseBrowserClient();
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      // After OAuth redirect: auto-open the donation the user was clicking
       const pending = localStorage.getItem("gma_donate_pending");
       if (data.session && pending) {
         localStorage.removeItem("gma_donate_pending");
@@ -221,124 +217,119 @@ export default function DonaTestPage() {
 
   return (
     <>
-      <main
-        className="min-h-screen w-full"
+      {/* Full-screen page — no card container, full bleed */}
+      <div
+        className="flex min-h-dvh flex-col"
         style={{ background: "#080B11" }}
       >
-        <div className="mx-auto w-full max-w-[600px] px-4 py-10 sm:px-6">
-
-          {/* ── Creator card ───────────────────────────────────────────── */}
-          <div
-            className="overflow-hidden rounded-2xl border border-white/10"
-            style={{ background: "rgba(10,13,20,0.98)" }}
-          >
-            <div
-              className="h-28 w-full"
-              style={{
-                background:
-                  "linear-gradient(135deg, #0e2218 0%, #112d20 50%, #0a1a14 100%)",
-              }}
-            />
-            <div className="relative px-5 pb-5">
-              <div
-                className="absolute -top-10 left-5 h-20 w-20 overflow-hidden rounded-full border-4"
-                style={{ borderColor: "#080B11" }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://i.pravatar.cc/160?img=12"
-                  alt="Foto de Carlos Mendoza"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="pt-12">
-                <h1 className="text-[20px] font-bold text-white">
-                  Carlos Mendoza
-                </h1>
-                <p
-                  className="mt-0.5 text-[13px] font-medium"
-                  style={{ color: "#22B16B" }}
-                >
-                  @carlos.mendoza
-                </p>
-                <p
-                  className="mt-3 text-[13px] leading-relaxed"
-                  style={{ color: "#8A9AB0" }}
-                >
-                  Documentalista independiente. Cuento historias que otros
-                  prefieren no ver. Si mi trabajo te llega, considera apoyarme
-                  — cada contribución hace posible el próximo proyecto.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Donation buttons ──────────────────────────────────────── */}
-          <div className="mt-5">
-            <p
-              className="mb-3 text-[11px] font-semibold uppercase tracking-wider"
-              style={{ color: "#4A5A6A" }}
+        {/* ── Banner full-bleed ───────────────────────────────────────── */}
+        <div
+          className="relative w-full"
+          style={{
+            height: 160,
+            background: "linear-gradient(160deg, #0e2218 0%, #133326 40%, #080B11 100%)",
+            flexShrink: 0,
+          }}
+        >
+          {/* GMA badge top-right */}
+          <div className="absolute right-4 top-4">
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: "rgba(34,177,107,0.15)", color: "#22B16B", border: "1px solid rgba(34,177,107,0.25)" }}
             >
-              Apoya el trabajo de Carlos
-            </p>
-            <div className="flex flex-col gap-2.5">
-              {DONATIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => handleDonate(opt)}
-                  className="group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-150"
-                  style={{
-                    background: opt.bg,
-                    borderColor: opt.border,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = opt.hoverBorder;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = opt.border;
-                  }}
-                >
-                  {opt.logo}
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-[14px] font-bold"
-                      style={{ color: opt.labelColor }}
-                    >
-                      {opt.name}
-                    </p>
-                    <p
-                      className="truncate text-[12px]"
-                      style={{ color: "#5A6A7A" }}
-                    >
-                      {opt.detail}
-                    </p>
-                  </div>
-                  <svg
-                    width={16}
-                    height={16}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#4A5A6A"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              ))}
-            </div>
+              GMA Filmo
+            </span>
+          </div>
+        </div>
+
+        {/* ── Creator info ────────────────────────────────────────────── */}
+        <div className="relative px-5" style={{ marginTop: -44 }}>
+          {/* Avatar */}
+          <div
+            className="h-[88px] w-[88px] overflow-hidden rounded-full border-4"
+            style={{ borderColor: "#080B11" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://i.pravatar.cc/160?img=12"
+              alt="Foto de Carlos Mendoza"
+              className="h-full w-full object-cover"
+            />
           </div>
 
-          <p
-            className="mt-8 text-center text-[11px]"
-            style={{ color: "#2A3A4A" }}
-          >
-            Página de prueba — GMA Filmo
-          </p>
+          <div className="mt-3">
+            <h1 className="text-[22px] font-extrabold text-white">Carlos Mendoza</h1>
+            <p className="mt-0.5 text-[13px] font-medium" style={{ color: "#22B16B" }}>
+              @carlos.mendoza
+            </p>
+            <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "#8A9AB0" }}>
+              Documentalista independiente. Cuento historias que otros prefieren
+              no ver. Cada contribución hace posible el próximo proyecto.
+            </p>
+          </div>
         </div>
-      </main>
 
+        {/* ── Divider ─────────────────────────────────────────────────── */}
+        <div
+          className="mx-5 mt-6"
+          style={{ height: 1, background: "rgba(255,255,255,0.07)" }}
+        />
+
+        {/* ── Donation section (fills remaining space) ─────────────────── */}
+        <div className="flex flex-1 flex-col px-5 pt-5 pb-8">
+          <p
+            className="mb-4 text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: "#4A5A6A" }}
+          >
+            Apoya el trabajo de Carlos
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {DONATIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => handleDonate(opt)}
+                className="flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-150 active:scale-[0.98]"
+                style={{
+                  background: opt.bg,
+                  borderColor: opt.border,
+                }}
+              >
+                {opt.logo}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-bold" style={{ color: opt.labelColor }}>
+                    {opt.name}
+                  </p>
+                  <p className="truncate text-[12px]" style={{ color: "#5A6A7A" }}>
+                    {opt.detail}
+                  </p>
+                </div>
+                <svg
+                  width={16}
+                  height={16}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#4A5A6A"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          {/* Spacer + footer pinned to bottom */}
+          <div className="mt-auto pt-10">
+            <p className="text-center text-[11px]" style={{ color: "#2A3A4A" }}>
+              Página de prueba — GMA Filmo
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Login gate ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {gate && (
           <LoginGate
