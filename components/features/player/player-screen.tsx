@@ -2,17 +2,21 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import {
   RotateCcw, RotateCw, SkipBack, SkipForward,
   Volume2, VolumeX,
   Maximize, Minimize2, ArrowLeft,
-  Settings, Airplay,
+  Settings, Airplay, X,
 } from "lucide-react";
+import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProgress } from "@/hooks/use-progress";
 import { useCastSupport } from "@/hooks/use-cast-support";
+import { DonationPanel } from "@/components/features/player/donation-panel";
 import type { MediaItem } from "@/types/catalog";
+import type { CreatorProfile } from "@/types/creator";
 
 // ─── Sprite types ─────────────────────────────────────────────────────────────
 
@@ -155,11 +159,90 @@ function Skip10({ direction }: { direction: "back" | "forward" }) {
 interface PlayerScreenProps {
   readonly item: MediaItem;
   readonly nextItem?: MediaItem;
+  readonly creator?: CreatorProfile | null;
 }
 
-export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
+// ─── Donation banner ──────────────────────────────────────────────────────────
+
+function DonationBanner({ visible, onClose, onOpenPanel }: {
+  visible: boolean;
+  onClose: () => void;
+  onOpenPanel: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key="donation-banner"
+          initial={{ clipPath: "inset(0 100% 0 0 round 20px)" }}
+          animate={{ clipPath: "inset(0 0% 0 0 round 20px)" }}
+          exit={{ opacity: 0, transition: { duration: 0.25 } }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute left-5 top-[76px] z-20 flex max-w-[min(85vw,420px)] items-start gap-2.5 rounded-[20px] border border-white/10 px-4 py-2.5"
+          style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(12px)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[13px] leading-relaxed text-white/90">
+            ¿Te ha gustado? Puedes apoyar al creador de este proyecto{" "}
+            <button
+              type="button"
+              onClick={onOpenPanel}
+              className="font-semibold text-[#22B16B] underline underline-offset-2 transition-opacity hover:opacity-80"
+            >
+              donando aquí
+            </button>
+            {" "}para que siga haciendo más.
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-1 flex items-center text-white/40 transition-colors hover:text-white"
+            aria-label="Cerrar"
+          >
+            <X size={13} />
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Splash intro (pre-playback "tudum" animation, GMA colours) ────────────────
+
+function SplashIntro() {
+  return (
+    <div className="gsp-loader">
+      <div className="gsp-ph1">
+        <div className="gsp-record" />
+        <div className="gsp-record-text">GMA</div>
+      </div>
+      <div className="gsp-word-b">f<span style={{ marginLeft: "0.08em" }}>ilmo</span></div>
+      <div className="gsp-ph2">
+        <div className="gsp-laptop-b" />
+        <svg className="gsp-laptop-t" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 30">
+          <path
+            d="M21 1H5C2.78 1 1 2.78 1 5V25a4 4 90 004 4H37a4 4 90 004-4V5c0-2.22-1.8-4-4-4H21"
+            pathLength={100}
+            strokeWidth={2}
+            stroke="currentColor"
+            fill="none"
+          />
+        </svg>
+      </div>
+      <div className="gsp-icon" />
+    </div>
+  );
+}
+
+export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
   const router   = useRouter();
   const duration = parseDuration(item);
+
+  const [showSplash, setShowSplash]         = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 4500);
+    return () => clearTimeout(t);
+  }, []);
 
   const [currentTime, setCurrentTime]       = useState(0);
   const [playing, setPlaying]               = useState(true);
@@ -171,6 +254,9 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
   const [ccTrack, setCcTrack]               = useState<string | null>(null);
   const [audioTrack, setAudioTrack]         = useState<string>("es-orig");
   const [showSettings, setShowSettings]     = useState(false);
+  const [showDonation,  setShowDonation]    = useState(false);
+  const [showDonationPanel, setShowDonationPanel] = useState(false);
+  const donationShown = useRef(false);
   const [playbackSpeed, setPlaybackSpeed]   = useState(1);
   const [autoplayNext, setAutoplayNext]     = useState(true);
 
@@ -269,6 +355,7 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
         const initial = Math.ceil(rem);
         setCountdownInitial(initial);
         setCountdownSecs(initial);
+        if (!donationShown.current) { donationShown.current = true; setShowDonation(true); }
       } else if (rem > autoplayOffset + 2 && countdownStartedRef.current) {
         // User scrubbed back past the window — allow it to fire again
         countdownStartedRef.current = false;
@@ -335,13 +422,13 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
-    if (playing) vid.play().catch((err: unknown) => {
+    if (playing && !showSplash) vid.play().catch((err: unknown) => {
       // AbortError = autoPlay and play() raced; the video is still playing, ignore it
       if (err instanceof DOMException && err.name === "AbortError") return;
       setPlaying(false);
     });
     else vid.pause();
-  }, [playing]);
+  }, [playing, showSplash]);
 
   useEffect(() => {
     const vid = videoRef.current;
@@ -351,8 +438,9 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
   }, [muted, volume]);
 
   // Timer-based time tracking: runs for (1) no video at all, (2) YouTube iframe (can't get real time)
+  // Frozen while the intro splash is up so the clock doesn't advance behind it.
   useEffect(() => {
-    if ((hasVideo && !isYT) || !playing) return;
+    if ((hasVideo && !isYT) || !playing || showSplash) return;
     const id = setInterval(() => {
       setCurrentTime((t) => {
         const next = t + 1;
@@ -361,7 +449,7 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [playing, duration, hasVideo, isYT]);
+  }, [playing, duration, hasVideo, isYT, showSplash]);
 
   // Periodic save for YouTube (native video uses handleTimeUpdate instead)
   useEffect(() => {
@@ -388,12 +476,14 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
       const initial = Math.ceil(remaining);
       setCountdownInitial(initial);
       setCountdownSecs(initial);
+      if (!donationShown.current) { donationShown.current = true; setShowDonation(true); }
     }
     if (remaining > autoplayOffset + 2 && countdownStartedRef.current) {
       countdownStartedRef.current = false;
       setCountdownSecs(null);
     }
   }, [currentTime, duration, nextItem, autoplayOffset, mp4Url]);
+
 
   // Tick down every second
   useEffect(() => {
@@ -565,9 +655,14 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
       onClick={isYT ? undefined : togglePlay}
       style={{ cursor: showControls ? "default" : "none" }}
     >
-      {/* ── Video layer ─────────────────────────────────────────────────── */}
+      {/* ── Video layer ─────────────────────────────────────────────────────
+          The media element is not mounted until the intro splash finishes, so
+          nothing can buffer, play or emit audio behind it — regardless of
+          source type (mp4 / YouTube). */}
       <div className="absolute inset-0">
-        {mp4Url ? (
+        {showSplash ? (
+          <PosterArt style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+        ) : mp4Url ? (
           <video
             ref={videoRef} src={mp4Url}
             className="h-full w-full object-contain"
@@ -746,6 +841,22 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Donation banner ─────────────────────────────────────────────── */}
+      <DonationBanner
+        visible={showDonation}
+        onClose={() => setShowDonation(false)}
+        onOpenPanel={() => setShowDonationPanel(true)}
+      />
+
+      {/* ── Donation panel ──────────────────────────────────────────────── */}
+      {showDonationPanel && (
+        <DonationPanel
+          creator={creator ?? null}
+          appUrl={process.env.NEXT_PUBLIC_APP_URL ?? "https://gma-filmo.vercel.app"}
+          onClose={() => setShowDonationPanel(false)}
+        />
       )}
 
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
@@ -998,6 +1109,22 @@ export function PlayerScreen({ item, nextItem }: PlayerScreenProps) {
           </p>
         </div>
       )}
+
+      {/* ── Pre-playback splash intro ────────────────────────────────────── */}
+      <AnimatePresence>
+        {showSplash && (
+          <motion.div
+            key="splash-intro"
+            className="absolute inset-0 flex items-center justify-center bg-black"
+            style={{ zIndex: 60, pointerEvents: "none" }}
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            <SplashIntro />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
