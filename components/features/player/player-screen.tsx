@@ -856,7 +856,14 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
       <DonationBanner
         visible={showDonation}
         onClose={() => setShowDonation(false)}
-        onOpenPanel={() => setShowDonationPanel(true)}
+        onOpenPanel={() => {
+          setShowDonationPanel(true);
+          // Pause playback while the panel is open
+          if (!isYT) setPlaying(false);
+          // Dismiss the autoplay countdown so it can't navigate away mid-scan
+          countdownDismissRef.current = true;
+          setCountdownSecs(null);
+        }}
       />
 
       {/* ── Donation panel ──────────────────────────────────────────────── */}
@@ -864,7 +871,11 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
         <DonationPanel
           creator={creator ?? null}
           appUrl={process.env.NEXT_PUBLIC_APP_URL ?? "https://gma-filmo.vercel.app"}
-          onClose={() => setShowDonationPanel(false)}
+          onClose={() => {
+            setShowDonationPanel(false);
+            // Resume playback from where it was
+            if (!isYT) setPlaying(true);
+          }}
         />
       )}
 
