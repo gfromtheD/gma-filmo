@@ -640,11 +640,11 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
   }, []);
 
   // Prefer structured artistas from DB; fall back to parsing raw author string
-  const credits: Array<{ name: string; role: string; photoUrl: string | null }> =
+  const credits: Array<{ name: string; role: string; photoUrl: string | null; slug?: string | null }> =
     item.artistas && item.artistas.length > 0
-      ? item.artistas.map((a) => ({ name: a.name, role: a.role, photoUrl: a.photoUrl }))
+      ? item.artistas.map((a) => ({ name: a.name, role: a.role, photoUrl: a.photoUrl, slug: a.slug ?? null }))
       : item.author
-        ? parseCredits(item.author).map((c) => ({ ...c, photoUrl: null }))
+        ? parseCredits(item.author).map((c) => ({ ...c, photoUrl: null, slug: null }))
         : [];
 
   return (
@@ -831,7 +831,16 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
                         )}
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold leading-none text-white/75">{c.name}</p>
+                        {c.slug ? (
+                          <Link
+                            href={`/creadores/${c.slug}`}
+                            className="pointer-events-auto text-[11px] font-semibold leading-none text-white/75 transition-colors hover:text-[#22B16B] hover:underline"
+                          >
+                            {c.name}
+                          </Link>
+                        ) : (
+                          <p className="text-[11px] font-semibold leading-none text-white/75">{c.name}</p>
+                        )}
                         {c.role && <p className="mt-0.5 text-[10px] leading-none text-white/40">{c.role}</p>}
                       </div>
                     </div>
