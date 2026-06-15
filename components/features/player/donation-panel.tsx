@@ -42,9 +42,8 @@ interface DonationPanelProps {
 }
 
 export function DonationPanel({ creator, appUrl, onClose }: DonationPanelProps) {
-  const profileUrl = creator
-    ? `${appUrl}/creadores/${creator.slug}`
-    : appUrl;
+  // TODO: revert to `/creadores/${creator.slug}` after QR flow is verified
+  const profileUrl = `${appUrl}/donatest`;
 
   const hasAnyDonation = creator && (
     creator.donacion_paypal || creator.donacion_patreon || creator.donacion_bitcoin
