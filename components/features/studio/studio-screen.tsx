@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Film, Upload, BarChart2, User, Check, AlertTriangle } from "lucide-react";
 import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
@@ -10,6 +10,7 @@ import { ProfileView }   from "./studio-profile-view";
 import { EditModal }     from "./studio-edit-modal";
 import { C, row }        from "./studio-ui";
 import { STUDIO_DATA }   from "./studio-data";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { StudioTitle, StudioTabId } from "./studio-types";
 export type { StudioTabId };
 
@@ -27,8 +28,34 @@ export function StudioScreen() {
   const [openTitle, setOpenTitle] = useState<StudioTitle | null>(null);
   const [focusTitle, setFocusTitle] = useState<StudioTitle | null>(null);
   const [toast,     setToast]     = useState<{ msg: string; error?: boolean; key: number } | null>(null);
+  const [data,      setData]      = useState(STUDIO_DATA);
 
-  const data = STUDIO_DATA;
+  useEffect(() => {
+    void (async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: row } = await supabase
+        .from("creator_profiles")
+        .select("creator_name, studio_name, bio, location, website_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!row) return;
+
+      setData((d) => ({
+        ...d,
+        creator: {
+          ...d.creator,
+          studioName: row.studio_name ?? d.creator.studioName,
+          artistName: row.creator_name ?? d.creator.artistName,
+          bio:        row.bio ?? d.creator.bio,
+          location:   row.location ?? d.creator.location,
+          socials:    { ...d.creator.socials, web: row.website_url ?? d.creator.socials.web },
+        },
+      }));
+    })();
+  }, []);
 
   function showToast(msg: string, opts?: { error?: boolean }) {
     setToast({ msg, error: opts?.error, key: Date.now() });
