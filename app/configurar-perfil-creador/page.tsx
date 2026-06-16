@@ -7,6 +7,9 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 export default function ConfigurarPerfilCreadorPage() {
   const router = useRouter();
   const [creatorName, setCreatorName] = useState("");
+  const [studioName,  setStudioName]  = useState("");
+  const [location,    setLocation]    = useState("");
+  const [websiteUrl,  setWebsiteUrl]  = useState("");
   const [loading,     setLoading]     = useState(false);
   const [init,        setInit]        = useState(true);
   const [error,       setError]       = useState("");
@@ -34,8 +37,9 @@ export default function ConfigurarPerfilCreadorPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = creatorName.trim();
-    if (!trimmed) return;
+    const trimmedName   = creatorName.trim();
+    const trimmedStudio = studioName.trim();
+    if (!trimmedName || !trimmedStudio) return;
     setLoading(true);
     setError("");
 
@@ -45,7 +49,13 @@ export default function ConfigurarPerfilCreadorPage() {
 
     const { error: err } = await supabase
       .from("creator_profiles")
-      .insert({ user_id: user.id, creator_name: trimmed });
+      .insert({
+        user_id:      user.id,
+        creator_name: trimmedName,
+        studio_name:  trimmedStudio,
+        location:     location.trim()   || null,
+        website_url:  websiteUrl.trim() || null,
+      });
 
     if (err) {
       setError("Error al guardar. Inténtalo de nuevo.");
@@ -110,9 +120,51 @@ export default function ConfigurarPerfilCreadorPage() {
             />
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
+              Nombre del estudio
+            </label>
+            <input
+              type="text"
+              value={studioName}
+              onChange={(e) => setStudioName(e.target.value)}
+              placeholder="Nombre de tu productora o estudio"
+              maxLength={80}
+              required
+              className="w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[14px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
+              Ubicación <span className="text-[#4A5A6E]/70">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Ciudad, país"
+              maxLength={80}
+              className="w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[14px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
+              Web <span className="text-[#4A5A6E]/70">(opcional)</span>
+            </label>
+            <input
+              type="url"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              placeholder="https://tu-web.com"
+              className="w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[14px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading || !creatorName.trim()}
+            disabled={loading || !creatorName.trim() || !studioName.trim()}
             className="mt-2 w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Guardando…" : "Empezar a crear →"}
