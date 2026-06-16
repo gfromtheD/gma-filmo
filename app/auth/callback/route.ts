@@ -93,11 +93,11 @@ export async function GET(request: NextRequest) {
       if (isCreatorOAuth) {
         const { data: existingCreator } = await supabase
           .from("creator_profiles")
-          .select("user_id")
+          .select("user_id, studio_name")
           .eq("user_id", data.user.id)
           .maybeSingle();
 
-        if (!existingCreator) {
+        if (!existingCreator || !existingCreator.studio_name) {
           const response = NextResponse.redirect(`${origin}/configurar-perfil-creador`);
           pendingCookies.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
