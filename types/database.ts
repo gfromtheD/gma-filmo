@@ -21,6 +21,9 @@ export type Database = {
           bio: string | null
           status: string
           created_at: string
+          studio_name: string | null
+          location: string | null
+          website_url: string | null
         }
         Insert: {
           user_id: string
@@ -28,6 +31,9 @@ export type Database = {
           bio?: string | null
           status?: string
           created_at?: string
+          studio_name?: string | null
+          location?: string | null
+          website_url?: string | null
         }
         Update: {
           user_id?: string
@@ -35,6 +41,9 @@ export type Database = {
           bio?: string | null
           status?: string
           created_at?: string
+          studio_name?: string | null
+          location?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
