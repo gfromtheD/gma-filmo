@@ -406,13 +406,47 @@ export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | n
   return unstable_cache(
     async () => {
       const supabase = getSupabasePublicClient() as AnyClient;
+
+      // Primary: dedicated creator profile table
       const { data } = await supabase
         .from("creator_public_profiles")
         .select("*")
         .eq("slug", slug)
         .maybeSingle();
-      if (!data) return null;
-      return mapCreatorRow(data as Record<string, unknown>);
+      if (data) return mapCreatorRow(data as Record<string, unknown>);
+
+      // Fallback: artistas table (166 seeded entries with bio + photo)
+      const { data: artista } = await supabase
+        .from("artistas")
+        .select("id, slug, name, bio, r2_photo_url")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!artista) return null;
+
+      // Fetch film slugs via junction table
+      const { data: paRows } = await supabase
+        .from("peliculas_artistas")
+        .select("peliculas(slug)")
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        .eq("artista_id", (artista as Record<string, unknown>).id as number);
+
+      const titulos: string[] = ((paRows ?? []) as { peliculas: { slug: string } | null }[])
+        .map((pa) => pa.peliculas?.slug)
+        .filter((s): s is string => Boolean(s));
+
+      return {
+        slug:             artista.slug as string,
+        nombre:           artista.name as string,
+        foto_perfil:      (artista.r2_photo_url as string | null) ?? null,
+        imagen_portada:   null,
+        nacionalidad:     null,
+        bio:              (artista.bio as string | null) ?? null,
+        redes_sociales:   [],
+        donacion_paypal:  null,
+        donacion_patreon: null,
+        donacion_bitcoin: null,
+        titulos,
+      };
     },
     [`creator-${slug}`],
     { revalidate: 3600 },
