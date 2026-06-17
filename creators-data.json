@@ -1,14 +1,998 @@
 [
   {
-    "name": "Ejemplo Creador 1",
-    "slug": "ejemplo-creador-1",
-    "bio": "Directora de cortometrajes de ficción especializados en el paisaje rural gallego.",
-    "r2_photo_url": null
+    "name": "AbadMONO",
+    "slug": "abadmono",
+    "bio": "Tengo 38 años y siempre me ha gustado el dibujo. Pero cuando me gradué de Bellas Artes en la universidad, me di cuenta de que no encajaba en el prototipo de “artista”, ese “artista” que se la vive en galerías, museos, salones, convocatorias. No estaba mal, pero no era para mí, me agobiaba muchísimo el esnobismo que requería y aunado al síndrome del impostor que siempre me ha acompañado, me alejé del “Arte”, aunque no del todo del dibujo. Así que, como muchos latinoamericanos y personas en el mundo enteró, me dediqué a ganarme la vida lejos de lo que estudié. Hasta la pandemia, cuya caótica llegada, me dejó sin empleo, sin salir y sin ahorros. Lo que me obligó casi sin darme cuenta a volver a lo único que se me da medianamente bien y me mantiene cuerdo. Así que poco a poco la ilustración y la docencia infantil sobre el dibujo y la ilustración, me han devuelto al arte y el arte me trajo a la “familia maldita”. No sé si tengo un estilo definido, pero hoy por hoy, estoy exclusivamente dedicado a la ilustración digital, lo análogo para amigos y familia.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/abadmono/photo.jpg"
   },
   {
-    "name": "Ejemplo Creador 2",
-    "slug": "ejemplo-creador-2",
+    "name": "Abril Leija",
+    "slug": "abril-leija",
+    "bio": "Soy Abril Leija, fanática del mundo cinematográfico desde hace unos años, me gusta apreciar los detalles de las filmografías y darles mi propia interpretación, aprecio ver distintos géneros y conocer cada vez más sobre el mundo del cine.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/abril-leija/photo.jpg"
+  },
+  {
+    "name": "ad0rian (Adrian.J.M.)",
+    "slug": "ad0rian",
+    "bio": "Técnico superior en ilustración y diseño, técnico superior Informático y desarrollador de videojuegos. Me flipa encanta dibujar comics en estilo manga y desarrollar videojuegos.\nObras\n\nEl enterrador (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ad0rian/photo.jpg"
+  },
+  {
+    "name": "Adri Dula",
+    "slug": "adri-dula",
+    "bio": "Diseñadora gráfica mexicana. Me dejo guiar por sencaciones y emociones, y justo eso es lo que hago cuando creo algo, intento plasmar lo que siento y, con suerte, causar algo en quien lo ve. Mi estilo es oscuro y detallado. Me gusta nutrir mi mente con libros, animaciones, películas, documentales, conocer el trabajo de los artistas del pasasdo y presente. No existe una definición de lo que es el diseño gráfico, y me gusta esa ambiguedad.\nObras\n\nPortada de Colección 3D (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/adri-dula/photo.jpg"
+  },
+  {
+    "name": "Adrián Gismero Molina",
+    "slug": "adrian-gismero-molina",
+    "bio": "Hola, me llamo Adrián. Llevo  años haciendo cursos de dibujo, diseño gráfico, 3D, etc. Aunque sí he hecho algunos trabajos de diseño de logos, dibujos para libros y camisetas y alguna caricatura también,  no he intentando dedicarme de manera profesional hasta ahora que acabo de terminar un curso de arte digital. Es tan reciente que me he puesto con ésto antes de terminar mi portfolio. Siempre he sido un enamorado del manga y la ciencia ficción a lo Philip K. Dick. Estoy encantado de poder colaborar con un canal como la Filmoteca Maldita y espero que os guste mi pequeña historieta.\nObras\n\nCreepypasta 1 (2023)\nCreepypasta 2 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/adrian-gismero-molina/photo.jpg"
+  },
+  {
+    "name": "ahoritalohago",
+    "slug": "ahoritalohago",
+    "bio": "Ilustradora y diseñadora mexicana egresada de la Facultad de Artes y Diseño de la UNAM. entusiasta del cine, la imagen en movimiento y los gatitos. Fiel devota de las ideas de Agnes Varda, porque el arte existe para inspirar, crear y compartir. 🌱✨",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ahoritalohago/photo.jpg"
+  },
+  {
+    "name": "Ahuizolt M. S.",
+    "slug": "ahuizolt-m-s",
     "bio": null,
-    "r2_photo_url": null
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ahuizolt-m-s/photo.jpg"
+  },
+  {
+    "name": "Alan Sanchez",
+    "slug": "alan-sanchez",
+    "bio": "Soy estudiante de diseño, ilustrador y me invento mis propias historias, pero mi pasión es el cine, he participado en el festival de cortos de la filmoteca maldita. Actualmente en depresión, y en busca del sentido de mi vida.\nObras\n\nCasting (1) (2023)\nCasting (2) (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/alan-sanchez/photo.jpg"
+  },
+  {
+    "name": "Alberto Valdez",
+    "slug": "alberto-valdez",
+    "bio": "Soy un Director y Animador Dominicano cuya obra se enfoca en contar historias ficticias con tematica historica y social con un estilo minimalista.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/alberto-valdez/photo.jpg"
+  },
+  {
+    "name": "Alejandro Holmberg",
+    "slug": "alejandro-holmberg",
+    "bio": "Mi nombre es Alejandro. Alex para acortar. Soy de Palma de Mallorca, Islas Baleares, aunque resido en Reino Unido desde 2018. Mi amor por el cine empieza durante mi infancia en los noventa. Crecí viendo una y otra vez Terminator 2, Depredador y Aliens: El regreso. En la preadolescencia descubrí Reservoir Dogs y Akira, y entonces las puertas se abrieron del todo. Me gusta crear y expresarme con diferentes técnicas: dibujo, pintura, fotografia, collage… y todo lo que hago está inspirado en el cine y la música, otra de mis mayores influencias.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/alejandro-holmberg/photo.jpg"
+  },
+  {
+    "name": "Alejandro Quijas (Morbous Mind)",
+    "slug": "alejandro-quijas",
+    "bio": "Docente universitario apasionado del dibujo, ilustración, fotografía y productos audiovisuales.\nObras\n\nPortada Sci-Cinema (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/alejandro-quijas/photo.jpg"
+  },
+  {
+    "name": "Alexander Moncayo",
+    "slug": "alexander-moncayo",
+    "bio": "Hola, mi nombre es Alexander Moncayo Delgado, soy de Colombia, tengo 26 y me gusta el cine raro.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/alexander-moncayo/photo.jpg"
+  },
+  {
+    "name": "AMADEO MEZA",
+    "slug": "amadeo-meza",
+    "bio": "Estoy metido en el mundo de la animacion desde el 2015, no de manera fluida pero nunca abandonando. Siempre me gusto el medio audiovisual, tanto cortos, videos musicales o peliculas me facinaron siempre, nunca fanatico por que nunca me memorize un apellido de director o lo que sea, mientras me estimulace la imaginacion cumplia. Mi estilo actual rodea mucho la critica social, siempre intentando ser sutil y no andar con obviedades o tener que escribirle al espectador la idea de manera literal. Si me pongo nacionalista? Justo me agarrar en un momento en el que te digo que si orgullosamente y eso que soy conciente que el nacionalismo puede usarse como arma divisoria entre paises, pero ya vengo de ideas vagas del anarquismo y zurdismo que no me terminan de cerrar, pero gracias al peronismo pude encontrar un lugar de tranquilidad. Bueno, con la respuesta anterior es obvio decir que mi pais es Argentina, hermoso pais más alla de toda la mierda que hay, pero en que pais no hay mierda? Mi nacimiento, 1º de Julio de 1991.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/amadeo-meza/photo.jpg"
+  },
+  {
+    "name": "Ana Pinkiller",
+    "slug": "ana-maria-munoz",
+    "bio": "Ana Muñoz (Elche, 1997), siempre ha sido una apasionada del cómic y la animación. Comenzó su formación artística en 2015 y se graduó en Bellas Artes en 2019 por la Universidad Politécnica de Valencia. Mientras cursaba el grado, se incorporó al Club de Cómic de la Facultad y pasó a formar parte de la coordinación durante tres años. Con ellos publicó sus primeras páginas de cómic en su fanzine anual.\nObras\n\nFanzine: El oceano (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ana-maria-munoz/photo.jpg"
+  },
+  {
+    "name": "Andrezpanda",
+    "slug": "andrezpanda",
+    "bio": "Soy Ilustrador, animador y caricaturista. Comencé publicando fanzines he historietas en espacios culturales independientes o de garaje con una fuerte influencia del comic argentino y europeo. Actualmente me dedico a hacer audiovisuales e ilustraciones desde un centro cultural cooperativo donde coordino un club de cine popular.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/andrezpanda/photo.jpg"
+  },
+  {
+    "name": "Angel Raymundo",
+    "slug": "angel-raymundo",
+    "bio": "Entusiasta y amante de la animación. Formación en animación 2D y Stop-Motion. Desde pequeño he realizado dibujo,pintura y escultura siempre con gran aprecio a la vida,la naturaleza y los colores. Soy crítico y analítico sobre todo lo que observo y todos mis trabajos, busco siempre llevar mis obras a un mejor nivel artístico.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/angel-raymundo/photo.jpg"
+  },
+  {
+    "name": "Annichilare",
+    "slug": "annichilare",
+    "bio": "1998, otro humano más.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/annichilare/photo.jpg"
+  },
+  {
+    "name": "Ariamis",
+    "slug": "ariamis",
+    "bio": "Ilustrador y Artista plástico ecuatoriano. Mi trabajo consiste principalmente en la exploración de lo bizarro y lo raro a través de personajes en situaciones y escenarios extraños.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ariamis/photo.jpg"
+  },
+  {
+    "name": "ARMANDO",
+    "slug": "armando",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/armando/photo.jpg"
+  },
+  {
+    "name": "Astru Rex",
+    "slug": "astru-rex",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/astru-rex/photo.jpg"
+  },
+  {
+    "name": "a_trap_ao",
+    "slug": "a_trap_ao",
+    "bio": "Dibujante de Valencia, España. Me gusta experimentar con toda clase de técnicas y materiales, también me gusta todo tipo de fotografía y sobretodo experimental y sobretodo en la analógica y el tratamiento químico de ésta.\nObras\n\nPortada de Colección Evoluciones (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/a_trap_ao/photo.jpg"
+  },
+  {
+    "name": "Bakasaru",
+    "slug": "bakasaru",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/bakasaru/photo.jpg"
+  },
+  {
+    "name": "Barzai",
+    "slug": "barzai",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/barzai/photo.jpg"
+  },
+  {
+    "name": "Boris Ivnarock",
+    "slug": "boris-ivnarock",
+    "bio": "Mexicano, Ingeniero de profesión, historietista por necedad desde el 2018 con intermitencias hasta la fecha. Como estilo me gusta fusionar técnicas de boligrafo y tinta, con color digital.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/boris-ivnarock/photo.jpg"
+  },
+  {
+    "name": "Broken Mind",
+    "slug": "broken-mind",
+    "bio": "\"Dibujo y sé cosas\". Diseñador gráfico e ilustrador amateur. Me encanta el terror en todas sus expresiones, la creación de personajes y plasmar mis mierdas sobre el papel.\nObras\n\nFanzine Broken Mind (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/broken-mind/photo.jpg"
+  },
+  {
+    "name": "c.a.m.i.l.o",
+    "slug": "c-a-m-i-l-o",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/c-a-m-i-l-o/photo.jpg"
+  },
+  {
+    "name": "Carlos Parada (Chivo-Negro)",
+    "slug": "carlos-parada-chivo-negro",
+    "bio": "Realizador en cine animación radicado en Chile con experiencia en la producción autogestionada de cortometrajes y videoclips. Empecé la carrera de animación en el 2017 y desde ahí a raíz de varias influencias y referentes he podido encontrar un estilo no solo gráfico sino que también narrativo, en que destaca el uso de secuencias inconexas y la exploración de diversas técnicas de animación. OTROS TRABAJOS FUERA DEL FESTI PROGRAMACION OBSOLETA: GUSTOSO-OXYMORON SEPTIMA CUERDA",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/carlos-parada-chivo-negro/photo.jpg"
+  },
+  {
+    "name": "champ II",
+    "slug": "champ-ii",
+    "bio": "ilustrador.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/champ-ii/photo.jpg"
+  },
+  {
+    "name": "Chamuco tercero",
+    "slug": "chamuco-tercero",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/chamuco-tercero/photo.jpg"
+  },
+  {
+    "name": "Conejo plateado",
+    "slug": "conejo-plateado",
+    "bio": "Ilustradora Freelance y tatuadora de Buenos Aires Argentina.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/conejo-plateado/photo.jpg"
+  },
+  {
+    "name": "Cote",
+    "slug": "cote",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/cote/photo.jpg"
+  },
+  {
+    "name": "D0N Calavera",
+    "slug": "d0n-calavera",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/d0n-calavera/photo.jpg"
+  },
+  {
+    "name": "Daniel Rumac",
+    "slug": "daniel-rumac",
+    "bio": "Diseñador mexicano especializado en el desarrollo de Identidad Visual a partir del diseño de logotipos, así como ilustración y lettering para la industria musical, marcas de moda y tecnología; también cuenta con proyectos que involucran marcas de alimentos y bebidas.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/daniel-rumac/photo.jpg"
+  },
+  {
+    "name": "Darwin Alfredo Trujillo",
+    "slug": "darwin-alfredo-trujillo",
+    "bio": "Soy de Chiapas, México, nacido en 1998. Desde que tengo memoria he sido fanático de ver películas, pero con el paso del tiempo sentí especial afinidad hacía el género del terror. Después de años en ese mundillo un día, en plena pandemia, decidí crear un cortometraje con plastilina escolar, llamado \"En el cuarto donde duermes\", meses después realicé un segundo corto; \"Pequeños problemas\" ganador del premio Sion Sono en la tercera edición del festival de cortometrajes de la Filmoteca maldita. Desafortunadamente me resulta difícil compaginar esta afición con mi vida laboral, actualmente estoy practicando el modelismo de figuras a escala, pero no descarto desarrollar otro proyecto audiovisual en un futuro no muy lejano. Mi estilo se caracteriza por la introducción de criaturas monstruosas en mis obras, aunado al uso del gore. A veces trato de dar cierto mensaje y/o reflexión y a veces solo busco crear algo entretenido.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/darwin-alfredo-trujillo/photo.jpg"
+  },
+  {
+    "name": "David Barnez",
+    "slug": "david-barnez",
+    "bio": "Artista gráfico mexicano interesado en el horror, ciencia ficción y la fantasía medieval. Más de 10 años de experiencia en ilustración editorial, artes gráficas y diseño de identidad gráfica (branding).",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/david-barnez/photo.jpg"
+  },
+  {
+    "name": "David Canas",
+    "slug": "david-canas",
+    "bio": "David Canas (Barcelona 1992) Soy guionista, director de cortos e ilustrador. Cinéfilo, amante del cómic y de los juegos de rol. He querido ser director de cine desde que tenía 9 años para, así, poder dirigir mis propios guiones. He creado la expansión \"La espada del demonio\" del juego de rol Advanced Dragon Ball D20. He trabajado en varios cortos, videoclips, videos para empresas y en el programa de tv \"De llit en llit\" de Ottokar para TV3.\nObras\n\nFanzine La Jodida raíz (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/david-canas/photo.jpg"
+  },
+  {
+    "name": "Delia Stuven",
+    "slug": "delia-stuven",
+    "bio": "Soy una ilustradora digital que le apasiona la animacion, el terror y los juegos de rol.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/delia-stuven/photo.jpg"
+  },
+  {
+    "name": "Demetrio Ayala",
+    "slug": "demetrio-ayala",
+    "bio": "Guionista y Director de Galeana, Nuevo León, México.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/demetrio-ayala/photo.jpg"
+  },
+  {
+    "name": "Dougie Jones",
+    "slug": "dougie-jones",
+    "bio": "Poco se sabe realmente sobre quién es Dougie Jones. Al parecer nació entre 1990 y 1997. Algunos indicios parecen señalar que habría nacido en el 94 en la ciudad argentina de Usuahia. Otras fuentes parecen sugerir que nació en el 96 en Montería, Colombia. Su consejero y asistente personal Lucas Serafini Boixados reveló en una charla con la filmoteca maldita que el señor Dougie Jones es músico, compositor, escritor y animador. Actualmente se encuentra trabajando en su primera novela.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/dougie-jones/photo.jpg"
+  },
+  {
+    "name": "Dragocape",
+    "slug": "dragocape",
+    "bio": "Soy mexicano, naci el 2/2/2000. Comenze a hacer animaciones un poco antes de la pandemia, aunque estuve interezado desde mucho antes, El estilo que le di fue por los pocos materiales que use y lo rapido qu me ponia a hacerlo (siempre terminaba haciendolo a ultima hora), participar en el festival de la flmoteca es algo que me gusta mucho, que seguire haciendo y que apoyaré cada que pueda.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/dragocape/photo.jpg"
+  },
+  {
+    "name": "Drako Show",
+    "slug": "drako-show",
+    "bio": "Soy un animador amateur oriundo de México, me gusta escribir y el dibujo; recientemente también soy licenciado en Gestión de empresas.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/drako-show/photo.jpg"
+  },
+  {
+    "name": "Moussaka Kaos",
+    "slug": "dulce-maria-velarde-amador",
+    "bio": "Aspirante a artista digital, del norte de Mexico. Actualmente jericallo. Fan de todo lo relacionado a las monas chinas, novelas gráficas y rayones callejeros.\nObras\n\nTitanes cayendo",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/dulce-maria-velarde-amador/photo.jpg"
+  },
+  {
+    "name": "Dulce Zavala",
+    "slug": "dulce-zavala",
+    "bio": "Soy diseñadora gráfica e ilustradora de la ciudad de León, Gto. México. Especializándome en una mezcla entre el estilo manga y el estilo cartoon busco sacar el mejor provecho y contar las mejores historias en ilustraciones. Creo que cada proyecto en el que trabajo es especial, por ello confío en la ilustración como medio para transmitir este mensaje.\nObras\n\nPortada de Colección Stop Motion (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/dulce-zavala/photo.jpg"
+  },
+  {
+    "name": "E-Benju",
+    "slug": "e-benju",
+    "bio": "¡Hola! Mi nombre es Esteban, y soy un desarrollador colombiano con más de dos años de experiencia laboral. Mi área de especialización es el Frontend, tanto en aplicaciones web como en aplicaciones móviles híbridas. Tengo algo de experiencia en el desarrollo Backend y en bases de datos en el ámbito laboral y académico. Además, me gusta mantenerme informado sobre las últimas tendencias en diseño UI/UX. Me considero con cierta afinidad por el diseño y suelo encargarme de diseñar mis propios proyectos personales. Cuando no estoy trabajando, disfruto del ciclismo y del cine. De hecho, mi gusto por el cine me animó a participar en este proyecto de desarrollo. Si deseas contactarme puedes escribirme a benjumeac12@gmail.com . O por medio de mi LinkedIn o mi portafolio personal que están justo debajo.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/e-benju/photo.jpg"
+  },
+  {
+    "name": "e.Moyano",
+    "slug": "e-moyano",
+    "bio": "Ilustrador y diseñador gráfico de Barcelona. Con más de 5 años de experiencia laboral como autónomo y trabajando para empresas del sector. He realizado diversas animaciones de carácter publicitario, videoclips y cómics promocionales así como retratos y logotipos comerciales.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/e-moyano/photo.jpg"
+  },
+  {
+    "name": "EL LEANDRETE",
+    "slug": "el-leandrete",
+    "bio": "Obras\n\nPortada de Colección +18 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/el-leandrete/photo.jpg"
+  },
+  {
+    "name": "Elisa García",
+    "slug": "elisa-garcia",
+    "bio": "Nací en Tegucigalpa, Honduras, el 30 de enero de 1973. Estudié en la Escuela Nacional de Bellas Artes, donde obtuve el título de Maestra en Artes Plásticas. También me titulé en la carrera de Arquitectura, y tengo dos maestrías: una en Gestión de Proyectos y otra en Educación. Actualmente trabajo haciendo ilustraciones, caricaturas, cómics, retratos, entre otros.\nObras\n\nFanzine Nocturna (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/elisa-garcia/photo.jpg"
+  },
+  {
+    "name": "EMA Cardona",
+    "slug": "ema-cardona",
+    "bio": "Artista de NSFW en internet con poco tiempo de expericncia pero con muchos animos de mantenerrme en el mundo del dibujo.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ema-cardona/photo.jpg"
+  },
+  {
+    "name": "Emdocur emgm",
+    "slug": "emdocur",
+    "bio": "Dibujo y ánimo con la intención de algún dia contar como quisiera mis propias fantasías, un deseo que existe desde que tengo recuerdo y me motiva cada dia. Mi estilo es reflejo de mis gustos y necesidades actuales, las que son comodidad y fluidez, cosas necesarias en esta etapa, ya que durante mucho tiempo me quedaba pegada en pequeñeces o simples iluciones que no se concretaban, ahora estoy dispuesta a crear, no solo imaginar.\nObras\n\nPortada Liero (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/emdocur/photo.jpg"
+  },
+  {
+    "name": "Enrique V Ramírez",
+    "slug": "enrique-v-ramirez",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/enrique-v-ramirez/photo.jpg"
+  },
+  {
+    "name": "Esperous",
+    "slug": "esperous",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/esperous/photo.jpg"
+  },
+  {
+    "name": "Fabio Yes",
+    "slug": "fabio-mendez",
+    "bio": "Fabio Méndez es un ilustrador y animador amateur cubano radicado en Galicia, España. Formado en la EASD Pablo Picasso y la Tirana University of Arts. Alumno en formación de la Escuela Superior de Diseño Antonio Faílde en diseño gráfico. Mi amor hacia el dibujo nace de mi padre, que se licenció en Restauración en el Instituto Superior de Arte de La Habana y siempre supo transmitirme su pasión por el arte. Nunca he tenido un objetivo claro y marcado de futuro de cara a mis habilidades. Sin embargo, acostumbro buscar siempre vías nuevas de escape a mi creatividad que me permitan desarrollarme de la forma más multidisciplinar posible. No solo dibujo o animo; también edito vídeos, hago fotomontajes, diseño y compongo música (o muero en el intento).",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/fabio-mendez/photo.jpg"
+  },
+  {
+    "name": "FIRMISTERY",
+    "slug": "firmistery",
+    "bio": "Soy un Director independiente de Cine y Arquitecto que se dedica a la animación y creación de espacio de cine independiente en el genero de terror contando con mas de 5 años generando comunidad para talentos emergentes del cine underground.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/firmistery/photo.jpg"
+  },
+  {
+    "name": "Freddy Vargas",
+    "slug": "freddy-vargas",
+    "bio": "Ilustrador, animador 2D y humorista gráfico, nacido en 1977, interesado en proyectos \"de guerrilla\" como este.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/freddy-vargas/photo.jpg"
+  },
+  {
+    "name": "fxg",
+    "slug": "fxg",
+    "bio": "ilustrador, artista 3d y pixel artist, de Tucuman, Argentina. Me dedico al character art y actualmente estoy haciendo personajes para juegos",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/fxg/photo.jpg"
+  },
+  {
+    "name": "Gamp",
+    "slug": "gamp",
+    "bio": "Nació el 28 de junio de 2006",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/gamp/photo.jpg"
+  },
+  {
+    "name": "Gonzalo Aeneas",
+    "slug": "gonzalo-aeneas",
+    "bio": "Al oeste de La Vileta crecía y vivía sin hacer mucho caso de la policía, practicaba artes marciales sin cansarme demasiado, porque por las noches estudiaba dibujando!\nObras\n\nLibertad de Explosión\nDet Sjunde Inseglet\ntarot de marsella\nleyenda negra (2022)\nlas olimpiadas del sufrimiento (2022)\nfermentum negrum dei sepulti (2022)\nbajo el cielo rojo de marte (2022)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/gonzalo-aeneas/photo.jpg"
+  },
+  {
+    "name": "GothKia",
+    "slug": "gothkia",
+    "bio": "No soy de biografias.\nObras\n\nFanzine Matando Perros (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/gothkia/photo.jpg"
+  },
+  {
+    "name": "Hamloti",
+    "slug": "hamloti",
+    "bio": "Estudiante de Diseño para la comunicación gráfica e ilustrador mexicano. Tengo 23 Años, amo el arte, sobre todo el cine y la ilustración.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/hamloti/photo.jpg"
+  },
+  {
+    "name": "Harold Callejas",
+    "slug": "harold-callejas",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/harold-callejas/photo.jpg"
+  },
+  {
+    "name": "Helel",
+    "slug": "helel",
+    "bio": "Soy un ilustrador independiente, hago todo tipo de comisiones, aunque mi especialidad es el estilo comic/manga, el digital. Y en tradicional, con acuarelas y oleo, hago un poco de arte terrorífico. Mi sueño es publicar varios comics y colaborar con mas gente.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/helel/photo.jpg"
+  },
+  {
+    "name": "Hermanos Rava",
+    "slug": "hermanos-rava",
+    "bio": "Animadores amateurs, aprendiendo sobre la marcha. Nuestro fin es intentar transmitir ideas, pensamientos, y emociones en nuestros cortos. Última célula activa de la KGB. Pareja de hermanos compuesta por Ezequiel Rava y Francisco Rava",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/hermanos-rava/photo.jpg"
+  },
+  {
+    "name": "HorrorotikA",
+    "slug": "horrorotika",
+    "bio": "Diego A. es el fundador y autor de HorrorotikA ©. Es diseñador gráfico y ha trabajado en diversos proyectos siempre dentro del área y ramas del diseño y la ilustración a lo largo de su carrera. – HorrorotikA es la representación de aspectos como el miedo, el erotismo, el horror, el placer y el dolor, que se combinan en torno a ilustraciones, diseños y composiciones impactantes dentro de una estética visual que busca escudriñar sentimientos y emociones reprimidas en el inconsciente humano.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/horrorotika/photo.jpg"
+  },
+  {
+    "name": "HUMO",
+    "slug": "humo",
+    "bio": "Creador de contenido oscuro, ácrata y melancólico, que experimenta a través de la trama, la luz y la sombra el desarrollo de entornos que recuerden a momentos de oscuridad, reflexión y vulnerabilidad en pos del aprendizaje y el sentimiento personal, buscando la belleza en la negrura y en lo extraño.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/humo/photo.jpg"
+  },
+  {
+    "name": "IdilioCorp",
+    "slug": "idiliocorp",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/idiliocorp/photo.jpg"
+  },
+  {
+    "name": "IKEGARA",
+    "slug": "ikegara",
+    "bio": "Un raro intentando aprender cualquier cosa como dibujo.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ikegara/photo.jpg"
+  },
+  {
+    "name": "Isa la caminante",
+    "slug": "isa-la-caminante",
+    "bio": "Soy estudiante de último semestre de comunicación, uno de mis apodos favoritos es \"caminante\", me gusta ver la vida como un constante tránsito. Colombiana de 20 años, fan de las epistemologías del sur, cambio social y teología contemporánea. De a momentos, alguien que canta. Le sigo el paso a la construcción de paz, #ACAB y a los movimientos sociales. No soy muy audiovisual, pero, no puedo dejar de pensar en cuanto me gusta escuchar, ver y narrar historias.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/isa-la-caminante/photo.jpg"
+  },
+  {
+    "name": "Isi",
+    "slug": "isi-b",
+    "bio": "Soy de España y tengo 26 años. Dibujo desde que tengo memoria, amante de la ilustración y el 3D. Actualmente creando mi primera novela gráfica de ciencia ficción \"El dios en la caja\".\nObras\n\nFanzine Errante (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/isi-b/photo.jpg"
+  },
+  {
+    "name": "Israel Montalvo",
+    "slug": "israel-montalvo",
+    "bio": "Israel Montalvo (CDMX, México), es un trazador de mundos perdidos, los cuales ha manifestado en diversos medios artísticos como la pintura, la música, el arte secuencial y la narrativa. En donde aborda como temáticas centrales el horror, en todas sus manifestaciones, la metaficción y la condición humana. Israel como pintor ha participado en múltiples exposiciones colectivas e individuales por todo México. También se desempeña como promotor cultural desarrollando eventos artísticos en los estados de Nayarit y Jalisco. Cómo escritor e ilustrador ha publicado en una infinidad de revistas, cómics, libros y ha participado en más de sesenta antologías literarias de cuento enfocadas en el horror y la ciencia ficción en México, España, Uruguay, Argentina, Perú, Chile, Guatemala, Colombia y Venezuela. En el 2016 publicó su primera novela gráfica: “El señor Calzetín volumen uno: Momentos en el tiempo o los días regulares de un personaje medio(ocre)” (bajo el sello Altres Costa-Amic Editores), por la que obtuvo dos becas, una para su realización en el 2009, y otra pasa su publicación en el 2014. En el 2018 publicó las novelas gráficas: “¿Podría ser un asesino?” y “I’m fraid of americans”, ambos de manera independiente. Ilustró la novela pulp: “Marciano Reyes y la cruzada de Venus” para la editorial española Historias Pulp. En el 2019 salió su primer libro de cuentos: “La Villa de los Azotes”, publicado por el sello la tinta del silencio. En el 2020 ilustró el cómic “La parte que no siente”, escrito por Julián Mitre y publicó la novela gráfica “Heathen: 5:15 los ángeles se han ido”, ambos con la editorial Mandrágora Ediciones. En el 2021 publicó la novela corta: Abel en la cruz, con la editorial Sultana Editores y la plaqueta “la ordinaría locura de una muerte cotidiana”, publicado por la editorial Ediciones Awen. En el 2021 compiló la antología de cuento de horror Hispanoamericana: “Afuera de esta compuerta el abismo me acecha”, para Ediciones del Olvido. En el 2022 publicó la novela: “Los abismos de la carne” para la editorial argentina Zeta Centuria Editores.\nObras\n\nFanzine El señor calzetin (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/israel-montalvo/photo.jpg"
+  },
+  {
+    "name": "Issac",
+    "slug": "issac",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/issac/photo.jpg"
+  },
+  {
+    "name": "Izaku",
+    "slug": "izaku",
+    "bio": "ilustrador novato me gusta dibujar, diseñar y editar.\nObras\n\nFanzine El Deseo (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/izaku/photo.jpg"
+  },
+  {
+    "name": "Jairo Ruiz Blanco",
+    "slug": "jairo-ruiz-blanco",
+    "bio": "Colombiano, habito en la frontera con Venezuela.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jairo-ruiz-blanco/photo.jpg"
+  },
+  {
+    "name": "Javier Alejandro Madrigal Montilla",
+    "slug": "javier-alejandro-madrigal-montilla",
+    "bio": "Soy estudiante de animación, amo el cine y quiero dedicarme a contar historias.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/javier-alejandro-madrigal-montilla/photo.jpg"
+  },
+  {
+    "name": "jeroberos",
+    "slug": "jeroberos",
+    "bio": "Soy originario de Camas, un municipio ubicado en la provincia de Sevilla, España. Me desempeño como ilustrador, maquetador, diseñador e historiador del arte, y cuento con una trayectoria de más de una década en esta disciplina.Mi pasión por el arte se remonta al año 2008, desde entonces experimentó con diversas ramas de este campo, y hoy en día consolido mi carrera en el diseño y la ilustración. Con más de una década de experiencia, colaboro con diversas empresas nacionales y exhibo mis obras en Sevilla y Granada. Mi estilo de dibujo es versátil, ya que tengo la capacidad de desenvolverme tanto en el realismo como en el estilo más caricaturesco. Además, utilizo una amplia gama de técnicas y tengo habilidades tanto en la técnica digital como en la artesanal, lo que me permite adaptarme a las necesidades de cada proyecto con facilidad.\nObras\n\nPerfil para GMA (2023)\nFondo DVD \"A mano alzada\" (2023)\nFondo DVD \"Los cortos más cortos\" (2023)\nPortada DVD (2023)\nFanzine (2023)\nEl avatar (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jeroberos/photo.jpg"
+  },
+  {
+    "name": "Jorge Alberto Chi González.",
+    "slug": "jorge-alberto-chi-gonzalez",
+    "bio": "Nací en Quintana Roo, México y desde que recuerdo siempre he querido expresarme artísticamente, lo cual he conseguido empezar hace poco menos de 2 años que comencé el estudio de Artes Plásticas; por lo mismo siempre tuve historias de todo tipo para contar y actualmente ese mismo estudio me permite conocer y hacer mías todas las herramientas y experiencia necesarias para contarlas por todos los medios y técnicas que tenga a mi disposición.\nObras\n\nTira de una página (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jorge-alberto-chi-gonzalez/photo.jpg"
+  },
+  {
+    "name": "Jorge Caín",
+    "slug": "jorge-cain",
+    "bio": "Aprendo y utilizo todas las formas de creación que encuentro para comunicar ideas rompedoras y conceptos abstractos que rebotan distinto en cada espectador. Desde Zaragoza, España, 1992. \"Creación, espiritualidad y ciencia ficción. Experimento con la luz, el 3D y la IA para dejar a algún espectador pensando.\"",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jorge-cain/photo.jpg"
+  },
+  {
+    "name": "JOSE ANTONIO LUNA",
+    "slug": "jose-antonio-luna",
+    "bio": "Soy de México y nací el 14 de enero de 1984 , dibujo desde hace 15 años, empece con el dibujo por que queria dedicarme a algo vivo algo que no me tuviera en una oficina todos los dias, en lo particular me gusta dibujar retratos aunque en los momentos que me siento libre dibujo caricaturas en especial me gusta el estilo tipo toon y creo que al final hago una mezcla de las cosas que me gustan.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jose-antonio-luna/photo.jpg"
+  },
+  {
+    "name": "José Torres",
+    "slug": "jose-torres",
+    "bio": "Cuco fue un corto realizado durante nuestra época universitaria como trabajo de semestre en el año 2019, siendo todos los participantes Ecuatorianos, quienes ya habiamos trabajado juntos en distintos proyectos durante la carrera, dado que siempre tuvimos un buen flujo de trabajo entre nosotros. La idea del corto nace a raíz de otro proyecto en el cual se buscaba contar historias sobre distintos mitos de la cultura Ecuatoriana, tomando como punto de partida la imagen del Cuco y dando nuestro propio toque.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jose-torres/photo.jpg"
+  },
+  {
+    "name": "Jossi Barbosa",
+    "slug": "jossi-barbosa",
+    "bio": "Diseñador Web y productor transmedia con experiencias en proyectos digitales, periodísticos y de diseño de experiencias de aprendizaje virtual. Mis interes principales son la innovación, el diseño y la experimentación. Además de contar con conocimientos en el manejo de herramientas de edición y sitios web.\nObras\n\nDesarrollo Web – ParcheTek (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jossi-barbosa/photo.jpg"
+  },
+  {
+    "name": "JotaIlustrador (José A. Peñaloza Ch.)",
+    "slug": "jotailustrador",
+    "bio": "Comence a dibujar desde peque, algunos tutoriales que veia por internet desde los cybers me motivaron a practicarlo de manera mas profesional. Gran error, porque ahora vivo en una frutracion constante. Estudio produccion audiovisual y tuve algunos pequeños exitos como hacer portadas de libros de youtubers como el libro \"Luna de Pluton by Dross\" y algunos proyectos audiovisuales. Ahora estoy por hacer animaciones para un documental. Deseenme suerte.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/jotailustrador/photo.jpg"
+  },
+  {
+    "name": "Juan Ureña",
+    "slug": "juan-urena",
+    "bio": "Colombiano, actualmente vivo en Madrid, estudié Diseño, pero me he dedicado siempre al mundo de la animación, trabajando en producciones colombo españolas como Pixiepost y en otras Mexicanas como Villanus.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/juan-urena/photo.jpg"
+  },
+  {
+    "name": "K. MónikaCC",
+    "slug": "k-monikacc",
+    "bio": "Persona transgénero dedicada a la escritura, amante de la música rock y metal, me encanta ver peliculas del genero de terror y horror.\nObras\n\nFanzine Censura (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/k-monikacc/photo.jpg"
+  },
+  {
+    "name": "Ka RobSa",
+    "slug": "ka-robsa",
+    "bio": "Ka RobSa (Carlos Robledo Sosa) es un animador 2D no binario de 21 años que comenzó a trabajar en la animación desde los 18 con una perspectiva orientada al terror analógico y el terror de los 2010's de internet basado en creppypasttas. Actualmente desarrolla un ARG en su canal homónimo \"Ka RobSa\", subiendo cortometrajes y desarrollando su propia web serie.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ka-robsa/photo.jpg"
+  },
+  {
+    "name": "Kapula",
+    "slug": "kapula",
+    "bio": "conceptualización, diseño gráfico, diagramación y animación.\nObras\n\nFanzine Antonio el panda (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/kapula/photo.jpg"
+  },
+  {
+    "name": "Kid Pochoclo",
+    "slug": "kid-pochoclo",
+    "bio": "Soy músico multiintrumentista, amigo de las artes audiovisuales.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/kid-pochoclo/photo.jpg"
+  },
+  {
+    "name": "Lea Comix",
+    "slug": "lea-comix",
+    "bio": "Soy Leandro Tomasetti (Lea Comix) Dibujante, historietista, editor de fanzines, y docente.\nObras\n\nLa creación 1 (2023)\nLa creación 2 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lea-comix/photo.jpg"
+  },
+  {
+    "name": "Leo Maldo",
+    "slug": "leo-maldo",
+    "bio": "ilustrador, animador amatuer, tatuador,dj y vj.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/leo-maldo/photo.jpg"
+  },
+  {
+    "name": "Lephomet",
+    "slug": "lephomet",
+    "bio": "Artista Méxicano en su camino para unir el Diseño y el Arte.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lephomet/photo.jpg"
+  },
+  {
+    "name": "Levi Flowers",
+    "slug": "levi-flowers",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/levi-flowers/photo.jpg"
+  },
+  {
+    "name": "Lina Gálvez (Dolz)",
+    "slug": "lina-galvez-dolz",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lina-galvez-dolz/photo.jpg"
+  },
+  {
+    "name": "Lizardwizard",
+    "slug": "lizardwizard",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lizardwizard/photo.jpg"
+  },
+  {
+    "name": "Lmask",
+    "slug": "lmask",
+    "bio": "Lmasky, conocido por sus amigos como “el gordo gaseosa” hace dibujitos en el internetes crea comics y de vez en cuando hace intentos de animación.\nObras\n\nFanzine Vaya personaje he creado (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lmask/photo.jpg"
+  },
+  {
+    "name": "Londoanor",
+    "slug": "londoanor",
+    "bio": "Artista plástico y visual nacido en Colombia, en un barrio popular, al lado de problemáticas que se normalizaban e interiorizaban, tuve la suerte de contar con buenos maestros de artes plásticas desde el colegio hasta la universidad (toda mi educación transcurrió en instituciones públicas), de esa manera y poco a poco, fui desarrollando ciertas preferencias conceptuales, representativas y estéticas para enriquecer aquello que me he dado cuenta de que quiero narrar a otros, narrar aquella manera en que he aprendido a ver la tierra en que se unen montañas y caminos, pero también culturas y cosmovisiones.\nObras\n\nPropuesta de logo (2023)\nPortada DVD – Categoría +18 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/londoanor/photo.jpg"
+  },
+  {
+    "name": "Lorenzo Vasek",
+    "slug": "lorenzo-vasek",
+    "bio": "Busco hacer partícipe al espectador en la exploración del inconsciente como el absurdo propio de la realidad por medio de dibujos, pinturas o audiovisuales, partiendo de narrativas que se mezclan con recuerdos, deseos, sueños, decadencia…",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lorenzo-vasek/photo.jpg"
+  },
+  {
+    "name": "Lucho Chauvin",
+    "slug": "lucho-chauvin",
+    "bio": "Soy un entusiasta de la animación y el modelado 3D. Desde que recuerdo, la ciencia ficción ha formado parte de mi vida, en películas, libros, dibujos animados, etc. Este cortometraje es un homeaje a todas esas historias que me han acompañado siempre.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/lucho-chauvin/photo.jpg"
+  },
+  {
+    "name": "macs",
+    "slug": "macs",
+    "bio": "artista freelancer, que estudia una carrera que no tienen nada que ver con lo que me gusta por que mi economia no me alcanza\nObras\n\nChingadera rara 1 (2023)\nChingadera rara 2 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/macs/photo.jpg"
+  },
+  {
+    "name": "Manuel Tell",
+    "slug": "manuel-tell",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/manuel-tell/photo.jpg"
+  },
+  {
+    "name": "Marcos Antúnez “M”",
+    "slug": "marcos-antunez-m",
+    "bio": "Apasionado del cine, los comics, está orgulloso de colaborar con gente con muchísimo potencial.\nObras",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/marcos-antunez-m/photo.jpg"
+  },
+  {
+    "name": "Margarita Gómez",
+    "slug": "margarita-gomez",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/margarita-gomez/photo.jpg"
+  },
+  {
+    "name": "María Bescós",
+    "slug": "maria-bescos",
+    "bio": "Empecé a dibujar cuando era pequeña y desde entonces no he parado. Fun fact: actualmente mi principal herramienta de dibujo es la Nintendo 3DS.\nObras\n\nPropuesta portada DVD (2023)\nFanzine Cen-taura (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/maria-bescos/photo.jpg"
+  },
+  {
+    "name": "Mario Vil",
+    "slug": "mario-vil",
+    "bio": "Hago dibujos",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mario-vil/photo.jpg"
+  },
+  {
+    "name": "mar_oblivion♡",
+    "slug": "mar_oblivion%e2%99%a1",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mar_oblivion%e2%99%a1/photo.jpg"
+  },
+  {
+    "name": "Matías Caivano",
+    "slug": "matias-caivano",
+    "bio": "Nací en Argentina, en 1996. Desde muy chiquito dibujé y cuando llegué a los 18 años supe que quería dedicarme a eso de lleno. Estudié Artes Plásticas recibiendome de profesor de arte, pero nunca ejercí sino que me dediqué a la ilustración digital, vendiendo comisiones por internet. Entré en la animación 2D por el cine de Satoshi Kon y, de casualidad, ese mismo año empecé a ver el canal de La Filmoteca Maldita. Estaba por realizarse el 2do Festival de Cortos, por lo que me animé a participar haciendo una pequeña animación. La experiencia del festival y de crear un corto animado me motivó a enfocarme cada vez más en la animación e intentar mejorar día a día para mostrar mejores historias y animaciones.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/matias-caivano/photo.jpg"
+  },
+  {
+    "name": "Meliora",
+    "slug": "meliora",
+    "bio": "¡Hola! Soy Meliora, soy amante del horror, lo oscuro y lo gótico. La mayoría de mis ilustraciones son \"FanArts\" aunque me gusta crear mis propios monstruos de vez en cuando. No sabría definir mi estilo, ya que al considerarme aprendiz sigo probando cosas nuevas cada día, sin embargo, creo que hay un patrón dominante en mis creaciones y es el querer embellecerlo todo al estilo más macabro posible, sin llegar al punto desagradable. Mi gran inspiración ha sido, es y será siempre, Tim Burton, pero dudo que haya sido asombro de muchos. Actualmente, me dedico a vender mis creaciones como son los Prints, accesorios hechos con arcilla, chapas pintadas a mano, entre otras… Y en ocasiones, colaboro con Streamers para diseñar los Paneles, Banners y Overlays de su canal de Twitch.\nObras\n\nPortada de Colección Cortos + cortos (2023)\nLa manca (Have Fun) (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/meliora/photo.jpg"
+  },
+  {
+    "name": "Melisa Viroz",
+    "slug": "melisa-viroz",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/melisa-viroz/photo.jpg"
+  },
+  {
+    "name": "Mobbarley",
+    "slug": "mobbarley",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mobbarley/photo.jpg"
+  },
+  {
+    "name": "Moira",
+    "slug": "moira",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/moira/photo.jpg"
+  },
+  {
+    "name": "Moises Olvera",
+    "slug": "moises-olvera",
+    "bio": "Soy dibujante digital, animador 2D y guionista principiante, procedente de México y con el inicio de propia carrera en el mundo de la animación, soy fan de crear historias y personajes, darles un diseño único y darles vida al momento de contar sus travesias.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/moises-olvera/photo.jpg"
+  },
+  {
+    "name": "Mongrel Straßenhund",
+    "slug": "mongrel-strasenhund",
+    "bio": "(It) Self taught free-ranging dog. Τὸ μικρά Θηρίον… Deforme física y cognitivamente. Niemand,Nirgends,Nichts,Nie…\nObras\n\nPortada para el Festival (2023)\nPortada para colección Mano Alzada (2023)\nFanzine Mutter (2023)\nFanzine El Instante (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mongrel-strasenhund/photo.jpg"
+  },
+  {
+    "name": "Morghven",
+    "slug": "morghven-gonterson",
+    "bio": "Morghven Soy ilustradora y tatuadora mexicana. Inicié en el mundo del arte de forma autodidacta y actualmente me encuentro laborando de forma independiente. He participado en proyectos creando ilustraciones para merchandise, portadas de libros, de videojuegos y de discos para diferentes bandas y algunos otros encargos personalizados. A lo largo del tiempo he explorado varias técnicas de ilustración tradicional como la pintura en acrílico, acuarelas, carboncillo, pasteles, etc. así como la ilustración digital. En el tatuaje estoy enfocada en blackwork y puntillismo. En ambas disciplinas busco compartir emociones y sentimientos, hablar el lenguaje de los sueños y de cierta forma plasmarlos en el lienzo y la piel. Me he visto influenciada e inspirada por diferentes cosas, desde la naturaleza al utilizar la botánica y animales en mis diseños, hasta la música, el cine, la poesía, la magia, la mitología… definiendo así mi estilo con una temática oscura y sombría.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/morghven-gonterson/photo.jpg"
+  },
+  {
+    "name": "Mr. alc",
+    "slug": "mr-alc",
+    "bio": "Ilustrador, grabador y fanzinero autodidacta\nObras\n\nFanzine El cocodrilo que se enamoró de una sirena (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mr-alc/photo.jpg"
+  },
+  {
+    "name": "Mutante Metafórica",
+    "slug": "mutante-metaforica",
+    "bio": "Me gustaria poder crear y dar vida a nuevas historias, creci viendo anime y leyendo mangas quiza por eso es mi primera opción para contar dichas historias. Algun día espero dedicarme a esto.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/mutante-metaforica/photo.jpg"
+  },
+  {
+    "name": "Naam jaan",
+    "slug": "naam-jaan",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/naam-jaan/photo.jpg"
+  },
+  {
+    "name": "Nahuel Piguillem",
+    "slug": "nahuel-piguillem",
+    "bio": "Me gusta programar y las matematicas",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nahuel-piguillem/photo.jpg"
+  },
+  {
+    "name": "Narratoon",
+    "slug": "narratoon",
+    "bio": "Soy animador independiente tradigital 2d. En búsqueda de un sentido para mi labor profesional y humana en este mundo podrido.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/narratoon/photo.jpg"
+  },
+  {
+    "name": "Nave interplanetaria",
+    "slug": "nave-interplanetaria",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nave-interplanetaria/photo.jpg"
+  },
+  {
+    "name": "Nebah",
+    "slug": "nebah",
+    "bio": "Un dibujantucho don nadie proveniente de la nada.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nebah/photo.jpg"
+  },
+  {
+    "name": "Nega Ranger",
+    "slug": "nega-ranger",
+    "bio": "Ilustrador colombiano freelancer, me especializó en estilo cartoon y anime/manga\nObras\n\nIlustración de las Secciones del DVD1 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nega-ranger/photo.jpg"
+  },
+  {
+    "name": "Nicolás Ortiz",
+    "slug": "nicolas-ortiz",
+    "bio": "soy una persona que quiere aspirar a ser director de cine, desde que comencé con este proyecto a los 12 años cuando comenzaba a comprar mis primeras figuras de lego y ver vídeos de stop motion de creadores de contenido de habla inglesa, inspirándome por películas bélicas y de super héroes me acerque al cine y descubrí el potencial que tenia el séptimo arte en la transmisión de ideas, desde que conocí la filosofía tuve un pensamiento muy critico reflexionando sobre varios temas, mas con la historia política de mi país, asi que combine ambos aspectos y con eso me forme, lo mas probable es que me hayan conocido por protestas una historia, pero creo que la historia de su creación tendre que contarla otro dia",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nicolas-ortiz/photo.jpg"
+  },
+  {
+    "name": "Nicolás Sparnocchia",
+    "slug": "nicolas-sparnocchia",
+    "bio": "Me formé en Diseño Gráfico, Ilustración, y trabajo en 3D. Amante de los cortos animados.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/nicolas-sparnocchia/photo.jpg"
+  },
+  {
+    "name": "Norma Helena García",
+    "slug": "norma-helena-garcia",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/norma-helena-garcia/photo.jpg"
+  },
+  {
+    "name": "North10",
+    "slug": "north10",
+    "bio": "Actualmente estudio diseño, realizo animaciones en proyectos personales con interés de mejorar en las técnicas utilizadas y enfocarlas en un futuro cercano en el ámbito profesional y en proyectos independientes, además, dibujo desde que tengo memoria.\nObras\n\nRove k5252 (1) (2023)\nRove k5252 (2) (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/north10/photo.jpg"
+  },
+  {
+    "name": "Ocelot",
+    "slug": "ocelot",
+    "bio": "Vtuber, Diseñador Gráfico\nObras\n\nImagen de Portada (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ocelot/photo.jpg"
+  },
+  {
+    "name": "Omar Cortes",
+    "slug": "omar-cortes",
+    "bio": "Artista visual, Mexico CDMX. Dibujante y pintor de profesión,  en los últimos 15 años me he desempeñado como ilustrador freelance tradicional y digital, también  a la impartición de clases para difundir mi conocimiento y experiencia  que he acumulado en mi carrera y  tiempo hasta ahora.  Mi afición a la animación y la narrativa gráfica me ha llevado a realizar  cómic y animación como proyecto personal.\nObras\n\nBlanca 1 (2023)\nBlanca 2 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/omar-cortes/photo.jpg"
+  },
+  {
+    "name": "Orlick",
+    "slug": "orlick",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/orlick/photo.jpg"
+  },
+  {
+    "name": "o_x animated",
+    "slug": "o_x-animated",
+    "bio": "Mi nombre es J.E. Antonioni, tengo 26 años, actualmente estoy trabajando en mi proyecto de animación llamado o_xanimated donde hago cortometrajes con un mismo estilo minimalista contando historias alegóricas en un género primordialmente humorístico.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/o_x-animated/photo.jpg"
+  },
+  {
+    "name": "Pablo Llorens Serrano",
+    "slug": "pablo-llorens-serrano-2",
+    "bio": "soy animador stopmotion, muñecos, juguetes ,plastilina, maquetas son los temas que me gustan.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/pablo-llorens-serrano-2/photo.jpg"
+  },
+  {
+    "name": "Pablo Peña",
+    "slug": "pablo-pena",
+    "bio": "Persona que ama lo que hace y no tiene problema en dedicar tiempo a diseñar, ilustrar, porque más que una profesión lo ve como un estilo de cida. En lo laboral siempre está dispuesto a asumir los nuevos retos sin importar lo difícil que sean, es versátil y creativo.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/pablo-pena/photo.jpg"
+  },
+  {
+    "name": "Pablo Peña Montenegro",
+    "slug": "pablo-pena-montenegro",
+    "bio": "Hola, soy Pablo Peña un ilustrador y diseñador gráfico peruano, que le apasionan los videojuegos y el arte. Acompáñame en las transmisiones charlando, jugando y sobre todo dibujando.Salud y libertad!!!!\nObras\n\nPortada del DVD 1 (2023)\nPortada del DVD 2 (2023)\nDVD \"Stop Motion\" (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/pablo-pena-montenegro/photo.jpg"
+  },
+  {
+    "name": "PedePequita",
+    "slug": "pedepequita",
+    "bio": "Estudiante de animación, España",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/pedepequita/photo.jpg"
+  },
+  {
+    "name": "Phantom sketches",
+    "slug": "phantom-sketches",
+    "bio": "venezolano 19 años\nObras\n\n(2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/phantom-sketches/photo.jpg"
+  },
+  {
+    "name": "Plum Powder",
+    "slug": "plum-powder",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/plum-powder/photo.jpg"
+  },
+  {
+    "name": "Ramiro Durán",
+    "slug": "ramiro-duran",
+    "bio": "Desde que salieron los celulares con camara recuerdo jugar con mis amigos haciendo videos de persecuciones, peleas, casas embrujadas o cualquier cosa que se nos ocurriera, pero solo era como pasatiempo en vacaciones o fines de semana, nada serio, en 2017 me motive con el stop motion luego de ver videos y peliculas de ese estilo, desde entonces he hecho algunos videos, el mas serio ha sido este, me gusta este estilo por la sensación que transmite al ver tu trabajo animado, es divertido. Me gustan mucho las películas de ciencia ficción, todo lo que tenga que ver con la edad media, me gusta también la música, dibujar y el deporte. Actualmente me dedico a la carrera que estudie que es ingenieria civil pero en el futuro espero poder hacer algo más con el stop motion o en general con los vídeos.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ramiro-duran/photo.jpg"
+  },
+  {
+    "name": "Renato Valdez",
+    "slug": "renato-valdez",
+    "bio": "Soy Renato Valdez, un joven director peruano apasionado por el cine desde mi infancia, en especial por los géneros de ciencia ficción y terror. A medida que fui creciendo, mi interés por la cultura cinematográfica se expandió hacia la televisión, los animes, los videojuegos, los libros y los cómics, lo que ha alimentado mi creatividad y se refleja en mis obras. Soy capaz de abordar una amplia gama de géneros y temas con un enfoque fresco y diverso. Me gusta experimentar con diferentes técnicas y narrativas para crear historias cautivadoras y emocionantes.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/renato-valdez/photo.jpg"
+  },
+  {
+    "name": "Rodrigo Brañanova",
+    "slug": "rodrigo-brananova",
+    "bio": "Soy un artista variado que le da a casi todo, y la animación 2d no es excepción. Aproveché el concurso de cortos de la filmo para aportar algo muy corto y sencillo. ¡Larga vida al corto y puxa Asturies!",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/rodrigo-brananova/photo.jpg"
+  },
+  {
+    "name": "Rodrigo Soria",
+    "slug": "rodrigo-soria",
+    "bio": "𓆨",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/rodrigo-soria/photo.jpg"
+  },
+  {
+    "name": "Roma Cusi Moreno",
+    "slug": "roma-cusi-moreno",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/roma-cusi-moreno/photo.jpg"
+  },
+  {
+    "name": "Sádico Sadid Arancibia",
+    "slug": "sadico-sadid-arancibia",
+    "bio": "Trabajo con las artes plasticas y el teatro desde el 2015, desde el 2018 me animo a escrivir unas cuantas cosas que publique independienmente, considero que mi especialidad es el muralismo, sin embargo tambien trabajo con las distintas ramas del arte plástico tanto como del teatro. No tengo un estilo espesifico, ya que siento importante no dejar de explorar y experimentar, aunque me baso en la estetica de los pueblos indigenas del país del cual provengo, Bolivia. tocando usualmente temas como la reivindicacion social, la lucha por los derechos de los pueblos, temas oscuros basados en la memoria oral nativa, Bolivia. Naci el 16 de noviembre del año 1995 en Tarija-Bolivia. Actualmente formo parte de Nereta Movimiento Artístico, tambien de Jesaete Teatro, intento jalar mi propia editorial independiente llamada Tospiu y milito en el tejido iberoamericano de Cultura Viva Comunitaria.\nObras\n\nFanzine Amanecer del 15 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sadico-sadid-arancibia/photo.jpg"
+  },
+  {
+    "name": "Saga Herráez",
+    "slug": "saga-herraez",
+    "bio": "José Herráez es un ilustrador ecuatoriano nacido el 26 de marzo de 1997 en Sígsig, un pueblo de Azuay. Desde joven mostró un gran interés por el cine de clase B y la exploración de la muerte como tema artístico. Sus obras buscan representar el miedo, el terror y lo grotesco desde un punto de vista estético, utilizando una paleta de colores pop pero punzante y deformando anatomías para generar un efecto más impactante. Su obra se ha desarrollado a partir del estudio del texto \"El Ser y el Tiempo\" del filósofo alemán Martin Heidegger, que ha influenciado su visión acerca del pesimismo como estado de ánimo y doctrina. Para Herráez, el miedo es una emoción intensa que genera una percepción peligrosa del entorno, y que puede manifestarse en cualquier momento, ya sea en el presente, futuro o pasado. En sus obras, Herráez explora cómo el individuo ingresa a un estado preventivo cuando se enfrenta a situaciones de miedo, y cómo la angustia puede afectar incluso a las personas más positivas, cambiando su actitud ante la vida después de una tragedia. Además, indaga en cómo el pesimismo puede superar cualquier sensación de optimismo para las personas, manifestándose como autodesprecio y culpa. José Herráez ha participado en diversas exposiciones colectivas e individuales en Ecuador y ha recibido reconocimientos por su trabajo en el ámbito artístico. Su obra ha sido descrita como una reflexión profunda y punzante sobre la condición humana y la complejidad de las emociones.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/saga-herraez/photo.jpg"
+  },
+  {
+    "name": "Salvador Galorel",
+    "slug": "salvador-galvez-orgel",
+    "bio": "\"Salvador Gálvez Oregel Nacido el 13 de julio de 1992 originario de Jiquilpan Michoacán hijo de padres michoacanos. A muy temprana edad mostro interés por el dibujo, la pintura, el cine y la animación. Teniendo alrededor de 6 años se fue de Jiquilpan y se mudo a Uriangato Guanajuato donde curso su etapa escolar hasta que a la edad de 18 años, ya para esta edad habría tenido varios intentos por hacer su primer corto con técnica de stop motion y animación tradicional, fue asta que vio el documental (La historia de Pixar) donde se dio cuenta que había mas maneras de hacer animación y que lo que el veía en las películas de alguna manera también lo podía hacer, asi que puso manos a la obra y realizo su primer corto en animación 3d y lo entrego como proyecto final mientras cursaba la prepa, de esta manera fue acreditado con una beca para estudiar la Licenciatura de Arte Digital en el Tecnológico de Monterrey campus Morelia donde estudio 2 años y posteriormente desertó. Pasando un tiempo entró a la licenciatura de Arquitectura en la Universidad de León campus Moroleón terminando oficialmente sus estudios a la edad de 27 años. En la actualidad se a desarrollado en el ámbito de la arquitectura dejando la animación como un pasatiempo.\"",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/salvador-galvez-orgel/photo.jpg"
+  },
+  {
+    "name": "Sara Cubero",
+    "slug": "sara",
+    "bio": "¡Hola! Soy Sara, la entusiasta de la informática. 🚀 Me apasiona la programación, pero también disfruto explorando otras áreas como redes y hardware. 🌐 Cuando no estoy tecleando código como una loca, me puedes encontrar investigando sobre las últimas tendencias en la web o perdida en foros de comunidades tecnológicas. 💻 ¡No hay nada como descubrir algo nuevo y emocionante en este mundo en constante evolución! Recientemente, tuve la oportunidad de participar en el proyecto \"Generación Maldita\", el cual me atrajo debido a mi admiración por los talentosos artistas involucrados en él. Si quieres saber más sobre mis aventuras en el mundo de la tecnología o estás interesado en colaborar en algún proyecto juntos, no dudes en contactarme. 💌 Puedes escribirme a sara.estudios.2017@gmail.com , y estaré encantada de charlar contigo y explorar oportunidades para unir nuestras habilidades y pasiones. ¡Muchas gracias por leer mi presentación! 🎉",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sara/photo.jpg"
+  },
+  {
+    "name": "Sasikume",
+    "slug": "sasikume",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sasikume/photo.jpg"
+  },
+  {
+    "name": "Satan Orbis",
+    "slug": "satan-orbis",
+    "bio": "Soy Satan Orbis, decidí adaptar este alias ya que siento que queda bien con mi estilo de animación. Empecé a hacer animaciones por la facilidad de crear historias, sin la necesidad de usar actores o locaciones reales. Creo animaciones que apelan a la nostalgia, recreando caricaturas donde les doy un toque macabro, con un tema social o de simple humor.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/satan-orbis/photo.jpg"
+  },
+  {
+    "name": "Sebastian Hernandez Amoros",
+    "slug": "sebastian-hernandez-amoros",
+    "bio": "Bio: Mega fan de las películas de terror serie B, el slasher y todo lo que de vértigo. Se parte de mi secta 🤘\nObras\n\nFanzine El Parasito Rectal (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sebastian-hernandez-amoros/photo.jpg"
+  },
+  {
+    "name": "ShadowCeless",
+    "slug": "shadowceless",
+    "bio": "Nací en el 2002 en argentina, estoy interesada en la animación desde los 15 años, poco a poco voy haciendo animaciones como esta que mande, también me metí en la ilustración y en todo lo que tenga que ver con dibujar porque nació con una pasión en con el dibujo con el querer contar algo por mas mini que sea, mi estilo es… No sabría como definirlo, creo que ni tiene definición simplemente hago lo que me pinta\nObras\n\nContraportada – Ultima pagina (2023)\nBuen Samaritano – ShadowCeless (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/shadowceless/photo.jpg"
+  },
+  {
+    "name": "Sirenas Migrantes",
+    "slug": "sirenas-migrantes",
+    "bio": "No me gusta escribir sobre mi. Me gusta dibujar y hacer cosas de esas.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sirenas-migrantes/photo.jpg"
+  },
+  {
+    "name": "Smile-Cat",
+    "slug": "smile-cat",
+    "bio": "Vivo en México. titulado en artes gráficas. Mis ilustraciones son influenciadas por la cultura POP, el misticismo, la anatomía y las películas de terror. Siempre busco nuevas técnicas para enriquecer mi arte.\nObras\n\nFanzine Decisiones (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/smile-cat/photo.jpg"
+  },
+  {
+    "name": "Sonia G",
+    "slug": "sonia-g",
+    "bio": "Nacida un octubre en una ciudad lluviosa del sur de México. Licenciada en artes visuales, interesada en la animación en Stop Motion como medio para expresar temas como los elementos mexicanos del misticismo y la muerte. En busca de resultados artesanales que involucran distintas técnicas como el grabado animado, la cerámica, el dibujo, la pintura, la escultura y la mezcla de todas estas. Aficionada del color pero víctima involuntaria del blanco y negro. Me inspira la luna, escuchar música en discman, la cultura Olmeca, Saturnino Herrán y el mero gusto de usar las manos para crear.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sonia-g/photo.jpg"
+  },
+  {
+    "name": "Suycipay",
+    "slug": "suycipay",
+    "bio": "Me considero artista, dibujo, hago guiones manejo algo de edición y me gusta moverme por campos underground del cine y el cómic.\nObras\n\nPropuesta Portada DVD (2023)\nFanzine El Chiste del Ojo (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/suycipay/photo.jpg"
+  },
+  {
+    "name": "Sylvain wain dezaki",
+    "slug": "sylvain-wain-dezaki",
+    "bio": "Soy un animador independiente chileno, que hace fan animation sin fines de lucro, generalmente de tematica manga-anime.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/sylvain-wain-dezaki/photo.jpg"
+  },
+  {
+    "name": "TOM ARTS",
+    "slug": "tom-arts",
+    "bio": "Mi nombre es tomas nieto, soy un artista visual del territorio del estado de Chile, desde chico el arte a sido parte esencial de mi vida, la creatividad la expresión y el uso de técnicas en las cuales siempre estoy trabajando para que mis ideas sean mas claras y llamativas al ojo publico, tratando de resaltar lo blanco y negro los contrastes y la visual de mis ilustraciones, también creo y diseño tarjetas para evento, amante del manga y de títulos referentes a la filosofía como puede ser metafísica de Aristóteles o la iglesia y el estado de mijail bakuni.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/tom-arts/photo.jpg"
+  },
+  {
+    "name": "tonytony",
+    "slug": "tony-makony",
+    "bio": "Más quebrado que una Z\nObras\n\nZenaida 1\nZenaida 2 (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/tony-makony/photo.jpg"
+  },
+  {
+    "name": "UBALDO BEARKING",
+    "slug": "ubaldo-bearking",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/ubaldo-bearking/photo.jpg"
+  },
+  {
+    "name": "Vat Animations",
+    "slug": "vat-animations",
+    "bio": "Yo, Reynaldo Torres (Kaya One), naci el 17 de Marzo del 95 en Colombia, en un principio debido a mis aptitudes para el dibujo me dedicaba solo a tatuar pero un dia me nacio el buscar otro medio de expresion, actualmente soy el fundador principal del estudio de animación y producción audiovisual Vat Films/Animations. Se puede revisar parte de mi trabajo en el Instagram @Kaya0ne, donde he posteado pequeños vistazos a otros cortometrajes realizados. Empecé en esto de la animación hace muy poco realmente, fue a mediados del 2016 donde realicé un proyecto animado de carácter educativo llamado AMAZONIA para finiquitar el semestre que regia en ese momento, cabe destacar que antes de esto solo había realizado mis historias a través de historietas en papel y lapicero, muy al estilo del manga tradicional. Pasaron varios años luego de haber realizado dicha animación, por problemas económicos tuve que pausar mis estudios y luego entró la pandemia del COVID 19, [5:32] para mitad de ese 2020 a mediados de la crisis mundial y el deseo de retomar el contar historias, conversando un día con una amiga sobre lo raro que sería una relación sexual con una sirena me surgió la idea de SHE FISH(La Bocachica), pocas horas después le escribí aun antiguo compañero de la universidad muy hábil con el manejo del Z-Brush, también interesado en la animación y le comente la idea en concreto aunque la decisión del plop-twist final fue algo que se nos ocurrió en el ultimo momento de la producción. De esta manera nos pusimos manos a la obra, él se encargó de la creación de los escenarios usando el software ya mencionado y yo me puse manos a la obra con los personajes y sus respectivos movimientos. El storyboard y la decisión visual de cada escena también recayó en mis manos, sorprendentemente en 14 días ya habíamos terminado el proyecto, para la parte musical solicitamos la ayuda de un muchacho bastante talentoso que se enfoca en mezclar sonidos tradicionales con electrónica y así fue que introducimos el lúgubre soundtrack que suena mientras es hipnotizado el pescador. Al poco tiempo de esto, lo enviamos a un festival de cine de terror que hubo en la ciudad de Santa Marta, y para esos mismos días por eso de andar husmeando en internet sobre cine, encontré un video sobre el Bill Plympton de LaFilmotecaMaldita, así fue como di con el canal. Me simpatizo mucho el estilo de narración de los videos, así que se lo envié a mi compañero de trabajo para que ojeara el canal, para hoy día sigue siendo uno de mis videos favoritos el que habla sobre el cine de mi país Colombia, donde ciertamente mencionan muchas películas que ya había visto pero también otras que inmediatamente me digné a ver (como ha sido con otras recomendaciones del canal). En fin, fue revisando los videos del canal que me enteré del festival de El Cine Es Nuestro, y sin dudarlo ni un minuto me puse en contacto vía Instagram para solicitar el poder enviar el corto de SHE FISH.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vat-animations/photo.jpg"
+  },
+  {
+    "name": "Vicente Albornoz",
+    "slug": "vicente-albornoz",
+    "bio": "Todos los cortos que intenté hacer siempre los pensé como un juego, es por eso que creo que no muchos logran los que buscaba, aunque siempre fue un disfrute hacerlos. El objetivo final nunca fue lograr el objetivo, sino la experiencia de hacer un corto.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vicente-albornoz/photo.jpg"
+  },
+  {
+    "name": "Vicente Coronado",
+    "slug": "vicente-coronado",
+    "bio": "Desde que era muy joven, el cine ha sido mi gran pasión. Me encantaban las películas de viajes en el tiempo, hombres lobos y animación, lo cual me llevó a querer dedicarme al cine. Aunque tengo algunos proyectos en mente, me falta el tiempo y los recursos necesarios para llevarlos a cabo. A pesar de esto, durante mi primer año de universidad, realicé mi primer cortometraje animado. Este proyecto fue un gran desafío para mí, ya que quería explorar mis habilidades y ver de qué era capaz. Aunque la narrativa resultó atropellada, me sentí enormemente gratificado al ver que mi trabajo cobraba vida.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vicente-coronado/photo.jpg"
+  },
+  {
+    "name": "Victor Lama",
+    "slug": "victor-lama",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/victor-lama/photo.jpg"
+  },
+  {
+    "name": "Vill",
+    "slug": "vill",
+    "bio": "Irónico, pictórico, daltónico\nObras\n\nFanzine Benedryl submarine (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vill/photo.jpg"
+  },
+  {
+    "name": "Vitap stuff",
+    "slug": "vitap-stuff",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vitap-stuff/photo.jpg"
+  },
+  {
+    "name": "VLADIMIR BARRIOS",
+    "slug": "vladimir-barrios",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vladimir-barrios/photo.jpg"
+  },
+  {
+    "name": "Vykiel",
+    "slug": "vykiel",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/vykiel/photo.jpg"
+  },
+  {
+    "name": "Willesferic",
+    "slug": "willesferic",
+    "bio": null,
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/willesferic/photo.jpg"
+  },
+  {
+    "name": "YoSoyLink",
+    "slug": "yosoylink",
+    "bio": "Artista visual, fanático de las cosas macabras, el terror y la fantasía. Originario de México. Trato de hacerme un nombre como artista multidisciplinario, no tengo mucho que decir de mi mismo, prefiero que mi trabajo hablé por si solo.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/yosoylink/photo.jpg"
+  },
+  {
+    "name": "Zahid Magaña R.",
+    "slug": "zahid-magana-r",
+    "bio": "Artista freelance que se inspira en los cómics viejos, tiene una especial afinidad al anime noventero y dosmilero, me gusta el chocolate, los animales peluditos y ver a manifestantes golpeando policías.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/zahid-magana-r/photo.jpg"
+  },
+  {
+    "name": "ZCK!",
+    "slug": "zck",
+    "bio": "Alejandro Carbajal \"Zck!\" Es un Artista enfocado a desarrollar una visión de la posmodernidad y el enfoque social a travez de sus ilustraciones ocupando técnicas como la tinta, collage, grabado hasta lo digital. Nacido en la Ciudad De México en 1991, despues de haber estudiado la licenciatura en Arte y Patrimonio Cultural comienza a enformar mas sus obras hacia la critica cultural. Gran parte de su trabajo esta enfocado a la ilustración de bandas de generos como Ska, Punk, Hardcore por decir algunos de paises como Japón, Canada, Rusia, etc. Siempre enfocandose a dejar una marca referente a la modernidad liquida que se vive ahora. Su trabajo tambien a llegado como intervencion callejera, creando obras de StreetArt de manera ilegal (y legal) desde posters, Stenciles y Stikers como forma de protesta ante la apropiacion de la cultura y una forma de llevar el arte ante todo publico, dejando aun lado el elitismo que gestionan curadores y centros culturales ante las nuevas propuetas artisticas.\nObras\n\nPortada de Colección TOP (2023)",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/zck/photo.jpg"
+  },
+  {
+    "name": "Zomewhere",
+    "slug": "zomewhere",
+    "bio": "Un chaval perdido en un mundo de nieblas.",
+    "r2_photo_url": "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/artistas/zomewhere/photo.jpg"
   }
 ]
