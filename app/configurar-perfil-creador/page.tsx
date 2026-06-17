@@ -46,6 +46,10 @@ export default function ConfigurarPerfilCreadorPage() {
   const [loading,       setLoading]       = useState(false);
   const [init,          setInit]          = useState(true);
   const [error,         setError]         = useState("");
+  // null = no decision yet (show conversion prompt), true = confirmed, false = declined
+  const [conversionConfirmed, setConversionConfirmed] = useState<boolean | null>(null);
+  const [isExistingViewer,    setIsExistingViewer]    = useState(false);
+  const [existingDisplayName, setExistingDisplayName] = useState("");
 
   useEffect(() => {
     async function check() {
@@ -53,13 +57,30 @@ export default function ConfigurarPerfilCreadorPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/"); return; }
 
-      const { data } = await supabase
+      const { data: creatorRow } = await supabase
         .from("creator_profiles")
         .select("user_id, studio_name")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data?.studio_name) { router.replace("/mi-estudio"); return; }
+      // Already fully set up as creator → go to studio
+      if (creatorRow?.studio_name) { router.replace("/mi-estudio"); return; }
+
+      // Check if they already have a viewer profile (existing account)
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const { count: subCount } = await supabase
+        .from("sub_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      const hasViewerAccount = !!profileRow && (subCount ?? 0) > 0;
+      setIsExistingViewer(hasViewerAccount && !creatorRow);
+      if (hasViewerAccount) setExistingDisplayName(profileRow!.display_name);
 
       const metaName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? "") as string;
       setCreatorName(metaName);
@@ -116,6 +137,48 @@ export default function ConfigurarPerfilCreadorPage() {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: "#060C14" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#22B16B] border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Existing viewer: ask before showing the creator form
+  if (isExistingViewer && conversionConfirmed === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "#060C14" }}>
+        <div className="w-full max-w-[440px] rounded-[16px] p-8" style={{ background: "#0D1520", border: "1px solid #1E2D42" }}>
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-3 py-1">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#22B16B]">Cuenta existente detectada</span>
+          </div>
+          <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.02em] text-white">
+            ¿Añadir acceso de creador?
+          </h1>
+          <p className="mt-3 text-[13px] leading-[1.6] text-[#8A9AB0]">
+            Ya tienes una cuenta de espectador como{" "}
+            <span className="font-semibold text-white">{existingDisplayName || "usuario"}</span>.
+            Todas tus valoraciones, listas e historial se conservan intactos.
+          </p>
+          <p className="mt-2 text-[13px] leading-[1.6] text-[#8A9AB0]">
+            Si añades acceso de creador, tendrás también{" "}
+            <span className="font-semibold text-[#22B16B]">Mi Estudio</span> disponible en tu cuenta.
+          </p>
+
+          <div className="mt-7 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setConversionConfirmed(true)}
+              className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
+            >
+              Sí, añadir acceso de creador
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="w-full rounded-full border border-[#1E2D42] py-3 text-[14px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.04]"
+            >
+              No, volver al inicio
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

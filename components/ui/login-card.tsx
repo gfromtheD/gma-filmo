@@ -65,6 +65,8 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
+    // Ensure any leftover creator-pending cookie doesn't pollute this normal login
+    document.cookie = "gma_creator_pending=; path=/; max-age=0; SameSite=Lax";
     const { error: err } = await getSupabaseBrowserClient().auth.signInWithOAuth({
       provider: "google",
       options: {

@@ -59,6 +59,7 @@ export function RegisterCard({ onBack, onLogin }: RegisterCardProps) {
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
+    document.cookie = "gma_creator_pending=; path=/; max-age=0; SameSite=Lax";
     const { error: err } = await getSupabaseBrowserClient().auth.signInWithOAuth({
       provider: "google",
       options: {
