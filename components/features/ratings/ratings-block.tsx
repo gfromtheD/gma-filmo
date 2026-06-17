@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
-import { GuestGate } from "@/components/ui/guest-gate";
+import { useIsGuest } from "@/hooks/use-is-guest";
+import { LoginPromptInput } from "./login-prompt-input";
 import { useRatings } from "@/hooks/use-ratings";
 import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community-ratings";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
@@ -20,6 +21,7 @@ interface RatingsBlockProps {
 export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) {
   const { getRating, setRating } = useRatings();
   const currentUserId = useSupabaseUserId();
+  const isGuest = useIsGuest();
   const existingEntry = getRating(numericId);
   const savedScore = existingEntry ? Math.round(existingEntry.rating * 2) : null;
 
@@ -40,7 +42,7 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
   }, [autoOpen]);
 
   return (
-    <GuestGate message="Para valorar este corto y ver tus puntuaciones, inicia sesión o regístrate.">
+    <>
       <section ref={sectionRef}>
         <h2 className="mb-4 text-[20px] font-extrabold tracking-[-0.02em] text-white">
           Valoraciones
@@ -83,14 +85,18 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="flex shrink-0 items-center gap-2 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
-          >
-            <GmaIcon name="star" size={14} strokeWidth={2} />
-            {savedScore !== null ? "Editar nota" : "Valorar"}
-          </button>
+          {isGuest ? (
+            <LoginPromptInput />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="flex shrink-0 items-center gap-2 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
+            >
+              <GmaIcon name="star" size={14} strokeWidth={2} />
+              {savedScore !== null ? "Editar nota" : "Valorar"}
+            </button>
+          )}
         </div>
 
         {/* Reviews header */}
@@ -131,7 +137,7 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
           }}
         />
       )}
-    </GuestGate>
+    </>
   );
 }
 

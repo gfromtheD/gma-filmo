@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Upload, Image as ImageIcon, Globe, AtSign, Video, Info, CheckCircle2 } from "lucide-react";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { StudioData } from "./studio-types";
 
 interface Props {
@@ -46,8 +47,35 @@ export function ProfileView({ data, onToast }: Props) {
     location: c.location, instagram: c.socials.instagram.replace("@", ""),
     vimeo: c.socials.vimeo.replace("vimeo.com/", ""), web: c.socials.web,
   });
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty]   = useState(false);
+  const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
+
+  async function handleSave() {
+    setSaving(true);
+    const supabase = getSupabaseBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); onToast("No se pudo guardar: sesión no encontrada", { error: true }); return; }
+
+    const { error } = await supabase
+      .from("creator_profiles")
+      .update({
+        studio_name:  form.studioName.trim(),
+        creator_name: form.artistName.trim(),
+        bio:          form.bio.trim().slice(0, 300),
+        location:     form.location.trim() || null,
+        website_url:  form.web.trim() || null,
+      })
+      .eq("user_id", user.id);
+
+    setSaving(false);
+    if (error) {
+      onToast("Error al guardar el perfil", { error: true });
+    } else {
+      setDirty(false);
+      onToast("Perfil actualizado");
+    }
+  }
 
   return (
     <div style={{ maxWidth: 1040, margin: "0 auto" }}>
@@ -57,9 +85,9 @@ export function ProfileView({ data, onToast }: Props) {
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em" }}>Perfil de creador</h1>
           <p style={{ margin: "10px 0 0", fontSize: 14, color: C.textSec }}>Así te ven los espectadores en GMA Filmo.</p>
         </div>
-        <button className="st-btn st-btn-accent" disabled={!dirty}
-          onClick={() => { setDirty(false); onToast("Perfil actualizado"); }}>
-          <Check size={16} strokeWidth={2.2} /> Guardar cambios
+        <button className="st-btn st-btn-accent" disabled={!dirty || saving}
+          onClick={() => void handleSave()}>
+          <Check size={16} strokeWidth={2.2} /> {saving ? "Guardando…" : "Guardar cambios"}
         </button>
       </div>
 
