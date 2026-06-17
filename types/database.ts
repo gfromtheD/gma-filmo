@@ -24,6 +24,9 @@ export type Database = {
           studio_name: string | null
           location: string | null
           website_url: string | null
+          role: string | null
+          instagram_url: string | null
+          vimeo_url: string | null
         }
         Insert: {
           user_id: string
@@ -34,6 +37,9 @@ export type Database = {
           studio_name?: string | null
           location?: string | null
           website_url?: string | null
+          role?: string | null
+          instagram_url?: string | null
+          vimeo_url?: string | null
         }
         Update: {
           user_id?: string
@@ -44,6 +50,9 @@ export type Database = {
           studio_name?: string | null
           location?: string | null
           website_url?: string | null
+          role?: string | null
+          instagram_url?: string | null
+          vimeo_url?: string | null
         }
         Relationships: []
       }

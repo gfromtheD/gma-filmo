@@ -60,11 +60,14 @@ export function ProfileView({ data, onToast }: Props) {
     const { error } = await supabase
       .from("creator_profiles")
       .update({
-        studio_name:  form.studioName.trim(),
-        creator_name: form.artistName.trim(),
-        bio:          form.bio.trim().slice(0, 300),
-        location:     form.location.trim() || null,
-        website_url:  form.web.trim() || null,
+        studio_name:   form.studioName.trim(),
+        creator_name:  form.artistName.trim(),
+        role:          form.role.trim() || null,
+        bio:           form.bio.trim().slice(0, 300),
+        location:      form.location.trim() || null,
+        website_url:   form.web.trim() || null,
+        instagram_url: form.instagram.trim() || null,
+        vimeo_url:     form.vimeo.trim() || null,
       })
       .eq("user_id", user.id);
 

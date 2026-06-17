@@ -9,8 +9,7 @@ import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const AVATAR_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
-const AVATAR_ICONS  = ["◆", "✦", "◐", "▲", "◇"] as const;
+const FALLBACK_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
 
 interface RatingsBlockProps {
   readonly title:     string;
@@ -141,6 +140,25 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
   );
 }
 
+function ReviewAvatar({ displayName, avatarUrl, avatarColor }: { displayName: string; avatarUrl: string | null; avatarColor: string | null }) {
+  const fallback = FALLBACK_COLORS[displayName.length % FALLBACK_COLORS.length];
+  const bg = avatarColor ?? fallback;
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+    );
+  }
+  return (
+    <div
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold"
+      style={{ background: bg + "33", color: bg }}
+    >
+      {displayName[0]?.toUpperCase() ?? "U"}
+    </div>
+  );
+}
+
 function ReviewCard({
   review,
   peliculaId,
@@ -150,11 +168,10 @@ function ReviewCard({
   peliculaId: number;
   currentUserId: string | null;
 }) {
-  const { userId, displayName, score, comment, ratedAt } = review;
+  const { userId, displayName, avatarUrl, avatarColor, score, comment, ratedAt } = review;
   const [liked, setLiked] = useState(review.likedByMe);
   const [count, setCount] = useState(review.likeCount);
 
-  const colorIdx    = displayName.length % AVATAR_COLORS.length;
   const isHighScore = score >= 8;
   const isOwn       = currentUserId === userId;
   const date        = new Date(ratedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -183,12 +200,7 @@ function ReviewCard({
 
   return (
     <div className="flex gap-4 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
-      <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px]"
-        style={{ background: AVATAR_COLORS[colorIdx] + "22", color: AVATAR_COLORS[colorIdx] }}
-      >
-        {AVATAR_ICONS[colorIdx]}
-      </div>
+      <ReviewAvatar displayName={displayName} avatarUrl={avatarUrl} avatarColor={avatarColor} />
 
       <div className="min-w-0 flex-1">
         <div className="mb-2 flex items-baseline gap-2.5">

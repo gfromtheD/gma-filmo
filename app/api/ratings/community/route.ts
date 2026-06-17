@@ -55,15 +55,19 @@ export async function GET(request: Request) {
     }
   }
 
-  // Resolve display names
+  // Resolve display names and avatars
   const userIds = [...new Set(ratings.map((r) => r.user_id))];
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id, display_name")
+    .select("id, display_name, avatar_url, avatar_color")
     .in("id", userIds);
 
-  const nameMap = new Map<string, string>();
-  for (const p of profiles ?? []) nameMap.set(p.id, p.display_name);
+  const nameMap   = new Map<string, string>();
+  const avatarMap = new Map<string, { url: string | null; color: string | null }>();
+  for (const p of profiles ?? []) {
+    nameMap.set(p.id, p.display_name);
+    avatarMap.set(p.id, { url: p.avatar_url, color: p.avatar_color });
+  }
 
   // Build reviews: only those with a comment, sorted by likes then recency, max 5
   const reviews = ratings
@@ -71,6 +75,8 @@ export async function GET(request: Request) {
     .map((r) => ({
       userId:      r.user_id,
       displayName: nameMap.get(r.user_id) ?? "Usuario",
+      avatarUrl:   avatarMap.get(r.user_id)?.url   ?? null,
+      avatarColor: avatarMap.get(r.user_id)?.color ?? null,
       score:       Math.round(r.score * 2),
       comment:     r.comment,
       ratedAt:     r.rated_at,

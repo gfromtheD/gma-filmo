@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Ejemplo Creador 1",
+    "slug": "ejemplo-creador-1",
+    "bio": "Directora de cortometrajes de ficción especializados en el paisaje rural gallego.",
+    "r2_photo_url": null
+  },
+  {
+    "name": "Ejemplo Creador 2",
+    "slug": "ejemplo-creador-2",
+    "bio": null,
+    "r2_photo_url": null
+  }
+]

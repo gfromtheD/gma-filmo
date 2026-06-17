@@ -38,7 +38,7 @@ export function StudioScreen() {
 
       const { data: row } = await supabase
         .from("creator_profiles")
-        .select("creator_name, studio_name, bio, location, website_url")
+        .select("creator_name, studio_name, bio, location, website_url, role, instagram_url, vimeo_url")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!row) return;
@@ -51,7 +51,13 @@ export function StudioScreen() {
           artistName: row.creator_name ?? d.creator.artistName,
           bio:        row.bio ?? d.creator.bio,
           location:   row.location ?? d.creator.location,
-          socials:    { ...d.creator.socials, web: row.website_url ?? d.creator.socials.web },
+          role:       row.role ?? d.creator.role,
+          socials: {
+            ...d.creator.socials,
+            web:       row.website_url   ?? d.creator.socials.web,
+            instagram: row.instagram_url ? `@${row.instagram_url}` : d.creator.socials.instagram,
+            vimeo:     row.vimeo_url     ? `vimeo.com/${row.vimeo_url}` : d.creator.socials.vimeo,
+          },
         },
       }));
     })();

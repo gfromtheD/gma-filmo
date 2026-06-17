@@ -6,6 +6,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 export interface CommunityReview {
   userId:      string;
   displayName: string;
+  avatarUrl:   string | null;
+  avatarColor: string | null;
   score:       number;
   comment:     string;
   ratedAt:     string;

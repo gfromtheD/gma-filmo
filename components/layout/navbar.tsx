@@ -138,10 +138,15 @@ export function Navbar() {
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
     setMenuOpen(false);
+    if (isGuest) {
+      document.cookie = "gma_guest=; path=/; max-age=0; SameSite=Lax";
+      router.push("/");
+      return;
+    }
     await getSupabaseBrowserClient().auth.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
-  }, [router]);
+  }, [router, isGuest]);
 
   // Close profile menu on outside click
   useEffect(() => {
@@ -444,7 +449,7 @@ export function Navbar() {
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-[#ff5252] disabled:opacity-50"
                   >
                     <GmaIcon name="close" size={16} />
-                    <span>{signingOut ? "Cerrando sesión…" : "Cerrar sesión"}</span>
+                    <span>{signingOut ? "Saliendo…" : isGuest ? "Salir al inicio" : "Cerrar sesión"}</span>
                   </button>
                 </div>
               </div>
