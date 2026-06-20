@@ -19,7 +19,7 @@ export function ProfileTransitionOverlay() {
   const [textFading, setTextFading] = useState(false);
 
   useEffect(() => {
-    if (phase !== "expanding" || pathname !== "/inicio") return;
+    if (phase !== "expanding" || pathname === "/perfiles") return;
     setTextFading(true);
     const t = setTimeout(startContract, 380);
     return () => clearTimeout(t);

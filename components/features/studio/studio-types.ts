@@ -21,6 +21,7 @@ export interface StudioTitle {
   language: string;
   subtitles: string[];
   poster: PosterData;
+  r2PosterUrl?: string;
   views?: number;
   rating?: number;
   ratingCount?: number;

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type ReactNode, type CSSProperties } from "react";
 import {
-  CheckCircle2, Clock, Pencil, AlertTriangle, Star, Play,
+  CheckCircle2, Clock, Pencil, AlertTriangle, Star, Play, ChevronDown,
 } from "lucide-react";
 import type { PosterData, TitleStatus } from "./studio-types";
 
@@ -119,11 +119,34 @@ export function Stars({ value = 0, size = 14, showNum = false, count }: {
 
 // ── Poster ────────────────────────────────────────────────────────────────────
 export function Poster({
-  data, title = "", year, type, ratio = "2 / 3", rounded = 12, hover = false,
+  data, imageUrl, title = "", year, type, ratio = "2 / 3", rounded = 12, hover = false,
 }: {
-  data?: PosterData | null; title?: string; year?: number | string; type?: string;
+  data?: PosterData | null; imageUrl?: string; title?: string; year?: number | string; type?: string;
   ratio?: string; rounded?: number; hover?: boolean;
 }) {
+  if (imageUrl) {
+    return (
+      <div className={hover ? "st-poster-wrap" : undefined} style={{
+        position: "relative", aspectRatio: ratio, width: "100%", borderRadius: rounded,
+        overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)",
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt={title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        {hover && (
+          <div className="st-poster-play" style={{
+            position: "absolute", inset: 0, display: "grid", placeItems: "center",
+            background: "rgba(3,8,14,0.45)", opacity: 0, transition: "opacity 0.22s ease",
+          }}>
+            <div style={{ width: 48, height: 48, borderRadius: 999, background: "rgba(255,255,255,0.92)",
+              display: "grid", placeItems: "center", paddingLeft: 3 }}>
+              <Play size={22} fill="#0A0F17" strokeWidth={0} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const p = data ?? { from: "#1c2a38", to: "#0a1119", accent: "#3fae7e" };
   const initials = title.split(" ").filter(Boolean).slice(0, 3).map(w => w[0]).join("").toUpperCase();
   return (
@@ -273,6 +296,91 @@ export function Menu({ trigger, items, align = "right", width = 196 }: {
               }}>
               {it.icon && <span style={{ display: "flex", flexShrink: 0 }}>{it.icon}</span>}
               {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── StudioSelect — custom dropdown that follows the design system ──────────────
+export function StudioSelect({ value, onChange, options }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", background: C.w4,
+          border: `1px solid ${open ? C.accent : "#1E2D42"}`,
+          borderRadius: 10, padding: "10px 14px",
+          color: "#fff", fontSize: 14, fontWeight: 500,
+          fontFamily: "inherit", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          outline: "none", transition: "border-color 0.18s",
+        }}
+      >
+        <span>{value}</span>
+        <ChevronDown
+          size={14}
+          color={C.textMuted}
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s", flexShrink: 0 }}
+        />
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+          background: "#0F1923", border: `1px solid ${C.border2}`,
+          borderRadius: 10, overflow: "hidden", zIndex: 200,
+          boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
+          animation: "dropIn 0.13s ease both",
+        }}>
+          {options.map(opt => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              style={{
+                width: "100%", padding: "10px 14px", textAlign: "left",
+                background: opt === value ? C.accent15 : "transparent",
+                border: "none",
+                color: opt === value ? C.accentH : C.textSec,
+                fontSize: 13.5, fontWeight: opt === value ? 700 : 500,
+                fontFamily: "inherit", cursor: "pointer",
+                transition: "background 0.12s, color 0.12s",
+              }}
+              onMouseEnter={e => {
+                if (opt !== value) {
+                  (e.currentTarget as HTMLElement).style.background = C.w6;
+                  (e.currentTarget as HTMLElement).style.color = "#fff";
+                }
+              }}
+              onMouseLeave={e => {
+                if (opt !== value) {
+                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                  (e.currentTarget as HTMLElement).style.color = C.textSec;
+                }
+              }}
+            >
+              {opt}
             </button>
           ))}
         </div>

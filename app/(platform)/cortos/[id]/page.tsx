@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MovieDetail } from "@/components/features/detail/movie-detail";
-import { getPeliculaBySlug, getRelatedPeliculas } from "@/lib/supabase/queries";
+import {
+  getPeliculaBySlug,
+  getRelatedPeliculas,
+  getCreatorByArtistaSlugs,
+} from "@/lib/supabase/queries";
 
 export const revalidate = 3600;
 
@@ -19,15 +23,23 @@ export default async function CortoDetailPage({ params, searchParams }: Props) {
   const movie = await getPeliculaBySlug(params.id);
   if (!movie) notFound();
 
-  const related = await getRelatedPeliculas(movie.id, movie.categories, 4, {
-    author: movie.author,
-    year: movie.year,
-  });
+  const artistaSlugs = (movie.artistas ?? [])
+    .map((a) => a.slug)
+    .filter((s): s is string => Boolean(s));
+
+  const [related, creator] = await Promise.all([
+    getRelatedPeliculas(movie.id, movie.categories, 4, {
+      author: movie.author,
+      year: movie.year,
+    }),
+    getCreatorByArtistaSlugs(artistaSlugs),
+  ]);
 
   return (
     <MovieDetail
       movie={movie}
       related={related}
+      creator={creator}
       autoOpenRating={searchParams.valorar === "1"}
     />
   );

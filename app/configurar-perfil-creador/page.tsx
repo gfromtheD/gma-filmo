@@ -73,14 +73,17 @@ export default function ConfigurarPerfilCreadorPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const { count: subCount } = await supabase
-        .from("sub_profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      const hasViewerAccount = !!profileRow && (subCount ?? 0) > 0;
+      // Any user with an existing profiles row is a viewer account
+      const hasViewerAccount = !!profileRow?.display_name;
       setIsExistingViewer(hasViewerAccount && !creatorRow);
       if (hasViewerAccount) setExistingDisplayName(profileRow!.display_name);
+
+      // If the user already confirmed conversion in this session (cookie persisted
+      // across navigation), skip the confirmation screen and go straight to the form.
+      const alreadyConfirmed = document.cookie.includes("gma_creator_setup=confirmed");
+      if (alreadyConfirmed && hasViewerAccount && !creatorRow) {
+        setConversionConfirmed(true);
+      }
 
       const metaName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? "") as string;
       setCreatorName(metaName);
@@ -128,7 +131,8 @@ export default function ConfigurarPerfilCreadorPage() {
       setError("Error al guardar. Inténtalo de nuevo.");
       setLoading(false);
     } else {
-      router.push("/mi-estudio");
+      document.cookie = "gma_creator_setup=; path=/; max-age=0; SameSite=Lax";
+      router.push("/perfiles?next=/mi-estudio");
       router.refresh();
     }
   }
@@ -165,17 +169,24 @@ export default function ConfigurarPerfilCreadorPage() {
           <div className="mt-7 flex flex-col gap-3">
             <button
               type="button"
-              onClick={() => setConversionConfirmed(true)}
+              onClick={() => {
+                document.cookie = "gma_creator_setup=confirmed; path=/; max-age=600; SameSite=Lax";
+                setConversionConfirmed(true);
+              }}
               className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
             >
               Sí, añadir acceso de creador
             </button>
             <button
               type="button"
-              onClick={() => router.push("/")}
+              onClick={async () => {
+                document.cookie = "gma_creator_setup=; path=/; max-age=0; SameSite=Lax";
+                await getSupabaseBrowserClient().auth.signOut();
+                router.push("/");
+              }}
               className="w-full rounded-full border border-[#1E2D42] py-3 text-[14px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.04]"
             >
-              No, volver al inicio
+              No, cancelar
             </button>
           </div>
         </div>
@@ -299,7 +310,7 @@ export default function ConfigurarPerfilCreadorPage() {
                     label: (
                       <>
                         He leído y acepto las{" "}
-                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline-offset-2 hover:underline">
+                        <a href="/terminos" className="font-semibold text-white underline-offset-2 hover:underline">
                           Condiciones de uso
                         </a>{" "}de GMA Filmo.
                       </>
@@ -311,7 +322,7 @@ export default function ConfigurarPerfilCreadorPage() {
                     label: (
                       <>
                         He leído y acepto la{" "}
-                        <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline-offset-2 hover:underline">
+                        <a href="/privacidad" className="font-semibold text-white underline-offset-2 hover:underline">
                           Política de privacidad
                         </a>.
                         {" "}Confirmo que el contenido que publique es de mi autoría o dispongo de los derechos necesarios.

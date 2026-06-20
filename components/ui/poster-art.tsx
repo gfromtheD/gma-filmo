@@ -272,7 +272,8 @@ interface PosterArtProps {
 
 export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl }: PosterArtProps) {
   const [c1, c2] = style.tone;
-  const motifFn = MOTIFS[style.motif];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const motifFn: MotifFn = (MOTIFS as Record<string, MotifFn | undefined>)[style.motif] ?? (() => null);
   const aspect = ratio === "landscape" ? "16/9" : ratio === "square" ? "1/1" : "2/3";
 
   return (

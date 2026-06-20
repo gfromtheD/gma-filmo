@@ -176,6 +176,12 @@ export function HomeScreen({ items }: HomeScreenProps) {
           </Carousel>
         )}
 
+        <Carousel title="Recién llegados">
+          {items.slice(0, 15).map((item) => (
+            <PosterCard key={item.id} item={item} ratio="landscape" size="lg" href={hrefFor(item)} />
+          ))}
+        </Carousel>
+
         {homeRows.map((row) => (
           <Carousel key={row.title} title={row.title}>
             {row.items.map((item) => (

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         data.user.user_metadata?.full_name ??
         data.user.user_metadata?.name;
 
-      // ── Existing profile setup ────────────────────────────────────────────
+      // ── Ensure profiles row exists ──────────────────────────────────────────
       const { data: existing } = await supabase
         .from("profiles")
         .select("display_name")
@@ -70,54 +70,51 @@ export async function GET(request: NextRequest) {
         ? (resolvedName && !hasRealName(existing.display_name) ? resolvedName : existing.display_name)
         : resolvedName;
 
-      // ── Creator email path: insert creator_profiles from metadata ─────────
-      const isCreatorEmail    = data.user.user_metadata?.is_creator === true;
-      const creatorNameFromMeta = data.user.user_metadata?.creator_name as string | undefined;
+      // ── Check creator status (single source of truth) ───────────────────────
+      // A user IS a creator if they have a creator_profiles row with studio_name set.
+      const { data: creatorRow } = await supabase
+        .from("creator_profiles")
+        .select("user_id, studio_name")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
 
-      if (isCreatorEmail && creatorNameFromMeta) {
-        const { data: existingCreator } = await supabase
-          .from("creator_profiles")
-          .select("user_id")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
+      const isConfirmedCreator = !!(creatorRow?.studio_name);
 
-        if (!existingCreator) {
-          await supabase.from("creator_profiles").insert({
-            user_id: data.user.id,
-            creator_name: creatorNameFromMeta,
-          });
-        }
+      // ── Routing decision ────────────────────────────────────────────────────
+      //
+      // Priority order:
+      //   1. Already a confirmed creator → always land on perfiles → mi-estudio
+      //   2. Creator OAuth + no studio yet → fill out creator form
+      //   3. Normal viewer → perfiles (or configurar-perfil if no name yet)
+
+      let destination: string;
+
+      if (isConfirmedCreator) {
+        // Returning creator: pick profile then go to Mi Estudio
+        destination = "/perfiles?next=/mi-estudio";
+      } else if (isCreatorOAuth) {
+        // New creator OAuth: go set up creator profile
+        destination = "/configurar-perfil-creador";
+        // Mark that this session is mid-creator-onboarding so middleware can
+        // block navigation away from the form until it's submitted or cancelled.
+        pendingCookies.push({
+          name: "gma_creator_setup",
+          value: "1",
+          options: { path: "/", maxAge: 600, sameSite: "lax" as const },
+        });
+      } else {
+        // Normal viewer login
+        const needsSetup = !hasRealName(finalName);
+        destination = needsSetup ? "/configurar-perfil" : next;
       }
-
-      // ── Creator OAuth path: redirect to creator setup ─────────────────────
-      if (isCreatorOAuth) {
-        const { data: existingCreator } = await supabase
-          .from("creator_profiles")
-          .select("user_id, studio_name")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
-
-        if (!existingCreator || !existingCreator.studio_name) {
-          const response = NextResponse.redirect(`${origin}/configurar-perfil-creador`);
-          pendingCookies.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-          response.cookies.set("gma_guest", "", { path: "/", maxAge: 0, sameSite: "lax" });
-          response.cookies.set("gma_creator_pending", "", { path: "/", maxAge: 0, sameSite: "lax" });
-          return response;
-        }
-      }
-
-      // ── Normal profile setup check ────────────────────────────────────────
-      const needsSetup = !hasRealName(finalName);
-      const destination = needsSetup ? "/configurar-perfil" : next;
 
       const response = NextResponse.redirect(`${origin}${destination}`);
       pendingCookies.forEach(({ name, value, options }) =>
         response.cookies.set(name, value, options),
       );
-      response.cookies.set("gma_guest", "", { path: "/", maxAge: 0, sameSite: "lax" });
-      response.cookies.set("gma_creator_pending", "", { path: "/", maxAge: 0, sameSite: "lax" });
+      // Always clear these cookies on any successful auth
+      response.cookies.set("gma_guest",           "", { path: "/", maxAge: 0, sameSite: "lax" });
+      response.cookies.set("gma_creator_pending",  "", { path: "/", maxAge: 0, sameSite: "lax" });
       return response;
     }
   }

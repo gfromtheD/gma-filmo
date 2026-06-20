@@ -30,6 +30,7 @@ interface MediaBase {
   readonly imageUrl?: string;
   readonly videoUrl?: string;
   readonly r2VideoUrl?: string;
+  readonly subtitleUrl?: string;
   readonly tags?: readonly string[];
   readonly tag?: string;
   readonly progress?: number;

@@ -51,10 +51,12 @@ type PeliculaRow = {
   author: string | null;
   r2_poster_url: string | null;
   r2_video_url: string | null;
+  r2_subtitle_url: string | null;
   youtube_url: string | null;
   thumbnail_url: string | null;
   source_page: string | null;
   created_at: string;
+  genre: string | null;
 };
 
 type PeliculaWithRelations = PeliculaRow & {
@@ -152,8 +154,9 @@ function toMovieMedia(
     }
   }
 
-  const imageUrl   = p.r2_poster_url ?? p.thumbnail_url ?? undefined;
-  const r2VideoUrl = p.r2_video_url ?? undefined;
+  const imageUrl    = p.r2_poster_url ?? p.thumbnail_url ?? undefined;
+  const r2VideoUrl  = p.r2_video_url ?? undefined;
+  const subtitleUrl = p.r2_subtitle_url ?? undefined;
   const content    = FILM_CONTENT[p.slug];
 
   return {
@@ -167,9 +170,10 @@ function toMovieMedia(
     synopsis: p.synopsis || content?.synopsis || "",
     tagline: content?.tagline,
     runtime: p.duration ?? "Corto",
-    genre: p.slug === "la-pelicula" ? "Película" : "Cortometraje",
+    genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
     r2VideoUrl,
+    subtitleUrl,
     style: deriveStyle(p.slug),
     author: p.author ?? undefined,
     artistas: artistas.length > 0 ? artistas : undefined,
@@ -262,11 +266,12 @@ export async function getRelatedPeliculas(
   excludeSlug: string,
   categories: readonly string[],
   limit = 4,
-  opts?: { author?: string; year?: number },
+  opts?: { author?: string; year?: number; excludeSlugs?: string[] },
 ): Promise<MovieMedia[]> {
   const all = await getPeliculas();
   const realCategories = categories.filter((c) => c !== "Cortometraje");
-  const candidates = all.filter((m) => m.id !== excludeSlug);
+  const excluded = new Set([excludeSlug, ...(opts?.excludeSlugs ?? [])]);
+  const candidates = all.filter((m) => !excluded.has(m.id));
 
   function scoreOf(m: MovieMedia): number {
     let s = 0;
@@ -343,22 +348,31 @@ export type Coleccion = {
   r2_cover_url: string | null;
 };
 
-export const getColecciones = cache(
-  unstable_cache(
-    async (): Promise<Coleccion[]> => {
-      const supabase = getSupabasePublicClient();
-      const { data } = await supabase
-        .from("colecciones")
-        .select("id, slug, name, description, r2_cover_url")
-        .order("name");
-      return (data ?? []) as Coleccion[];
-    },
-    ["colecciones-all"],
-    { revalidate: 3600, tags: ["colecciones"] },
-  )
+const ESTRENOS_COLECCION: Coleccion = {
+  id: -1,
+  slug: "estrenos",
+  name: "Estrenos",
+  description: "Los últimos títulos añadidos a GMA Filmo",
+  r2_cover_url: null,
+};
+
+const getColeccionesCached = unstable_cache(
+  async (): Promise<Coleccion[]> => {
+    const supabase = getSupabasePublicClient();
+    const { data } = await supabase
+      .from("colecciones")
+      .select("id, slug, name, description, r2_cover_url")
+      .order("name");
+    return [ESTRENOS_COLECCION, ...(data ?? [])] as Coleccion[];
+  },
+  ["colecciones-all"],
+  { revalidate: 3600, tags: ["colecciones"] },
 );
 
+export const getColecciones = cache(getColeccionesCached);
+
 export async function getColeccionBySlug(slug: string): Promise<Coleccion | null> {
+  if (slug === "estrenos") return ESTRENOS_COLECCION;
   const supabase = getSupabasePublicClient();
   const { data } = await supabase
     .from("colecciones")
@@ -369,6 +383,12 @@ export async function getColeccionBySlug(slug: string): Promise<Coleccion | null
 }
 
 export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[]> {
+  // "Estrenos" is a virtual collection — the 20 most recently added titles
+  if (slug === "estrenos") {
+    const all = await getPeliculas();
+    return all.slice(0, 20);
+  }
+
   const supabase = getSupabasePublicClient();
 
   const { data: col } = await supabase

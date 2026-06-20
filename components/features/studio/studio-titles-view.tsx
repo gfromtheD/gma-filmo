@@ -13,6 +13,7 @@ interface Props {
   onNav: (id: StudioTabId, payload?: StudioTitle) => void;
   onEditTitle: (t: StudioTitle) => void;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
+  onDelete: (t: StudioTitle) => void;
   openTitle: StudioTitle | null;
   setOpenTitle: (t: StudioTitle | null) => void;
 }
@@ -29,6 +30,7 @@ function actionsFor(t: StudioTitle, handlers: {
   onStats: (t: StudioTitle) => void;
   onEdit: (t: StudioTitle) => void;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
+  onDelete: (t: StudioTitle) => void;
   onOpen: (t: StudioTitle) => void;
 }): MenuItem[] {
   const base: MenuItem[] = [{ label: "Ver detalles", icon: <Eye size={16} />, onClick: () => handlers.onOpen(t) }];
@@ -38,13 +40,13 @@ function actionsFor(t: StudioTitle, handlers: {
     { label: "Ver estadísticas", icon: <BarChart2 size={16} />, onClick: () => handlers.onStats(t) },
     { divider: true },
     { label: "Despublicar", icon: <EyeOff size={16} />, onClick: () => handlers.onToast(`«${t.title}» se ha despublicado`) },
-    { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onToast(`«${t.title}» eliminado`, { error: true }) },
+    { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
   if (t.status === "borrador") return [
     { label: "Continuar edición", icon: <Pencil size={16} />, onClick: () => handlers.onEdit(t) },
     { label: "Enviar a revisión", icon: <Upload size={16} />, onClick: () => handlers.onToast(`«${t.title}» enviado a revisión`) },
     { divider: true },
-    { label: "Eliminar borrador", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onToast("Borrador eliminado", { error: true }) },
+    { label: "Eliminar borrador", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
   if (t.status === "revision") return [
     ...base,
@@ -56,7 +58,7 @@ function actionsFor(t: StudioTitle, handlers: {
     ...base,
     { label: "Editar y reenviar", icon: <RefreshCw size={16} />, onClick: () => handlers.onEdit(t) },
     { divider: true },
-    { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onToast(`«${t.title}» eliminado`, { error: true }) },
+    { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
 }
 
@@ -65,13 +67,14 @@ interface Handlers {
   onEdit: (t: StudioTitle) => void;
   onStats: (t: StudioTitle) => void;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
+  onDelete: (t: StudioTitle) => void;
 }
 
 function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
     <div style={card({ padding: 12, display: "flex", flexDirection: "column" })}>
       <div style={{ position: "relative", cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
-        <Poster data={t.poster} title={t.title} type={t.type} year={t.year} hover />
+        <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} hover />
         <div style={{ position: "absolute", top: 9, left: 9 }}><StatusBadge status={t.status} size="sm" /></div>
       </div>
       <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-start", marginTop: 12, gap: 8 }}>
@@ -121,7 +124,7 @@ function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
     <div style={card({ padding: 12, display: "grid",
       gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, alignItems: "center" })}>
       <div style={{ width: 52, cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
-        <Poster data={t.poster} title={t.title} rounded={7} />
+        <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} rounded={7} />
       </div>
       <div style={{ minWidth: 0, cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
         <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
@@ -158,7 +161,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
             <StatusBadge status={t.status} />
             <button className="st-btn st-btn-ghost st-btn-icon" onClick={onClose}><X size={18} /></button>
           </div>
-          <div style={{ width: 150, marginBottom: 18 }}><Poster data={t.poster} title={t.title} type={t.type} year={t.year} /></div>
+          <div style={{ width: 150, marginBottom: 18 }}><Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} /></div>
           <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700 }}>{t.title}</h2>
           <div style={{ fontSize: 13, fontWeight: 600, color: C.textMuted }}>{t.type} · {t.genre} · {t.duration} · {t.year}</div>
           <p style={{ marginTop: 14, fontSize: 14, color: C.textSec, lineHeight: 1.6 }}>{t.description}</p>
@@ -222,7 +225,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
   );
 }
 
-export function TitlesView({ data, onNav, onEditTitle, onToast, openTitle, setOpenTitle }: Props) {
+export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTitle, setOpenTitle }: Props) {
   const [filter, setFilter] = useState("todos");
   const [q, setQ] = useState("");
   const [layout, setLayout] = useState<"grid" | "lista">("grid");
@@ -240,6 +243,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, openTitle, setOp
     onEdit: onEditTitle,
     onStats: (t: StudioTitle) => onNav("estadisticas", t),
     onToast,
+    onDelete,
   };
 
   return (

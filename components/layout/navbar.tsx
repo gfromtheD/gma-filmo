@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
-import { ExternalLink, UserRound } from "lucide-react";
+import { ExternalLink, UserRound, MessageCircle } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -14,6 +14,9 @@ import { renderAvatar } from "@/lib/data/profile-avatars";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
+import { useStudioTabStore } from "@/store/use-studio-tab-store";
+import { STUDIO_TABS } from "@/components/features/studio/studio-sub-nav";
+import { useDMStore } from "@/store/use-dm-store";
 
 interface NavItem {
   readonly id: string;
@@ -71,6 +74,7 @@ export function Navbar() {
 
   const isGuest      = useIsGuest();
   const { isCreator } = useIsCreator();
+  const openDM = useDMStore((s) => s.open);
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
   const phase        = useTransitionStore((s) => s.phase);
   const chipBtnRef   = useRef<HTMLButtonElement>(null);
@@ -95,12 +99,10 @@ export function Navbar() {
       const revealT = setTimeout(() => setChipReveal(false), 120);
       const expandT = setTimeout(() => setPillExpanded(true), 240);
 
-      // Trigger roulette for creators after pill has expanded
+      // Trigger roulette for creators after pill has expanded — ends on Mi Estudio
       let r1: ReturnType<typeof setTimeout> | undefined;
-      let r2: ReturnType<typeof setTimeout> | undefined;
       if (isCreator) {
-        r1 = setTimeout(() => setRouletteStep(1), 500);   // → Mi Estudio
-        r2 = setTimeout(() => setRouletteStep(0), 1900);  // → Mi Espacio
+        r1 = setTimeout(() => setRouletteStep(1), 500);   // → Mi Estudio (stays)
       }
 
       prevPhase.current = phase;
@@ -108,7 +110,6 @@ export function Navbar() {
         clearTimeout(revealT);
         clearTimeout(expandT);
         if (r1) clearTimeout(r1);
-        if (r2) clearTimeout(r2);
       };
     }
     prevPhase.current = phase;
@@ -134,6 +135,23 @@ export function Navbar() {
   const itemRefs   = useRef<(HTMLElement | null)[]>([]);
   const [pill, setPill]         = useState({ left: 0, width: 0 });
   const [pillReady, setPillReady] = useState(false);
+
+  // ── Studio sub-nav (second row of compound nav) ───────────────────────────
+  const { activeTab: studioTab, setActiveTab: setStudioTab } = useStudioTabStore();
+  const studioTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [studioTabPill, setStudioTabPill]           = useState({ left: 0, width: 0 });
+  const [studioTabPillReady, setStudioTabPillReady] = useState(false);
+  const isStudioNav = isCreator && pathname.startsWith("/mi-estudio");
+
+
+  useEffect(() => {
+    if (!isStudioNav) { setStudioTabPillReady(false); return; }
+    const idx = STUDIO_TABS.findIndex((t) => t.id === studioTab);
+    const el  = studioTabRefs.current[idx];
+    if (!el) return;
+    setStudioTabPill({ left: el.offsetLeft, width: el.offsetWidth });
+    setStudioTabPillReady(true);
+  }, [studioTab, isStudioNav]);
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
@@ -170,17 +188,31 @@ export function Navbar() {
   }
 
   // Sync roulette label with current route (only when no animation is running)
+  // Creators default to Mi Estudio on any page; viewers always Mi Espacio
   useEffect(() => {
     if (phase !== "idle") return;
-    setRouletteStep(pathname.startsWith("/mi-estudio") ? 1 : 0);
-  }, [pathname, phase]);
+    if (pathname.startsWith("/mi-estudio")) {
+      setRouletteStep(1);
+    } else if (pathname.startsWith("/mi-espacio")) {
+      setRouletteStep(0);
+    } else {
+      setRouletteStep(isCreator ? 1 : 0);
+    }
+  }, [pathname, phase, isCreator]);
 
   // Toggle between Mi Espacio ↔ Mi Estudio with roulette animation on the pill
   function handleSpacePillClick() {
-    if (!isCreator || !spaceIsActive) {
+    if (!isCreator) {
       router.push("/mi-espacio");
       return;
     }
+    if (!spaceIsActive) {
+      // Creator on any other page: pill takes them to their default (Mi Estudio)
+      setRouletteStep(1);
+      setTimeout(() => router.push("/mi-estudio"), 420);
+      return;
+    }
+    // Creator already in space section: toggle between Mi Espacio ↔ Mi Estudio
     const targetHref = pathname.startsWith("/mi-estudio") ? "/mi-espacio" : "/mi-estudio";
     const targetStep = targetHref === "/mi-estudio" ? 1 : 0;
     setRouletteStep(targetStep);
@@ -202,8 +234,7 @@ export function Navbar() {
     <header
       className="sticky top-0 z-50"
       style={{
-        background:
-          "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0) 100%)",
+        background: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0) 100%)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
       }}
@@ -237,63 +268,126 @@ export function Navbar() {
           </span>
         </div>
 
-        {/* ── Center: pill nav ──────────────────────────────────────── */}
+        {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
-          className="relative flex gap-1 rounded-full border border-[#262626] p-1"
+          className="relative flex rounded-full border border-[#262626]"
           style={{ background: "rgba(255,255,255,0.04)" }}
         >
-          {pillReady && (
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-              style={{ left: pill.left, width: pill.width }}
-            />
-          )}
+          {/* ── Main nav row ─────────────────────────────────────────── */}
+          <div className="relative z-10 flex gap-1 p-1">
+            {pillReady && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                style={{ left: pill.left, width: pill.width }}
+              />
+            )}
 
-          {NAV_ITEMS.map((item, i) => {
-            const active = isActive(item);
-            const labelColor = active ? "#051910" : "#B8C5D4";
+            {NAV_ITEMS.map((item, i) => {
+              const active = isActive(item);
+              const labelColor = active ? "#051910" : "#B8C5D4";
 
-            // ── Space tab (creator: click toggles Mi Espacio ↔ Mi Estudio) ──
-            if (item.id === "space" && isCreator) {
-              return (
-                <div
-                  key={item.id}
-                  ref={(el) => { itemRefs.current[i] = el; }}
-                  className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
-                  onClick={handleSpacePillClick}
-                >
-                  {/* Slot-machine roulette — two labels stacked, clip to one row */}
-                  <span
-                    className="inline-block overflow-hidden text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                    style={{ height: "1.2em", lineHeight: "1.2em", color: labelColor }}
+              if (item.id === "space" && isCreator) {
+                return (
+                  <div
+                    key={item.id}
+                    ref={(el) => { itemRefs.current[i] = el; }}
+                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
+                    onClick={handleSpacePillClick}
                   >
-                    <motion.span
-                      className="flex flex-col"
-                      animate={{ y: rouletteStep === 0 ? "0em" : "-1.2em" }}
-                      transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                    <span
+                      className="inline-block overflow-hidden text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                      style={{ height: "1.2em", lineHeight: "1.2em", color: labelColor }}
                     >
-                      <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Espacio</span>
-                      <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
-                    </motion.span>
-                  </span>
-                </div>
-              );
-            }
+                      <motion.span
+                        className="flex flex-col"
+                        animate={{ y: rouletteStep === 0 ? "0em" : "-1.2em" }}
+                        transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                      >
+                        <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Espacio</span>
+                        <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
+                      </motion.span>
+                    </span>
+                  </div>
+                );
+              }
 
-            // ── Normal tab ───────────────────────────────────────────
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                ref={(el) => { itemRefs.current[i] = el; }}
-                className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                style={{ color: active ? "#051910" : "#B8C5D4" }}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  ref={(el) => { itemRefs.current[i] = el; }}
+                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                  style={{ color: active ? "#051910" : "#B8C5D4" }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+
+
+          {/* ── Studio tabs: deploy BELOW the main pill, out of normal flow ── */}
+          {isStudioNav && (
+            <motion.div
+              style={{
+                position: "absolute",
+                top: "100%",
+                marginTop: 20,
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 2,
+                display: "flex",
+                gap: 4,
+                padding: 4,
+                borderRadius: 999,
+                background: "rgba(3,4,8,0.96)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              }}
+              initial={{ clipPath: "inset(0 44% 0 44% round 999px)" }}
+              animate={{ clipPath: "inset(0 0% 0 0% round 999px)" }}
+              transition={{ delay: 0.16, type: "spring", stiffness: 260, damping: 28, mass: 0.9 }}
+            >
+              {studioTabPillReady && (
+                <motion.span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute", bottom: 4, height: 2,
+                    borderRadius: 999,
+                    background: "#22B16B",
+                    pointerEvents: "none",
+                  }}
+                  animate={{ left: studioTabPill.left, width: studioTabPill.width }}
+                  transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.7 }}
+                />
+              )}
+              {STUDIO_TABS.map((tab, i) => (
+                <button
+                  key={tab.id}
+                  ref={(el) => { studioTabRefs.current[i] = el; }}
+                  onClick={() => {
+                    setStudioTab(tab.id);
+                    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  style={{
+                    position: "relative", zIndex: 10,
+                    display: "flex", alignItems: "center", gap: 7,
+                    height: 36, padding: "0 18px",
+                    borderRadius: 999,
+                    background: "transparent", border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                    color: studioTab === tab.id ? "#22B16B" : "#B8C5D4",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </motion.div>
+          )}
         </nav>
 
         {/* ── Right: search + profile ───────────────────────────────── */}
@@ -416,6 +510,16 @@ export function Navbar() {
                     <GmaIcon name="bookmark" size={16} />
                     <span>Mi Espacio</span>
                   </Link>
+                  {isCreator && (
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); openDM(); }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+                    >
+                      <MessageCircle size={16} />
+                      <span>Mensajes directos</span>
+                    </button>
+                  )}
                   {!activeProfile?.isKids && (
                     <Link
                       href="/configuracion"

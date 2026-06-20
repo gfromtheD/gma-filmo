@@ -71,12 +71,7 @@ const AUDIO_TRACKS = [
   { id: "en",      label: "English · 5.1",      badge: "EN · 5.1"          },
 ] as const;
 
-const CC_TRACKS = [
-  { id: null, label: "Desactivado" },
-  { id: "es", label: "Español"    },
-  { id: "en", label: "English"    },
-  { id: "ca", label: "Català"     },
-] as const;
+// CC tracks are built dynamically from item.subtitleUrl in the component
 
 function getChapter(t: number, duration: number): { num: string; name: string } {
   const idx = Math.min(
@@ -157,9 +152,11 @@ function Skip10({ direction }: { direction: "back" | "forward" }) {
 // ─── Player ───────────────────────────────────────────────────────────────────
 
 interface PlayerScreenProps {
-  readonly item: MediaItem;
-  readonly nextItem?: MediaItem;
-  readonly creator?: CreatorProfile | null;
+  readonly item:        MediaItem;
+  readonly nextItem?:   MediaItem;
+  readonly nextUrl?:    string;
+  readonly creator?:    CreatorProfile | null;
+  readonly initialTime?: number;
 }
 
 // ─── Donation banner ──────────────────────────────────────────────────────────
@@ -234,7 +231,7 @@ function SplashIntro() {
   );
 }
 
-export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
+export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: PlayerScreenProps) {
   const router   = useRouter();
   const duration = parseDuration(item);
 
@@ -293,6 +290,10 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
   function handleLoadedMetadata() {
     const vid = videoRef.current;
     if (!vid) return;
+    if (initialTime && initialTime > 0) {
+      vid.currentTime = initialTime;
+      return;
+    }
     const saved = getProgress(item.numericId);
     if (saved && !saved.completed && saved.currentTime > 10 && isFinite(saved.currentTime)) {
       vid.currentTime = saved.currentTime;
@@ -385,9 +386,9 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
   }
 
   function handlePlayNext() {
-    if (!nextItem || navigatedRef.current) return;
+    if (!nextItem || !nextUrl || navigatedRef.current) return;
     navigatedRef.current = true;
-    router.push(`/ver/${nextItem.id}`);
+    router.replace(nextUrl);
   }
 
   // Fallback save on unmount (e.g. browser back, middleware redirect)
@@ -405,6 +406,10 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
       }
     };
   }, [item.numericId, duration]);
+
+  const subtitleProxyUrl = item.subtitleUrl
+    ? `/api/subtitle-proxy?url=${encodeURIComponent(item.subtitleUrl)}`
+    : null;
 
   const mp4Url     = item.r2VideoUrl ?? null;
   const youtubeUrl = !mp4Url && item.videoUrl && isYouTubeUrl(item.videoUrl)
@@ -436,6 +441,15 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
     vid.muted  = muted;
     vid.volume = muted ? 0 : volume;
   }, [muted, volume]);
+
+  // Sync CC selector with the actual TextTrack on the video element
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid || !subtitleProxyUrl) return;
+    for (let i = 0; i < vid.textTracks.length; i++) {
+      vid.textTracks[i]!.mode = ccTrack ? "showing" : "hidden";
+    }
+  }, [ccTrack, subtitleProxyUrl]);
 
   // Timer-based time tracking: runs for (1) no video at all, (2) YouTube iframe (can't get real time)
   // Frozen while the intro splash is up so the clock doesn't advance behind it.
@@ -495,9 +509,9 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
   // When countdown hits 0: navigate if autoplay is on, otherwise just hide
   useEffect(() => {
     if (countdownSecs !== 0 || !nextItem || navigatedRef.current) return;
-    if (autoplayNext) {
+    if (autoplayNext && nextUrl) {
       navigatedRef.current = true;
-      router.push(`/ver/${nextItem.id}`);
+      router.replace(nextUrl);
     } else {
       setCountdownSecs(null);
     }
@@ -684,7 +698,16 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
               // Force countdown to 0 so the navigate useEffect fires immediately
               if (nextItem && !navigatedRef.current) setCountdownSecs(0);
             }}
-          />
+          >
+            {subtitleProxyUrl && (
+              <track
+                kind="subtitles"
+                src={subtitleProxyUrl}
+                label="Subtítulos"
+                srcLang="es"
+              />
+            )}
+          </video>
         ) : youtubeUrl ? (
           <iframe
             src={youtubeUrl} title={item.title}
@@ -969,6 +992,7 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
           autoplayNext={autoplayNext}
           onAutoplayNext={setAutoplayNext}
           hasNext={Boolean(nextItem)}
+          hasSubtitle={Boolean(subtitleProxyUrl)}
         />
       )}
 
@@ -1102,7 +1126,7 @@ export function PlayerScreen({ item, nextItem, creator }: PlayerScreenProps) {
               {nextItem && (
                 <button
                   type="button"
-                  onClick={() => router.push(`/ver/${nextItem.id}`)}
+                  onClick={() => nextUrl && router.replace(nextUrl)}
                   className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-white/55 transition-colors hover:text-white active:scale-95"
                 >
                   Siguiente
@@ -1757,7 +1781,7 @@ function SettingsPanel({
   audioTrack, onAudioTrack,
   speed, onSpeed,
   autoplayNext, onAutoplayNext,
-  hasNext,
+  hasNext, hasSubtitle,
 }: {
   ccTrack: string | null;
   onCcTrack: (t: string | null) => void;
@@ -1768,8 +1792,13 @@ function SettingsPanel({
   autoplayNext: boolean;
   onAutoplayNext: (v: boolean) => void;
   hasNext: boolean;
+  hasSubtitle: boolean;
 }) {
   const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  const ccOptions: { id: string | null; label: string }[] = hasSubtitle
+    ? [{ id: null, label: "Desactivado" }, { id: "sub", label: "Subtítulos" }]
+    : [{ id: null, label: "No disponible" }];
 
   return (
     <div
@@ -1806,17 +1835,18 @@ function SettingsPanel({
       {/* Subtitles */}
       <div className="border-b border-white/8 px-4 py-3">
         <p className="mb-1 text-[10px] font-bold tracking-widest uppercase text-white/30">Subtítulos</p>
-        {CC_TRACKS.map((opt) => (
+        {ccOptions.map((opt) => (
           <button
             key={String(opt.id)}
             type="button"
-            onClick={() => onCcTrack(opt.id)}
+            onClick={() => hasSubtitle && onCcTrack(opt.id)}
             className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors ${
+              !hasSubtitle ? "cursor-default opacity-40" :
               ccTrack === opt.id ? "text-[#22B16B]" : "text-white/55 hover:text-white/80"
             }`}
           >
             <span className="flex w-3 shrink-0 items-center justify-center">
-              {ccTrack === opt.id && <GmaIcon name="check" size={11} />}
+              {ccTrack === opt.id && hasSubtitle && <GmaIcon name="check" size={11} />}
             </span>
             {opt.label}
           </button>

@@ -1,24 +1,64 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Upload, Film, Check, ChevronRight, Plus, Trash2, RefreshCw, Play, Info, CheckCircle2 } from "lucide-react";
-import { C, card, row, col, Poster } from "./studio-ui";
+import { useState, useEffect } from "react";
+import { Upload, Check, ChevronRight, Plus, Trash2, Play, Info, CheckCircle2, Loader2, HelpCircle } from "lucide-react";
+import { C, card, row, col, Poster, StudioSelect } from "./studio-ui";
+import { UploadOrbital } from "./studio-upload-orbital";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { StudioData, PosterData, StudioTabId } from "./studio-types";
 
 interface Props {
   data: StudioData;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
   onNav: (id: StudioTabId) => void;
+  onPublished?: () => void;
 }
 
 const STEPS = ["Archivo", "Detalles", "Vista previa"];
 
-function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+const DRAFT_KEY = "gma_studio_upload_draft";
+
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(s => !s)}
+        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", color: C.textMuted, lineHeight: 1 }}
+      >
+        <HelpCircle size={12} />
+      </button>
+      {show && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          width: 230, padding: "10px 13px", borderRadius: 10, zIndex: 200, pointerEvents: "none",
+          background: "#0F1923", border: `1px solid ${C.border2}`,
+          boxShadow: "0 10px 32px rgba(0,0,0,0.7)",
+          fontSize: 12, color: C.textSec, lineHeight: 1.55,
+        }}>
+          {text}
+          <span style={{
+            position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+            display: "block", width: 0, height: 0,
+            borderLeft: "5px solid transparent", borderRight: "5px solid transparent",
+            borderTop: `5px solid ${C.border2}`,
+          }} />
+        </div>
+      )}
+    </span>
+  );
+}
+
+function Field({ label, hint, required, info, children }: { label: string; hint?: string; required?: boolean; info?: string; children: React.ReactNode }) {
   return (
     <div>
       <label style={{ ...row(), justifyContent: "space-between", marginBottom: 8, display: "flex" }}>
-        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: C.textFaint }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: C.textFaint }}>
           {label}{required && <span style={{ color: C.accentH }}> *</span>}
+          {info && <InfoTooltip text={info} />}
         </span>
         {hint && <span style={{ fontSize: 11, fontWeight: 600, color: C.textFaint }}>{hint}</span>}
       </label>
@@ -44,12 +84,19 @@ interface FormState {
   duration: string; language: string; subtitles: string[]; poster: PosterData; trailer: boolean;
 }
 
-export function UploadView({ data, onToast, onNav }: Props) {
-  const [step, setStep]       = useState(0);
-  const [file, setFile]       = useState<{ name: string; size: string } | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [dragOver, setDragOver] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+interface MainFile {
+  name: string;
+  size: string;
+  r2Url: string;
+}
+
+export function UploadView({ data, onToast, onNav, onPublished }: Props) {
+  const [step, setStep] = useState(0);
+  const [mainFile, setMainFile] = useState<MainFile | null>(null);
+  const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+  const [publishing, setPublishing]       = useState(false);
+  const [posterPreview, setPosterPreview] = useState<"h" | "v">("h");
+  const [hasDraft, setHasDraft]           = useState(false);
 
   const posterChoices = [
     data.posters["marea"]!, data.posters["tren"]!, data.posters["carto"]!,
@@ -63,20 +110,91 @@ export function UploadView({ data, onToast, onNav }: Props) {
   });
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm(f => ({ ...f, [k]: v }));
 
-  const startUpload = (name: string, size: string) => {
-    setFile({ name, size });
-    setProgress(0);
-    if (timer.current) clearInterval(timer.current);
-    timer.current = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) { if (timer.current) clearInterval(timer.current); return 100; }
-        return Math.min(100, p + Math.random() * 14 + 4);
-      });
-    }, 320);
-  };
-  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
+  // Restore draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw) as { step?: number; mainFile?: MainFile; assetUrls?: Record<string, string>; form?: FormState };
+      if (d.mainFile)   setMainFile(d.mainFile);
+      if (d.assetUrls)  setAssetUrls(d.assetUrls);
+      if (d.form)       setForm(d.form);
+      // If a main file exists but step was 0 (not yet advanced), jump to step 1
+      const targetStep = typeof d.step === "number" ? d.step : 0;
+      setStep(d.mainFile && targetStep === 0 ? 1 : targetStep);
+      setHasDraft(true);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const canNext = step === 0 ? (!!file && progress >= 100) : step === 1 ? (!!form.title.trim() && !!form.duration.trim()) : true;
+  // Persist draft whenever state changes (skip empty sessions)
+  useEffect(() => {
+    if (!mainFile && !form.title.trim()) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, mainFile, assetUrls, form }));
+    } catch {}
+  }, [step, mainFile, assetUrls, form]);
+
+  function discardDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setStep(0);
+    setMainFile(null);
+    setAssetUrls({});
+    setForm({ title: "", description: "", genre: "Drama", year: "2026", duration: "", language: "Español", subtitles: [], poster: data.posters["nieve"]!, trailer: false });
+    setHasDraft(false);
+  }
+
+  const canNext = step === 0 ? !!mainFile : step === 1 ? (!!form.title.trim() && !!form.duration.trim()) : true;
+
+  async function handlePublish() {
+    if (!mainFile) return;
+    setPublishing(true);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        onToast("Tu sesión ha caducado. Por favor inicia sesión de nuevo.", { error: true });
+        return;
+      }
+
+      const res = await fetch("/api/titles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          title:         form.title.trim(),
+          synopsis:      form.description.trim() || null,
+          year:          form.year,
+          duration:      form.duration.trim(),
+          genre:         form.genre,
+          language:      form.language,
+          r2VideoUrl:    mainFile.r2Url,
+          r2PosterUrl:   assetUrls["poster_h"] ?? assetUrls["poster_v"] ?? assetUrls["poster"] ?? null,
+          r2SubtitleUrl: assetUrls["subtitles"] ?? null,
+          fileSizeBytes: 0,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error del servidor" }));
+        onToast((err as { error?: string }).error ?? "Error al publicar", { error: true });
+        return;
+      }
+
+      const { title: created } = await res.json() as { title: { slug: string; title: string } };
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      onToast(`«${created.title}» publicado y disponible en el catálogo`);
+      onPublished?.();
+      onNav("titulos");
+    } catch {
+      onToast("Error inesperado al publicar. Inténtalo de nuevo.", { error: true });
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto" }}>
@@ -85,6 +203,31 @@ export function UploadView({ data, onToast, onNav }: Props) {
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em" }}>Subir contenido</h1>
         <p style={{ margin: "10px 0 0", fontSize: 14, color: C.textSec }}>Sube tu corto o película, completa la ficha y revísala antes de publicar.</p>
       </div>
+
+      {/* Draft banner */}
+      {hasDraft && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 16px", borderRadius: 10, marginBottom: 18,
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+        }}>
+          <span style={{ fontSize: 13, color: "rgba(245,158,11,0.9)", fontWeight: 600 }}>
+            Borrador restaurado — continúa desde donde lo dejaste
+          </span>
+          <button
+            type="button"
+            onClick={discardDraft}
+            style={{
+              background: "none", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 7,
+              padding: "4px 12px", cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, fontWeight: 700, color: "rgba(245,158,11,0.75)",
+              display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s",
+            }}
+          >
+            <Trash2 size={12} /> Descartar
+          </button>
+        </div>
+      )}
 
       {/* Stepper */}
       <div style={{ display: "flex", gap: 0, marginBottom: 26, alignItems: "center" }}>
@@ -110,62 +253,10 @@ export function UploadView({ data, onToast, onNav }: Props) {
 
       {/* Step 0: file */}
       {step === 0 && (
-        <div>
-          {!file ? (
-            <div
-              onClick={() => startUpload("marea_alta_master_v3.mov", "1.84 GB")}
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); startUpload("marea_alta_master_v3.mov", "1.84 GB"); }}
-              style={{ border: `1.5px dashed ${dragOver ? C.accent : C.border2}`, borderRadius: 16, padding: "56px 24px",
-                textAlign: "center", cursor: "pointer", background: dragOver ? C.accent10 : C.w4,
-                transition: "all 0.18s ease" }}>
-              <span style={{ display: "grid", placeItems: "center", width: 64, height: 64, borderRadius: 18, margin: "0 auto 18px",
-                background: C.accent10, border: `1px solid ${C.accent30}`, color: C.accentH }}>
-                <Upload size={28} />
-              </span>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>Arrastra tu vídeo aquí</div>
-              <p style={{ fontSize: 13.5, fontWeight: 600, marginTop: 7, color: C.textMuted }}>o haz clic para seleccionar un archivo</p>
-              <div style={{ ...row(8), justifyContent: "center", marginTop: 18, flexWrap: "wrap" }}>
-                {["MP4", "MOV", "ProRes", "máx. 8 GB", "hasta 4K"].map(x => (
-                  <span key={x} style={{ fontSize: 11.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
-                    border: `1px solid ${C.border1}`, color: C.textFaint }}>{x}</span>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div style={card({ padding: 22 })}>
-              <div style={row(14)}>
-                <span style={{ display: "grid", placeItems: "center", width: 46, height: 46, borderRadius: 11, flexShrink: 0,
-                  background: "#131920", border: `1px solid ${C.border2}`, color: C.accentH }}>
-                  <Film size={22} />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ ...row(), justifyContent: "space-between", gap: 12 }}>
-                    <span style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{file.name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.textMuted, whiteSpace: "nowrap" }}>{file.size}</span>
-                  </div>
-                  <div style={{ height: 7, borderRadius: 999, background: C.w8, overflow: "hidden", marginTop: 11 }}>
-                    <div style={{ width: `${progress}%`, height: "100%", borderRadius: 999, transition: "width 0.3s ease",
-                      background: progress >= 100 ? C.accent : `linear-gradient(90deg, ${C.accent}, ${C.accentH})` }} />
-                  </div>
-                  <div style={{ ...row(), justifyContent: "space-between", marginTop: 9 }}>
-                    <span style={{ ...row(6), fontSize: 12.5, fontWeight: 700,
-                      color: progress >= 100 ? C.accentH : C.textSec }}>
-                      {progress >= 100
-                        ? <><CheckCircle2 size={14} strokeWidth={2.2} /> Subida completa · listo para procesar</>
-                        : <><span className="studio-spin"><RefreshCw size={13} /></span> Subiendo… {Math.round(progress)}%</>}
-                    </span>
-                    <button className="st-btn st-btn-ghost st-btn-sm st-btn-danger"
-                      onClick={() => { if (timer.current) clearInterval(timer.current); setFile(null); setProgress(0); }}>
-                      <Trash2 size={14} /> Quitar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <UploadOrbital
+          onMainReady={f => setMainFile(f)}
+          onAssetReady={(assetType, url) => setAssetUrls(prev => ({ ...prev, [assetType]: url }))}
+        />
       )}
 
       {/* Step 1: details */}
@@ -183,14 +274,10 @@ export function UploadView({ data, onToast, onNav }: Props) {
               <input className="st-input" value={form.duration} onChange={e => set("duration", e.target.value)} placeholder="14 min" />
             </Field>
             <Field label="Año">
-              <select className="st-select" value={form.year} onChange={e => set("year", e.target.value)}>
-                {["2026","2025","2024","2023","2022","2021"].map(y => <option key={y}>{y}</option>)}
-              </select>
+              <StudioSelect value={form.year} onChange={v => set("year", v)} options={["2026","2025","2024","2023","2022","2021"]} />
             </Field>
             <Field label="Idioma">
-              <select className="st-select" value={form.language} onChange={e => set("language", e.target.value)}>
-                {data.languages.map(l => <option key={l}>{l}</option>)}
-              </select>
+              <StudioSelect value={form.language} onChange={v => set("language", v)} options={data.languages} />
             </Field>
           </div>
           <Field label="Género">
@@ -207,7 +294,11 @@ export function UploadView({ data, onToast, onNav }: Props) {
             </div>
           </Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
-            <Field label="Póster / thumbnail" hint="elige un diseño">
+            <Field
+              label="Póster / thumbnail"
+              hint="elige un diseño"
+              info="Si tu corto o película no tiene póster o ilustración propia, pondremos uno de estos por defecto en el catálogo. Por eso te pedimos que elijas los colores y el estilo que mejor representen tu obra."
+            >
               <div style={{ ...row(10), flexWrap: "wrap" }}>
                 {posterChoices.map((p, i) => (
                   <button key={i} type="button" onClick={() => set("poster", p)}
@@ -218,7 +309,11 @@ export function UploadView({ data, onToast, onNav }: Props) {
                 ))}
               </div>
             </Field>
-            <Field label="Tráiler" hint="opcional">
+            <Field
+              label="Tráiler"
+              hint="opcional"
+              info="Si activas el tráiler, se reproducirá automáticamente cuando tu título aparezca en el carrusel de recomendaciones de la pantalla principal — en vez de mostrar el póster de manera estática, se reproducirá el tráiler."
+            >
               <button type="button" onClick={() => set("trailer", !form.trailer)}
                 style={card({ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
                   borderColor: form.trailer ? C.accent30 : C.border1, background: form.trailer ? C.accent10 : C.w4 })}>
@@ -226,7 +321,7 @@ export function UploadView({ data, onToast, onNav }: Props) {
                   ? <CheckCircle2 size={18} color={C.accentH} strokeWidth={2} />
                   : <Plus size={18} color={C.textMuted} strokeWidth={2} />}
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: form.trailer ? "#fff" : C.textSec }}>
-                  {form.trailer ? "trailer_marea.mp4 añadido" : "Añadir tráiler"}
+                  {assetUrls["trailer"] ? "Tráiler subido ✓" : "Añadir tráiler"}
                 </span>
               </button>
             </Field>
@@ -239,7 +334,64 @@ export function UploadView({ data, onToast, onNav }: Props) {
         <div>
           <div style={card({ padding: 24, display: "grid", gridTemplateColumns: "190px 1fr", gap: 26 })}>
             <div>
-              <Poster data={form.poster} title={form.title || "Sin título"} type={form.genre} year={form.year} />
+              {(() => {
+                const hasBoth = !!(assetUrls["poster_h"] && assetUrls["poster_v"]);
+                const activeSrc = hasBoth
+                  ? (posterPreview === "h" ? assetUrls["poster_h"] : assetUrls["poster_v"])
+                  : (assetUrls["poster_h"] ?? assetUrls["poster_v"] ?? assetUrls["poster"]);
+                const isH = hasBoth && posterPreview === "h";
+                return (
+                  <>
+                    {/* toggle — only when both posters are uploaded */}
+                    {hasBoth && (
+                      <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+                        {([["h", "Horizontal"], ["v", "Vertical"]] as const).map(([mode, label]) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setPosterPreview(mode)}
+                            style={{
+                              flex: 1, padding: "5px 0", borderRadius: 7, cursor: "pointer",
+                              fontFamily: "inherit", fontSize: 11, fontWeight: 700,
+                              border: `1px solid ${posterPreview === mode ? C.accent30 : C.border2}`,
+                              background: posterPreview === mode ? C.accent15 : C.w4,
+                              color: posterPreview === mode ? C.accentH : C.textMuted,
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeSrc ? (
+                      <div style={{ position: "relative" }}>
+                        <img
+                          src={activeSrc}
+                          alt={form.title || "Póster"}
+                          style={{
+                            width: "100%", borderRadius: 10, objectFit: "cover", display: "block",
+                            aspectRatio: isH ? "16/9" : "2/3",
+                          }}
+                        />
+                        {hasBoth && (
+                          <div style={{
+                            position: "absolute", bottom: 8, left: 8,
+                            fontSize: 9.5, fontWeight: 700, letterSpacing: "0.06em",
+                            padding: "2px 7px", borderRadius: 999,
+                            background: "rgba(0,0,0,0.65)", color: "rgba(255,255,255,0.7)",
+                          }}>
+                            {isH ? "CARRUSEL" : "CATÁLOGO"}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Poster data={form.poster} title={form.title || "Sin título"} type={form.genre} year={form.year} />
+                    )}
+                  </>
+                );
+              })()}
               <button className="st-btn st-btn-secondary st-btn-sm" style={{ width: "100%", marginTop: 12, justifyContent: "center" }}>
                 <Play size={14} /> Previsualizar vídeo
               </button>
@@ -257,9 +409,13 @@ export function UploadView({ data, onToast, onNav }: Props) {
               </p>
               <div className="st-sep" style={{ margin: "18px 0" }} />
               <div style={col(10)}>
-                {([["Subtítulos", form.subtitles.length ? form.subtitles.join(", ") : "Ninguno"],
-                  ["Tráiler", form.trailer ? "Incluido" : "No incluido"],
-                  ["Archivo", file ? file.name : "—"]] as [string, string][]).map(([l, v]) => (
+                {([
+                  ["Subtítulos", form.subtitles.length ? form.subtitles.join(", ") : "Ninguno"],
+                  ["Tráiler", assetUrls["trailer"] ? "Subido ✓" : "No incluido"],
+                  ["Póster", (assetUrls["poster_h"] ?? assetUrls["poster_v"] ?? assetUrls["poster"]) ? "Imagen subida ✓" : "Diseño predeterminado"],
+                  ["Archivo", mainFile?.name ?? "—"],
+                  ["Tamaño", mainFile?.size ?? "—"],
+                ] as [string, string][]).map(([l, v]) => (
                   <div key={l} style={{ ...row(), justifyContent: "space-between" }}>
                     <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{l}</span>
                     <span style={{ fontSize: 13, color: "#fff" }}>{v}</span>
@@ -272,7 +428,7 @@ export function UploadView({ data, onToast, onNav }: Props) {
             background: C.accent10, borderColor: C.accent30 })}>
             <Info size={18} color={C.accentH} style={{ flexShrink: 0 }} />
             <p style={{ margin: 0, fontSize: 13, color: C.textSec }}>
-              Al publicar, tu título entra en <strong style={{ color: "#fff" }}>revisión</strong> (1–3 días). Recibirás un aviso cuando esté disponible para el público.
+              Al publicar, tu título quedará <strong style={{ color: "#fff" }}>disponible inmediatamente</strong> en el catálogo de GMA Filmo.
             </p>
           </div>
         </div>
@@ -280,7 +436,7 @@ export function UploadView({ data, onToast, onNav }: Props) {
 
       {/* Footer nav */}
       <div style={{ ...row(), justifyContent: "space-between", marginTop: 28 }}>
-        <button className="st-btn st-btn-ghost" onClick={() => step === 0 ? onNav("titulos") : setStep(step - 1)}>
+        <button className="st-btn st-btn-ghost" onClick={() => step === 0 ? onNav("titulos") : setStep(step - 1)} disabled={publishing}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
           {step === 0 ? "Cancelar" : "Atrás"}
         </button>
@@ -289,9 +445,10 @@ export function UploadView({ data, onToast, onNav }: Props) {
             Continuar <ChevronRight size={16} />
           </button>
         ) : (
-          <button className="st-btn st-btn-accent"
-            onClick={() => { onToast(`«${form.title || "Tu título"}» enviado a revisión`); onNav("titulos"); }}>
-            <Upload size={16} /> Publicar y enviar a revisión
+          <button className="st-btn st-btn-accent" disabled={publishing} onClick={handlePublish}>
+            {publishing
+              ? <><Loader2 size={16} className="studio-spin" /> Publicando…</>
+              : <><Upload size={16} /> Publicar en GMA Filmo</>}
           </button>
         )}
       </div>

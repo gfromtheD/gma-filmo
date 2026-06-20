@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/auth/callback"];
+const PUBLIC_PATHS = ["/", "/auth/callback", "/terminos", "/privacidad"];
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -68,6 +68,24 @@ export async function middleware(request: NextRequest) {
 
   if (user && pathname === "/") {
     return NextResponse.redirect(new URL("/inicio", request.url));
+  }
+
+  // Creator onboarding gate: if the user is mid-creator-setup they must
+  // finish (or cancel) the form before accessing any other part of the app.
+  const creatorSetupVal = request.cookies.get("gma_creator_setup")?.value;
+  const isCreatorSetup = creatorSetupVal === "1" || creatorSetupVal === "confirmed";
+  const CREATOR_SETUP_ALLOWED = [
+    "/configurar-perfil-creador",
+    "/terminos",
+    "/privacidad",
+    "/auth/callback",
+  ];
+  if (
+    isCreatorSetup &&
+    user &&
+    !CREATOR_SETUP_ALLOWED.some((p) => pathname.startsWith(p))
+  ) {
+    return NextResponse.redirect(new URL("/configurar-perfil-creador", request.url));
   }
 
   return supabaseResponse;

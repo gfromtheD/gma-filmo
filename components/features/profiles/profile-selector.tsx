@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useTransitionStore } from "@/store/use-transition-store";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
@@ -18,7 +18,10 @@ const serifItalic: React.CSSProperties = {
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function ProfileSelector() {
-  const router = useRouter();
+  const router      = useRouter();
+  const searchParams = useSearchParams();
+  // Optional redirect after profile selection (e.g. ?next=/mi-estudio)
+  const nextUrl = searchParams.get("next") ?? "/inicio";
 
   const profiles         = useProfileStore((s) => s.profiles);
   const addProfile       = useProfileStore((s) => s.addProfile);
@@ -121,7 +124,7 @@ export function ProfileSelector() {
             setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
             const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
             startExpand(pinGate.origin, size, pinGate.name, isFirstVisit);
-            setTimeout(() => router.push("/inicio"), 950);
+            setTimeout(() => router.push(nextUrl), 950);
           }}
           onCancel={() => setPinGate(null)}
         />
@@ -135,14 +138,14 @@ export function ProfileSelector() {
         profiles={profiles}
         onSelectSupabase={() => {
           setActiveProfile({ id: "__supabase__", name: supabaseName ?? "", isKids: false });
-          router.push("/inicio");
+          router.push(nextUrl);
         }}
         onSelectSub={(profile, origin) => {
           if (profile.requirePin && profile.pin) {
             setPinGate({ id: profile.id, name: profile.name, isKids: profile.isKids, correctPin: profile.pin, origin: origin ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 } });
           } else {
             setActiveProfile({ id: profile.id, name: profile.name, isKids: profile.isKids });
-            router.push("/inicio");
+            router.push(nextUrl);
           }
         }}
         onEditSupabase={() => setEditSupabase(true)}
