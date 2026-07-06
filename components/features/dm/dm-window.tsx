@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { deriveAvatarColor } from "@/components/providers/user-profile-provider";
 import { useDMStore } from "@/store/use-dm-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -424,8 +423,7 @@ function MsgBubble({
 
 export function DMWindow() {
   const { isOpen, activeConvoId, close, setConvo } = useDMStore();
-  const { displayName, userId } = useUserProfile();
-  const myColor = deriveAvatarColor(userId ?? "guest");
+  const { userId } = useUserProfile();
 
   const [maximized, setMaximized] = useState(false);
   const [convos, setConvos]       = useState<Convo[]>([]);
@@ -555,8 +553,8 @@ export function DMWindow() {
   }
 
   // ── Report ────────────────────────────────────────────────────────────────
-  async function handleReport(msgId: string) {
-    // TODO: insert into reports table
+  async function handleReport() {
+    // TODO: insert into reports table (needs the message id from the caller)
     alert("Mensaje denunciado. Lo revisaremos pronto.");
   }
 

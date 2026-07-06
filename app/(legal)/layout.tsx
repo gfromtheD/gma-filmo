@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { BackButton } from "./back-button";
 
 export const metadata: Metadata = { title: "GMA Filmo" };

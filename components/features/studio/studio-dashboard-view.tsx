@@ -2,47 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "motion/react";
-import { Film, Eye, Star, Heart, ArrowUp, ChevronRight, ChevronDown, Plus, Clock, User, CheckCircle2, Check, HardDrive, Zap, ArrowUpRight, BarChart2, Calendar, CirclePlay } from "lucide-react";
-import { fmt, C, card, row, col, Stars, Poster, StudioLogo, Sparkline } from "./studio-ui";
+import { Eye, Star, ChevronDown, Plus, Check, HardDrive, Zap, ArrowUpRight, BarChart2, Calendar, CirclePlay } from "lucide-react";
+import { fmt, C, card, row, Stars, Poster } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 
 interface Props {
   data: StudioData;
   onNav: (id: StudioTabId, payload?: StudioTitle) => void;
   onOpenTitle: (t: StudioTitle) => void;
-}
-
-function StatTile({ icon, label, value, sub, trend, spark }: {
-  icon?: React.ReactNode; label: string; value: string | number;
-  sub?: string; trend?: string; spark?: number[];
-}) {
-  return (
-    <div style={card({ padding: "18px 20px", display: "flex", flexDirection: "column" })}>
-      {(icon || trend) && (
-        <div style={row()}>
-          {icon && (
-            <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 9,
-              background: C.accent10, border: `1px solid ${C.accent30}`, color: C.accentH, flexShrink: 0 }}>
-              {icon}
-            </span>
-          )}
-          {trend && (
-            <span style={{ ...row(3), marginLeft: "auto", fontSize: 12, fontWeight: 700, color: C.accentH }}>
-              <ArrowUp size={12} strokeWidth={2.4} />{trend}
-            </span>
-          )}
-        </div>
-      )}
-      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", marginTop: 14, lineHeight: 1 }}>{value}</div>
-      <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-end", marginTop: 8 }}>
-        <div>
-          <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{label}</div>
-          {sub && <div style={{ fontSize: 12, fontWeight: 600, marginTop: 5, color: C.textMuted }}>{sub}</div>}
-        </div>
-        {spark && <Sparkline data={spark} w={84} h={30} />}
-      </div>
-    </div>
-  );
 }
 
 const STORAGE = { used: 3.2, total: 10, files: 5 } as const;

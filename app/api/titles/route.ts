@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    title, synopsis, year, duration, genre, language,
+    title, synopsis, year, duration, language,
     r2VideoUrl, r2PosterUrl, r2SubtitleUrl, fileSizeBytes,
   } = body as {
     title: string; synopsis?: string; year?: string; duration?: string;

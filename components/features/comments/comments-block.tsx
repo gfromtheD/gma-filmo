@@ -112,7 +112,6 @@ function TimestampPill({ secs, movieSlug }: { secs: number; movieSlug: string })
 
 function CommentForm({
   peliculaId,
-  movieSlug,
   parentId,
   placeholder,
   onSubmitted,

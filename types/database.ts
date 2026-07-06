@@ -526,6 +526,148 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          avatar_color: string | null
+          content: string
+          created_at: string
+          display_name: string
+          id: number
+          is_deleted: boolean
+          like_count: number
+          parent_id: number | null
+          pelicula_id: number
+          timestamp_ref: number | null
+          user_id: string
+        }
+        Insert: {
+          avatar_color?: string | null
+          content: string
+          created_at?: string
+          display_name?: string
+          id?: never
+          is_deleted?: boolean
+          like_count?: number
+          parent_id?: number | null
+          pelicula_id: number
+          timestamp_ref?: number | null
+          user_id: string
+        }
+        Update: {
+          avatar_color?: string | null
+          content?: string
+          created_at?: string
+          display_name?: string
+          id?: never
+          is_deleted?: boolean
+          like_count?: number
+          parent_id?: number | null
+          pelicula_id?: number
+          timestamp_ref?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_likes: {
+        Row: {
+          comment_id: number
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: number
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: number
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_conversations: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          last_message: string | null
+          other_color: string | null
+          other_display_name: string | null
+          updated_at: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          last_message?: string | null
+          other_color?: string | null
+          other_display_name?: string | null
+          updated_at?: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          last_message?: string | null
+          other_color?: string | null
+          other_display_name?: string | null
+          updated_at?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
+      dm_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          reactions: Json
+          reply_to_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          reactions?: Json
+          reply_to_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          reactions?: Json
+          reply_to_id?: string | null
+          sender_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       film_scores: {
