@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AtSign, Video, Globe, Upload } from "lucide-react";
+import { motion } from "motion/react";
+import { AtSign, Video, Globe, Upload, ShieldCheck, Clapperboard } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { ThreeDMarquee } from "@/components/ui/three-d-marquee";
 
 const inputCls =
   "w-full rounded-[10px] border border-[#1E2D42] bg-[#0A1120] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors focus:border-[#22B16B]/60";
@@ -148,35 +150,85 @@ export default function ConfigurarPerfilCreadorPage() {
   // Existing viewer: ask before showing the creator form
   if (isExistingViewer && conversionConfirmed === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "#060C14" }}>
-        <div className="w-full max-w-[440px] rounded-[16px] p-8" style={{ background: "#0D1520", border: "1px solid #1E2D42" }}>
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-3 py-1">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4" style={{ background: "#060C14" }}>
+
+        {/* Fondo — carrusel de portadas a pantalla completa */}
+        <div className="pointer-events-none absolute inset-0 opacity-60">
+          <ThreeDMarquee className="h-full w-full rounded-none" columns={5} />
+        </div>
+        {/* Oscurecido para legibilidad */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at center, rgba(6,12,20,0.5) 0%, rgba(6,12,20,0.72) 55%, rgba(6,12,20,0.94) 100%)" }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-52"
+          style={{ background: "linear-gradient(to top, rgba(6,12,20,0.92), transparent)" }}
+        />
+
+        {/* Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 w-full max-w-[560px] rounded-[20px] p-8 md:p-10"
+          style={{
+            background: "rgba(10,18,32,0.74)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(34,177,107,0.05)",
+          }}
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-3 py-1">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#22B16B]" />
             <span className="text-[11px] font-bold uppercase tracking-widest text-[#22B16B]">Cuenta existente detectada</span>
           </div>
-          <h1 className="mt-4 text-[22px] font-extrabold tracking-[-0.02em] text-white">
+
+          <h1 className="mt-5 text-[26px] font-extrabold leading-[1.15] tracking-[-0.02em] text-white md:text-[30px]">
             ¿Añadir acceso de creador?
           </h1>
-          <p className="mt-3 text-[13px] leading-[1.6] text-[#8A9AB0]">
-            Ya tienes una cuenta de espectador como{" "}
-            <span className="font-semibold text-white">{existingDisplayName || "usuario"}</span>.
-            Todas tus valoraciones, listas e historial se conservan intactos.
-          </p>
-          <p className="mt-2 text-[13px] leading-[1.6] text-[#8A9AB0]">
-            Si añades acceso de creador, tendrás también{" "}
-            <span className="font-semibold text-[#22B16B]">Mi Estudio</span> disponible en tu cuenta.
+          <p className="mt-2 text-[13.5px] leading-[1.6] text-[#8A9AB0]">
+            Tu cuenta seguirá siendo la misma: solo sumas las herramientas de creador.
           </p>
 
-          <div className="mt-7 flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                document.cookie = "gma_creator_setup=confirmed; path=/; max-age=600; SameSite=Lax";
-                setConversionConfirmed(true);
-              }}
-              className="w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
+          {/* Cuenta detectada */}
+          <div className="mt-6 flex items-center gap-3.5 rounded-[14px] border border-white/[0.07] bg-white/[0.04] p-4">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[17px] font-extrabold text-white"
+              style={{ background: "linear-gradient(135deg,#22B16B,#14603A)" }}
             >
-              Sí, añadir acceso de creador
-            </button>
+              {(existingDisplayName || "U").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-bold text-white">{existingDisplayName || "usuario"}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#5A6A7E]">Cuenta de espectador</p>
+            </div>
+            <span className="ml-auto shrink-0 rounded-full border border-[#22B16B]/25 bg-[#22B16B]/10 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-[#22B16B]">
+              Activa
+            </span>
+          </div>
+
+          {/* Qué implica */}
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            <div className="rounded-[14px] border border-white/[0.07] bg-white/[0.03] p-4">
+              <ShieldCheck size={18} className="text-[#22B16B]" />
+              <p className="mt-2.5 text-[13px] font-bold text-white">Todo se conserva</p>
+              <p className="mt-1 text-[12px] leading-[1.55] text-[#8A9AB0]">
+                Tus valoraciones, listas e historial quedan intactos.
+              </p>
+            </div>
+            <div className="rounded-[14px] border border-white/[0.07] bg-white/[0.03] p-4">
+              <Clapperboard size={18} className="text-[#22B16B]" />
+              <p className="mt-2.5 text-[13px] font-bold text-white">Desbloqueas Mi Estudio</p>
+              <p className="mt-1 text-[12px] leading-[1.55] text-[#8A9AB0]">
+                Sube tus cortos y gestiona tu contenido desde tu cuenta.
+              </p>
+            </div>
+          </div>
+
+          {/* Acciones */}
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
             <button
               type="button"
               onClick={async () => {
@@ -184,12 +236,22 @@ export default function ConfigurarPerfilCreadorPage() {
                 await getSupabaseBrowserClient().auth.signOut();
                 router.push("/");
               }}
-              className="w-full rounded-full border border-[#1E2D42] py-3 text-[14px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.04]"
+              className="rounded-full border border-white/10 py-3 text-[13.5px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.05] sm:w-[38%]"
             >
               No, cancelar
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                document.cookie = "gma_creator_setup=confirmed; path=/; max-age=600; SameSite=Lax";
+                setConversionConfirmed(true);
+              }}
+              className="flex-1 rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
+            >
+              Sí, añadir acceso de creador
+            </button>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
