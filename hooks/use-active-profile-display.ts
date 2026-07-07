@@ -23,14 +23,13 @@ export function useActiveProfileDisplay(): ActiveProfileDisplay {
     : null;
 
   if (!subProfile) {
-    // La foto de creador (creator_profiles.avatar_url) gana sobre el avatar
-    // de espectador guardado en local — solo hay una píldora para la cuenta.
-    const creatorAvatarUrl = supabase.creatorAvatarUrl;
+    // useUserProfile() ya resuelve la prioridad foto-de-creador vs avatar de
+    // espectador — ver UserProfileProvider.
     return {
       displayName:    supabase.displayName,
       avatarColor:    supabase.avatarColor,
-      avatarIconId:   creatorAvatarUrl ? "" : supabase.avatarIconId,
-      avatarImageUrl: creatorAvatarUrl || supabase.avatarImageUrl,
+      avatarIconId:   supabase.avatarIconId,
+      avatarImageUrl: supabase.avatarImageUrl,
       isSubProfile:   false,
     };
   }

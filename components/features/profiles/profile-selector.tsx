@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GmaIcon } from "@/components/ui/gma-icon";
-import { useTransitionStore } from "@/store/use-transition-store";
+import { useTransitionStore, type TransitionVariant } from "@/store/use-transition-store";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
@@ -136,6 +136,7 @@ export function ProfileSelector() {
         supabaseImageUrl={supabaseImageUrl}
         supabaseIconId={supabaseIconId}
         profiles={profiles}
+        nextUrl={nextUrl}
         onSelectSupabase={() => {
           setActiveProfile({ id: "__supabase__", name: supabaseName ?? "", isKids: false });
           router.push(nextUrl);
@@ -160,7 +161,7 @@ export function ProfileSelector() {
 
 function ScreenA({
   supabaseName, supabaseColor, supabaseImageUrl, supabaseIconId,
-  profiles,
+  profiles, nextUrl,
   onSelectSupabase, onSelectSub, onEditSupabase, onEditSub, onAddProfile,
 }: {
   supabaseName:     string | null;
@@ -168,6 +169,7 @@ function ScreenA({
   supabaseImageUrl: string;
   supabaseIconId:   string;
   profiles:         readonly Profile[];
+  nextUrl:          string;
   onSelectSupabase: () => void;
   onSelectSub:      (profile: Profile, origin?: { x: number; y: number }) => void;
   onEditSupabase:   () => void;
@@ -180,13 +182,19 @@ function ScreenA({
   ) ?? "green";
 
   const startExpand = useTransitionStore((s) => s.startExpand);
+  // Entrar a Mi Estudio se diferencia con la variante invertida (negro/verde)
+  // de la misma animación — solo aplica al perfil principal, nunca a sub-perfiles.
+  const isCreatorEntry = nextUrl.startsWith("/mi-estudio");
 
-  function triggerNav(rect: DOMRect, navigate: () => void, name: string, profileId: string) {
+  function triggerNav(
+    rect: DOMRect, navigate: () => void, name: string, profileId: string,
+    variant: TransitionVariant = "viewer",
+  ) {
     const key = `gma_profile_visited_${profileId}`;
     const isFirstVisit = !localStorage.getItem(key);
     if (isFirstVisit) localStorage.setItem(key, "1");
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit);
+    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit, variant);
     setTimeout(navigate, 950);
   }
 
@@ -222,7 +230,7 @@ function ScreenA({
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
             <ProfileCard
-              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "", "__supabase__")}
+              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "", "__supabase__", isCreatorEntry ? "creator" : "viewer")}
               onEdit={onEditSupabase}
               glowColor={supabaseColor}
               label={supabaseName}

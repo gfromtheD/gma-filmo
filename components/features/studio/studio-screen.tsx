@@ -40,17 +40,19 @@ export function StudioScreen() {
 
       const socialLinks = (row.social_links ?? {}) as Record<string, string>;
 
+      // Una vez confirmado que existe una fila real, los campos vacíos deben
+      // quedar vacíos — no rellenarse con el texto de muestra de STUDIO_DATA.
       setData((d) => ({
         ...d,
         creator: {
           ...d.creator,
           studioName: row.studio_name ?? d.creator.studioName,
           artistName: row.creator_name ?? d.creator.artistName,
-          bio:        row.bio ?? d.creator.bio,
-          location:   row.location ?? d.creator.location,
-          role:       row.role ?? d.creator.role,
-          avatarUrl:  row.avatar_url ?? d.creator.avatarUrl,
-          socials: { ...d.creator.socials, ...socialLinks },
+          bio:        row.bio ?? "",
+          location:   row.location ?? "",
+          role:       row.role ?? "",
+          avatarUrl:  row.avatar_url ?? "",
+          socials: socialLinks,
         },
       }));
     })();

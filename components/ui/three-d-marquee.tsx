@@ -131,6 +131,12 @@ function MarqueeColumn({ images, direction, duration }: {
             height={360}
             sizes="220px"
             draggable={false}
+            // Solo las primeras portadas de cada columna están realmente a la
+            // vista al cargar la página — esas sí van con prioridad alta. El
+            // resto no se pide hasta que el scroll del bucle las acerca a la
+            // pantalla (loading="lazy" es el valor por defecto de next/image).
+            priority={i < 3}
+            loading={i < 3 ? undefined : "lazy"}
             className="aspect-video w-full rounded-lg object-cover select-none"
           />
         </div>

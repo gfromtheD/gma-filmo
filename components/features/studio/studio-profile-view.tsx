@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Upload, Image as ImageIcon, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -36,6 +36,16 @@ export function ProfileView({ data, onToast }: Props) {
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
   const setSocial = (k: string, v: string) => { setSocialLinks(s => ({ ...s, [k]: v })); setDirty(true); };
+
+  // `data.creator` llega primero con datos de muestra y se sustituye por los
+  // reales tras el fetch async en StudioScreen — sin este efecto, este estado
+  // local se quedaría congelado con la muestra inicial para siempre.
+  useEffect(() => {
+    if (editing) return; // no pisar una edición en curso
+    setForm({ studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location });
+    setSocialLinks(c.socials);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c]);
 
   async function handleSave() {
     setSaving(true);

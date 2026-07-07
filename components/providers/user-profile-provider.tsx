@@ -169,6 +169,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       value={{
         ...profile,
         ...settings,
+        // La foto de creador gana sobre el avatar de espectador aquí mismo —
+        // así cualquier consumidor de useUserProfile() (píldora, selector de
+        // perfiles, etc.) recibe ya el valor correcto sin repetir la lógica.
+        avatarImageUrl: profile.creatorAvatarUrl || settings.avatarImageUrl,
+        avatarIconId:   profile.creatorAvatarUrl ? "" : settings.avatarIconId,
         userId,
         isLoaded,
         updateDisplayName,
