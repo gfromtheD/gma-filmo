@@ -72,6 +72,17 @@ const nextConfig = {
       { protocol: "https", hostname: "generacionmaldita.com" },
     ],
   },
+
+  // En dev en Windows, el caché persistente de webpack (.next/cache/webpack/*.pack)
+  // se corrompe con frecuencia si un antivirus con protección en tiempo real
+  // escanea esos archivos grandes a mitad de escritura — deja referencias a chunks
+  // que ya no existen y el servidor cae con "Cannot find module './XXXX.js'".
+  // Desactivar el caché en disco solo en dev evita la corrupción (el rebuild
+  // incremental sigue funcionando en memoria durante la sesión del servidor).
+  webpack(config, { dev }) {
+    if (dev) config.cache = false;
+    return config;
+  },
 };
 
 export default nextConfig;

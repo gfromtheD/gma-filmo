@@ -22,7 +22,7 @@ export const STUDIO_DATA: StudioData = {
     location: "Vigo, Galicia",
     joined: "Enero 2024",
     plan: "Creador verificado",
-    socials: { instagram: "@estudio.marea", vimeo: "vimeo.com/estudiomarea", web: "estudiomarea.film" },
+    socials: { instagram: "estudio.marea", vimeo: "estudiomarea", website: "estudiomarea.film" },
     logoColors: { from: "#22B16B", to: "#0d4f33" },
     stats: { titles: 7, published: 4, totalViews: 131039, avgRating: 4.5, followers: 8420 },
   },

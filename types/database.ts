@@ -27,6 +27,8 @@ export type Database = {
           role: string | null
           instagram_url: string | null
           vimeo_url: string | null
+          avatar_url: string | null
+          social_links: Json
         }
         Insert: {
           user_id: string
@@ -40,6 +42,8 @@ export type Database = {
           role?: string | null
           instagram_url?: string | null
           vimeo_url?: string | null
+          avatar_url?: string | null
+          social_links?: Json
         }
         Update: {
           user_id?: string
@@ -53,6 +57,8 @@ export type Database = {
           role?: string | null
           instagram_url?: string | null
           vimeo_url?: string | null
+          avatar_url?: string | null
+          social_links?: Json
         }
         Relationships: []
       }

@@ -67,8 +67,9 @@ export interface Creator {
   location: string;
   joined: string;
   plan: string;
-  socials: { instagram: string; vimeo: string; web: string };
+  socials: Record<string, string>;
   logoColors: { from: string; to: string };
+  avatarUrl?: string;
   stats: { titles: number; published: number; totalViews: number; avgRating: number; followers: number };
 }
 

@@ -194,11 +194,23 @@ export function Poster({
 }
 
 // ── StudioLogo ────────────────────────────────────────────────────────────────
-export function StudioLogo({ colors, size = 44, name = "Estudio", rounded = 12 }: {
-  colors?: { from: string; to: string }; size?: number; name?: string; rounded?: number;
+export function StudioLogo({ colors, size = 44, name = "Estudio", rounded = 12, imageUrl }: {
+  colors?: { from: string; to: string }; size?: number; name?: string; rounded?: number; imageUrl?: string;
 }) {
   const c = colors ?? { from: "#22B16B", to: "#0d4f33" };
   const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
+  if (imageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imageUrl}
+        alt={name}
+        style={{ width: size, height: size, borderRadius: rounded, flexShrink: 0, objectFit: "cover" }}
+      />
+    );
+  }
+
   return (
     <div style={{ width: size, height: size, borderRadius: rounded, flexShrink: 0,
       background: `linear-gradient(140deg, ${c.from}, ${c.to})`, display: "grid", placeItems: "center",

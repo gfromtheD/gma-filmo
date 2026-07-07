@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Upload, Image as ImageIcon, Globe, AtSign, Video, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
+import { Check, Upload, Image as ImageIcon, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { SocialLinksPanel, SocialPlatformIcon, getSocialPlatform, socialDisplayText } from "@/components/ui/social-links-panel";
 import type { StudioData } from "./studio-types";
 
 interface Props {
@@ -23,34 +24,18 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function SocialField({ icon, prefix, value, onChange, placeholder }: {
-  icon: React.ReactNode; prefix: string; value: string;
-  onChange: (v: string) => void; placeholder: string;
-}) {
-  return (
-    <div style={{ ...row(0), background: C.w4, border: `1px solid ${C.border2}`, borderRadius: 10, overflow: "hidden" }}>
-      <span style={{ ...row(7), padding: "0 12px", color: C.textMuted, fontSize: 13, fontWeight: 600,
-        borderRight: `1px solid ${C.border2}`, height: 42, flexShrink: 0 }}>
-        {icon} {prefix}
-      </span>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#fff",
-          fontFamily: "inherit", fontSize: 14, fontWeight: 600, padding: "0 13px" }} />
-    </div>
-  );
-}
-
 export function ProfileView({ data, onToast }: Props) {
   const c = data.creator;
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio,
-    location: c.location, instagram: c.socials.instagram.replace("@", ""),
-    vimeo: c.socials.vimeo.replace("vimeo.com/", ""), web: c.socials.web,
+    location: c.location,
   });
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(c.socials);
   const [dirty, setDirty]   = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
+  const setSocial = (k: string, v: string) => { setSocialLinks(s => ({ ...s, [k]: v })); setDirty(true); };
 
   async function handleSave() {
     setSaving(true);
@@ -58,17 +43,19 @@ export function ProfileView({ data, onToast }: Props) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); onToast("No se pudo guardar: sesión no encontrada", { error: true }); return; }
 
+    const cleanSocialLinks = Object.fromEntries(
+      Object.entries(socialLinks).map(([k, v]) => [k, v.trim()]).filter(([, v]) => !!v)
+    );
+
     const { error } = await supabase
       .from("creator_profiles")
       .update({
-        studio_name:   form.studioName.trim(),
-        creator_name:  form.artistName.trim(),
-        role:          form.role.trim() || null,
-        bio:           form.bio.trim().slice(0, 300),
-        location:      form.location.trim() || null,
-        website_url:   form.web.trim() || null,
-        instagram_url: form.instagram.trim() || null,
-        vimeo_url:     form.vimeo.trim() || null,
+        studio_name:  form.studioName.trim(),
+        creator_name: form.artistName.trim(),
+        role:         form.role.trim() || null,
+        bio:          form.bio.trim().slice(0, 300),
+        location:     form.location.trim() || null,
+        social_links: cleanSocialLinks,
       })
       .eq("user_id", user.id);
 
@@ -138,7 +125,7 @@ export function ProfileView({ data, onToast }: Props) {
 
             {/* Content */}
             <div style={{ padding: "0 28px 28px", marginTop: -46 }}>
-              <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} />
+              <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} imageUrl={c.avatarUrl} />
 
               <div style={{ ...row(10), marginTop: 16, alignItems: "center" }}>
                 <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em" }}>
@@ -182,23 +169,17 @@ export function ProfileView({ data, onToast }: Props) {
               )}
 
               {/* Socials */}
-              {(form.instagram || form.vimeo || form.web) && (
+              {Object.values(socialLinks).some((v) => v.trim()) && (
                 <div style={{ ...row(14), marginTop: 18, flexWrap: "wrap" }}>
-                  {form.instagram && (
-                    <span style={{ ...row(5), color: C.textMuted, fontSize: 13, fontWeight: 600 }}>
-                      <AtSign size={14} /> @{form.instagram}
-                    </span>
-                  )}
-                  {form.vimeo && (
-                    <span style={{ ...row(5), color: C.textMuted, fontSize: 13, fontWeight: 600 }}>
-                      <Video size={14} /> {form.vimeo}
-                    </span>
-                  )}
-                  {form.web && (
-                    <span style={{ ...row(5), color: C.textMuted, fontSize: 13, fontWeight: 600 }}>
-                      <Globe size={14} /> {form.web}
-                    </span>
-                  )}
+                  {Object.entries(socialLinks).filter(([, v]) => v.trim()).map(([key, value]) => {
+                    const platform = getSocialPlatform(key);
+                    if (!platform) return null;
+                    return (
+                      <span key={key} style={{ ...row(5), color: C.textMuted, fontSize: 13, fontWeight: 600 }}>
+                        <SocialPlatformIcon platform={platform} size={14} /> {socialDisplayText(key, value.trim())}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
 
@@ -229,7 +210,7 @@ export function ProfileView({ data, onToast }: Props) {
                 letterSpacing: "0.08em", color: C.textFaint, marginBottom: 18 }}>Identidad del estudio</div>
               <div style={{ ...row(18), marginBottom: 22, flexWrap: "wrap", display: "flex" }}>
                 <div style={{ position: "relative" }}>
-                  <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} />
+                  <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} imageUrl={c.avatarUrl} />
                   <button className="st-btn st-btn-secondary st-btn-icon"
                     style={{ position: "absolute", bottom: -6, right: -6, width: 30, height: 30,
                       borderRadius: 999, background: "#101820" }}
@@ -285,14 +266,7 @@ export function ProfileView({ data, onToast }: Props) {
                 letterSpacing: "0.08em", color: C.textFaint, marginBottom: 16 }}>
                 Redes sociales <span style={{ color: C.textFaint, textTransform: "none", letterSpacing: 0 }}>· opcional</span>
               </div>
-              <div style={col(13)}>
-                <SocialField icon={<AtSign size={16} />} prefix="instagram.com/" value={form.instagram}
-                  onChange={v => set("instagram", v)} placeholder="usuario" />
-                <SocialField icon={<Video size={16} />} prefix="vimeo.com/" value={form.vimeo}
-                  onChange={v => set("vimeo", v)} placeholder="estudio" />
-                <SocialField icon={<Globe size={16} />} prefix="https://" value={form.web}
-                  onChange={v => set("web", v)} placeholder="tu-web.com" />
-              </div>
+              <SocialLinksPanel values={socialLinks} onChange={setSocial} accentColor={C.accentH} />
             </div>
           </div>
 
@@ -310,7 +284,7 @@ export function ProfileView({ data, onToast }: Props) {
                     backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)" }} />
                 </div>
                 <div style={{ padding: "0 20px 20px", marginTop: -34 }}>
-                  <StudioLogo colors={c.logoColors} size={66} name={form.studioName} rounded={15} />
+                  <StudioLogo colors={c.logoColors} size={66} name={form.studioName} rounded={15} imageUrl={c.avatarUrl} />
                   <div style={{ ...row(8), marginTop: 12, alignItems: "center" }}>
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{form.studioName}</h3>
                     {c.verified && <CheckCircle2 size={15} color={C.accentH} strokeWidth={2.2} />}

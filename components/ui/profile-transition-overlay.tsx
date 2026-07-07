@@ -13,17 +13,26 @@ export function ProfileTransitionOverlay() {
   const chipPos       = useTransitionStore((s) => s.chipPos);
   const profileName   = useTransitionStore((s) => s.profileName);
   const greeting      = useTransitionStore((s) => s.greeting);
+  const variant       = useTransitionStore((s) => s.variant);
+  const startPath     = useTransitionStore((s) => s.startPath);
   const startContract = useTransitionStore((s) => s.startContract);
   const reset         = useTransitionStore((s) => s.reset);
 
   const [textFading, setTextFading] = useState(false);
 
+  // Variante "creator": misma animación pero invertida — círculo negro,
+  // texto verde — para diferenciarla del selector de perfiles (verde de siempre).
+  const isCreator      = variant === "creator";
+  const circleColor    = isCreator ? "#04100A" : "#22B16B";
+  const greetingColor  = isCreator ? "rgba(62,217,139,0.55)" : "rgba(3,26,14,0.5)";
+  const nameColor      = isCreator ? "#3ED98B" : "#031A0E";
+
   useEffect(() => {
-    if (phase !== "expanding" || pathname === "/perfiles") return;
+    if (phase !== "expanding" || pathname === startPath) return;
     setTextFading(true);
     const t = setTimeout(startContract, 380);
     return () => clearTimeout(t);
-  }, [phase, pathname, startContract]);
+  }, [phase, pathname, startPath, startContract]);
 
   useEffect(() => {
     if (phase === "idle") setTextFading(false);
@@ -43,7 +52,7 @@ export function ProfileTransitionOverlay() {
           style={{
             position: "fixed",
             borderRadius: "50%",
-            background: "#22B16B",
+            background: circleColor,
             left: origin.x,
             top: origin.y,
             x: "-50%",
@@ -64,7 +73,7 @@ export function ProfileTransitionOverlay() {
           style={{
             position: "fixed",
             borderRadius: "50%",
-            background: "#22B16B",
+            background: circleColor,
             x: "-50%",
             y: "-50%",
             zIndex: 9999,
@@ -101,7 +110,7 @@ export function ProfileTransitionOverlay() {
             {profileName ? (
               <>
                 <span style={{
-                  color: "rgba(3,26,14,0.5)",
+                  color: greetingColor,
                   fontSize: 26,
                   fontWeight: 600,
                   letterSpacing: "0.01em",
@@ -109,7 +118,7 @@ export function ProfileTransitionOverlay() {
                   {greeting}
                 </span>
                 <span style={{
-                  color: "#031A0E",
+                  color: nameColor,
                   fontSize: 120,
                   fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
                   fontStyle: "italic",
@@ -121,7 +130,7 @@ export function ProfileTransitionOverlay() {
               </>
             ) : (
               <span style={{
-                color: "#031A0E",
+                color: nameColor,
                 fontSize: 40,
                 fontWeight: 600,
                 letterSpacing: "0.01em",

@@ -15,18 +15,23 @@ import { useProfileStore } from "@/store/use-profile-store";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
-  displayName: string;
-  email:       string | null;
-  memberSince: Date | null;
-  avatarColor: string;
+  displayName:      string;
+  email:            string | null;
+  memberSince:      Date | null;
+  avatarColor:      string;
+  // Foto subida en el perfil de creador (creator_profiles.avatar_url). Cuando
+  // existe, gana sobre el avatar de espectador para la píldora del navbar —
+  // ver useActiveProfileDisplay.
+  creatorAvatarUrl: string;
 }
 
 interface UserProfileContextValue extends UserProfile, ProfileSettings {
-  userId:            string | null;
-  isLoaded:          boolean;
-  updateDisplayName: (name: string) => Promise<void>;
-  updateAvatarColor: (color: string) => Promise<void>;
-  updateSettings:    (patch: Partial<ProfileSettings>) => void;
+  userId:               string | null;
+  isLoaded:             boolean;
+  updateDisplayName:    (name: string) => Promise<void>;
+  updateAvatarColor:    (color: string) => Promise<void>;
+  updateSettings:       (patch: Partial<ProfileSettings>) => void;
+  refreshCreatorAvatar: () => Promise<void>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -45,12 +50,14 @@ const UserProfileContext = createContext<UserProfileContextValue>({
   email:             null,
   memberSince:       null,
   avatarColor:       "#22B16B",
+  creatorAvatarUrl:  "",
   userId:            null,
   isLoaded:          false,
   ...DEFAULT_SETTINGS,
-  updateDisplayName: async () => {},
-  updateAvatarColor: async () => {},
-  updateSettings:    () => {},
+  updateDisplayName:    async () => {},
+  updateAvatarColor:    async () => {},
+  updateSettings:       () => {},
+  refreshCreatorAvatar: async () => {},
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -68,10 +75,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
   }, [userId, isLoading, checkOwner]);
 
   const [profile, setProfile] = useState<UserProfile>({
-    displayName: "",
-    email:       null,
-    memberSince: null,
-    avatarColor: "#22B16B",
+    displayName:      "",
+    email:            null,
+    memberSince:      null,
+    avatarColor:      "#22B16B",
+    creatorAvatarUrl: "",
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -83,12 +91,17 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const supabase = getSupabaseBrowserClient();
 
     async function load() {
-      const [{ data: { user } }, { data: profileRow }] = await Promise.all([
+      const [{ data: { user } }, { data: profileRow }, { data: creatorRow }] = await Promise.all([
         supabase.auth.getUser(),
         supabase
           .from("profiles")
           .select("display_name, avatar_color")
           .eq("id", userId!)
+          .maybeSingle(),
+        supabase
+          .from("creator_profiles")
+          .select("avatar_url")
+          .eq("user_id", userId!)
           .maybeSingle(),
       ]);
 
@@ -109,15 +122,28 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       const savedColor = profileRow?.avatar_color?.trim() ?? "";
 
       setProfile({
-        displayName: savedName && savedName !== "Espectador" ? savedName : emailLocal,
-        email:       user.email ?? null,
-        memberSince: user.created_at ? new Date(user.created_at) : null,
-        avatarColor: savedColor || defaultColor,
+        displayName:      savedName && savedName !== "Espectador" ? savedName : emailLocal,
+        email:            user.email ?? null,
+        memberSince:      user.created_at ? new Date(user.created_at) : null,
+        avatarColor:      savedColor || defaultColor,
+        creatorAvatarUrl: creatorRow?.avatar_url ?? "",
       });
       setIsLoaded(true);
     }
 
     void load();
+  }, [userId]);
+
+  // Recarga solo la foto de creador — se llama justo tras guardarla en el
+  // wizard, para que la píldora la muestre sin esperar a un remount completo.
+  const refreshCreatorAvatar = useCallback(async () => {
+    if (!userId) return;
+    const { data } = await getSupabaseBrowserClient()
+      .from("creator_profiles")
+      .select("avatar_url")
+      .eq("user_id", userId)
+      .maybeSingle();
+    setProfile((prev) => ({ ...prev, creatorAvatarUrl: data?.avatar_url ?? "" }));
   }, [userId]);
 
   const updateDisplayName = useCallback(async (name: string) => {
@@ -148,6 +174,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         updateDisplayName,
         updateAvatarColor,
         updateSettings,
+        refreshCreatorAvatar,
       }}
     >
       {children}

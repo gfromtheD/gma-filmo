@@ -15,6 +15,10 @@ function pickGreeting(isFirstVisit: boolean): string {
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
 
+// "viewer" = verde de siempre (selector de perfiles). "creator" = invertido
+// (negro que se expande, texto verde) — solo para el onboarding de creador.
+export type TransitionVariant = "viewer" | "creator";
+
 interface TransitionStore {
   phase: "idle" | "expanding" | "contracting";
   origin: { x: number; y: number };
@@ -22,7 +26,18 @@ interface TransitionStore {
   chipPos: { x: number; y: number };
   profileName: string;
   greeting: string;
-  startExpand: (origin: { x: number; y: number }, size: number, profileName: string, isFirstVisit: boolean) => void;
+  variant: TransitionVariant;
+  // Ruta desde la que se llamó a startExpand — el overlay espera a que el
+  // pathname cambie respecto a esta para saber que la navegación ya ocurrió,
+  // en vez de asumir que siempre se lanza desde "/perfiles".
+  startPath: string;
+  startExpand: (
+    origin: { x: number; y: number },
+    size: number,
+    profileName: string,
+    isFirstVisit: boolean,
+    variant?: TransitionVariant,
+  ) => void;
   startContract: () => void;
   setChipPos: (pos: { x: number; y: number }) => void;
   reset: () => void;
@@ -35,8 +50,18 @@ export const useTransitionStore = create<TransitionStore>((set) => ({
   chipPos: { x: 0, y: 40 },
   profileName: "",
   greeting: "",
-  startExpand: (origin, size, profileName, isFirstVisit) =>
-    set({ phase: "expanding", origin, size, profileName, greeting: pickGreeting(isFirstVisit) }),
+  variant: "viewer",
+  startPath: "",
+  startExpand: (origin, size, profileName, isFirstVisit, variant = "viewer") =>
+    set({
+      phase: "expanding",
+      origin,
+      size,
+      profileName,
+      variant,
+      greeting: pickGreeting(isFirstVisit),
+      startPath: typeof window !== "undefined" ? window.location.pathname : "",
+    }),
   startContract: () => set({ phase: "contracting" }),
   setChipPos: (chipPos) => set({ chipPos }),
   reset: () => set({ phase: "idle" }),

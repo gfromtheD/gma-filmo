@@ -33,10 +33,12 @@ export function StudioScreen() {
 
       const { data: row } = await supabase
         .from("creator_profiles")
-        .select("creator_name, studio_name, bio, location, website_url, role, instagram_url, vimeo_url")
+        .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!row) return;
+
+      const socialLinks = (row.social_links ?? {}) as Record<string, string>;
 
       setData((d) => ({
         ...d,
@@ -47,12 +49,8 @@ export function StudioScreen() {
           bio:        row.bio ?? d.creator.bio,
           location:   row.location ?? d.creator.location,
           role:       row.role ?? d.creator.role,
-          socials: {
-            ...d.creator.socials,
-            web:       row.website_url   ?? d.creator.socials.web,
-            instagram: row.instagram_url ? `@${row.instagram_url}` : d.creator.socials.instagram,
-            vimeo:     row.vimeo_url     ? `vimeo.com/${row.vimeo_url}` : d.creator.socials.vimeo,
-          },
+          avatarUrl:  row.avatar_url ?? d.creator.avatarUrl,
+          socials: { ...d.creator.socials, ...socialLinks },
         },
       }));
     })();
