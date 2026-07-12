@@ -23,8 +23,8 @@ const ContentSecurityPolicy = [
   "frame-src www.youtube.com www.youtube-nocookie.com",
   // Prevents embedding this app in any external iframe (modern browsers)
   "frame-ancestors 'none'",
-  // API + Supabase Realtime WebSocket
-  "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co",
+  // API + Supabase Realtime WebSocket + subida directa a R2 (URL prefirmada, PUT desde el navegador)
+  "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com",
   "font-src 'self'",
   // Service worker and blob workers
   "worker-src 'self' blob:",
