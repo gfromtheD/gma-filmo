@@ -1,4 +1,5 @@
 import type { StudioData } from "./studio-types";
+import { CREATOR_GENRES } from "@/lib/genres";
 
 const posters = {
   tren:   { from: "#1c3a2e", to: "#0a1410", accent: "#3fae7e", glyph: "tren" },
@@ -106,7 +107,7 @@ export const STUDIO_DATA: StudioData = {
     { stars: 2, pct: 3 }, { stars: 1, pct: 1 },
   ],
 
-  genres: ["Drama", "Thriller", "Documental", "Experimental", "Comedia", "Terror", "Ciencia ficción", "Romance", "Animación"],
+  genres: CREATOR_GENRES.map(g => g.label),
   languages: ["Español", "Gallego", "Catalán", "Euskera", "Inglés", "Francés", "Portugués", "Sin diálogo"],
   posters,
 };

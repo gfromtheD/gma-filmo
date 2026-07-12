@@ -166,7 +166,7 @@ function toMovieMedia(
     title: p.title,
     year: parseInt(p.year ?? "0") || 0,
     rating: "TODOS",
-    categories: categories.length > 0 ? categories : ["Cortometraje"],
+    categories,
     synopsis: p.synopsis || content?.synopsis || "",
     tagline: content?.tagline,
     runtime: p.duration ?? "Corto",

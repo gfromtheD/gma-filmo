@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getUserId } from "@/lib/api/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { CREATOR_GENRES } from "@/lib/genres";
 
 function durationToMinutes(s: string): number {
   if (!s) return 0;
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    title, synopsis, year, duration, language,
+    title, synopsis, year, duration, language, genre,
     r2VideoUrl, r2PosterUrl, r2SubtitleUrl, fileSizeBytes,
   } = body as {
     title: string; synopsis?: string; year?: string; duration?: string;
@@ -51,6 +52,23 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdminClient();
 
+  // Género narrativo: validado server-side contra una allowlist explícita.
+  // El cliente nunca envía un collection_id — solo la etiqueta, que se resuelve aquí.
+  let genreColeccionId: number | null = null;
+  if (genre) {
+    const match = CREATOR_GENRES.find(g => g.label === genre);
+    if (!match) {
+      return NextResponse.json({ error: "Género no válido" }, { status: 400 });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: col } = await (supabase as any)
+      .from("colecciones")
+      .select("id")
+      .eq("slug", match.slug)
+      .maybeSingle();
+    genreColeccionId = (col as { id: number } | null)?.id ?? null;
+  }
+
   // Get creator display name
   const { data: profile } = await supabase
     .from("creator_profiles")
@@ -65,27 +83,22 @@ export async function POST(req: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabaseAny = supabase as any;
-  const { data, error } = await supabaseAny
-    .from("peliculas")
-    .insert({
-      slug,
-      title:           title.trim(),
-      synopsis:        synopsis?.trim() || null,
-      year:            year || null,
-      duration:        duration?.trim() || null,
-      author:          (profile as { creator_name?: string } | null)?.creator_name ?? "GMA Creator",
-      r2_video_url:    r2VideoUrl,
-      r2_poster_url:   r2PosterUrl || null,
-      r2_subtitle_url: r2SubtitleUrl || null,
-      source_page:     "studio_upload",
-      creator_user_id: userId,
-      genre:           mediaFormat,
-      language:        language || null,
-      file_size_bytes: fileSizeBytes ?? 0,
-      status:          "published",
-    })
-    .select("id, slug, title")
-    .single();
+  const { data, error } = await supabaseAny.rpc("publish_creator_pelicula", {
+    p_slug:               slug,
+    p_title:              title.trim(),
+    p_synopsis:           synopsis?.trim() || null,
+    p_year:                year || null,
+    p_duration:            duration?.trim() || null,
+    p_author:              (profile as { creator_name?: string } | null)?.creator_name ?? "GMA Creator",
+    p_r2_video_url:        r2VideoUrl,
+    p_r2_poster_url:       r2PosterUrl || null,
+    p_r2_subtitle_url:     r2SubtitleUrl || null,
+    p_creator_user_id:     userId,
+    p_media_format:        mediaFormat,
+    p_language:            language || null,
+    p_file_size_bytes:     fileSizeBytes ?? 0,
+    p_genre_coleccion_id:  genreColeccionId,
+  });
 
   if (error) {
     console.error("[titles] insert error:", error);
