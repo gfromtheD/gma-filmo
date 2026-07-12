@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Upload, Image as ImageIcon, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { SocialLinksPanel, SocialPlatformIcon, getSocialPlatform, socialDisplayText } from "@/components/ui/social-links-panel";
 import type { StudioData } from "./studio-types";
+
+// Debe coincidir con UPLOAD_CAPS.avatar en lib/r2/client.ts — se duplica aquí
+// porque ese módulo instancia el cliente S3 y no es seguro importarlo en cliente.
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 interface Props {
   data: StudioData;
@@ -34,6 +38,10 @@ export function ProfileView({ data, onToast }: Props) {
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(c.socials);
   const [dirty, setDirty]   = useState(false);
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl]       = useState<string | null>(c.avatarUrl ?? null);
+  const [avatarAction, setAvatarAction] = useState<"idle" | "uploading" | "removing">("idle");
+  const avatarBusy = avatarAction !== "idle";
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
   const setSocial = (k: string, v: string) => { setSocialLinks(s => ({ ...s, [k]: v })); setDirty(true); };
 
@@ -44,8 +52,94 @@ export function ProfileView({ data, onToast }: Props) {
     if (editing) return; // no pisar una edición en curso
     setForm({ studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location });
     setSocialLinks(c.socials);
+    setAvatarUrl(c.avatarUrl ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c]);
+
+  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite volver a elegir el mismo archivo más tarde
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      onToast("El archivo debe ser una imagen", { error: true });
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      onToast("La imagen supera el límite de 5 MB", { error: true });
+      return;
+    }
+
+    setAvatarAction("uploading");
+    const supabase = getSupabaseBrowserClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setAvatarAction("idle");
+      onToast("Sesión caducada. Vuelve a iniciar sesión.", { error: true });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("assetType", "avatar");
+
+    try {
+      const res = await fetch("/api/upload/file", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        onToast((body as { error?: string }).error ?? "No se pudo subir la imagen.", { error: true });
+        return;
+      }
+      const publicUrl = (body as { publicUrl: string }).publicUrl;
+
+      const { error } = await supabase
+        .from("creator_profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", session.user.id);
+
+      if (error) {
+        onToast("La imagen se subió pero no se pudo guardar en el perfil", { error: true });
+        return;
+      }
+
+      setAvatarUrl(publicUrl);
+      onToast("Foto de perfil actualizada");
+    } catch {
+      onToast("Error de red al subir la imagen.", { error: true });
+    } finally {
+      setAvatarAction("idle");
+    }
+  }
+
+  async function handleAvatarRemove() {
+    if (!avatarUrl) { onToast("No hay foto que eliminar", { error: true }); return; }
+
+    setAvatarAction("removing");
+    const supabase = getSupabaseBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setAvatarAction("idle");
+      onToast("No se pudo eliminar: sesión no encontrada", { error: true });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("creator_profiles")
+      .update({ avatar_url: null })
+      .eq("user_id", user.id);
+
+    setAvatarAction("idle");
+    if (error) {
+      onToast("Error al eliminar la foto", { error: true });
+    } else {
+      setAvatarUrl(null);
+      onToast("Logo eliminado");
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -135,7 +229,7 @@ export function ProfileView({ data, onToast }: Props) {
 
             {/* Content */}
             <div style={{ padding: "0 28px 28px", marginTop: -46 }}>
-              <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} imageUrl={c.avatarUrl} />
+              <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} imageUrl={avatarUrl ?? undefined} />
 
               <div style={{ ...row(10), marginTop: 16, alignItems: "center" }}>
                 <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em" }}>
@@ -220,11 +314,20 @@ export function ProfileView({ data, onToast }: Props) {
                 letterSpacing: "0.08em", color: C.textFaint, marginBottom: 18 }}>Identidad del estudio</div>
               <div style={{ ...row(18), marginBottom: 22, flexWrap: "wrap", display: "flex" }}>
                 <div style={{ position: "relative" }}>
-                  <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} imageUrl={c.avatarUrl} />
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    style={{ display: "none" }}
+                    onChange={(e) => void handleAvatarFileChange(e)}
+                  />
+                  <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} imageUrl={avatarUrl ?? undefined} />
                   <button className="st-btn st-btn-secondary st-btn-icon"
                     style={{ position: "absolute", bottom: -6, right: -6, width: 30, height: 30,
-                      borderRadius: 999, background: "#101820" }}
-                    onClick={() => onToast("Sube tu logo en formato PNG o SVG")}>
+                      borderRadius: 999, background: "#101820", opacity: avatarBusy ? 0.5 : 1 }}
+                    disabled={avatarBusy}
+                    onClick={() => avatarInputRef.current?.click()}>
                     <ImageIcon size={14} />
                   </button>
                 </div>
@@ -234,12 +337,16 @@ export function ProfileView({ data, onToast }: Props) {
                   </div>
                   <div style={row(9)}>
                     <button className="st-btn st-btn-secondary st-btn-sm"
-                      onClick={() => onToast("Selector de archivo abierto")}>
-                      <Upload size={14} /> Subir
+                      style={{ opacity: avatarBusy ? 0.5 : 1 }}
+                      disabled={avatarBusy}
+                      onClick={() => avatarInputRef.current?.click()}>
+                      <Upload size={14} /> {avatarAction === "uploading" ? "Subiendo…" : "Subir"}
                     </button>
                     <button className="st-btn st-btn-ghost st-btn-sm st-btn-danger"
-                      onClick={() => onToast("Logo eliminado", { error: true })}>
-                      Quitar
+                      style={{ opacity: avatarBusy ? 0.5 : 1 }}
+                      disabled={avatarBusy}
+                      onClick={() => void handleAvatarRemove()}>
+                      {avatarAction === "removing" ? "Quitando…" : "Quitar"}
                     </button>
                   </div>
                 </div>
@@ -294,7 +401,7 @@ export function ProfileView({ data, onToast }: Props) {
                     backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)" }} />
                 </div>
                 <div style={{ padding: "0 20px 20px", marginTop: -34 }}>
-                  <StudioLogo colors={c.logoColors} size={66} name={form.studioName} rounded={15} imageUrl={c.avatarUrl} />
+                  <StudioLogo colors={c.logoColors} size={66} name={form.studioName} rounded={15} imageUrl={avatarUrl ?? undefined} />
                   <div style={{ ...row(8), marginTop: 12, alignItems: "center" }}>
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{form.studioName}</h3>
                     {c.verified && <CheckCircle2 size={15} color={C.accentH} strokeWidth={2.2} />}
