@@ -245,6 +245,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const [playing, setPlaying]               = useState(true);
   const [muted, setMuted]                   = useState(false);
   const [volume, setVolume]                 = useState(1.0);
+  const [brightness, setBrightness]         = useState(1.0);
   const [buffered, setBuffered]             = useState(0);
   const [buffering, setBuffering]           = useState(false);
   const [videoError, setVideoError]         = useState(false);
@@ -680,6 +681,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           <video
             ref={videoRef} src={mp4Url}
             className="h-full w-full object-contain"
+            style={{ filter: `brightness(${brightness})` }}
             playsInline autoPlay
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
@@ -750,14 +752,6 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             Reintentar
           </button>
         </div>
-      )}
-
-      {/* Playing dim — fades out when paused */}
-      {!isYT && (
-        <div
-          className="pointer-events-none absolute inset-0 transition-opacity duration-500 ease-in-out"
-          style={{ background: "rgba(0,0,0,0.42)", opacity: playing ? 1 : 0 }}
-        />
       )}
 
       {/* Pause cinematic vignette — fades in when paused */}
@@ -989,6 +983,8 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           onAudioTrack={setAudioTrack}
           speed={playbackSpeed}
           onSpeed={setPlaybackSpeed}
+          brightness={brightness}
+          onBrightness={setBrightness}
           autoplayNext={autoplayNext}
           onAutoplayNext={setAutoplayNext}
           hasNext={Boolean(nextItem)}
@@ -1613,6 +1609,85 @@ function VolumeSlider({
   );
 }
 
+// ─── Brightness slider ────────────────────────────────────────────────────────
+
+const BRIGHTNESS_MIN = 0.5;
+const BRIGHTNESS_MAX = 1.5;
+
+function BrightnessSlider({
+  brightness,
+  onBrightness,
+}: {
+  brightness: number;
+  onBrightness: (b: number) => void;
+}) {
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const [isActive, setIsActive] = useState(false);
+  const displayPct = ((brightness - BRIGHTNESS_MIN) / (BRIGHTNESS_MAX - BRIGHTNESS_MIN)) * 100;
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    isDragging.current = true;
+    setIsActive(true);
+
+    const rect = trackRef.current!.getBoundingClientRect();
+
+    function getBrightness(clientX: number) {
+      const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return BRIGHTNESS_MIN + pct * (BRIGHTNESS_MAX - BRIGHTNESS_MIN);
+    }
+
+    onBrightness(getBrightness(e.clientX));
+
+    function onMove(ev: PointerEvent) {
+      onBrightness(getBrightness(ev.clientX));
+    }
+
+    function onUp(ev: PointerEvent) {
+      isDragging.current = false;
+      onBrightness(getBrightness(ev.clientX));
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }
+
+  function onPointerEnter() { setIsActive(true); }
+  function onPointerLeave() { if (!isDragging.current) setIsActive(false); }
+
+  return (
+    <div
+      ref={trackRef}
+      className="relative flex w-full cursor-pointer select-none items-center"
+      style={{ height: 20, touchAction: "none" }}
+      onPointerDown={onPointerDown}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+    >
+      <div className="relative w-full rounded-full bg-white/25" style={{ height: 3 }}>
+        <div
+          className="absolute left-0 top-0 h-full rounded-full bg-white transition-[width] duration-75"
+          style={{ width: `${displayPct}%` }}
+        />
+      </div>
+      <div
+        className="absolute top-1/2 rounded-full bg-white transition-all duration-150"
+        style={{
+          width:     isActive ? 11 : 9,
+          height:    isActive ? 11 : 9,
+          left:      `${displayPct}%`,
+          transform: "translateX(-50%) translateY(-50%)",
+          boxShadow: isActive ? "0 0 0 3px rgba(255,255,255,0.2)" : "none",
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── Rounded play triangle ────────────────────────────────────────────────────
 
 function PlayTriangle({ size = 26 }: { size?: number }) {
@@ -1780,6 +1855,7 @@ function SettingsPanel({
   ccTrack, onCcTrack,
   audioTrack, onAudioTrack,
   speed, onSpeed,
+  brightness, onBrightness,
   autoplayNext, onAutoplayNext,
   hasNext, hasSubtitle,
 }: {
@@ -1789,6 +1865,8 @@ function SettingsPanel({
   onAudioTrack: (t: string) => void;
   speed: number;
   onSpeed: (s: number) => void;
+  brightness: number;
+  onBrightness: (b: number) => void;
   autoplayNext: boolean;
   onAutoplayNext: (v: boolean) => void;
   hasNext: boolean;
@@ -1830,6 +1908,12 @@ function SettingsPanel({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Brightness */}
+      <div className="border-b border-white/8 px-4 py-3">
+        <p className="mb-2 text-[10px] font-bold tracking-widest uppercase text-white/30">Brillo</p>
+        <BrightnessSlider brightness={brightness} onBrightness={onBrightness} />
       </div>
 
       {/* Subtitles */}
