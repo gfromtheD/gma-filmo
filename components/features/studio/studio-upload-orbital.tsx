@@ -29,7 +29,7 @@ interface PreviewItem {
 }
 
 export interface UploadOrbitalProps {
-  onMainReady:   (f: { name: string; size: string; r2Url: string }) => void;
+  onMainReady:   (f: { name: string; size: string; sizeBytes: number; r2Url: string }) => void;
   onAssetReady?: (assetType: string, r2Url: string) => void;
 }
 
@@ -383,6 +383,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
   const subInputRef      = useRef<HTMLInputElement>(null);
   const extrasInputRef   = useRef<HTMLInputElement>(null);
   const xhrRefs         = useRef<Record<string, XMLHttpRequest>>({});
+  const abortControllers = useRef<Record<string, AbortController>>({});
   const sessionUsed     = useRef(0);
 
   useEffect(() => {
@@ -397,37 +398,77 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
   const hasContent = queue.length > 0;
 
   // ── upload ─────────────────────────────────────────────────────────────────
+  // Sube directo del navegador a R2 con una URL prefirmada — el archivo nunca
+  // pasa por el servidor de Next.js, así que no choca con el límite de payload
+  // de las Serverless Functions de Vercel (~4.5 MB), crítico para vídeos grandes.
   async function uploadFile(entry: QueuedFile) {
     setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "uploading", progress: 0 } : f));
 
-    const formData = new FormData();
-    formData.append("file", entry.file);
-    formData.append("assetType", entry.assetType);
+    const setError = (msg: string) =>
+      setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "error", errorMsg: msg } : f));
 
-    const xhr = new XMLHttpRequest();
-    xhrRefs.current[entry.id] = xhr;
+    const controller = new AbortController();
+    abortControllers.current[entry.id] = controller;
 
-    xhr.upload.onprogress = e => {
-      if (e.lengthComputable) setQueue(q => q.map(f => f.id === entry.id ? { ...f, progress: (e.loaded / e.total) * 100 } : f));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const { publicUrl } = JSON.parse(xhr.responseText) as { publicUrl: string };
-        sessionUsed.current += entry.file.size;
-        setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "done", progress: 100, r2Url: publicUrl } : f));
-        if (entry.assetType === "main") onMainReady({ name: entry.file.name, size: entry.sizeLabel, r2Url: publicUrl });
-        else onAssetReady?.(entry.assetType, publicUrl);
-      } else {
-        const msg = (() => { try { return (JSON.parse(xhr.responseText) as { error?: string }).error ?? `Error ${xhr.status}`; } catch { return `Error ${xhr.status}`; } })();
-        setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "error", errorMsg: msg } : f));
+    const contentType = entry.file.type || "application/octet-stream";
+
+    try {
+      const presignRes = await fetch("/api/upload/presign", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken.current ? { Authorization: `Bearer ${authToken.current}` } : {}),
+        },
+        body: JSON.stringify({
+          assetType:    entry.assetType,
+          fileName:     entry.file.name,
+          fileSize:     entry.file.size,
+          contentType,
+          sessionUsed:  sessionUsed.current,
+        }),
+      });
+
+      if (!presignRes.ok) {
+        const body = await presignRes.json().catch(() => ({}) as { error?: string });
+        setError(body.error ?? `Error ${presignRes.status}`);
+        return;
       }
-      delete xhrRefs.current[entry.id];
-    };
-    xhr.onerror = () => setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "error", errorMsg: "Error de red" } : f));
 
-    xhr.open("POST", "/api/upload/file");
-    if (authToken.current) xhr.setRequestHeader("Authorization", `Bearer ${authToken.current}`);
-    xhr.send(formData);
+      const { presignedUrl, publicUrl } = await presignRes.json() as { presignedUrl: string; publicUrl: string };
+
+      await new Promise<void>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhrRefs.current[entry.id] = xhr;
+
+        xhr.upload.onprogress = e => {
+          if (e.lengthComputable) setQueue(q => q.map(f => f.id === entry.id ? { ...f, progress: (e.loaded / e.total) * 100 } : f));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            sessionUsed.current += entry.file.size;
+            setQueue(q => q.map(f => f.id === entry.id ? { ...f, state: "done", progress: 100, r2Url: publicUrl } : f));
+            if (entry.assetType === "main") onMainReady({ name: entry.file.name, size: entry.sizeLabel, sizeBytes: entry.file.size, r2Url: publicUrl });
+            else onAssetReady?.(entry.assetType, publicUrl);
+            resolve();
+          } else {
+            setError(`Error ${xhr.status} al subir a almacenamiento`);
+            resolve();
+          }
+        };
+        xhr.onerror = () => { setError("Error de red durante la subida"); resolve(); };
+        xhr.onabort = () => resolve();
+
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", contentType);
+        xhr.send(entry.file);
+      });
+    } catch (err) {
+      if ((err as { name?: string }).name !== "AbortError") setError("Error de red");
+    } finally {
+      delete xhrRefs.current[entry.id];
+      delete abortControllers.current[entry.id];
+    }
   }
 
   function uploadAll() {
@@ -541,6 +582,8 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
   function removeFile(id: string) {
     xhrRefs.current[id]?.abort();
     delete xhrRefs.current[id];
+    abortControllers.current[id]?.abort();
+    delete abortControllers.current[id];
     setPreviews(prev => {
       const idx = prev.findIndex(p => p.fileId === id);
       if (idx !== -1) URL.revokeObjectURL(prev[idx]!.objectUrl);

@@ -87,6 +87,7 @@ interface FormState {
 interface MainFile {
   name: string;
   size: string;
+  sizeBytes: number;
   r2Url: string;
 }
 
@@ -174,7 +175,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
           r2VideoUrl:    mainFile.r2Url,
           r2PosterUrl:   assetUrls["poster_h"] ?? assetUrls["poster_v"] ?? assetUrls["poster"] ?? null,
           r2SubtitleUrl: assetUrls["subtitles"] ?? null,
-          fileSizeBytes: 0,
+          fileSizeBytes: mainFile.sizeBytes,
         }),
       });
 
