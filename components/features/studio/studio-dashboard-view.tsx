@@ -119,10 +119,14 @@ function PriceRoller({ price }: { price: number }) {
   );
 }
 
-function StorageCard() {
-  const [showPlans,     setShowPlans]     = useState(false);
-  const [showBreakdown, setShowBreakdown] = useState(false);
-  const [selectedGB,    setSelectedGB]    = useState(50);
+interface StorageCardProps {
+  showBreakdown: boolean;
+  onToggleBreakdown: () => void;
+}
+
+function StorageCard({ showBreakdown, onToggleBreakdown }: StorageCardProps) {
+  const [showPlans,  setShowPlans]  = useState(false);
+  const [selectedGB, setSelectedGB] = useState(50);
 
   const total   = STORAGE.total;
   const pct     = Math.round((STORAGE.used / total) * 100);
@@ -141,7 +145,8 @@ function StorageCard() {
       : `Tienes ${freeGB} GB libres · ${STORAGE.files} archivos subidos.`;
 
   return (
-    <div style={card({ padding: "14px 16px", marginBottom: 22, borderColor: cardBorder, width: "fit-content" })}>
+    <div style={card({ padding: "14px 16px", borderColor: cardBorder, width: "100%", height: "100%",
+      display: "flex", flexDirection: "column" })}>
       {/* Header — solo título, sin botones */}
       <div style={{ ...row(10), marginBottom: 14 }}>
         <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, borderRadius: 9,
@@ -156,8 +161,9 @@ function StorageCard() {
         </div>
       </div>
 
-      {/* Rings row — main siempre visible, desglose se despliega a la derecha */}
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-end", justifyContent: "center" }}>
+      {/* Rings row — crece para ocupar el alto disponible y centra el contenido;
+          el desglose se despliega en la misma fila si cabe, si no hace wrap debajo */}
+      <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: 20, alignItems: "center", justifyContent: "center" }}>
         <StorageRing
           pct={pct} color={statusColor} trackColor={trackColor}
           label="Total" sub={`${STORAGE.used} / ${total} GB`}
@@ -180,13 +186,13 @@ function StorageCard() {
       </div>
 
       {/* Footer + botón desglose */}
-      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10, flexShrink: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600,
           color: isCrit ? C.errorFg : isWarn ? C.gold : C.textMuted }}>
           {footerMsg}
         </div>
         <button className="st-btn st-btn-secondary st-btn-sm"
-          onClick={() => setShowBreakdown(v => !v)}>
+          onClick={onToggleBreakdown}>
           <motion.span animate={{ rotate: showBreakdown ? 180 : 0 }}
             transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             style={{ display: "inline-flex" }}>
@@ -217,8 +223,10 @@ function StorageCard() {
         )}
       </AnimatePresence>
 
-      {/* Storage slider + price calculator */}
-      {showPlans && (() => {
+      {/* Storage slider + price calculator — depende también de showBreakdown: si se
+          cierra el desglose principal, este panel (cuyo propio botón vive dentro del
+          desglose) no debe quedar huérfano visible sin forma de cerrarlo. */}
+      {showBreakdown && showPlans && (() => {
         const price    = calcPrice(selectedGB);
         const isFree   = selectedGB <= 5;
         const extraGB  = selectedGB - 5;
@@ -230,9 +238,9 @@ function StorageCard() {
               letterSpacing: "0.08em", color: C.textFaint, marginBottom: 18 }}>
               Elige cuánto espacio necesitas
             </div>
-            <div style={{ ...row(20), alignItems: "stretch" }}>
+            <div style={{ ...row(20), alignItems: "stretch", flexWrap: "wrap" }}>
               {/* Slider column */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ ...row(), justifyContent: "space-between", alignItems: "baseline" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
                     <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1 }}>
@@ -266,7 +274,7 @@ function StorageCard() {
               </div>
 
               {/* Price card */}
-              <div style={{ flexShrink: 0, width: 160, padding: "18px 16px", borderRadius: 14, textAlign: "center",
+              <div style={{ flex: "0 1 160px", minWidth: 140, padding: "18px 16px", borderRadius: 14, textAlign: "center",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
                 border: `1px solid ${isFree ? C.accent30 : C.border2}`,
                 background: isFree ? C.accent10 : C.w6 }}>
@@ -345,6 +353,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function DashboardView({ data, onNav, onOpenTitle }: Props) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const { creator, titles } = data;
   const published    = titles.filter(t => t.status === "publicado");
   const inReview     = titles.filter(t => t.status === "revision");
@@ -412,13 +421,22 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
       </div>
 
       {/* ── Bento grid ── */}
+      {/* Fila 1 (progress/stack/featured/catalog) siempre fija. Al expandir el desglose
+          de almacenamiento, esta ocupa toda la fila 2 (todas las columnas) y "table" +
+          "checklist" bajan un nivel para dejarle el hueco — el desglose crece en ancho,
+          no en alto. */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "1.35fr 0.9fr 1.05fr 1.05fr",
-        gridTemplateAreas: `
-          "progress stack   gauge     catalog"
-          "featured table   table     checklist"
-          "featured table   table     checklist"
+        gridTemplateColumns: "1.1fr 1.2fr 1.05fr 1.05fr",
+        gridTemplateAreas: showBreakdown ? `
+          "progress stack   featured catalog"
+          "gauge    gauge   gauge    gauge"
+          "table    table   table    checklist"
+          "table    table   table    checklist"
+        ` : `
+          "progress stack   featured catalog"
+          "gauge    table   table    checklist"
+          "gauge    table   table    checklist"
         `,
         gap: 16,
       }}>
@@ -439,13 +457,22 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
           </div>
         </div>
 
-        {/* stack — 2 mini cards apiladas */}
-        <div style={{ gridArea: "stack", display: "grid", gridTemplateRows: "1fr 1fr", gap: 16 }}>
+        {/* stack — Publicados + Nuevos apiladas a la izquierda, En revisión a la derecha
+            de ambas (misma altura combinada) para no dejar hueco en la columna */}
+        <div style={{ gridArea: "stack", display: "grid",
+          gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 16 }}>
           <div style={card({ padding: "16px 18px" })}>
             <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: "0.1em", color: C.textFaint, marginBottom: 10 }}>Publicados</div>
             <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>{pubPct}%</div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 6 }}>{published.length} de {titles.length} títulos</div>
+          </div>
+          <div style={{ gridRow: "span 2", ...card({ padding: "16px 18px", height: "100%",
+            display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
+              letterSpacing: "0.1em", color: C.textFaint, marginBottom: 10 }}>En revisión</div>
+            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>{reviewPct}%</div>
+            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 6 }}>{inReview.length} título{inReview.length !== 1 ? "s" : ""} en cola</div>
           </div>
           <div style={card({ padding: "16px 18px" })}>
             <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
@@ -459,8 +486,8 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
         </div>
 
         {/* gauge — almacenamiento */}
-        <div style={{ gridArea: "gauge", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
-          <StorageCard />
+        <div style={{ gridArea: "gauge", display: "flex", alignItems: "stretch", justifyContent: "center" }}>
+          <StorageCard showBreakdown={showBreakdown} onToggleBreakdown={() => setShowBreakdown(v => !v)} />
         </div>
 
         {/* catalog — distribución */}
@@ -490,40 +517,40 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
             onClick={() => onNav("titulos")}>Gestionar títulos</button>
         </div>
 
-        {/* featured — título destacado */}
+        {/* featured — título destacado (compacto y horizontal: fila 1 fija, no bloquea
+            el hueco que se abre a la derecha de "gauge" cuando se expande el desglose) */}
         {featured && (
-          <div style={{ gridArea: "featured", borderRadius: 14, overflow: "hidden", cursor: "pointer",
-            border: `1px solid ${C.border2}`, display: "flex", flexDirection: "column", minHeight: 230 }}
+          <div style={{ gridArea: "featured", ...card({ padding: "14px 16px", cursor: "pointer" }),
+            height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}
             onClick={() => onOpenTitle(featured)}>
-            <div style={{ flex: 1, padding: "14px 16px",
-              background: `linear-gradient(160deg, ${featured.poster.from}66 0%, ${featured.poster.to}44 100%)`,
-              display: "flex", flexDirection: "column" }}>
-              <div style={{ ...row(), justifyContent: "space-between" }}>
-                <span style={{ ...row(5), background: C.accent, color: "#000",
-                  fontSize: 11, fontWeight: 800, borderRadius: 999, padding: "3px 10px" }}>
-                  <Star size={10} fill="currentColor" strokeWidth={0} /> Destacado
-                </span>
-                <div style={row(8)}>
-                  <button className="st-btn st-btn-ghost st-btn-sm" style={{ padding: "5px 7px" }}
-                    onClick={e => { e.stopPropagation(); onOpenTitle(featured); }}>
-                    <CirclePlay size={15} />
-                  </button>
-                  <button className="st-btn st-btn-ghost st-btn-sm" style={{ padding: "5px 7px" }}>
-                    <ArrowUpRight size={15} />
-                  </button>
-                </div>
-              </div>
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0" }}>
-                <Poster data={featured.poster} imageUrl={featured.r2PosterUrl} title={featured.title} type={featured.type} year={featured.year} />
+            <div style={{ ...row(), justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ ...row(5), background: C.accent, color: "#000",
+                fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: "3px 9px" }}>
+                <Star size={9} fill="currentColor" strokeWidth={0} /> Destacado
+              </span>
+              <div style={row(6)}>
+                <button className="st-btn st-btn-ghost st-btn-sm" style={{ padding: "4px 6px" }}
+                  onClick={e => { e.stopPropagation(); onOpenTitle(featured); }}>
+                  <CirclePlay size={14} />
+                </button>
+                <button className="st-btn st-btn-ghost st-btn-sm" style={{ padding: "4px 6px" }}>
+                  <ArrowUpRight size={14} />
+                </button>
               </div>
             </div>
-            <div style={{ padding: "12px 16px 14px", background: C.w6, borderTop: `1px solid ${C.border1}` }}>
-              <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em" }}>{featured.title}</div>
-              <div style={{ ...row(10), marginTop: 6 }}>
-                <span style={{ ...row(4), fontSize: 12, color: C.textMuted }}>
-                  <Eye size={12} /> {fmt(featured.views ?? 0)}
-                </span>
-                <Stars value={featured.rating ?? 0} size={11} showNum />
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div style={{ width: 46, flexShrink: 0, borderRadius: 7, overflow: "hidden" }}>
+                <Poster data={featured.poster} imageUrl={featured.r2PosterUrl} title={featured.title} type={featured.type} year={featured.year} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: "-0.01em",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{featured.title}</div>
+                <div style={{ ...row(8), marginTop: 5 }}>
+                  <span style={{ ...row(4), fontSize: 11.5, color: C.textMuted }}>
+                    <Eye size={11} /> {fmt(featured.views ?? 0)}
+                  </span>
+                  <Stars value={featured.rating ?? 0} size={10} showNum />
+                </div>
               </div>
             </div>
           </div>
