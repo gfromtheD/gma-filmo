@@ -8,6 +8,7 @@ import {
   RefreshCw, ChevronLeft, ChevronRight, Plus, GripVertical, ChevronUp,
 } from "lucide-react";
 import { C } from "./studio-ui";
+import { BoxesLoader } from "@/components/ui/boxes-loader";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 // ── types ─────────────────────────────────────────────────────────────────────
@@ -254,7 +255,21 @@ function PreviewCarousel({
 }
 
 // ── EmptyDropZone ──────────────────────────────────────────────────────────────
-function EmptyDropZone({ isDragOver }: { isDragOver: boolean }) {
+function EmptyDropZone({ isDragOver, detecting }: { isDragOver: boolean; detecting?: boolean }) {
+  if (detecting) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "60px 24px" }}>
+        <BoxesLoader size={17} color={C.accentH} />
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Detectando…</div>
+          <div style={{ fontSize: 12, color: C.textFaint, marginTop: 4 }}>
+            Identificando tipo de archivo…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "60px 24px" }}>
       <div style={{
@@ -657,7 +672,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
                 onRemoveCurrent={handlePreviewClose}
               />
             ) : (
-              <EmptyDropZone isDragOver={isDragOver} />
+              <EmptyDropZone isDragOver={isDragOver} detecting={detecting} />
             )}
           </div>
 
@@ -702,6 +717,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
                 {/* header */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                    {detecting && <BoxesLoader size={6} color={C.accentH} />}
                     <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
                       {detecting
                         ? "Detectando…"
