@@ -467,12 +467,17 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
             <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>{pubPct}%</div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 6 }}>{published.length} de {titles.length} títulos</div>
           </div>
-          <div style={{ gridRow: "span 2", ...card({ padding: "16px 18px", height: "100%",
-            display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
+          <div style={{ gridRow: "span 2", ...card({ padding: "18px", height: "100%",
+            display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }) }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
-              letterSpacing: "0.1em", color: C.textFaint, marginBottom: 10 }}>En revisión</div>
-            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>{reviewPct}%</div>
-            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 6 }}>{inReview.length} título{inReview.length !== 1 ? "s" : ""} en cola</div>
+              letterSpacing: "0.1em", color: C.textFaint }}>En revisión</div>
+            <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1 }}>{reviewPct}%</div>
+            <div>
+              <div style={{ fontSize: 13, color: C.textMuted }}>{inReview.length} título{inReview.length !== 1 ? "s" : ""} en cola de revisión</div>
+              <div style={{ height: 4, borderRadius: 999, background: C.w8, overflow: "hidden", marginTop: 10 }}>
+                <div style={{ height: "100%", width: `${reviewPct}%`, borderRadius: 999, background: "#E8B84B" }} />
+              </div>
+            </div>
           </div>
           <div style={card({ padding: "16px 18px" })}>
             <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
@@ -491,7 +496,8 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
         </div>
 
         {/* catalog — distribución */}
-        <div style={{ gridArea: "catalog", ...card({ padding: "18px 20px" }) }}>
+        <div style={{ gridArea: "catalog", ...card({ padding: "18px 20px", height: "100%",
+          display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
           <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", marginBottom: 16 }}>
             <div style={{ width: `${pubPct}%`,    background: C.accentH, transition: "width 0.6s ease" }} />
             <div style={{ width: `${reviewPct}%`, background: "#E8B84B", transition: "width 0.6s ease" }} />
