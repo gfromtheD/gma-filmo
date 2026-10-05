@@ -19,6 +19,7 @@ export async function database() {
  ALTER TABLE peliculas ENABLE ROW LEVEL SECURITY; CREATE POLICY public_read ON peliculas FOR SELECT USING (true); GRANT SELECT ON peliculas TO anon,authenticated;
  INSERT INTO peliculas(slug,title,r2_video_url,status) VALUES('legacy','Original','https://legacy.example/video.mp4','published');`);
  await db.exec(await readFile('supabase/migrations/20261005_upload_engine_v2.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/20261006_upload_engine_r2_first.sql','utf8'));
  return db;
 }
 export async function command<T=Record<string,unknown>>(db:PGlite,action:string,payload:unknown,owner=OWNER):Promise<T> {

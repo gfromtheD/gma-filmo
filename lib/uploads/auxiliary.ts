@@ -34,7 +34,7 @@ export class AuxiliaryProvider {
   constructor(private bucket: string, client?: S3Client) {
     this.client = client ?? new S3Client({ region:"auto",
       endpoint:"https://" + requiredEnv("CLOUDFLARE_ACCOUNT_ID") + ".r2.cloudflarestorage.com",
-      credentials:{accessKeyId:requiredEnv("R2_ACCESS_KEY_ID"),secretAccessKey:requiredEnv("R2_SECRET_ACCESS_KEY")},maxAttempts:2 });
+      credentials:{accessKeyId:requiredEnv("R2_ACCESS_KEY_ID"),secretAccessKey:requiredEnv("R2_SECRET_ACCESS_KEY")},maxAttempts:2,requestChecksumCalculation:'WHEN_REQUIRED',responseChecksumValidation:'WHEN_REQUIRED' });
   }
   ingestKey(session:UploadSession){ return "ingest/" + session.owner_id + "/" + session.id; }
   finalKey(session:UploadSession){return "ready/" + session.owner_id + "/" + session.asset_id;}

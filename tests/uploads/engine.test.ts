@@ -10,7 +10,7 @@ const SHA='a'.repeat(64);
 async function setup(){const db=await database();await db.exec('UPDATE gma_upload_policy SET legacy_inventory_verified=true');return db;}
 async function draft(db:Awaited<ReturnType<typeof database>>,purpose='title'){return command<UploadDraft>(db,'create_draft',{purpose});}
 async function reserve(db:Awaited<ReturnType<typeof database>>,d:UploadDraft,role='main',bytes=100,key=randomUUID()){
- return command<UploadSession>(db,'reserve',{draft_id:d.id,revision:d.revision,role,bytes,sha256:SHA,file_name:'movie.mp4',content_type:'video/mp4',idempotency_key:key,request_hash:key});
+ return command<UploadSession>(db,'reserve',{draft_id:d.id,revision:d.revision,role,bytes,video_provider:'stream',sha256:SHA,file_name:'movie.mp4',content_type:'video/mp4',idempotency_key:key,request_hash:key});
 }
 async function ready(db:Awaited<ReturnType<typeof database>>,s:UploadSession){
  await command(db,'bind',{session_id:s.id,provider_ref:randomUUID(),provider_data:{}});

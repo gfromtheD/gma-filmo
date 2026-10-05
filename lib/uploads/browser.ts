@@ -3,13 +3,17 @@ import { Upload } from 'tus-js-client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { TUS_CHUNK_SIZE,UPLOAD_LIMITS } from './policy';
 import type { UploadSession,MediaAsset,UploadDraft,AssetRole } from './types';
+import {isVideoRole} from './policy';
+import type {ReceivedPart} from './video-provider';
 import type { ClientDraftResponse } from './client-models';
 
 export async function uploadApi<T>(path:string,method='GET',body?:unknown):Promise<T> {
- const {data:{session}}=await getSupabaseBrowserClient().auth.getSession();
+ const auth=getSupabaseBrowserClient().auth;
+ const execute=async(token:string)=>fetch(path,{method,cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:body===undefined?undefined:JSON.stringify(body)});
+ let {data:{session}}=await auth.getSession();
  if(!session)throw new Error('Inicia sesión para subir contenido');
- const response=await fetch(path,{method,cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},
- body:body===undefined?undefined:JSON.stringify(body)});
+ let response=await execute(session.access_token);
+ if(response.status===401){session=(await auth.refreshSession()).data.session;if(!session)throw new Error('Inicia sesión para continuar');response=await execute(session.access_token);}
  const data=await response.json();if(!response.ok)throw new Error(data.error??'No se pudo completar la operación');return data as T;
 }
 let draftTask:Promise<UploadDraft>|undefined;
@@ -38,7 +42,7 @@ export function hashFile(file:File,signal?:AbortSignal,onProgress?:(n:number)=>v
    worker.postMessage({file});
  });
 }
-function put(file:File,url:string,signal:AbortSignal,progress:(n:number)=>void):Promise<void> {
+function put(file:Blob,url:string,signal:AbortSignal,progress:(n:number)=>void):Promise<void> {
  return new Promise((resolve,reject)=>{
  const xhr=new XMLHttpRequest();const abort=()=>xhr.abort();
  if(signal.aborted){reject(new DOMException('Interrumpido','AbortError'));return;}
@@ -49,6 +53,37 @@ function put(file:File,url:string,signal:AbortSignal,progress:(n:number)=>void):
  xhr.onerror=()=>{done();reject(new Error('Error de red'));};xhr.onabort=()=>{done();reject(new DOMException('Interrumpido','AbortError'));};
  xhr.open('PUT',url);xhr.setRequestHeader('Content-Type',file.type||'application/octet-stream');xhr.send(file);
  });
+}
+/** ListParts, not local success callbacks, determines resumable progress. */
+async function multipart(file:File,session:UploadSession,signal:AbortSignal,progress:(n:number)=>void) {
+ type Inspection={parts:ReceivedPart[];complete:boolean;partSize:number;generation:number};
+ const inspect=async()=> (await uploadApi<{upload:Inspection}>('/api/uploads/'+session.id+'/parts','POST')).upload;
+ const initial=await inspect();if(initial.complete){progress(100);return;}
+ const size=initial.partSize,count=Math.ceil(file.size/size);
+ const confirmed=new Map(initial.parts.map(p=>[p.number,p.size]));const sending=new Map<number,number>();
+ const expected=(n:number)=>Math.min(size,file.size-(n-1)*size);
+ const update=()=>progress(Math.min(100,(Array.from(confirmed.values()).reduce((a,b)=>a+b,0)+Array.from(sending.values()).reduce((a,b)=>a+b,0))/file.size*100));
+ const missing=Array.from({length:count},(_,i)=>i+1).filter(n=>confirmed.get(n)!==expected(n));let cursor=0;
+ update();
+ const parallel=new AbortController(),cancel=()=>parallel.abort();signal.addEventListener('abort',cancel,{once:true});if(signal.aborted)parallel.abort();
+ const worker=async()=>{while(cursor<missing.length){const number=missing[cursor++]!;confirmed.delete(number);
+   for(let attempt=0;attempt<5;attempt++) {
+     if(parallel.signal.aborted)throw new DOMException('Interrumpido','AbortError');
+     try {
+       const {part}=await uploadApi<{part:{url:string;size:number}}>('/api/uploads/'+session.id+'/part','POST',{number,generation:initial.generation});
+       await put(file.slice((number-1)*size,number*size,'application/octet-stream'),part.url,parallel.signal,p=>{sending.set(number,expected(number)*p/100);update();});
+       sending.delete(number);confirmed.set(number,expected(number));update();break;
+     }catch(e){sending.delete(number);if(parallel.signal.aborted)throw e;
+       const observed=await inspect();if(observed.complete)return;
+       const received=observed.parts.find(p=>p.number===number);
+       if(received?.size===expected(number)){confirmed.set(number,received.size);update();break;}
+       if(attempt===4)throw e;
+       await delay(parallel.signal);
+     }
+   }
+ }};
+ try{await Promise.all([worker(),worker()]);}catch(e){parallel.abort();throw e;}finally{signal.removeEventListener('abort',cancel);}
+ const final=await inspect();if(!final.complete && final.parts.some(p=>p.size!==expected(p.number)))throw new Error('Las partes recibidas necesitan recuperación');
 }
 function tus(file:File,url:string,session:UploadSession,signal:AbortSignal,progress:(n:number)=>void):Promise<void> {
  return new Promise((resolve,reject)=>{
@@ -80,9 +115,10 @@ export async function uploadAsset(input:{file:File;role:AssetRole;key:string;sig
  }
  input.onSession?.(session);
  if(signal.aborted)throw new DOMException('Interrumpido','AbortError');
- const url=session.provider_data.uploadUrl;if(typeof url!=='string' && !session.provider_data.transfer_complete)throw new Error('La sesión necesita recuperación del proveedor');
+ const url=session.provider_data.uploadUrl;if(typeof url!=='string' && !session.multipart_upload_id && !session.provider_data.transfer_complete)throw new Error('La sesión necesita recuperación del proveedor');
  input.onState?.('Transfiriendo');const progress=input.onProgress??(()=>{});
- if(!session.provider_data.transfer_complete){if(session.provider==='stream')await tus(file,String(url),session,signal,progress);else await put(file,String(url),signal,progress);}
+ if(!session.provider_data.transfer_complete){if(session.provider==='stream')await tus(file,String(url),session,signal,progress);else if(isVideoRole(role))await multipart(file,session,signal,progress);else await put(file,String(url),signal,progress);}
+ if(signal.aborted)throw new DOMException('Interrumpido','AbortError');
  input.onState?.('Validando y procesando');
  await uploadApi('/api/uploads/'+session.id+'/complete','POST');
  const deadline=Date.now()+20*60*1000;

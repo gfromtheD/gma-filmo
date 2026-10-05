@@ -1,6 +1,6 @@
 'use client';
 import { useEffect,useState,type RefObject } from 'react';
-export function useStreamPlayback(ref:RefObject<HTMLVideoElement>,slug:string,enabled:boolean) {
+export function useHlsPlayback(ref:RefObject<HTMLVideoElement>,slug:string,enabled:boolean) {
  const [source,setSource]=useState<{url:string;expiresAt:number}|null>(null);
  const [error,setError]=useState<string|null>(null);
  useEffect(()=>{
@@ -38,3 +38,6 @@ export function useStreamPlayback(ref:RefObject<HTMLVideoElement>,slug:string,en
  },[enabled,source,ref]);
  return {url:source?.url??null,error};
 }
+
+// Kept for callers of the former managed-provider hook.
+export const useStreamPlayback=useHlsPlayback;

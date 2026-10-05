@@ -17,9 +17,9 @@ const ContentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   // Images: local + R2 bucket + Cloudflare + legacy thumbnails from generacionmaldita.com
   // + fotos de perfil de Google (inicio de sesión con Google; `profiles.avatar_url`)
-  `img-src 'self' data: blob: *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net imagedelivery.net generacionmaldita.com images.unsplash.com lh3.googleusercontent.com`,
+  `img-src 'self' data: blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net imagedelivery.net generacionmaldita.com images.unsplash.com lh3.googleusercontent.com`,
   // Video: R2 MP4s + Cloudflare Stream HLS
-  `media-src 'self' blob: *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net *.videodelivery.net`,
+  `media-src 'self' blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net *.videodelivery.net`,
   // YouTube embeds in the player
   "frame-src www.youtube.com www.youtube-nocookie.com",
   // Prevents embedding this app in any external iframe (modern browsers)

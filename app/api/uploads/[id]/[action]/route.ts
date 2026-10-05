@@ -4,8 +4,10 @@ import { uuid } from '@/lib/uploads/contracts';
 import { UploadError } from '@/lib/uploads/repository';
 import { UploadService } from '@/lib/uploads/service';
 export async function POST(req:Request,{params}:{params:{id:string;action:string}}){return respond(async()=>{
- engineGate(params.action==='resume');const id=uuid.parse(params.id),user=await owner(req),service=new UploadService();
- if(params.action==='complete')return {asset:await service.complete(user,id)};
+ engineGate();const id=uuid.parse(params.id),user=await owner(req),service=new UploadService();
+ if(params.action==='parts')return {upload:await service.inspect(user,id)};
+ if(params.action==='part'){const input=z.object({number:z.number().int().positive(),generation:z.number().int().positive()}).strict().parse(await jsonBody(req));return {part:await service.signPart(user,id,input.number,input.generation)};}
+ if(params.action==='complete'){const asset=await service.complete(user,id);const metadata={...asset.metadata};delete metadata.outputs;return {asset:{...asset,metadata}};}
  if(params.action==='cancel')return {session:await service.repo.command(user,'cancel',{session_id:id})};
  if(params.action==='pause')return {session:await service.repo.command(user,'pause',{session_id:id,paused:true})};
  if(params.action==='resume') {const input=z.object({sha256:z.string().regex(/^[a-f0-9]{64}$/),bytes:z.number().int().positive()}).strict().parse(await jsonBody(req));

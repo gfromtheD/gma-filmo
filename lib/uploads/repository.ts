@@ -31,11 +31,15 @@ export class UploadRepository {
     return this.rpc('gma_upload_command', { p_owner: owner, p_action: action, p_payload: payload });
   }
 
+  video<T>(owner:string,action:string,payload:Row):Promise<T> {
+    return this.rpc('gma_video_command',{p_owner:owner,p_action:action,p_payload:payload});
+  }
+
   async rpc<T>(name: string, params: Row): Promise<T> {
     const { data, error } = await this.db.rpc(name, params);
     if (error) translateDatabaseError(error);
     if (data === null || data === undefined) throw new UploadError("UPLOAD_DATABASE_UNAVAILABLE", 503);
-    if(Array.isArray(data)){if(data.length!==1)throw new UploadError('UPLOAD_DATABASE_UNAVAILABLE',503);return data[0] as T;}
+    if(Array.isArray(data) && name!=='gma_video_orphan_prefixes'){if(data.length!==1)throw new UploadError('UPLOAD_DATABASE_UNAVAILABLE',503);return data[0] as T;}
     return data as T;
   }
 
@@ -68,6 +72,9 @@ export class UploadRepository {
     return data as MediaAsset;
   }
 
+  assetSummary(id:string):Promise<MediaAsset> {return this.rpc('gma_video_asset_summary',{p_asset_id:id});}
+  videoOutput(id:string,relative:string):Promise<{asset:MediaAsset;key:string}> {return this.rpc('gma_video_output',{p_asset_id:id,p_relative:relative});}
+
   async draftDetail(ownerId: string, id: string) {
     const draft = await this.draft(ownerId, id);
     const [{ data: sessions, error: sessionError }, { data: media, error: mediaError }] = await Promise.all([
@@ -78,7 +85,7 @@ export class UploadRepository {
     if (mediaError) translateDatabaseError(mediaError);
     const ids = Array.from(new Set((sessions as UploadSession[]).map(session => session.asset_id)));
     const assets: MediaAsset[] = [];
-    for (const assetId of ids) assets.push(await this.asset(assetId));
+    for (const assetId of ids) assets.push(await this.assetSummary(assetId));
     return { draft, sessions: sessions as UploadSession[], media: media as Row[], assets };
   }
 
@@ -97,6 +104,10 @@ export class UploadRepository {
     if (error) translateDatabaseError(error);
     const row=Array.isArray(data)?data[0]:data;
     return row?.id ? row as UploadJob : null;
+  }
+
+  async jobLease(id:string):Promise<{state:string;lease_owner:string|null;lease_until:string|null}|null> {
+    const {data,error}=await this.db.from('gma_upload_jobs').select('state,lease_owner,lease_until').eq('id',id).maybeSingle();if(error)translateDatabaseError(error);return data;
   }
 
   async finishJob(jobId: string, worker: string, success: boolean, code?: string, retryAfter?: string): Promise<void> {
@@ -133,6 +144,8 @@ export class UploadRepository {
     }
     return false;
   }
+
+  async orphanPrefixes(sessionId:string):Promise<string[]> {return this.rpc('gma_video_orphan_prefixes',{p_session_id:sessionId});}
 
   async scheduleReconciliation(): Promise<void> {
     await this.rpc<number>('gma_upload_schedule', {});

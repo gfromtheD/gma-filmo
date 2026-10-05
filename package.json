@@ -15,7 +15,13 @@
     "test:uploads": "tsx --test --test-concurrency=1 tests/uploads/engine.test.ts tests/uploads/providers.test.ts",
     "test:uploads:concurrency": "node scripts/uploads/local-postgres.mjs",
     "test:uploads:browser": "playwright test --config playwright.uploads.config.ts",
-    "uploads:preflight": "tsx scripts/uploads/preflight.ts"
+    "uploads:preflight": "tsx scripts/uploads/preflight.ts",
+    "test:uploads:r2": "tsx --test --test-concurrency=1 tests/uploads/r2-first.test.ts",
+    "test:uploads:ffmpeg": "tsx --test tests/uploads/ffmpeg.test.ts",
+    "uploads:video-worker": "tsx scripts/uploads/video-worker.ts",
+    "uploads:r2-smoke": "tsx scripts/uploads/r2-smoke.ts",
+    "uploads:hls-test-fixture": "tsx scripts/uploads/hls-test-fixture.ts",
+    "uploads:storage-audit": "tsx scripts/uploads/storage-audit.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1072.0",

@@ -193,7 +193,7 @@ function toMovieMedia(
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
     r2VideoUrl,
-    playbackKind: p.playback_kind==='stream'?'stream':'legacy',
+    playbackKind: p.playback_kind==='r2_hls'?'r2_hls':p.playback_kind==='stream'?'stream':'legacy',
     videoUrl: p.youtube_url ?? undefined,
     subtitleUrl,
     language: p.language?.trim() || undefined,

@@ -10,7 +10,7 @@ export async function GET(req:Request,{params}:{params:{slug:string}}){return re
  const {data:title,error}=await db.from('peliculas').select('id,status,creator_user_id').eq('slug',params.slug).maybeSingle();
  if(error)throw new UploadError('UPLOAD_DATABASE_UNAVAILABLE',503);
  if(!title || (title.status && title.status!=='published' && title.creator_user_id!==await optionalOwner(req)))throw new UploadError('UPLOAD_NOT_FOUND',404);
- const {data:media,error:mediaError}=await db.from('gma_title_media').select('role,slot,language,position,gma_media_assets(*)').eq('title_id',title.id).order('position');
+ const {data:media,error:mediaError}=await db.from('gma_title_media').select('role,slot,language,position,gma_media_assets(id,state,provider,provider_ref,delivery_path,duration_seconds)').eq('title_id',title.id).order('position');
  if(mediaError)throw new UploadError('UPLOAD_DATABASE_UNAVAILABLE',503);
  return {media:media.map((m:Record<string,unknown>)=>{
    const a=m.gma_media_assets as Record<string,unknown>;let url=a.delivery_path,expiresAt=null;

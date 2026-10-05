@@ -13,6 +13,10 @@ export interface UploadSession {
   provider: UploadProvider;
   provider_ref: string | null;
   provider_data: Record<string, unknown>;
+  object_key?: string | null;
+  multipart_upload_id?: string | null;
+  part_size?: number;
+  transfer_generation?: number;
   expected_input_bytes: number;
   source_sha256: string;
   content_type: string;
@@ -35,6 +39,9 @@ export interface MediaAsset {
   received_bytes: number | null;
   provider_reported_size: number | null;
   duration_seconds: number | null;
+  original_bytes?: number | null;
+  processed_bytes?: number | null;
+  auxiliary_bytes?: number | null;
 }
 export interface ProvisionedUpload { providerRef: string; uploadUrl: string; expiresAt: string }
 export interface VideoObservation {
@@ -62,7 +69,7 @@ export interface UploadDraft {
   metadata: Record<string, unknown>; title_id: number | null;
 }
 export interface UploadJob {
-  id: string; kind: "provision" | "verify" | "delete" | "reconcile";
+  id: string; kind: "provision" | "verify" | "delete" | "reconcile" | "process";
   session_id: string | null; payload: Record<string, unknown>;
   attempts: number; lease_owner: string | null; lease_until: string | null;
 }
