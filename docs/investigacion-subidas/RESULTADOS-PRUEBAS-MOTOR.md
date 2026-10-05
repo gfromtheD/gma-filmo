@@ -1,3 +1,5 @@
+> Documento histórico de la implementación anterior. La arquitectura principal se ha redirigido a R2-first; consultar [ARQUITECTURA-R2-FIRST.md](ARQUITECTURA-R2-FIRST.md) y [PRUEBAS-R2-FIRST.md](PRUEBAS-R2-FIRST.md). Las decisiones que hacían obligatorio Stream están sustituidas.
+
 # Resultados de pruebas del motor de subidas
 
 Fecha: 2026-10-05. Rama: `feature/upload-engine-v2`. Base: `93fbea02b0e69eb7d3f054b59e55f9caa6a37351`.

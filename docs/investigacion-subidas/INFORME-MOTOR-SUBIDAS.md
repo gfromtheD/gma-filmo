@@ -1,3 +1,5 @@
+> Documento histórico de la implementación anterior. La arquitectura principal se ha redirigido a R2-first; consultar [ARQUITECTURA-R2-FIRST.md](ARQUITECTURA-R2-FIRST.md) y [PRUEBAS-R2-FIRST.md](PRUEBAS-R2-FIRST.md). Las decisiones que hacían obligatorio Stream están sustituidas.
+
 # Investigación del motor de subidas de GMA Filmo
 
 **Fecha:** 5 de octubre de 2026. **Base local:** `25b706e83cd3e20393b67ebe7c40bb331c08383e`, rama `mejora/temas-secundarios`. El diagnóstico anterior partía de `41494c6`; se han vuelto a inspeccionar los archivos actuales.

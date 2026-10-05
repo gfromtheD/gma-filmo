@@ -1,3 +1,5 @@
+> Documento histórico de la implementación anterior. La arquitectura principal se ha redirigido a R2-first; consultar [ARQUITECTURA-R2-FIRST.md](ARQUITECTURA-R2-FIRST.md) y [PRUEBAS-R2-FIRST.md](PRUEBAS-R2-FIRST.md). Las decisiones que hacían obligatorio Stream están sustituidas.
+
 # Motor de subidas v2 — entrega local y activación pendiente
 
 Fecha: 2026-10-05. Rama: `feature/upload-engine-v2`. Base comprobada antes de editar: `93fbea02b0e69eb7d3f054b59e55f9caa6a37351`. El informe investigaba `25b706e`; la diferencia hasta esta base incluye la documentación. Se ha conservado el trabajo previo de dependencias y módulos de subidas.
