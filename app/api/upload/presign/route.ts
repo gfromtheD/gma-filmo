@@ -1,3 +1,4 @@
+import { uploadEngineEnabled } from '@/lib/uploads/config';
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -12,6 +13,8 @@ function fmtBytes(b: number) {
 }
 
 export async function POST(req: NextRequest) {
+  if(process.env.UPLOADS_PAUSED==='true')return NextResponse.json({error:'UPLOAD_ADMISSION_PAUSED'},{status:503});
+  if(uploadEngineEnabled())return NextResponse.json({error:'UPLOAD_USE_PERSISTENT_SESSION'},{status:410});
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
@@ -45,11 +48,12 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdminClient();
   // creator_user_id and file_size_bytes added in migration 20260619
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existing } = await (supabase as any)
+  const { data: existing, error: quotaError } = await (supabase as any)
     .from("peliculas")
     .select("file_size_bytes")
     .eq("creator_user_id", userId);
 
+  if(quotaError)return NextResponse.json({error:'No se pudo verificar la cuota'},{status:503});
   const usedBytes = (existing ?? []).reduce((sum: number, r: { file_size_bytes?: number }) => sum + (r.file_size_bytes ?? 0), 0);
   if (usedBytes + fileSize > FREE_QUOTA) {
     return NextResponse.json(

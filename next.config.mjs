@@ -19,13 +19,13 @@ const ContentSecurityPolicy = [
   // + fotos de perfil de Google (inicio de sesión con Google; `profiles.avatar_url`)
   `img-src 'self' data: blob: *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net imagedelivery.net generacionmaldita.com images.unsplash.com lh3.googleusercontent.com`,
   // Video: R2 MP4s + Cloudflare Stream HLS
-  `media-src 'self' blob: *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net`,
+  `media-src 'self' blob: *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net *.videodelivery.net`,
   // YouTube embeds in the player
   "frame-src www.youtube.com www.youtube-nocookie.com",
   // Prevents embedding this app in any external iframe (modern browsers)
   "frame-ancestors 'none'",
   // API + Supabase Realtime WebSocket + subida directa a R2 (URL prefirmada, PUT desde el navegador)
-  "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com",
+  "connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com https://*.cloudflarestream.com https://videodelivery.net https://*.videodelivery.net",
   "font-src 'self'",
   // Service worker and blob workers
   "worker-src 'self' blob:",

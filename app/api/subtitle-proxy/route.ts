@@ -1,46 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-
-function srtToVtt(text: string): string {
-  const normalized = text.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  // Replace SRT comma millisecond separator with VTT period
-  const body = normalized.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
-  return "WEBVTT\n\n" + body;
-}
-
-export async function GET(req: NextRequest) {
-  const url = req.nextUrl.searchParams.get("url");
-  if (!url) return NextResponse.json({ error: "Missing url" }, { status: 400 });
-
-  // Only allow fetching from our R2 bucket domain
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return NextResponse.json({ error: "Invalid url" }, { status: 400 });
-  }
-
-  const allowed = process.env.R2_PUBLIC_DOMAIN ?? process.env.NEXT_PUBLIC_R2_DOMAIN;
-  if (allowed && parsed.hostname !== new URL(allowed.startsWith("http") ? allowed : `https://${allowed}`).hostname) {
-    return NextResponse.json({ error: "Unauthorized domain" }, { status: 403 });
-  }
-
-  let res: Response;
-  try {
-    res = await fetch(url, { next: { revalidate: 86400 } });
-  } catch {
-    return NextResponse.json({ error: "Fetch failed" }, { status: 502 });
-  }
-
-  if (!res.ok) return NextResponse.json({ error: "Upstream error" }, { status: 502 });
-
-  const text = await res.text();
-  const isVtt = text.trimStart().startsWith("WEBVTT");
-  const vtt   = isVtt ? text : srtToVtt(text);
-
-  return new NextResponse(vtt, {
-    headers: {
-      "Content-Type": "text/vtt; charset=utf-8",
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+import { NextRequest,NextResponse } from 'next/server';
+import { normalizeSubtitles } from '@/lib/uploads/auxiliary';
+export async function GET(req:NextRequest) {
+ const input=req.nextUrl.searchParams.get('url');if(!input)return NextResponse.json({error:'Missing url'},{status:400});
+ const domain=process.env.R2_PUBLIC_DOMAIN??process.env.NEXT_PUBLIC_R2_DOMAIN??process.env.NEXT_PUBLIC_R2_PUBLIC_URL??'https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev';
+ let url:URL,allowed:URL;
+ try{url=new URL(input);allowed=new URL(domain.startsWith('http')?domain:'https://'+domain);}catch{return NextResponse.json({error:'Invalid url'},{status:400});}
+ if(url.protocol!=='https:'||url.hostname!==allowed.hostname||url.port||url.username||url.password)return NextResponse.json({error:'Unauthorized domain'},{status:403});
+ try {
+   const upstream=await fetch(url,{redirect:'error',signal:AbortSignal.timeout(15000),cache:'no-store'});
+   if(!upstream.ok||!upstream.body)throw new Error('Upstream failed');
+   const reader=upstream.body.getReader(),chunks:Uint8Array[]=[];let bytes=0;
+   try{while(true){const {value,done}=await reader.read();if(done)break;bytes+=value.length;
+     if(bytes>4*1024**2)throw new Error('Too large');chunks.push(value);}}
+   finally{await reader.cancel();}
+   const vtt=normalizeSubtitles(Buffer.concat(chunks));
+   return new NextResponse(vtt.toString('utf8'),{headers:{'Content-Type':'text/vtt; charset=utf-8','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
+ }catch{return NextResponse.json({error:'Subtitle unavailable'},{status:502});}
 }

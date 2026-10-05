@@ -1,3 +1,9 @@
+import { uploadEngineEnabled } from '@/lib/uploads/config';
+import { respond } from '@/lib/uploads/http';
+import { UploadRepository } from '@/lib/uploads/repository';
+import { requestHash } from '@/lib/uploads/service';
+import { uuid,revisionSchema } from '@/lib/uploads/contracts';
+import { z } from 'zod';
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { getUserId } from "@/lib/api/auth";
@@ -25,10 +31,17 @@ function slugify(title: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  if(process.env.UPLOADS_PAUSED==='true')return NextResponse.json({error:'UPLOAD_ADMISSION_PAUSED'},{status:503});
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await req.json();
+  if(uploadEngineEnabled())return respond(async()=>{
+    const input=z.object({draft_id:uuid,revision:revisionSchema}).strict().parse(body);
+    const repo=new UploadRepository();const draft=await repo.draft(userId,input.draft_id);
+    const title=await repo.command(userId,'publish',{...input,request_hash:requestHash({draft_id:draft.id,metadata:draft.metadata})});
+    revalidateTag('peliculas');return {title};
+  },201);
   const {
     title, synopsis, year, duration, language, genre,
     r2VideoUrl, r2PosterUrl, r2SubtitleUrl, fileSizeBytes,
@@ -107,5 +120,7 @@ export async function POST(req: NextRequest) {
 
   revalidateTag("peliculas");
 
-  return NextResponse.json({ title: data }, { status: 201 });
+  const created=Array.isArray(data)?data[0]:data;
+  if(!created)return NextResponse.json({error:'UPLOAD_DATABASE_UNAVAILABLE'},{status:503});
+  return NextResponse.json({ title: created }, { status: 201 });
 }

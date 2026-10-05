@@ -262,7 +262,7 @@ for (const width of [320, 768, 1440]) {
   test(`subida: detalles y vista previa a ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.addInitScript(() => {
-      localStorage.setItem("gma_studio_upload_draft", JSON.stringify({
+      localStorage.setItem("gma_studio_upload_draft:11111111-1111-4111-8111-111111111111", JSON.stringify({
         step: 1, mainFile: { name: "Unarchivoextremadamentelargoparacomprobarlaenvolturadeltexto.mp4", size: "10 MB", sizeBytes: 10485760, r2Url: "https://example.invalid/test.mp4" },
         assetUrls: {}, form: { title: "Una película con un nombre largo que se revisa en móvil y tablet", description: "Un argumento de ejemplo para comprobar el ajuste de las columnas.", genre: "Drama", year: "2026", duration: "10 min", language: "Español", subtitles: [], poster: { from: "#123", to: "#234", accent: "#22B16B" }, trailer: false },
       }));

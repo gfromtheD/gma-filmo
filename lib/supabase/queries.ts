@@ -53,6 +53,8 @@ type PeliculaRow = {
   author: string | null;
   r2_poster_url: string | null;
   r2_video_url: string | null;
+  playback_kind?: string;
+  status?: string | null;
   r2_subtitle_url: string | null;
   youtube_url: string | null;
   thumbnail_url: string | null;
@@ -191,6 +193,7 @@ function toMovieMedia(
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
     r2VideoUrl,
+    playbackKind: p.playback_kind==='stream'?'stream':'legacy',
     videoUrl: p.youtube_url ?? undefined,
     subtitleUrl,
     language: p.language?.trim() || undefined,
@@ -242,7 +245,7 @@ const getPeliculasCached = unstable_cache(
   async (): Promise<MovieMedia[]> => {
     const supabase = getSupabasePublicClient();
     const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
-      supabase.from("peliculas").select(SELECT_WITH_COLS).order("created_at", { ascending: false }),
+      supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").order("created_at", { ascending: false }),
       fetchArtistaMap(),
       fetchScoreMap(),
     ]);
@@ -263,7 +266,7 @@ export const getPeliculas = cache(getPeliculasCached);
 export async function getPeliculaBySlug(slug: string): Promise<MovieMedia | null> {
   const supabase = getSupabasePublicClient();
   const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
-    supabase.from("peliculas").select(SELECT_WITH_COLS).eq("slug", slug).single(),
+    supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").eq("slug", slug).single(),
     fetchArtistaMap(),
     fetchScoreMap(),
   ]);
@@ -427,7 +430,7 @@ export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[
   const ids = junctions.map((j: { pelicula_id: number }) => j.pelicula_id);
 
   const [{ data, error }, artistaMap] = await Promise.all([
-    supabase.from("peliculas").select(SELECT_WITH_COLS).in("id", ids).order("created_at", { ascending: false }),
+    supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").in("id", ids).order("created_at", { ascending: false }),
     fetchArtistaMap(),
   ]);
 
