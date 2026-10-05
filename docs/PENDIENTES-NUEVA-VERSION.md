@@ -2,7 +2,7 @@
 
 Fecha: 3 de octubre de 2026. Base inspeccionada: rama `main`, commit `41494c6289e3c60af9ef94a65875cadcac6508b8`.
 
-Este documento registra lo solicitado y lo relaciona con la copia local del código de GitHub. El diagnóstico original fue estático. Tras la autorización posterior se han aplicado correcciones locales de temas secundarios en la rama `mejora/temas-secundarios`; véase el registro de implementación al final. No se han ejecutado subidas ni modificado Supabase, R2 o Vercel. Los errores comunicados por el usuario se consideran pendientes de reproducción salvo cuando su comportamiento se ve directamente en el código. Los límites de infraestructura y la configuración desplegada siguen sin verificar.
+Este documento registra lo solicitado y lo relaciona con la copia local del código de GitHub. El diagnóstico original fue estático. Tras la autorización posterior se han aplicado y publicado correcciones de temas secundarios en la rama `mejora/temas-secundarios`; véase el registro de implementación al final. El 5 de octubre se completó la auditoría documental del motor de subidas y se consultó configuración de Vercel en lectura. No se han ejecutado subidas reales ni reconstruido el motor. Los errores comunicados siguen pendientes de reproducción salvo cuando su comportamiento se ve directamente en el código; capacidad, configuración R2 y esquema Supabase efectivo siguen sin verificar.
 
 ## Seguimiento
 
@@ -14,7 +14,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 | --- | --- | --- | --- | --- |
 | INV-01 | Invitado visible en la bienvenida | Alta | Verificado localmente; pendiente entorno real | Revisión de sesión y rutas |
 | EST-01 | Estudio sin actividad ficticia | Alta | En validación | Datos reales y estados vacíos |
-| SUB-01 | Diagnóstico completo del motor de subidas | Esencial | Pendiente | Entorno local y acceso a registros/configuración |
+| SUB-01 | Diagnóstico completo del motor de subidas | Esencial | Auditoría documental completa; validación operativa pendiente | Entorno aislado y acceso a registros/configuración R2/Supabase |
 | SUB-02 | Rehacer el flujo, los límites y la publicación | Esencial | Pendiente | SUB-01 y decisiones de capacidad |
 | SOC-01 | Redes sociales clicables y correctas | Alta | En validación; integración pública pendiente | Identidad pública del creador |
 | DON-01 | Donaciones y QR del creador real | Alta | Corrección parcial; validación móvil pendiente | CRE-01 y enlaces reales |
@@ -121,11 +121,13 @@ No consta una medición de que el despliegue pueda completar esos tamaños. Hay 
 - [ ] SUB-01.1 Preparar ejecución local y registrar versiones, entorno y cuenta de prueba; no hacer pruebas grandes contra contenido real sin un espacio de prueba definido.
 - [ ] SUB-01.2 Reproducir la incidencia con un vídeo pequeño y guardar fase exacta, HTTP, error de navegador y registro de servidor, sin tokens ni URLs firmadas en el documento público.
 - [ ] SUB-01.3 Seguir selección → detección → autenticación → firma → CORS/PUT → confirmación → publicación → catálogo → reproducción → muro del creador.
-- [ ] SUB-01.4 Inventariar todas las rutas de subida y sus consumidores, incluidos avatar, formularios alternativos y llamadas fuera de la interfaz orbital.
+- [x] SUB-01.4 Inventariar todas las rutas de subida y sus consumidores, incluidos avatar, formularios alternativos y llamadas fuera de la interfaz orbital. Auditoría local del 5 de octubre: presign/orbital y file utilizado por los dos formularios de avatar; véase el informe de investigación.
 - [ ] SUB-01.5 Comprobar políticas y valores reales en Vercel/R2: plan, operación PUT o multipart, tamaños, duración, expiración, orígenes, permisos, memoria cuando intervenga servidor y costes/capacidad. Registrar fuente oficial y fecha en la revisión futura.
 - [ ] SUB-01.6 Comprobar tablas, columnas, función RPC, permisos y relación de propiedad en el Supabase desplegado; no asumir que las migraciones locales ya se ejecutaron.
 - [ ] SUB-01.7 Medir concurrencia, velocidad, tiempo, fallos y almacenamiento con muestras crecientes y redes distintas. Definir capacidad verificada con condiciones concretas, no solo un número máximo.
 - [ ] SUB-01.8 Entregar diagnóstico y decisión de arquitectura antes de rehacer el motor. Conservar lo que se haya demostrado útil y justificar cada cambio.
+
+**Investigación del 5 de octubre:** [informe del motor de subidas](investigacion-subidas/INFORME-MOTOR-SUBIDAS.md), basado en `25b706e`. Incluye veinte hallazgos correlacionados con archivos, límites oficiales, alternativa Stream+tus/R2 condicionada a calidad y coste, modelo/contratos, plan y matriz de pruebas. Vercel confirmado Hobby con Fluid; R2/Supabase solo presencia de variables, sin verificación administrativa. SUB-01.5 está parcialmente revisado; SUB-01.8 tiene dictamen documental y queda abierto hasta validar infraestructura/capacidad y decisiones. No marcar SUB-01 ni SUB-02 como resueltos.
 
 ### Estructura objetivo a diseñar
 
