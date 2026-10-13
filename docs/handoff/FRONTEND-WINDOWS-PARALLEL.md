@@ -144,3 +144,24 @@ documenta aquí con aviso de riesgo.
   `features/studio/studio-sub-nav` (no modificada). Si el Mac también cambió `navbar.tsx`, prevalece su lógica
   y se reaplican las piezas de `navbar-parts/`.
 - **Limitación:** no probado con un creador autenticado (ruleta, «Mi Estudio» en el panel móvil y fila de Studio).
+
+### 2026-10-13 — EXPERIMENTO: distribución estilo Filmin (rama `experiment/filmin-layout`)
+
+- **Rama:** `experiment/filmin-layout` (sale de `feature/frontend-windows` @ `3df25c9`). **No integrar sin decisión del usuario.**
+  Para volver a la versión anterior: `git switch feature/frontend-windows`.
+- **Alcance:** réplica de la *estructura y distribución* observadas (cabecera, hero, filas, ficha, pestañas, catálogo) con el
+  contenido, logo y datos de GMA. No se copió código, textos, imágenes, logotipo ni tipografía de Filmin.
+- **Archivos nuevos:** `components/features/home/home-hero.tsx`, `components/features/detail/{detail-header,detail-tabs}.tsx`,
+  `lib/credits.ts`, `e2e/filmin-layout.spec.ts`.
+- **Archivos modificados:** `components/layout/navbar.tsx` (+ `navbar-parts/brand.tsx`), `components/layout/app-shell.tsx`,
+  `components/ui/{carousel,poster-art}.tsx` (PosterArt: prop opcional `fill`), `components/features/home/home-screen.tsx`,
+  `components/features/detail/movie-detail.tsx`, `components/features/catalog/catalog-screen.tsx`, `app/globals.css`.
+- **Corrección independiente reutilizable (commit `5eaf603`):** `overflow-x: hidden` en `html, body` impedía que la cabecera
+  `sticky` se pegara (bug previo a esta rama); ahora `overflow-x: clip`. Es candidata a llevarse a `feature/frontend-windows`.
+- **No tocado:** Studio, Player, APIs, datos, Supabase. `MovieDetail` mantiene lista, valoraciones, comentarios, donaciones y
+  propuesta de sinopsis. Series (`series-detail`) sigue con el hero clásico.
+- **Pruebas:** `tsc` limpio; lint sin avisos nuevos (4 previos); E2E 48/48.
+- **Conflictos posibles con el Mac:** `movie-detail.tsx`, `home-screen.tsx` y `poster-art.tsx` son los más expuestos
+  (el Mac cambió reproducción/catálogo). `Player`/`Studio` no se tocaron.
+- **Límites:** perfil autenticado no replicable (no observable públicamente); sin vídeo en el hero; sin pestaña «Extras»
+  (GMA no tiene ese contenido); fuente Manrope en lugar de Graphik; creadores autenticados sin probar.
