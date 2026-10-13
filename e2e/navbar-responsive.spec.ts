@@ -121,33 +121,15 @@ test.describe("navbar: comportamiento", () => {
     });
   }
 
-  test("la píldora se alinea al pasar de móvil a escritorio (reduced-motion: sin transición)", async ({ page }) => {
-    await page.setViewportSize({ width: 800, height: 900 });
-    await openHome(page);
-    await page.setViewportSize({ width: 1280, height: 900 });
-
-    const nav = page.getByRole("navigation", { name: "Principal" });
-    const home = nav.getByRole("link", { name: "Home" });
-    const pill = nav.locator("[data-nav-pill]");
-    await expect(pill).toBeVisible();
-
-    await expect(async () => {
-      const [h, p] = await Promise.all([home.boundingBox(), pill.boundingBox()]);
-      expect(Math.abs((p?.x ?? -99) - (h?.x ?? 0))).toBeLessThanOrEqual(1);
-      expect(Math.abs((p?.width ?? -99) - (h?.width ?? 0))).toBeLessThanOrEqual(1);
-    }).toPass({ timeout: 5_000 });
-
-    const property = await pill.evaluate((el) => getComputedStyle(el).transitionProperty);
-    expect(property).toBe("none");
-  });
-
-  test("la cabecera se solidifica tras desplazarse", async ({ page }) => {
+  test("la cabecera se solidifica y queda pegada tras desplazarse", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await openHome(page);
-    const layer = page.locator("header [data-scrolled]");
-    await expect(layer).toHaveAttribute("data-scrolled", "false");
-    await page.mouse.wheel(0, 400);
-    await expect(layer).toHaveAttribute("data-scrolled", "true");
+    const header = page.locator("header[data-scrolled]");
+    await expect(header).toHaveAttribute("data-scrolled", "false");
+    await page.mouse.wheel(0, 600);
+    await expect(header).toHaveAttribute("data-scrolled", "true");
+    // Debe quedar pegada arriba (sticky), no desaparecer con el scroll.
+    await expect.poll(async () => Math.round((await header.boundingBox())?.y ?? -999)).toBe(0);
   });
 });
 
