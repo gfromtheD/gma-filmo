@@ -83,6 +83,9 @@
   --gma-r-container:    12px;
   --gma-r-pill:         999px;
 
+  /* Alto de la cabecera fija: 64px en móvil, 80px desde el punto de cambio de la navbar (lg = 1024px) */
+  --gma-header-h:       64px;
+
   /* shadcn light defaults (unused — app is always .dark) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -151,6 +154,12 @@
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #262626;
   --sidebar-ring: #22B16B;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gma-header-h: 80px;
+  }
 }
 
 @layer base {

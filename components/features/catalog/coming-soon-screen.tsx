@@ -10,7 +10,7 @@ export function ComingSoonScreen({
   description = "Estamos preparando una selección de cortometrajes. Vuelve pronto.",
 }: ComingSoonScreenProps) {
   return (
-    <section className="relative flex min-h-[calc(100svh-80px)] w-full items-center justify-center overflow-hidden bg-[#0A0F17]">
+    <section className="relative flex min-h-[calc(100svh-var(--gma-header-h))] w-full items-center justify-center overflow-hidden bg-[#0A0F17]">
       {/* Fondo: carrusel de portadas bajando (como en la pantalla de login) */}
       <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
         <ThreeDMarquee className="h-full w-full" columns={5} />
