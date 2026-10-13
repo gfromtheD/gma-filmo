@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { motion, useAnimation, AnimatePresence } from "motion/react";
+import { motion, useAnimation, AnimatePresence, useReducedMotion } from "motion/react";
 import { DropdownMenu } from "radix-ui";
 import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
@@ -21,6 +21,7 @@ import { useTransitionStore } from "@/store/use-transition-store";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
 import { STUDIO_TABS } from "@/components/features/studio/studio-sub-nav";
 import { useDMStore } from "@/store/use-dm-store";
+import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
 
 interface NavItem {
   readonly id: string;
@@ -28,6 +29,9 @@ interface NavItem {
   readonly href: string;
   readonly match: string;
 }
+
+/** Espera de la ruleta Mi Espacio ↔ Mi Estudio antes de navegar. */
+const ROULETTE_DELAY_MS = 420;
 
 const NAV_ITEMS: readonly NavItem[] = [
   { id: "home",   label: "Home",       href: "/inicio",     match: "/inicio" },
@@ -53,6 +57,8 @@ export function Navbar() {
   const avatarRef    = useRef<HTMLSpanElement>(null);
   const prevPhase    = useRef(phase);
   const avatarCtrl   = useAnimation();
+  const reduceMotion = useReducedMotion();
+  const isScrolled    = useScrollThreshold();
   const [chipReveal,   setChipReveal]   = useState(false);
   const [pillExpanded, setPillExpanded] = useState(true);
 
@@ -161,6 +167,15 @@ export function Navbar() {
     }
   }, [pathname, phase, isCreator]);
 
+  // Navegación diferida de la ruleta; se cancela al desmontar o al repetir el clic.
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (navTimerRef.current) clearTimeout(navTimerRef.current); }, []);
+
+  function pushAfterRoulette(href: string) {
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => router.push(href), reduceMotion ? 0 : ROULETTE_DELAY_MS);
+  }
+
   // Toggle between Mi Espacio ↔ Mi Estudio with roulette animation on the pill
   function handleSpacePillClick() {
     if (!isCreator) {
@@ -170,19 +185,19 @@ export function Navbar() {
     if (!spaceIsActive) {
       // Creator on any other page: pill takes them to their default (Mi Estudio)
       setRouletteStep(1);
-      setTimeout(() => router.push("/mi-estudio"), 420);
+      pushAfterRoulette("/mi-estudio");
       return;
     }
     // Creator already in space section: toggle between Mi Espacio ↔ Mi Estudio
     const targetHref = pathname.startsWith("/mi-estudio") ? "/mi-espacio" : "/mi-estudio";
     const targetStep = targetHref === "/mi-estudio" ? 1 : 0;
     setRouletteStep(targetStep);
-    setTimeout(() => router.push(targetHref), 420);
+    pushAfterRoulette(targetHref);
   }
 
   function handleStudioTabSelect(id: (typeof STUDIO_TABS)[number]["id"]) {
     setStudioTab(id);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
   // Elementos del panel móvil: mismas rutas que la píldora; los creadores ven
@@ -199,16 +214,29 @@ export function Navbar() {
       : []),
   ];
 
-  // Measure active pill position
+  // Mide la píldora activa y la recalcula si la barra cambia de tamaño
+  // (redimensionado, zoom, carga de la fuente, paso de móvil a escritorio).
+  const navRef = useRef<HTMLElement>(null);
+  const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
+
   useEffect(() => {
-    const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
-    if (activeIdx < 0) return;
-    const el = itemRefs.current[activeIdx];
-    if (!el) return;
-    setPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setPillReady(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, spaceIsActive]);
+    function measure() {
+      const el = activeIdx >= 0 ? itemRefs.current[activeIdx] : null;
+      if (!el || el.offsetWidth === 0) return;
+      setPill((prev) =>
+        prev.left === el.offsetLeft && prev.width === el.offsetWidth
+          ? prev
+          : { left: el.offsetLeft, width: el.offsetWidth },
+      );
+      setPillReady(true);
+    }
+    measure();
+    const nav = navRef.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [activeIdx]);
 
   return (
     <header
@@ -219,7 +247,12 @@ export function Navbar() {
         WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <div className="mx-auto grid h-16 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-2 px-3 sm:px-4 lg:h-20 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-8">
+      <span
+        aria-hidden="true"
+        data-scrolled={isScrolled}
+        className="pointer-events-none absolute inset-0 border-b border-white/5 bg-black/90 opacity-0 transition-opacity duration-200 data-[scrolled=true]:opacity-100 motion-reduce:transition-none"
+      />
+      <div className="relative mx-auto grid h-16 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-2 px-3 sm:px-4 lg:h-20 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-8">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
           <MobileMenu items={mobileItems} />
@@ -228,6 +261,7 @@ export function Navbar() {
 
         {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
+          ref={navRef}
           aria-label="Principal"
           className="relative hidden rounded-full border border-[#262626] lg:flex"
           style={{ background: "rgba(255,255,255,0.04)" }}
@@ -237,7 +271,8 @@ export function Navbar() {
             {pillReady && (
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                data-nav-pill=""
+                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
                 style={{ left: pill.left, width: pill.width }}
               />
             )}
@@ -264,7 +299,7 @@ export function Navbar() {
                       <motion.span
                         className="flex flex-col"
                         animate={{ y: rouletteStep === 0 ? "0em" : "-1.2em" }}
-                        transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: reduceMotion ? 0 : 0.38, ease: [0.4, 0, 0.2, 1] }}
                       >
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Espacio</span>
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
@@ -310,9 +345,9 @@ export function Navbar() {
                 overflow: "hidden",
                 whiteSpace: "nowrap",
               }}
-              initial={{ clipPath: "inset(0 44% 0 44% round 999px)" }}
+              initial={reduceMotion ? false : { clipPath: "inset(0 44% 0 44% round 999px)" }}
               animate={{ clipPath: "inset(0 0% 0 0% round 999px)" }}
-              transition={{ delay: 0.16, type: "spring", stiffness: 260, damping: 28, mass: 0.9 }}
+              transition={reduceMotion ? { duration: 0 } : { delay: 0.16, type: "spring", stiffness: 260, damping: 28, mass: 0.9 }}
             >
               {studioTabPillReady && (
                 <motion.span
@@ -324,7 +359,7 @@ export function Navbar() {
                     pointerEvents: "none",
                   }}
                   animate={{ left: studioTabPill.left, width: studioTabPill.width }}
-                  transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.7 }}
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 38, mass: 0.7 }}
                 />
               )}
               {STUDIO_TABS.map((tab, i) => (
@@ -374,7 +409,7 @@ export function Navbar() {
                 clipPath: pillExpanded
                   ? "inset(0% 0% 0% 0% round 9999px)"
                   : "inset(0% calc(100% - 32px) 0% 0% round 9999px)",
-                transition: pillExpanded
+                transition: pillExpanded && !reduceMotion
                   ? "clip-path 0.38s cubic-bezier(0.22,1,0.36,1), background-color 0.2s"
                   : "none",
               }}
