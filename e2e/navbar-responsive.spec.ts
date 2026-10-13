@@ -180,3 +180,54 @@ test.describe("menú lateral del visitante en móvil", () => {
     await expect(dialog.getByRole("link", { name: "Iniciar sesión" })).toHaveAttribute("href", "/?login=1");
   });
 });
+
+/**
+ * Regresión: con la página desplazada, abrir un menú (cuenta o ☰) bloqueaba el scroll poniendo
+ * `overflow: hidden` en <body>. Como <body> pasaba a ser un contenedor de scroll, la cabecera pegajosa
+ * saltaba al principio del documento (desaparecía) y la pantalla quedaba bloqueada.
+ */
+test.describe("abrir un menú con la página desplazada no rompe la cabecera", () => {
+  async function headerTop(page: Page) {
+    return page.evaluate(() => Math.round(document.querySelector("header")!.getBoundingClientRect().top));
+  }
+
+  test("escritorio: el menú de cuenta deja la cabecera en su sitio", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await openHome(page);
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await expect(async () => {
+      expect(await headerTop(page)).toBe(0);
+    }).toPass({ timeout: 5_000 });
+    await clickUntil(page.getByRole("button", { name: "Cuenta" }), page.getByRole("menu"));
+    expect(await headerTop(page)).toBe(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(900);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toBeHidden();
+    expect(await headerTop(page)).toBe(0);
+    // Y la página sigue pudiéndose desplazar.
+    await page.mouse.wheel(0, 300);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(900);
+    await context.close();
+  });
+
+  test("móvil: el menú lateral no desplaza la cabecera y se cierra devolviendo el scroll", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await openHome(page);
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await expect(async () => {
+      expect(await headerTop(page)).toBe(0);
+    }).toPass({ timeout: 5_000 });
+    await clickUntil(
+      page.getByRole("button", { name: "Abrir menú principal" }),
+      page.getByRole("dialog", { name: "Menú principal" }),
+    );
+    expect(await headerTop(page)).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Menú principal" })).toBeHidden();
+    expect(await headerTop(page)).toBe(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(900);
+    await context.close();
+  });
+});

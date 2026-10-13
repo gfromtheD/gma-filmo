@@ -373,7 +373,7 @@ export function Navbar() {
             <GmaIcon name="bookmark" size={22} />
           </Link>
 
-          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
           <div className={`relative ml-1.5 ${isGuest ? "hidden sm:block" : ""}`}>
             <DropdownMenu.Trigger asChild>
             <button
