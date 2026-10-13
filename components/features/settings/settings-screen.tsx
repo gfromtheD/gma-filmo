@@ -67,12 +67,12 @@ export function SettingsScreen() {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-8 pb-24 pt-10">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 pb-24 pt-10">
       <div className="mb-7">
         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6D7D94]">
           Configuración
         </p>
-        <h1 className="text-[40px] leading-none text-white" style={serifItalic}>
+        <h1 className="text-3xl sm:text-[40px] leading-tight text-white" style={serifItalic}>
           Ajustes y preferencias
         </h1>
       </div>
@@ -113,7 +113,7 @@ export function SettingsScreen() {
 // ─── Layout primitives ────────────────────────────────────────────────────────
 
 function CardGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-4">{children}</div>;
+  return <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>;
 }
 
 function SettingsCard({
@@ -128,7 +128,7 @@ function SettingsCard({
   span?: "full";
 }) {
   return (
-    <div className={`rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-6 ${span === "full" ? "col-span-2" : ""}`}>
+    <div className={`rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-4 sm:p-6 ${span === "full" ? "md:col-span-2" : ""}`}>
       <p className="text-[15.5px] font-bold text-white">{title}</p>
       {description && (
         <p className="mt-1 text-[12.5px] leading-[1.5] text-[#6D7D94]">{description}</p>
@@ -140,40 +140,46 @@ function SettingsCard({
 
 // ─── Control primitives ───────────────────────────────────────────────────────
 
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={value}
+      aria-label={label}
       onClick={() => onChange(!value)}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
-        value ? "bg-[#22B16B]" : "bg-[#2A2A2A]"
-      }`}
+      className="relative flex h-11 w-11 shrink-0 items-center rounded-full"
     >
       <span
-        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-        style={{ left: 2, transform: value ? "translateX(20px)" : "translateX(0)" }}
-      />
+        aria-hidden="true"
+        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${value ? "bg-[#22B16B]" : "bg-[#2A2A2A]"}`}
+      >
+        <span
+          className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+          style={{ left: 2, transform: value ? "translateX(20px)" : "translateX(0)" }}
+        />
+      </span>
     </button>
   );
 }
 
-function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({ label, accessibleLabel = label, value, onChange }: { label: string; accessibleLabel?: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[13.5px] font-semibold text-white">{label}</span>
-      <Toggle value={value} onChange={onChange} />
+    <div className="flex items-center justify-between gap-4 min-w-0">
+      <span className="min-w-0 break-words text-[13.5px] font-semibold text-white">{label}</span>
+      <Toggle label={accessibleLabel} value={value} onChange={onChange} />
     </div>
   );
 }
 
 function GmaSelect({
+  label,
   value,
   options,
   onChange,
   fullWidth,
 }: {
+  label: string;
   value: string;
   options: readonly string[];
   onChange: (v: string) => void;
@@ -182,6 +188,7 @@ function GmaSelect({
   return (
     <div className={`relative ${fullWidth ? "w-full" : ""}`}>
       <select
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`appearance-none rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] py-2.5 pl-4 pr-9 text-[13px] font-medium text-white outline-none focus:border-[#22B16B] ${
@@ -212,7 +219,7 @@ function ActionButton({ label, danger, onClick, disabled }: {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-full px-4 py-1.5 text-[13px] font-bold transition-colors duration-150 disabled:opacity-40 ${
+      className={`min-h-11 rounded-full px-4 py-1.5 text-[13px] font-bold transition-colors duration-150 disabled:opacity-40 ${
         danger
           ? "bg-[#ff5252]/10 text-[#ff5252] hover:bg-[#ff5252]/20"
           : "bg-[#1A1A1A] text-[#B8C5D4] hover:bg-[#262626] hover:text-white"
@@ -306,7 +313,7 @@ function CuentaSection() {
   return (
     <div className="flex flex-col gap-4">
       {/* Profile header */}
-      <div className="flex items-center gap-5 rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-6">
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-4 sm:p-6">
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px]">
           {avatarImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -323,7 +330,7 @@ function CuentaSection() {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[20px] font-extrabold text-white">{displayName}</div>
+          <div className="break-words text-[20px] font-extrabold text-white">{displayName}</div>
           {profile.memberSince && (
             <div className="mt-0.5 text-[13px] text-[#6D7D94]">
               Miembro desde {formatMemberSince(profile.memberSince)}
@@ -336,21 +343,21 @@ function CuentaSection() {
       <CardGrid>
         {/* Email */}
         <SettingsCard title="Correo electrónico">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-[#6D7D94]">{profile.email ?? "—"}</span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="break-all text-[13px] text-[#6D7D94]">{profile.email ?? "—"}</span>
             <ActionButton
               label={showEmailForm ? "Cancelar" : "Cambiar"}
               onClick={() => { setShowEmailForm((v) => !v); setEmailFeedback(null); }}
             />
           </div>
           {showEmailForm && (
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="nuevo@correo.com"
-                className="flex-1 rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-[13px] text-white placeholder-[#6D7D94] outline-none focus:border-[#22B16B]"
+                className="min-w-0 flex-1 rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#6D7D94] outline-none focus:border-[#22B16B]"
               />
               <ActionButton label="Confirmar" onClick={() => void handleEmailChange()} />
             </div>
@@ -368,7 +375,7 @@ function CuentaSection() {
 
         {/* Plan — decorative until billing is wired */}
         <SettingsCard title="Plan actual" description="Gestión de planes disponible próximamente.">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-full bg-[#22B16B]/10 px-3 py-1 text-[12px] font-bold text-[#22B16B]">
               PRIME
             </span>
@@ -407,7 +414,7 @@ function CuentaSection() {
                 value={deleteInput}
                 onChange={(e) => setDeleteInput(e.target.value)}
                 placeholder="eliminar cuenta"
-                className="w-full rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-[13px] text-white placeholder-[#3A4A5E] outline-none focus:border-[#ff5252]"
+                className="w-full rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#3A4A5E] outline-none focus:border-[#ff5252]"
               />
               <div className="flex justify-end gap-2">
                 <ActionButton
@@ -452,9 +459,10 @@ function IdiomaSection() {
   const { prefs, set } = useSettingsPrefs();
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsCard title="Idioma de la aplicación" description="Cambia el idioma de menús y descripciones.">
         <GmaSelect
+          label="Idioma de la aplicación"
           value={prefs.appLang}
           options={["Español (España)", "Español (Latino)", "English", "Português", "Français"]}
           onChange={(v) => set("appLang", v)}
@@ -464,6 +472,7 @@ function IdiomaSection() {
 
       <SettingsCard title="Idioma preferido de audio" description="Se selecciona al iniciar una reproducción.">
         <GmaSelect
+          label="Idioma preferido de audio"
           value={prefs.audioLang}
           options={[
             "Español castellano · Original",
@@ -479,12 +488,13 @@ function IdiomaSection() {
 
       <SettingsCard title="Subtítulos por defecto">
         <GmaSelect
+          label="Subtítulos por defecto"
           value={prefs.subsLang}
           options={["Español", "English", "Português", "Français", "Desactivado"]}
           onChange={(v) => set("subsLang", v)}
           fullWidth
         />
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <div className="flex flex-1 items-center justify-between rounded-[6px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2">
             <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6D7D94]">Tamaño</span>
             <span className="text-[12px] font-semibold text-white">Mediano</span>
@@ -505,7 +515,7 @@ function IdiomaSection() {
       </SettingsCard>
 
       <SettingsCard title="Subtítulos forzados" description="Para diálogos en otros idiomas dentro de la película.">
-        <ToggleRow label="Activado" value={prefs.forcedSubs} onChange={(v) => set("forcedSubs", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Subtítulos forzados" value={prefs.forcedSubs} onChange={(v) => set("forcedSubs", v)} />
       </SettingsCard>
 
       <SettingsCard title="Vista previa de subtítulos">
@@ -525,9 +535,10 @@ function ReproduccionSection() {
   const { prefs, set } = useSettingsPrefs();
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsCard title="Calidad de streaming" description="La calidad automática se adapta a tu conexión.">
         <GmaSelect
+          label="Calidad de streaming"
           value={prefs.calidad}
           options={["Auto", "Ultra HD (4K)", "Alta (1080p)", "Media (720p)", "Baja (480p)"]}
           onChange={(v) => set("calidad", v)}
@@ -540,15 +551,15 @@ function ReproduccionSection() {
       </SettingsCard>
 
       <SettingsCard title="Reproducir siguiente episodio" description="El siguiente episodio comienza automáticamente al terminar.">
-        <ToggleRow label="Activado" value={prefs.autoNext} onChange={(v) => set("autoNext", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Reproducir siguiente episodio" value={prefs.autoNext} onChange={(v) => set("autoNext", v)} />
       </SettingsCard>
 
       <SettingsCard title="Reproducir vistas previas" description="Reproducir tráilers y avances al explorar el catálogo.">
-        <ToggleRow label="Activado" value={prefs.autoPreviews} onChange={(v) => set("autoPreviews", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Reproducir vistas previas" value={prefs.autoPreviews} onChange={(v) => set("autoPreviews", v)} />
       </SettingsCard>
 
       <SettingsCard title="Saltar introducción" description="Omite la intro y los créditos iniciales automáticamente.">
-        <ToggleRow label="Activado" value={prefs.skipIntro} onChange={(v) => set("skipIntro", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Saltar introducción" value={prefs.skipIntro} onChange={(v) => set("skipIntro", v)} />
       </SettingsCard>
     </div>
   );
@@ -560,13 +571,14 @@ function ParentalSection() {
   const { prefs, set } = useSettingsPrefs();
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsCard title="PIN de acceso" description="Protege los perfiles con clasificación de edad avanzada.">
         <ToggleRow label="Requerir PIN" value={prefs.pinEnabled} onChange={(v) => set("pinEnabled", v)} />
       </SettingsCard>
 
       <SettingsCard title="Clasificación máxima" description="Restringe el catálogo visible según la clasificación de edad.">
         <GmaSelect
+          label="Clasificación máxima"
           value={prefs.maxRating}
           options={[
             "Todo el catálogo",
@@ -589,25 +601,25 @@ function NotificacionesSection() {
   const { prefs, set } = useSettingsPrefs();
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsCard title="Nuevos episodios" description="Aviso cuando se publiquen episodios de series que sigues.">
-        <ToggleRow label="Activado" value={prefs.newEpisodes} onChange={(v) => set("newEpisodes", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Notificaciones de nuevos episodios" value={prefs.newEpisodes} onChange={(v) => set("newEpisodes", v)} />
       </SettingsCard>
 
       <SettingsCard title="Recordatorios de estrenos" description="Te avisamos antes de que estrene algo en tu lista.">
-        <ToggleRow label="Activado" value={prefs.reminders} onChange={(v) => set("reminders", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Recordatorios de estrenos" value={prefs.reminders} onChange={(v) => set("reminders", v)} />
       </SettingsCard>
 
       <SettingsCard title="Recomendaciones personalizadas" description="Basadas en tu historial de visualización.">
-        <ToggleRow label="Activado" value={prefs.recommendations} onChange={(v) => set("recommendations", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Recomendaciones personalizadas" value={prefs.recommendations} onChange={(v) => set("recommendations", v)} />
       </SettingsCard>
 
       <SettingsCard title="Novedades por correo" description="Recibe noticias del catálogo en tu bandeja de entrada.">
-        <ToggleRow label="Activado" value={prefs.newsletter} onChange={(v) => set("newsletter", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Novedades por correo" value={prefs.newsletter} onChange={(v) => set("newsletter", v)} />
       </SettingsCard>
 
       <SettingsCard title="Notificaciones push" description="Avisos en tiempo real en tu dispositivo.">
-        <ToggleRow label="Activado" value={prefs.pushNotifs} onChange={(v) => set("pushNotifs", v)} />
+        <ToggleRow label="Activado" accessibleLabel="Notificaciones push" value={prefs.pushNotifs} onChange={(v) => set("pushNotifs", v)} />
       </SettingsCard>
     </div>
   );
@@ -629,7 +641,7 @@ function DispositivosSection() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <SettingsCard title="Sesiones activas" description="Dispositivos conectados a tu cuenta.">
         <div className="flex justify-end">
           <ActionButton
@@ -639,7 +651,7 @@ function DispositivosSection() {
         </div>
         {showDevices && (
           <div className="mt-3 rounded-lg border border-[#2A2A2A] bg-[#1A1A1A] px-4 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[13px] font-semibold text-white">Este dispositivo</p>
                 <p className="text-[11.5px] text-[#6D7D94]">Navegador web · Activo ahora</p>
@@ -654,6 +666,7 @@ function DispositivosSection() {
 
       <SettingsCard title="Calidad de descarga" description="Calidad para contenido descargado sin conexión.">
         <GmaSelect
+          label="Calidad de descarga"
           value={prefs.calidad}
           options={["Ultra HD (4K)", "Alta (1080p)", "Media (720p)", "Baja (480p)"]}
           onChange={(v) => set("calidad", v)}

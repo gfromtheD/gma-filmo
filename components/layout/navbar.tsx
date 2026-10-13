@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import styles from "./navbar.module.css";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
@@ -172,8 +173,15 @@ export function Navbar() {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        chipBtnRef.current?.focus({ preventScroll: true });
+      }
+    }
+    document.addEventListener("keydown", handleKey);
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    return () => { document.removeEventListener("mousedown", handleClick); document.removeEventListener("keydown", handleKey); };
   }, [menuOpen]);
 
   // "Mi Espacio" is active when on /mi-espacio OR (creator) /mi-estudio
@@ -219,16 +227,37 @@ export function Navbar() {
     setTimeout(() => router.push(targetHref), 420);
   }
 
-  // Measure active pill position
+  // Keep the indicator aligned when the screen or navigation width changes.
   useEffect(() => {
-    const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
-    if (activeIdx < 0) return;
-    const el = itemRefs.current[activeIdx];
-    if (!el) return;
-    setPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setPillReady(true);
+    function reveal(el: HTMLElement) {
+      const row = el.parentElement;
+      if (!row || row.scrollWidth <= row.clientWidth) return;
+      const start = el.offsetLeft - 4;
+      const end = el.offsetLeft + el.offsetWidth + 4;
+      if (start < row.scrollLeft) row.scrollTo({ left: start });
+      else if (end > row.scrollLeft + row.clientWidth) row.scrollTo({ left: end - row.clientWidth });
+    }
+    function measure() {
+      const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
+      const el = itemRefs.current[activeIdx];
+      if (el) {
+        setPill({ left: el.offsetLeft, width: el.offsetWidth });
+        setPillReady(true);
+        reveal(el);
+      } else {
+        setPillReady(false);
+      }
+      const tab = studioTabRefs.current[STUDIO_TABS.findIndex(t => t.id === studioTab)];
+      if (tab) {
+        setStudioTabPill({ left: tab.offsetLeft, width: tab.offsetWidth });
+        reveal(tab);
+      }
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, spaceIsActive]);
+  }, [pathname, spaceIsActive, studioTab, isCreator]);
 
   return (
     <header
@@ -240,17 +269,10 @@ export function Navbar() {
       }}
     >
       <div
-        className="mx-auto max-w-[1440px] px-8"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center",
-          height: 80,
-          gap: 32,
-        }}
+        className={`${styles.layout} mx-auto max-w-[1440px] lg:px-8`}
       >
         {/* ── Left: brand ───────────────────────────────────────────── */}
-        <div className="flex items-center gap-3">
+        <div className={styles.brand}>
           <Link href="/" className="flex shrink-0 items-center gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo-gma.png" alt="GMA" className="h-8 w-auto" />
@@ -270,7 +292,7 @@ export function Navbar() {
 
         {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
-          className="relative flex rounded-full border border-[#262626]"
+          className={`${styles.nav} border border-[#262626]`}
           style={{ background: "rgba(255,255,255,0.04)" }}
         >
           {/* ── Main nav row ─────────────────────────────────────────── */}
@@ -278,7 +300,7 @@ export function Navbar() {
             {pillReady && (
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="pointer-events-none absolute top-1 h-11 lg:h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
                 style={{ left: pill.left, width: pill.width }}
               />
             )}
@@ -289,10 +311,11 @@ export function Navbar() {
 
               if (item.id === "space" && isCreator) {
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={item.id}
                     ref={(el) => { itemRefs.current[i] = el; }}
-                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
+                    className={`${styles.item} relative z-10 flex cursor-pointer items-center rounded-full`}
                     onClick={handleSpacePillClick}
                   >
                     <span
@@ -308,7 +331,7 @@ export function Navbar() {
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
                       </motion.span>
                     </span>
-                  </div>
+                  </button>
                 );
               }
 
@@ -317,7 +340,7 @@ export function Navbar() {
                   key={item.id}
                   href={item.href}
                   ref={(el) => { itemRefs.current[i] = el; }}
-                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                  className={`${styles.item} relative z-10 flex items-center rounded-full text-[13.5px] font-semibold transition-colors duration-[260ms]`}
                   style={{ color: active ? "#051910" : "#B8C5D4" }}
                 >
                   {item.label}
@@ -330,22 +353,12 @@ export function Navbar() {
           {/* ── Studio tabs: deploy BELOW the main pill, out of normal flow ── */}
           {isStudioNav && (
             <motion.div
+              className={styles.studioTabs}
               style={{
-                position: "absolute",
-                top: "100%",
-                marginTop: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
                 zIndex: 2,
-                display: "flex",
-                gap: 4,
-                padding: 4,
-                borderRadius: 999,
                 background: "rgba(3,4,8,0.96)",
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
-                overflow: "hidden",
-                whiteSpace: "nowrap",
               }}
               initial={{ clipPath: "inset(0 44% 0 44% round 999px)" }}
               animate={{ clipPath: "inset(0 0% 0 0% round 999px)" }}
@@ -391,10 +404,10 @@ export function Navbar() {
         </nav>
 
         {/* ── Right: search + profile ───────────────────────────────── */}
-        <div className="flex items-center justify-end gap-1">
+        <div className={styles.account}>
           <Link
             href="/buscador"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={19} />
@@ -407,7 +420,7 @@ export function Navbar() {
               aria-label="Cuenta"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 hover:bg-[#1A1A1A]"
+              className="flex min-h-11 items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 hover:bg-[#1A1A1A]"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
@@ -442,7 +455,7 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap">
+              <span className={`${styles.accountName} max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap`}>
                 {isGuest ? "Invitado" : displayName}
               </span>
               <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94] shrink-0" />
@@ -450,7 +463,7 @@ export function Navbar() {
 
             {menuOpen && (
               <div
-                className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
+                className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] max-w-[calc(100vw-32px)] max-h-[calc(100dvh-88px)] overflow-y-auto rounded-[14px] border border-[#262626] shadow-2xl"
                 style={{ background: "#0D0D0D" }}
               >
                 {isGuest ? (

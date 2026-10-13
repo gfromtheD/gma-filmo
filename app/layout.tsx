@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope, Instrument_Serif } from "next/font/google";
 
 import { AppProviders } from "@/components/providers/app-providers";
@@ -20,6 +20,8 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-serif",
   display: "swap",
 });
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export const metadata: Metadata = {
   title: {

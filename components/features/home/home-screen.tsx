@@ -50,6 +50,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
     return () => {
       document.removeEventListener("visibilitychange", release);
       window.removeEventListener("blur", release);
+      if (safetyRef.current) clearTimeout(safetyRef.current);
     };
   }, []);
 
@@ -119,30 +120,32 @@ export function HomeScreen({ items }: HomeScreenProps) {
         {/* Dot indicators + prev/next arrows */}
         {featuredItems.length > 1 && (
           <div
-            className="group absolute bottom-6 left-0 right-0 z-10 flex items-center justify-center gap-3"
+            className="relative z-10 mx-auto flex max-w-full items-center justify-center gap-1 px-4 pb-6 sm:gap-3 sm:pb-8"
+            aria-label="Selección de destacados"
             style={{ animation: "fadeIn 0.55s ease both" }}
           >
             <button
               type="button"
               aria-label="Anterior"
               onClick={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
-              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-white opacity-60 transition-opacity duration-200 hover:opacity-100 active:scale-95"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <div className="flex items-center gap-[6px]">
+            <div className="flex min-w-0 flex-wrap items-center justify-center">
               {featuredItems.map((_, i) => (
                 <button
                   key={i}
                   type="button"
-                  aria-label={`Slide ${i + 1}`}
+                  aria-label={`Ver destacado ${i + 1}: ${featuredItems[i]?.title}`}
                   onClick={() => setFeaturedIdx(i)}
-                  className={`h-[5px] rounded-full transition-all duration-300 ${
+                  aria-current={i === featuredIdx ? "true" : undefined}
+                  className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all duration-300 after:h-[5px] after:rounded-full ${
                     i === featuredIdx
-                      ? "w-8 bg-[#22B16B]"
-                      : "w-[10px] bg-white/25 hover:bg-white/50"
+                      ? "after:w-8 after:bg-[#22B16B]"
+                      : "after:w-[10px] after:bg-white/25 hover:after:bg-white/50"
                   }`}
                 />
               ))}
@@ -151,7 +154,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
               type="button"
               aria-label="Siguiente"
               onClick={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
-              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
+              className="flex h-11 w-11 shrink-0 items-center justify-center text-white opacity-60 transition-opacity duration-200 hover:opacity-100 active:scale-95"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
@@ -163,7 +166,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
       </div>
 
       <motion.div
-        className="mx-auto max-w-[1440px] px-8"
+        className="mx-auto min-w-0 max-w-[1440px] px-4 sm:px-6 lg:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
@@ -202,7 +205,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
             action={
               <Link
                 href="/mi-espacio"
-                className="inline-flex items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
               >
                 Ver todo
               </Link>

@@ -1,0 +1,22 @@
+.layout { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; min-height:80px; gap:32px; padding-top:env(safe-area-inset-top); padding-left:max(32px,env(safe-area-inset-left)); padding-right:max(32px,env(safe-area-inset-right)); }
+.brand { display:flex; align-items:center; gap:12px; min-width:0; }
+.account { display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+.nav { position:relative; display:flex; border-radius:999px; }
+.item { height:36px; padding:0 20px; white-space:nowrap; }
+.studioTabs { position:absolute; top:100%; margin-top:20px; left:50%; transform:translateX(-50%); display:flex; gap:4px; padding:4px; white-space:nowrap; border-radius:999px; }
+@media(max-width:1023px) {
+ .layout { grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; padding: max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left)); }
+ .brand { grid-column:1; grid-row:1; }
+ .brand > span { display:none; }
+ .account { grid-column:2; grid-row:1; }
+ .account button, .account a { min-height:44px; }
+ .nav { grid-column:1/-1; grid-row:2; min-width:0; flex-direction:column; border-radius:22px; }
+ .nav > div:first-child { overflow-x:auto; max-width:100%; }
+ .item { height:44px; padding:0 12px; flex-shrink:0; }
+ .studioTabs { position:relative; top:auto; left:auto; transform:none; margin-top:0; max-width:100%; overflow-x:auto; border-radius:18px; }
+ .studioTabs button { min-height:44px; flex-shrink:0; }
+}
+@media(max-width:479px) { .accountName { display:none; } }
+@media(pointer:coarse) {
+ .item, .studioTabs button { min-height:44px; }
+}

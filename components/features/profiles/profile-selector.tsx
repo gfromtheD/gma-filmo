@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useTransitionStore, type TransitionVariant } from "@/store/use-transition-store";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
+import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
 import { COLOR_VALUES, renderAvatar, type AvatarColor } from "@/lib/data/profile-avatars";
@@ -204,28 +205,28 @@ function ScreenA({
   }
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ background: "#080A0F" }}>
+    <div className="flex min-h-screen min-h-[100dvh] flex-col" style={{ background: "#080A0F" }}>
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-8 pt-7">
+      <div className="flex flex-wrap items-center justify-between gap-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pl-[max(2rem,env(safe-area-inset-left))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pt-[calc(1.75rem+env(safe-area-inset-top))]">
         <GmaLogo />
         <button
           type="button"
           onClick={() => void handleSignOut()}
-          className="text-[13px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
+          className="min-h-11 px-2 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
         >
           Cerrar sesión
         </button>
       </div>
 
       {/* Center content */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 pb-16">
-        <h1 className="mb-3 text-[64px] leading-[1.05] text-white" style={serifItalic}>
+      <div className="flex flex-1 flex-col items-center justify-center pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-10 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pb-[calc(4rem+env(safe-area-inset-bottom))]">
+        <h1 className="mb-3 max-w-full break-words text-center text-[clamp(2.25rem,7vw,4rem)] leading-[1.05] text-white" style={serifItalic}>
           ¿Quién está viendo?
         </h1>
-        <p className="mb-16 text-[18px] text-[#6D7D94]">Elige un perfil para continuar</p>
+        <p className="mb-9 text-center text-[16px] text-[#6D7D94] sm:mb-16 sm:text-[18px]">Elige un perfil para continuar</p>
 
-        <div className="flex flex-wrap items-start justify-center gap-10">
+        <div className="grid w-full max-w-[1000px] grid-cols-2 justify-items-center gap-x-4 gap-y-8 sm:flex sm:flex-wrap sm:items-start sm:justify-center sm:gap-10">
 
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
@@ -282,12 +283,12 @@ function ScreenA({
           <button
             type="button"
             onClick={onAddProfile}
-            className="group flex flex-col items-center gap-4"
+            className="group flex w-full min-w-0 max-w-[140px] flex-col items-center gap-3 sm:gap-4"
           >
-            <div className="flex h-[140px] w-[140px] items-center justify-center rounded-full border-2 border-dashed border-[#2A2A2A] transition-[border-color,background] duration-200 group-hover:border-[#22B16B]/50 group-hover:bg-[#22B16B]/5">
+            <div className="flex h-[104px] w-[104px] sm:h-[140px] sm:w-[140px] items-center justify-center rounded-full border-2 border-dashed border-[#2A2A2A] transition-[border-color,background] duration-200 group-hover:border-[#22B16B]/50 group-hover:bg-[#22B16B]/5">
               <GmaIcon name="plus" size={30} className="text-[#3A3A3A] transition-colors group-hover:text-[#22B16B]/70" />
             </div>
-            <div className="text-[17px] font-semibold text-[#3A3A3A] transition-colors group-hover:text-[#6D7D94]">
+            <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#6D7D94] sm:text-[17px] transition-colors group-hover:text-[#6D7D94]">
               Añadir perfil
             </div>
           </button>
@@ -312,18 +313,19 @@ function ProfileCard({
 }) {
   const btnRef = useRef<HTMLButtonElement>(null);
   return (
-    <div className="group flex flex-col items-center gap-4">
+    <div className="group flex w-full min-w-0 max-w-[140px] flex-col items-center gap-3 sm:gap-4">
       <button
         ref={btnRef}
         type="button"
         onClick={() => btnRef.current && onClick(btnRef.current.getBoundingClientRect())}
-        className="relative h-[140px] w-[140px] overflow-hidden rounded-full transition-transform duration-200 group-hover:scale-105"
+        aria-label={`Entrar como ${label}`}
+        className="relative h-[104px] w-[104px] sm:h-[140px] sm:w-[140px] overflow-hidden rounded-full transition-transform duration-200 group-hover:scale-105"
         style={{ boxShadow: `0 10px 40px ${glowColor}44` }}
       >
         {children}
       </button>
-      <div className="flex flex-col items-center gap-2">
-        <div className="text-[17px] font-semibold text-[#B8C5D4] transition-colors group-hover:text-white">
+      <div className="flex w-full min-w-0 flex-col items-center gap-2">
+        <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#B8C5D4] sm:text-[17px] transition-colors group-hover:text-white">
           {label}
         </div>
         {badge && (
@@ -337,7 +339,8 @@ function ProfileCard({
         <button
           type="button"
           onClick={onEdit}
-          className="flex items-center gap-1.5 rounded-full border border-[#2A2A2A] bg-[#111318] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] opacity-0 transition-[opacity,border-color,color] duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100"
+          aria-label={`Editar ${label}`}
+          className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#2A2A2A] bg-[#111318] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] opacity-100 transition-[opacity,border-color,color] md:[@media(hover:hover)]:opacity-0 duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100 group-focus-within:opacity-100"
         >
           <PencilIcon size={11} />
           Editar
@@ -357,6 +360,7 @@ function PinGate({
   onSuccess:  () => void;
   onCancel:   () => void;
 }) {
+  const viewportBounds = useVisibleViewport();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [error,  setError]  = useState(false);
   const refs = [
@@ -388,17 +392,19 @@ function PinGate({
 
   return (
     <div
-      className="fixed inset-0 z-[700] flex flex-col items-center justify-center"
-      style={{ background: "#080A0F" }}
+      className="fixed inset-0 z-[700] overflow-y-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+      role="dialog" aria-modal="true" aria-label={`PIN de ${name}`}
+      style={{ ...viewportBounds, background: "#080A0F" }}
     >
+      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center justify-center">
       <GmaLogo />
-      <div className="mt-16 flex flex-col items-center gap-6 text-center">
-        <h2 className="text-[32px] font-extrabold text-white" style={serifItalic}>
+      <div className="mt-8 flex w-full min-w-0 flex-col items-center gap-5 text-center sm:mt-16 sm:gap-6">
+        <h2 className="max-w-full break-words text-[26px] font-extrabold text-white sm:text-[32px]" style={serifItalic}>
           ¿Quién es {name}?
         </h2>
         <p className="text-[15px] text-[#6D7D94]">Introduce el PIN para acceder</p>
 
-        <div className="flex gap-4 mt-2">
+        <div className="mt-2 flex gap-2 sm:gap-4">
           {refs.map((ref, i) => (
             <input
               key={i}
@@ -410,7 +416,7 @@ function PinGate({
               autoFocus={i === 0}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="h-16 w-16 rounded-[14px] border text-center text-[28px] font-bold text-white outline-none transition-colors"
+              className="h-12 w-12 rounded-[14px] sm:h-16 sm:w-16 border text-center text-[28px] font-bold text-white outline-none transition-colors"
               style={{
                 background:  "#0E1016",
                 borderColor: error ? "#ff5252" : digits[i] ? "#22B16B" : "#1E1E1E",
@@ -426,10 +432,11 @@ function PinGate({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-4 text-[13px] font-semibold text-[#3A4A5A] transition-colors hover:text-[#6D7D94]"
+          className="mt-4 min-h-11 px-4 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:text-[#6D7D94]"
         >
           Volver a perfiles
         </button>
+      </div>
       </div>
     </div>
   );

@@ -13,22 +13,26 @@ export function Carousel({ title, action, children }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   function scrollBy(dir: -1 | 1) {
-    scrollRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+    const row = scrollRef.current;
+    if (row) row.scrollBy({
+      left: dir * row.clientWidth * 0.9,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
   }
 
   return (
-    <section className="mb-10">
+    <section className="mb-8 min-w-0 sm:mb-10">
       {/* Section header */}
-      <div className="mb-4 flex items-baseline justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:mb-4">
         <h3
-          className="text-[24px] font-bold tracking-[-0.01em] text-white"
+          className="min-w-0 flex-1 basis-40 break-words text-xl sm:text-[24px] font-bold tracking-[-0.01em] text-white"
         >
           {title}
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1 sm:gap-2">
           {action}
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
             onClick={() => scrollBy(-1)}
             aria-label="Anterior"
             type="button"
@@ -36,7 +40,7 @@ export function Carousel({ title, action, children }: CarouselProps) {
             <GmaIcon name="chevronLeft" size={16} />
           </button>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
             onClick={() => scrollBy(1)}
             aria-label="Siguiente"
             type="button"
@@ -49,7 +53,10 @@ export function Carousel({ title, action, children }: CarouselProps) {
       {/* Scroll row */}
       <div
         ref={scrollRef}
-        className="flex gap-[14px] overflow-x-auto pb-2"
+        role="region"
+        aria-label={title}
+        tabIndex={0}
+        className="flex min-w-0 gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-1 focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-[#22B16B] sm:gap-[14px]"
         style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none" }}
       >
         {children}

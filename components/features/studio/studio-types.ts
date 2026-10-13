@@ -70,7 +70,7 @@ export interface Creator {
   socials: Record<string, string>;
   logoColors: { from: string; to: string };
   avatarUrl?: string;
-  stats: { titles: number; published: number; totalViews: number; avgRating: number; followers: number };
+  stats: { titles: number; published: number; totalViews: number | null; avgRating: number | null; followers: number | null };
 }
 
 export interface StudioData {

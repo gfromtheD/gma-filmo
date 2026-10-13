@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/auth/callback", "/terminos", "/privacidad"];
+const PUBLIC_PATHS = ["/", "/auth/callback", "/terminos", "/privacidad", "/creadores"];
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -83,6 +83,7 @@ export async function middleware(request: NextRequest) {
   if (
     isCreatorSetup &&
     user &&
+    !isPublic &&
     !CREATOR_SETUP_ALLOWED.some((p) => pathname.startsWith(p))
   ) {
     return NextResponse.redirect(new URL("/configurar-perfil-creador", request.url));

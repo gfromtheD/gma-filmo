@@ -31,11 +31,16 @@ function HeroCredits({ item }: { item: MediaItem }) {
   // Prefer structured artistas from DB
   let director: string | null = null;
   let illustrator: string | null = null;
+  let directorSlug: string | null = null;
+  let illustratorSlug: string | null = null;
 
   if (movie.artistas && movie.artistas.length > 0) {
-    director    = movie.artistas.find((a) => /creador|director/i.test(a.role))?.name
-               ?? movie.artistas[0]?.name ?? null;
-    illustrator = movie.artistas.find((a) => /ilustrador|illustrator/i.test(a.role))?.name ?? null;
+    const directorCredit = movie.artistas.find((a) => /creador|director/i.test(a.role)) ?? movie.artistas[0];
+    const illustratorCredit = movie.artistas.find((a) => /ilustrador|illustrator/i.test(a.role));
+    director = directorCredit?.name ?? null;
+    directorSlug = directorCredit?.slug ?? null;
+    illustrator = illustratorCredit?.name ?? null;
+    illustratorSlug = illustratorCredit?.slug ?? null;
   } else if (movie.author) {
     const creado = movie.author.match(/Creado por:\s*([^;]+)/i);
     const ilustr = movie.author.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
@@ -52,17 +57,21 @@ function HeroCredits({ item }: { item: MediaItem }) {
   // If only one name exists, always show it as director
   if (!director && illustrator) {
     director    = illustrator;
+    directorSlug = illustratorSlug;
     illustrator = null;
   }
 
-  const parts: string[] = [];
-  if (director) parts.push(`Dirigido por ${director}`);
-  if (illustrator && illustrator !== director) parts.push(`Ilustrado por ${illustrator}`);
+  const parts = [
+    ...(director ? [{ role: "Dirigido por", name: director, slug: directorSlug }] : []),
+    ...(illustrator && illustrator !== director ? [{ role: "Ilustrado por", name: illustrator, slug: illustratorSlug }] : []),
+  ];
 
   return (
     <div className="mt-4 flex flex-col gap-1">
-      {parts.map((p) => (
-        <p key={p} className="text-[13px] text-[#6D7D94]">{p}</p>
+      {parts.map(({ role, name, slug }) => (
+        <p key={`${role}-${name}`} className="break-words text-[13px] text-[#B8C5D4]">
+          {role} {slug ? <Link href={`/creadores/${encodeURIComponent(slug)}`} className="transition-colors hover:text-[#22B16B] hover:underline">{name}</Link> : name}
+        </p>
       ))}
     </div>
   );
@@ -76,11 +85,10 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
 
   return (
     <section
-      className="relative w-full overflow-hidden isolate"
-      style={{ height: 600 }}
+      className="relative isolate w-full overflow-hidden"
     >
       {/* Poster art fills the background — fadeIn on mount to crossfade between slides */}
-      <div className="absolute inset-0" style={{ animation: "fadeIn 1.1s ease both" }}>
+      <div className="absolute inset-0 [&>div]:h-full" style={{ animation: "fadeIn 1.1s ease both" }}>
         <PosterArt style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
       </div>
 
@@ -88,7 +96,8 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
       {backHref && (
         <Link
           href={backHref}
-          className="absolute left-8 top-7 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+          aria-label="Volver al catálogo"
+          className="absolute left-4 top-5 flex h-11 w-11 sm:left-6 lg:left-8 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
           style={{ zIndex: 3 }}
         >
           <GmaIcon name="chevronLeft" size={18} />
@@ -107,10 +116,10 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
 
       {/* Content — left column, pinned to bottom */}
       <div
-        className="relative flex h-full items-end pb-14"
+        className="relative flex min-h-[520px] items-end pb-8 pt-24 sm:min-h-[600px] sm:pb-14 sm:pt-28"
         style={{ zIndex: 2 }}
       >
-        <div className="mx-auto w-full max-w-360 px-8">
+        <div className="mx-auto w-full min-w-0 max-w-360 px-4 sm:px-6 lg:px-8">
           <motion.div
             style={{ maxWidth: 580 }}
             initial={{ opacity: 0, y: 20 }}
@@ -118,20 +127,19 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             {/* Eyebrow label */}
-            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D7D94]">
+            <div className="mb-3 break-words text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D7D94]">
               {tag ?? item.tag ?? "DESTACADO"}
             </div>
 
             {/* Title */}
             <h1
-              className="font-extrabold text-white"
-              style={{ fontSize: 64, letterSpacing: "-0.03em", lineHeight: 1.06 }}
+              className="break-words text-[clamp(2rem,6vw,4rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white"
             >
               {item.title}
             </h1>
 
             {/* Meta row */}
-            <div className="my-4.5 flex flex-wrap items-center gap-3.5 text-[14px] font-semibold text-[#B8C5D4]">
+            <div className="my-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:my-4.5 text-[14px] font-semibold text-[#B8C5D4]">
               {item.kind === "movie" && (item as MovieMedia).approvalScore != null && (
                 <span className="font-extrabold text-[#22B16B]">
                   {(item as MovieMedia).approvalScore}%
@@ -143,7 +151,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
                 {item.tags?.slice(0, 3).map((t) => (
                 <span
                   key={t}
-                  className="rounded border border-[#262626] px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#B8C5D4]"
+                  className="max-w-full break-words rounded border border-[#262626] px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#B8C5D4]"
                 >
                   {t}
                 </span>
@@ -152,16 +160,16 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
 
             {/* Tagline / hook */}
             {item.synopsis && (
-              <p className="text-[15px] leading-[1.55] text-[#D9E2EC]" style={{ maxWidth: 560, marginTop: 8 }}>
+              <p className="break-words text-sm leading-[1.55] text-[#D9E2EC] sm:text-[15px]" style={{ maxWidth: 560, marginTop: 8 }}>
                 {shortText(item.synopsis, item.tagline)}
               </p>
             )}
 
             {/* CTAs */}
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-2 sm:mt-7 sm:gap-3">
               {onPlay && (
                 <button
-                  className="inline-flex items-center gap-2.5 rounded-full bg-[#22B16B] px-5.5 py-3 text-[14px] font-bold text-gma-accent-fg transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#2AC57A] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-[#22B16B] px-4 py-3 sm:px-5.5 text-[14px] font-bold text-gma-accent-fg transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#2AC57A] active:scale-[0.96]"
                   onClick={onPlay}
                   type="button"
                 >
@@ -171,7 +179,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onTrailer && (
                 <button
-                  className="inline-flex items-center gap-2.5 rounded-full bg-[#1A1A1A] px-5.5 py-3 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#262626] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#262626] active:scale-[0.96]"
                   onClick={onTrailer}
                   type="button"
                 >
@@ -181,7 +189,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onDetail && (
                 <button
-                  className="inline-flex items-center gap-2.5 rounded-full bg-white/6 px-5.5 py-3 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-[#0a0a0a] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-white/6 px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-[#0a0a0a] active:scale-[0.96]"
                   onClick={onDetail}
                   type="button"
                 >
@@ -198,6 +206,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
                   }}
                   onClick={onAddList}
                   aria-label={inList ? "Quitar de Mi Lista" : "Agregar a Mi Lista"}
+                  aria-pressed={inList}
                   type="button"
                 >
                   <div className="relative h-5 w-5">

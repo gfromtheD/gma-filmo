@@ -1,5 +1,7 @@
 "use client";
 
+import styles from "./studio-responsive.module.css";
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,7 +9,8 @@ import {
   Sparkles, ImageIcon, Check, AlertCircle, Trash2, ChevronDown,
   RefreshCw, ChevronLeft, ChevronRight, Plus, GripVertical, ChevronUp,
 } from "lucide-react";
-import { C } from "./studio-ui";
+import { C, useStudioDropdown } from "./studio-ui";
+import { createPortal } from "react-dom";
 import { BoxesLoader } from "@/components/ui/boxes-loader";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -298,18 +301,21 @@ function TypeSelect({ value, onChange, disabled }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { panelRef, position } = useStudioDropdown(open, ref, 220);
   useEffect(() => {
     if (!open) return;
-    const fn = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", fn);
-    return () => document.removeEventListener("mousedown", fn);
-  }, [open]);
+    const fn = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", fn);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", fn); document.removeEventListener("keydown", key); };
+  }, [open, panelRef]);
 
   const Def  = ASSET_DEFS[value];
   const Icon = Def.icon;
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button type="button" onClick={() => !disabled && setOpen(o => !o)} style={{
+      <button type="button" disabled={disabled} aria-expanded={open} onClick={() => !disabled && setOpen(o => !o)} style={{
         width: "100%", display: "flex", alignItems: "center", gap: 6,
         padding: "5px 8px", borderRadius: 6, cursor: disabled ? "default" : "pointer",
         background: "transparent", border: `1px solid ${open ? C.accent : C.border2}`,
@@ -320,18 +326,18 @@ function TypeSelect({ value, onChange, disabled }: {
         <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{Def.label}</span>
         {!disabled && <ChevronDown size={9} color={C.textMuted} style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />}
       </button>
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 500,
+      {open && createPortal(
+        <div ref={panelRef} style={{
+          ...position,
           background: "#0F1923", border: `1px solid ${C.border2}`, borderRadius: 9,
-          overflow: "hidden", boxShadow: "0 8px 28px rgba(0,0,0,0.6)",
+          boxShadow: "0 8px 28px rgba(0,0,0,0.6)",
         }}>
           {ASSET_ORDER.map(id => {
             const D = ASSET_DEFS[id]; const I = D.icon; const active = id === value;
             return (
               <button key={id} type="button" onClick={() => { onChange(id); setOpen(false); }} style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 11px", background: active ? C.accent15 : "transparent",
+                padding: "10px 11px", minHeight: 44, background: active ? C.accent15 : "transparent",
                 border: "none", cursor: "pointer", fontFamily: "inherit",
                 fontSize: 12.5, fontWeight: active ? 700 : 500, color: active ? C.accentH : C.textSec,
               }}>
@@ -339,7 +345,7 @@ function TypeSelect({ value, onChange, disabled }: {
               </button>
             );
           })}
-        </div>
+        </div>, document.body
       )}
     </div>
   );
@@ -637,7 +643,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <div style={{
+      <div className={styles.orbital} style={{
         borderRadius: 14, border: `1px solid ${C.border1}`, background: C.w4, overflow: "hidden",
         display: "flex", flexDirection: hasContent ? "row" : "column",
         transition: "flex-direction 0s",
@@ -645,6 +651,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
 
         {/* ── LEFT: drop zone ────────────────────────────────────────────────── */}
         <div
+          className={styles.orbitalLeft}
           style={{
             position: "relative",
             flexShrink: 0,
@@ -659,7 +666,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
           onDrop={e => { e.preventDefault(); setIsDragOver(false); addFiles(Array.from(e.dataTransfer.files)); }}
           onClick={() => { if (previews.length === 0) fileInputRef.current?.click(); }}
         >
-          <div style={{
+          <div className={styles.orbitalPreview} style={{
             padding: previews.length > 0 ? 14 : 0,
             flex: 1, display: "flex", flexDirection: "column",
             minHeight: hasContent ? 480 : "auto",
@@ -706,6 +713,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
           {hasContent && (
             <motion.div
               key="right-panel"
+              className={styles.orbitalRight}
               initial={{ opacity: 0, width: 0, minWidth: 0 }}
               animate={{ opacity: 1, width: "45%", minWidth: 280, flex: 1 }}
               exit={{ opacity: 0, width: 0, minWidth: 0 }}
@@ -766,6 +774,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
                     return (
                       <div
                         key={entry.id}
+                        className={styles.orbitalFile}
                         draggable
                         onDragStart={() => setDraggedIdx(idx)}
                         onDragEnd={() => { setDraggedIdx(null); setDragOverIdx(null); }}
@@ -834,6 +843,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
                               <button
                                 key={dir}
                                 type="button"
+                                aria-label={`${dir === -1 ? "Subir" : "Bajar"} ${entry.file.name} en la lista`}
                                 onClick={e => { e.stopPropagation(); if (!disabled) swapItems(idx, idx + dir); }}
                                 disabled={disabled}
                                 style={{
@@ -853,7 +863,7 @@ export function UploadOrbital({ onMainReady, onAssetReady }: UploadOrbitalProps)
                         </div>
 
                         {/* remove */}
-                        <button onClick={() => removeFile(entry.id)} disabled={entry.state === "uploading"} style={{
+                        <button type="button" aria-label={`Quitar ${entry.file.name}`} onClick={() => removeFile(entry.id)} disabled={entry.state === "uploading"} style={{
                           background: "none", border: "none", padding: 3, borderRadius: 5,
                           cursor: entry.state === "uploading" ? "not-allowed" : "pointer",
                           color: C.textMuted, opacity: entry.state === "uploading" ? 0.3 : 1,

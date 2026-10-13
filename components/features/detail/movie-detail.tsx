@@ -9,6 +9,7 @@ import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import type { MovieMedia } from "@/types/catalog";
+import { externalUrl } from "@/lib/social-links";
 import type { CreatorProfile } from "@/types/creator";
 
 interface MovieDetailProps {
@@ -35,21 +36,21 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
       <Hero item={movie} onPlay={() => router.push(`/ver/${movie.id}`)} onAddList={toggleList} inList={inList} backHref="/cortos" />
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-10">
-        <div className="grid gap-10" style={{ gridTemplateColumns: "1fr 304px" }}>
+      <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
+        <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_304px] lg:gap-10">
 
           {/* Left: synopsis + stats */}
-          <div className="flex flex-col gap-8">
+          <div className="flex min-w-0 flex-col gap-8">
             <SynopsisSection movie={movie} />
             {/* ── Tabs: Valoraciones / Comentarios ──────────────────────── */}
             <div>
-              <div className="mb-5 flex border-b border-[#262626]">
+              <div className="mb-5 flex flex-wrap border-b border-[#262626]">
                 {(["valoraciones", "comentarios"] as const).map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className="px-5 py-2.5 text-[14px] font-bold capitalize transition-colors"
+                    className="min-h-11 px-4 py-2.5 text-[14px] sm:px-5 font-bold capitalize transition-colors"
                     style={{
                       color:        activeTab === tab ? "#22B16B" : "#6D7D94",
                       borderBottom: activeTab === tab ? "2px solid #22B16B" : "2px solid transparent",
@@ -75,7 +76,7 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
           </div>
 
           {/* Right: meta + related */}
-          <aside className="flex flex-col gap-8">
+          <aside className="flex min-w-0 flex-col gap-8">
             <MetaCard movie={movie} />
             {related.length > 0 && (
               <RelatedPanel
@@ -129,7 +130,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
       <h2 className="mb-4 text-[20px] font-extrabold tracking-[-0.02em] text-white">
         Sinopsis
       </h2>
-      <p className="text-[15px] leading-[1.7] text-[#D9E2EC]">{movie.synopsis}</p>
+      <p className="break-words text-[15px] leading-[1.7] text-[#D9E2EC]">{movie.synopsis}</p>
 
       {/* AI disclosure + propose CTA */}
       <div className="mt-5 rounded-[10px] border border-[#1E1E1E] bg-[#0A0A0A] px-4 py-3">
@@ -151,7 +152,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="text-[11px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+                className="min-h-11 break-words text-[11px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
               >
                 {open ? "Cancelar" : <>¿No es acorde al contenido? <span className="underline underline-offset-2">Propón una mejor</span></>}
               </button>
@@ -164,22 +165,22 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Escribe aquí la sinopsis correcta para este corto…"
                   rows={4}
-                  className="w-full resize-none rounded-[8px] border border-[#262626] bg-[#111] px-3 py-2.5 text-[13px] leading-[1.6] text-[#D9E2EC] placeholder-[#3A4A5A] outline-none transition-colors focus:border-[#22B16B]/50"
+                  className="w-full resize-none rounded-[8px] border border-[#262626] bg-[#111] px-3 py-2.5 text-base leading-[1.6] sm:text-[13px] text-[#D9E2EC] placeholder-[#3A4A5A] outline-none transition-colors focus:border-[#22B16B]/50"
                 />
                 {error && <p className="text-[11px] text-[#ff5252]">{error}</p>}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => void submit()}
                     disabled={!text.trim() || sending}
-                    className="rounded-full bg-[#22B16B] px-4 py-1.5 text-[12px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="min-h-11 rounded-full bg-[#22B16B] px-4 py-1.5 text-[12px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {sending ? "Enviando…" : "Enviar propuesta"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+                    className="min-h-11 rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
                   >
                     Cancelar
                   </button>
@@ -238,7 +239,7 @@ const DONATION_PLATFORMS = [
         <path d="M15.607 4.653H8.941L6.645 19.251H1.82L4.862 0h7.995c3.754 0 6.375 2.294 6.473 5.513-.648-.478-2.105-.86-3.722-.86m6.57 5.546c0 3.41-3.01 6.853-6.958 6.853h-2.493L11.595 24H6.74l1.845-11.538h3.592c4.208 0 7.346-3.634 7.153-6.949a5.24 5.24 0 0 1 2.848 4.686M9.653 5.546h6.408c.907 0 1.942.222 2.363.541-.195 2.741-2.655 5.483-6.441 5.483H8.714Z" />
       </svg>
     ),
-    getHref: (c: CreatorProfile | null) => c?.donacion_paypal ?? "https://www.paypal.com",
+    getHref: (c: CreatorProfile | null) => externalUrl(c?.donacion_paypal),
   },
   {
     key: "patreon" as const,
@@ -252,7 +253,7 @@ const DONATION_PLATFORMS = [
         <path d="M22.957 7.21c-.004-3.064-2.391-5.576-5.191-6.482-3.478-1.125-8.064-.962-11.384.604C2.357 3.231 1.093 7.391 1.046 11.54c-.039 3.411.302 12.396 5.369 12.46 3.765.047 4.326-4.804 6.068-7.141 1.24-1.662 2.836-2.132 4.801-2.618 3.376-.836 5.678-3.501 5.673-7.031Z" />
       </svg>
     ),
-    getHref: (c: CreatorProfile | null) => c?.donacion_patreon ?? "https://www.patreon.com",
+    getHref: (c: CreatorProfile | null) => externalUrl(c?.donacion_patreon),
   },
   {
     key: "bitcoin" as const,
@@ -268,22 +269,24 @@ const DONATION_PLATFORMS = [
     ),
     getHref: (c: CreatorProfile | null) => {
       const addr = c?.donacion_bitcoin;
-      return addr ? `bitcoin:${addr}` : "https://bitcoin.org";
+      return addr ? `bitcoin:${addr}` : null;
     },
   },
 ] as const;
 
 function DonationRow({ creator }: { creator: CreatorProfile | null }) {
+  const platforms = DONATION_PLATFORMS.filter(platform => platform.getHref(creator));
+  if (platforms.length === 0) return null;
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-[13px] font-bold uppercase tracking-[0.1em] text-[#6D7D94]">
         Apoya al creador
       </h3>
-      <div className="grid grid-cols-3 gap-3">
-        {DONATION_PLATFORMS.map(({ key, label, color, hoverBg, hoverBorder, icon, getHref }) => (
+      <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-3">
+        {platforms.map(({ key, label, color, hoverBg, hoverBorder, icon, getHref }) => (
           <a
             key={key}
-            href={getHref(creator)}
+            href={getHref(creator)!}
             target="_blank"
             rel="noopener noreferrer"
             className="flex flex-col items-center gap-3 rounded-[14px] border border-[#262626] bg-[#0D0D0D] px-3 py-6 text-center transition-all duration-200"
@@ -355,8 +358,8 @@ function MetaCard({ movie }: { movie: MovieMedia }) {
             <>
               <MetaRow label="Año"      value={String(movie.year)} />
               <MetaRow label="Duración" value={movie.runtime} />
-              {director    && <MetaRow label="Director"   value={director}   linkHref={directorSlug    ? `/creadores/${directorSlug}`    : undefined} />}
-              {illustrator && <MetaRow label="Ilustrador" value={illustrator} linkHref={illustratorSlug ? `/creadores/${illustratorSlug}` : undefined} />}
+              {director    && <MetaRow label="Director"   value={director}   linkHref={directorSlug    ? `/creadores/${encodeURIComponent(directorSlug)}`    : undefined} />}
+              {illustrator && <MetaRow label="Ilustrador" value={illustrator} linkHref={illustratorSlug ? `/creadores/${encodeURIComponent(illustratorSlug)}` : undefined} />}
               {movie.tag   && <MetaRow label="Producción" value={movie.tag} accent />}
             </>
           );
@@ -397,7 +400,7 @@ function MetaRow({ label, value, accent, linkHref }: {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <dt className="shrink-0 text-[12px] text-[#6D7D94]">{label}</dt>
-      <dd className={`text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
+      <dd className={`min-w-0 break-words text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
         {linkHref ? (
           <Link href={linkHref} className="transition-colors hover:text-[#22B16B] hover:underline">
             {value}
@@ -422,7 +425,7 @@ function RelatedPanel({
       <h3 className="mb-4 text-[16px] font-extrabold tracking-[-0.01em] text-white">
         También te puede gustar
       </h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
         {related.map((m) => (
           <PosterCard
             key={m.id}

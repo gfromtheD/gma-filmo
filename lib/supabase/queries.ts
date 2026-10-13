@@ -4,6 +4,7 @@ import { getSupabasePublicClient } from "@/lib/supabase/public";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
+import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorShorts, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
 
 // ── Deterministic visual style from slug ─────────────────────────────────────
@@ -77,13 +78,19 @@ const fetchArtistaMapCached = unstable_cache(
     const entries: [string, ArtistaEntry][] = [];
     for (const a of (data ?? [])) {
       const entry: ArtistaEntry = { name: a.name, r2_photo_url: a.r2_photo_url, slug: a.slug };
-      entries.push([a.name.toLowerCase(), entry]);
+      entries.push([creditNameKey(a.name), entry]);
       entries.push([a.slug.toLowerCase(), entry]);
       entries.push([a.slug.replace(/-/g, " ").toLowerCase(), entry]);
     }
+    for (const creator of catalogCreators) {
+      if (!entries.some(([key]) => key === creditNameKey(creator.name))) {
+        const entry: ArtistaEntry = { name: creator.name, slug: creator.slug, r2_photo_url: creator.r2_photo_url };
+        entries.push([creditNameKey(creator.name), entry]);
+      }
+    }
     return entries;
   },
-  ["artistas-map"],
+  ["artistas-map-associated-shorts-v4"],
   { revalidate: 3600, tags: ["artistas"] },
 );
 
@@ -135,7 +142,7 @@ function toMovieMedia(
   }
 
   // Primary: structured junction table links
-  const artistas: ArtistCredit[] = p.peliculas_artistas
+  let artistas: ArtistCredit[] = p.peliculas_artistas
     .filter((pa) => pa.artistas != null)
     .map((pa) => ({
       name:     pa.artistas!.name,
@@ -144,14 +151,22 @@ function toMovieMedia(
       slug:     pa.artistas!.slug ?? null,
     }));
 
-  // Fallback: match author field against artistas table, preserving each role
-  if (artistas.length === 0 && p.author && artistaMap) {
+  // Preserve every named credit, including historical creators without accounts.
+  if (p.author) {
     for (const credit of parseAuthorCredits(p.author)) {
-      const match = artistaMap.get(credit.name.toLowerCase());
-      if (match) {
-        artistas.push({ name: match.name, role: credit.role, photoUrl: match.r2_photo_url, slug: match.slug ?? null });
-      }
+      const existing = artistas.find(artist => creditNameKey(artist.name) === creditNameKey(credit.name));
+      if (existing) continue;
+      const match = artistaMap?.get(creditNameKey(credit.name));
+      artistas.push(match
+        ? { name: match.name, role: credit.role, photoUrl: match.r2_photo_url, slug: match.slug }
+        : catalogCredit(credit.name, credit.role));
     }
+  }
+
+  // Confirmed "Mis trabajos" links from the original directory are matched
+  // to a real short by canonical slug, never to an absent or invented work.
+  if (p.slug !== "la-pelicula" && p.genre !== "Película") {
+    artistas = addCatalogCredits(p.slug, artistas);
   }
 
   const imageUrl    = p.r2_poster_url ?? p.thumbnail_url ?? undefined;
@@ -173,6 +188,7 @@ function toMovieMedia(
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
     r2VideoUrl,
+    videoUrl: p.youtube_url ?? undefined,
     subtitleUrl,
     style: deriveStyle(p.slug),
     author: p.author ?? undefined,
@@ -227,12 +243,13 @@ const getPeliculasCached = unstable_cache(
       fetchScoreMap(),
     ]);
     if (error || !data) return [];
-    return (data as PeliculaWithRelations[]).map((p) => ({
+    const films = (data as PeliculaWithRelations[]).map((p) => ({
       ...toMovieMedia(p, artistaMap),
       approvalScore: scoreMap.get(p.slug),
     }));
+    return keepCreatorLinks(films, films);
   },
-  ["peliculas-all"],
+  ["peliculas-all-associated-shorts-v4"],
   { revalidate: 3600, tags: ["peliculas"] },
 );
 
@@ -248,10 +265,8 @@ export async function getPeliculaBySlug(slug: string): Promise<MovieMedia | null
   ]);
 
   if (error || !data) return null;
-  return {
-    ...toMovieMedia(data as PeliculaWithRelations, artistaMap),
-    approvalScore: scoreMap.get(slug),
-  };
+  const film = { ...toMovieMedia(data as PeliculaWithRelations, artistaMap), approvalScore: scoreMap.get(slug) };
+  return keepCreatorLinks([film], await getPeliculas())[0] ?? null;
 }
 
 // Deterministic tie-breaker so each film gets stable but unique ordering
@@ -414,7 +429,7 @@ export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[
   ]);
 
   if (error || !data) return [];
-  return (data as PeliculaWithRelations[]).map((p) => toMovieMedia(p, artistaMap));
+  return keepCreatorLinks((data as PeliculaWithRelations[]).map((p) => toMovieMedia(p, artistaMap)), await getPeliculas());
 }
 
 // ── Creator public profiles ───────────────────────────────────────────────────
@@ -425,6 +440,9 @@ type AnyClient = ReturnType<typeof getSupabasePublicClient> & { from: (t: string
 export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
   return unstable_cache(
     async () => {
+      const films = await getPeliculas();
+      const associated = creatorShorts(slug, films);
+      if (!associated.length) return null;
       const supabase = getSupabasePublicClient() as AnyClient;
 
       // Primary: dedicated creator profile table
@@ -433,7 +451,11 @@ export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | n
         .select("*")
         .eq("slug", slug)
         .maybeSingle();
-      if (data) return mapCreatorRow(data as Record<string, unknown>);
+      if (data) {
+        const profile = mapCreatorRow(data as Record<string, unknown>);
+        const catalog = catalogProfile(slug, films);
+        return completeCatalogProfile(profile, catalog);
+      }
 
       // Fallback: artistas table (166 seeded entries with bio + photo)
       const { data: artista } = await supabase
@@ -441,34 +463,26 @@ export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | n
         .select("id, slug, name, bio, r2_photo_url")
         .eq("slug", slug)
         .maybeSingle();
-      if (!artista) return null;
+      if (!artista) return catalogProfile(slug, films);
 
-      // Fetch film slugs via junction table
-      const { data: paRows } = await supabase
-        .from("peliculas_artistas")
-        .select("peliculas(slug)")
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        .eq("artista_id", (artista as Record<string, unknown>).id as number);
-
-      const titulos: string[] = ((paRows ?? []) as { peliculas: { slug: string } | null }[])
-        .map((pa) => pa.peliculas?.slug)
-        .filter((s): s is string => Boolean(s));
-
+      const catalog = catalogProfile(slug, films);
       return {
         slug:             artista.slug as string,
         nombre:           artista.name as string,
         foto_perfil:      (artista.r2_photo_url as string | null) ?? null,
         imagen_portada:   null,
         nacionalidad:     null,
-        bio:              (artista.bio as string | null) ?? null,
-        redes_sociales:   [],
+        bio:              (artista.bio as string | null) ?? catalog?.bio ?? null,
+        redes_sociales:   catalog?.redes_sociales ?? [],
         donacion_paypal:  null,
         donacion_patreon: null,
         donacion_bitcoin: null,
-        titulos,
+        titulos: associated.map(film => film.id),
+        editorial: true,
+        source_url: catalog?.source_url ?? null,
       };
     },
-    [`creator-${slug}`],
+    [`creator-with-short-v3-${slug}`],
     { revalidate: 3600 },
   )();
 }
@@ -480,16 +494,9 @@ export async function getCreatorFilmsByTitulos(titulos: readonly string[]): Prom
 }
 
 export async function getCreatorByArtistaSlugs(slugs: string[]): Promise<CreatorProfile | null> {
-  if (!slugs.length) return null;
-  const supabase = getSupabasePublicClient() as AnyClient;
-  const { data } = await supabase
-    .from("creator_public_profiles")
-    .select("*")
-    .in("slug", slugs);
-  if (!data?.length) return null;
-  for (const s of slugs) {
-    const found = (data as Record<string, unknown>[]).find((r) => r["slug"] === s);
-    if (found) return mapCreatorRow(found);
+  for (const slug of slugs) {
+    const creator = await getCreatorBySlug(slug);
+    if (creator) return creator;
   }
   return null;
 }

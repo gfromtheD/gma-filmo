@@ -36,16 +36,16 @@ export function SeriesDetail({ series, episodes, related }: SeriesDetailProps) {
       />
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-10">
-        <div className="grid gap-10" style={{ gridTemplateColumns: "1fr 304px" }}>
+      <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10">
+        <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_304px] lg:gap-10">
 
           {/* Left: episodes */}
-          <div>
+          <div className="min-w-0">
             <EpisodesPanel series={series} episodes={episodes} />
           </div>
 
           {/* Right: meta + related */}
-          <aside className="flex flex-col gap-8">
+          <aside className="flex min-w-0 flex-col gap-8">
             <MetaCard series={series} />
             {related.length > 0 && <RelatedPanel related={related} onNavigate={(id) => router.push(`/series/${id}`)} />}
           </aside>
@@ -66,21 +66,21 @@ function EpisodesPanel({ series, episodes }: { series: SeriesMedia; episodes: re
   const displayEpisodes = activeSeason === 1 ? episodes : [];
 
   return (
-    <section>
-      <div className="mb-5 flex items-center gap-4">
+    <section className="min-w-0">
+      <div className="mb-5 flex flex-wrap items-center gap-4">
         <h2 className="text-[20px] font-extrabold tracking-[-0.02em] text-white">Episodios</h2>
 
         {/* Season selector — only rendered when there's more than 1 season */}
         {series.seasons > 1 && (
           <div
-            className="flex gap-1 rounded-full border border-[#262626] bg-[#0D0D0D] p-1"
+            className="flex max-w-full flex-wrap gap-1 rounded-2xl border border-[#262626] bg-[#0D0D0D] p-1"
           >
             {seasonNumbers.map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => setActiveSeason(n)}
-                className={`rounded-full px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${
+                className={`min-h-11 min-w-11 rounded-full px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${
                   activeSeason === n
                     ? "bg-[#22B16B] text-[#03200F]"
                     : "text-[#B8C5D4] hover:text-white"
@@ -126,11 +126,10 @@ function EpisodeRow({
   seriesStyle: SeriesMedia["style"];
 }) {
   return (
-    <li className="group flex items-start gap-4 py-4">
+    <li className="group flex min-w-0 items-start gap-3 py-4 sm:gap-4">
       {/* Thumbnail */}
       <div
-        className="relative shrink-0 overflow-hidden rounded-[6px]"
-        style={{ width: 128, height: 72 }}
+        className="relative aspect-video w-20 shrink-0 overflow-hidden rounded-[6px] min-[400px]:w-24 sm:w-32"
       >
         <PosterArt style={seriesStyle} title="" kind="series" ratio="landscape" />
 
@@ -144,9 +143,9 @@ function EpisodeRow({
 
       {/* Info */}
       <div className="min-w-0 flex-1 pt-0.5">
-        <div className="mb-1 flex items-baseline gap-2">
+        <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-[12px] font-bold text-[#22B16B]">E{ep.n}</span>
-          <span className="truncate text-[14px] font-bold text-white">{ep.title}</span>
+          <span className="min-w-0 break-words text-[14px] font-bold text-white">{ep.title}</span>
           <span className="ml-auto shrink-0 text-[12px] text-[#6D7D94]">{ep.runtime}</span>
         </div>
         <p className="line-clamp-2 text-[13px] leading-[1.5] text-[#6D7D94]">
@@ -213,7 +212,7 @@ function MetaRow({ label, value, accent }: { label: string; value: string; accen
   return (
     <div className="flex items-baseline justify-between gap-2">
       <dt className="shrink-0 text-[12px] text-[#6D7D94]">{label}</dt>
-      <dd className={`text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
+      <dd className={`min-w-0 break-words text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
         {value}
       </dd>
     </div>
@@ -234,7 +233,7 @@ function RelatedPanel({
       <h3 className="mb-4 text-[16px] font-extrabold tracking-[-0.01em] text-white">
         También te puede gustar
       </h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
         {related.map((s) => (
           <PosterCard
             key={s.id}

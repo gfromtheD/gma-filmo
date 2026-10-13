@@ -92,7 +92,7 @@ function TimestampPill({ secs, movieSlug }: { secs: number; movieSlug: string })
     <button
       type="button"
       onClick={() => router.push(`/ver/${movieSlug}?t=${secs}`)}
-      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11.5px] font-bold transition-colors hover:bg-[#22B16B22]"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded px-2 py-0.5 text-[11.5px] font-bold transition-colors hover:bg-[#22B16B22]"
       style={{
         background:  "rgba(34,177,107,0.10)",
         color:       "#22B16B",
@@ -177,28 +177,29 @@ function CommentForm({
         placeholder={placeholder ?? "Comparte tu opinión sobre esta obra…"}
         maxLength={1000}
         rows={compact ? 2 : 3}
-        className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-4 py-3 text-[13.5px] leading-[1.55] text-white placeholder-[#4A5568] outline-none transition-colors focus:border-[#3A3A3A]"
+        className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-4 py-3 text-base leading-[1.55] sm:text-[13.5px] text-white placeholder-[#4A5568] outline-none transition-colors focus:border-[#3A3A3A]"
       />
 
       <div className="mt-2 flex items-center gap-3 flex-wrap">
         {/* Timestamp toggle */}
         {!parentId && (
           showTs ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
               <span className="text-[12px] text-[#6D7D94]">⏱</span>
               <input
                 value={tsInput}
                 onChange={(e) => setTsInput(e.target.value)}
                 placeholder="ej. 1:23"
                 maxLength={8}
-                className="w-20 rounded-[6px] border border-[#262626] bg-[#0A0A0A] px-2 py-1 text-[12px] font-mono text-white outline-none focus:border-[#22B16B]"
+                className="min-h-11 w-20 rounded-[6px] border border-[#262626] bg-[#0A0A0A] px-2 py-1 text-base font-mono sm:text-[12px] text-white outline-none focus:border-[#22B16B]"
                 style={{ fontFamily: "ui-monospace, monospace" }}
               />
               {!tsValid && <span className="text-[11px] text-red-400">Formato: m:ss</span>}
               <button
                 type="button"
                 onClick={() => { setShowTs(false); setTsInput(""); }}
-                className="text-[11px] text-[#4A5568] hover:text-white transition-colors"
+                aria-label="Quitar momento del vídeo"
+                className="min-h-11 min-w-11 text-[11px] text-[#4A5568] hover:text-white transition-colors"
               >
                 ✕
               </button>
@@ -207,7 +208,7 @@ function CommentForm({
             <button
               type="button"
               onClick={() => { setShowTs(true); }}
-              className="flex items-center gap-1.5 text-[12px] text-[#4A5568] hover:text-[#6D7D94] transition-colors"
+              className="flex min-h-11 items-center gap-1.5 text-[12px] text-[#4A5568] hover:text-[#6D7D94] transition-colors"
             >
               <span>⏱</span>
               <span>Añadir momento del vídeo</span>
@@ -226,7 +227,7 @@ function CommentForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-[#262626] px-3 py-1.5 text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:border-[#3A3A3A] hover:text-white"
+            className="min-h-11 rounded-full border border-[#262626] px-3 py-1.5 text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:border-[#3A3A3A] hover:text-white"
           >
             Cancelar
           </button>
@@ -236,7 +237,7 @@ function CommentForm({
           type="button"
           onClick={() => void handleSubmit()}
           disabled={!canSubmit}
-          className="rounded-full bg-[#22B16B] px-4 py-1.5 text-[12.5px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-11 rounded-full bg-[#22B16B] px-4 py-1.5 text-[12.5px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? "Publicando…" : "Publicar"}
         </button>
@@ -305,13 +306,13 @@ function CommentCard({
   const isReply     = comment.parent_id !== null;
 
   return (
-    <div className={`flex gap-3 ${isReply ? "" : "rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-4"}`}>
+    <div className={`flex min-w-0 gap-2 sm:gap-3 ${isReply ? "" : "rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-3 sm:p-4"}`}>
       <Av name={comment.display_name} color={comment.avatar_color} size={isReply ? 28 : 36} />
 
       <div className="min-w-0 flex-1">
         {/* Header */}
         <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="text-[13.5px] font-bold text-white">@{comment.display_name}</span>
+          <span className="min-w-0 max-w-full break-words text-[13.5px] font-bold text-white">@{comment.display_name}</span>
           <span className="text-[11.5px] text-[#4A5568]" style={{ fontFamily: "ui-monospace, monospace" }}>
             {timeAgo(comment.created_at)}
           </span>
@@ -321,16 +322,16 @@ function CommentCard({
         </div>
 
         {/* Content */}
-        <p className="text-[13.5px] leading-[1.6] text-[#D9E2EC]">{comment.content}</p>
+        <p className="whitespace-pre-wrap break-words text-[13.5px] leading-[1.6] text-[#D9E2EC]">{comment.content}</p>
 
         {/* Actions */}
-        <div className="mt-2.5 flex items-center gap-4">
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
           {/* Like */}
           {!isOwn && currentUserId ? (
             <button
               type="button"
               onClick={() => void handleLike()}
-              className="flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
+              className="flex min-h-11 items-center gap-1.5 text-[12px] font-semibold transition-colors"
               style={{ color: liked ? "#22B16B" : "#4A5568" }}
             >
               <GmaIcon
@@ -343,7 +344,7 @@ function CommentCard({
               <span>De acuerdo</span>
             </button>
           ) : count > 0 ? (
-            <span className="flex items-center gap-1.5 text-[12px] text-[#4A5568]">
+            <span className="flex min-h-11 items-center gap-1.5 text-[12px] text-[#4A5568]">
               <GmaIcon name="heart" size={13} strokeWidth={1.8} />
               <span>{count}</span>
             </span>
@@ -354,7 +355,7 @@ function CommentCard({
             <button
               type="button"
               onClick={() => setShowReplyForm((v) => !v)}
-              className="text-[12px] font-semibold text-[#4A5568] transition-colors hover:text-white"
+              className="min-h-11 text-[12px] font-semibold text-[#4A5568] transition-colors hover:text-white"
             >
               ↩ Responder
             </button>
@@ -366,7 +367,7 @@ function CommentCard({
               type="button"
               onClick={() => void handleReport()}
               disabled={reported}
-              className="ml-auto text-[11px] text-[#4A5568] transition-colors hover:text-red-400 disabled:opacity-50"
+              className="ml-auto min-h-11 text-[11px] text-[#4A5568] transition-colors hover:text-red-400 disabled:opacity-50"
             >
               {reported ? "Denunciado" : "Denunciar"}
             </button>
@@ -398,7 +399,7 @@ function CommentCard({
             <button
               type="button"
               onClick={() => setShowReplies((v) => !v)}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-[#22B16B] transition-opacity hover:opacity-80"
+              className="flex min-h-11 items-center gap-1.5 text-[12px] font-semibold text-[#22B16B] transition-opacity hover:opacity-80"
             >
               <svg
                 width="12" height="12" viewBox="0 0 12 12"
@@ -411,7 +412,7 @@ function CommentCard({
             </button>
 
             {showReplies && (
-              <div className="mt-3 flex flex-col gap-3 border-l-2 border-[#262626] pl-4">
+              <div className="mt-3 flex flex-col gap-3 border-l-2 border-[#262626] pl-2 sm:pl-4">
                 {replies.map((r) => (
                   <CommentCard
                     key={r.id}

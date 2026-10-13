@@ -48,7 +48,7 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
         </h2>
 
         {/* Score row */}
-        <div className="mb-5 flex items-center gap-7 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
+        <div className="mb-5 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-4 sm:flex sm:flex-wrap sm:gap-7 sm:p-5">
           <div className="shrink-0">
             <div className="flex items-baseline gap-1.5">
               <span
@@ -68,9 +68,9 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
             </div>
           </div>
 
-          <span className="h-14 w-px shrink-0 bg-[#262626]" />
+          <span className="hidden h-14 w-px shrink-0 sm:block bg-[#262626]" />
 
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[14px] text-[#6D7D94]">Tu valoración</div>
             <div className="mt-1 text-[16px] text-white">
               {savedScore !== null ? (
@@ -85,12 +85,12 @@ export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) 
           </div>
 
           {isGuest ? (
-            <LoginPromptInput />
+            <div className="col-span-2 w-full sm:w-auto sm:max-w-[260px] sm:flex-1"><LoginPromptInput /></div>
           ) : (
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="flex shrink-0 items-center gap-2 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
+              className="col-span-2 flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
             >
               <GmaIcon name="star" size={14} strokeWidth={2} />
               {savedScore !== null ? "Editar nota" : "Valorar"}
@@ -199,12 +199,12 @@ function ReviewCard({
   }
 
   return (
-    <div className="flex gap-4 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
+    <div className="flex min-w-0 gap-3 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-3 sm:p-5">
       <ReviewAvatar displayName={displayName} avatarUrl={avatarUrl} avatarColor={avatarColor} />
 
       <div className="min-w-0 flex-1">
-        <div className="mb-2 flex items-baseline gap-2.5">
-          <span className="text-[14px] font-bold text-white">@{displayName}</span>
+        <div className="mb-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <span className="min-w-0 max-w-full break-words text-[14px] font-bold text-white">@{displayName}</span>
           <span
             className="rounded px-2 py-0.5 text-[11.5px] font-bold"
             style={{
@@ -222,14 +222,14 @@ function ReviewCard({
             {date}
           </span>
         </div>
-        <p className="text-[14px] leading-[1.55] text-[#D9E2EC]">{comment}</p>
+        <p className="whitespace-pre-wrap break-words text-[14px] leading-[1.55] text-[#D9E2EC]">{comment}</p>
 
         {/* Like button */}
         {!isOwn && currentUserId && (
           <button
             type="button"
             onClick={() => void handleLike()}
-            className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
+            className="mt-3 flex min-h-11 items-center gap-1.5 text-[12px] font-semibold transition-colors"
             style={{ color: liked ? "#22B16B" : "#4A5568" }}
           >
             <GmaIcon
@@ -243,7 +243,7 @@ function ReviewCard({
           </button>
         )}
         {isOwn && count > 0 && (
-          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4A5568]">
+          <div className="mt-3 flex min-h-11 items-center gap-1.5 text-[12px] text-[#4A5568]">
             <GmaIcon name="heart" size={13} strokeWidth={1.8} />
             <span>{count} {count === 1 ? "persona" : "personas"} de acuerdo</span>
           </div>
@@ -269,6 +269,50 @@ function RatingModal({
   const [score, setScore]     = useState<number | null>(initialScore);
   const [comment, setComment] = useState(initialComment);
   const [withProfile, setWithProfile] = useState(true);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const updateViewport = () => setViewport({
+      height: window.visualViewport?.height ?? window.innerHeight,
+      top: window.visualViewport?.offsetTop ?? 0,
+    });
+    updateViewport();
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    dialogRef.current?.focus();
+    const handleKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); }
+      if (event.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), textarea, input, [tabindex="0"]',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !dialogRef.current?.contains(active) || active === dialogRef.current)) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (active === last || !dialogRef.current?.contains(active) || active === dialogRef.current)) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeys);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+      document.removeEventListener("keydown", handleKeys);
+      previousFocus?.focus();
+    };
+  }, []);
 
   const SCALE_HINTS = [
     "1 — Horrible",
@@ -278,37 +322,41 @@ function RatingModal({
 
   return (
     <div
-      className="fixed inset-0 z-[500] flex items-center justify-center px-4"
-      style={{ background: "rgba(5,8,16,0.75)", backdropFilter: "blur(4px)" }}
+      className="fixed inset-x-0 top-0 z-[500] flex h-dvh items-center justify-center px-3 py-3 sm:px-4"
+      style={{ background: "rgba(5,8,16,0.75)", backdropFilter: "blur(4px)", height: viewport?.height, top: viewport?.top }}
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[600px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rating-modal-title"
+        tabIndex={-1}
+        className="relative flex max-h-full w-full max-w-[600px] flex-col overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl outline-none"
         style={{ background: "#0D0D0D" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-[#262626] px-6 py-5">
+        <div className="flex shrink-0 items-center gap-3 border-b border-[#262626] px-4 py-3 sm:px-6 sm:py-5">
           <GmaIcon name="star" size={20} className="text-[#22B16B]" />
-          <span className="text-[16px] font-bold text-white">
+          <span id="rating-modal-title" className="min-w-0 flex-1 line-clamp-3 break-words text-[16px] font-bold text-white">
             Valorar &ldquo;{title}&rdquo;
           </span>
-          <div className="flex-1" />
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-white"
           >
             <GmaIcon name="close" size={16} />
           </button>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6">
           <p className="mb-4 text-[13px] text-[#6D7D94]">Tu puntuación</p>
 
           {/* 1–10 number grid */}
-          <div className="relative mb-2 flex gap-1.5">
+          <div className="relative mb-2 grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
               const active = score !== null && n <= score;
               return (
@@ -316,7 +364,9 @@ function RatingModal({
                   key={n}
                   type="button"
                   onClick={() => setScore(n)}
-                  className="relative flex flex-1 items-center justify-center rounded-[8px] border py-3 text-[15px] font-bold transition-colors"
+                  aria-label={`Puntuación ${n} de 10`}
+                  aria-pressed={score === n}
+                  className="relative flex min-h-11 items-center justify-center rounded-[8px] border py-3 text-[15px] font-bold transition-colors"
                   style={{
                     fontFamily:  "ui-monospace, 'Cascadia Code', monospace",
                     background:  active ? "rgba(34,177,107,0.10)" : "rgba(255,255,255,0.04)",
@@ -327,7 +377,7 @@ function RatingModal({
                   {n}
                   {score === n && (
                     <span
-                      className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#22B16B]"
+                      className="absolute -top-6 left-1/2 hidden sm:block -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#22B16B]"
                       style={{ fontFamily: "ui-monospace, monospace" }}
                     >
                       Nota
@@ -339,7 +389,7 @@ function RatingModal({
           </div>
 
           <div
-            className="mb-6 mt-1 flex justify-between text-[11px] uppercase tracking-[0.06em] text-[#4A5568]"
+            className="mb-6 mt-1 flex flex-wrap justify-between gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.06em] text-[#4A5568]"
             style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
           >
             {SCALE_HINTS.map((h) => (
@@ -358,46 +408,34 @@ function RatingModal({
             maxLength={1000}
             placeholder="Escribe tu opinión sobre este título..."
             rows={4}
-            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-4 py-3 text-[14px] leading-[1.55] text-white placeholder-[#4A5568] outline-none transition-colors focus:border-[#3A3A3A]"
+            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-4 py-3 whitespace-pre-wrap break-words text-base leading-[1.55] sm:text-[14px] text-white placeholder-[#4A5568] outline-none transition-colors focus:border-[#3A3A3A]"
           />
 
-          <div className="mt-2 flex items-center justify-between">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <span
               className="text-[11.5px] text-[#4A5568]"
               style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
             >
               {comment.length} / 1.000 caracteres
             </span>
-            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#6D7D94]">
-              <span
-                role="checkbox"
-                aria-checked={withProfile}
-                tabIndex={0}
-                onClick={() => setWithProfile((v) => !v)}
-                onKeyDown={(e) => e.key === " " && setWithProfile((v) => !v)}
-                className={`flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border transition-colors ${
-                  withProfile
-                    ? "border-[#22B16B] bg-[#22B16B]"
-                    : "border-[#262626] bg-transparent"
-                }`}
-              >
-                {withProfile && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
-                    <path d="M1 4l2.5 2.5L9 1" stroke="#051910" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px] text-[#6D7D94]">
+              <input
+                type="checkbox"
+                checked={withProfile}
+                onChange={(event) => setWithProfile(event.target.checked)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-[#22B16B]"
+              />
               Publicar con mi perfil
             </label>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 border-t border-[#262626] px-6 py-4">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-[#262626] px-4 py-3 sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[#262626] px-4 py-2 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#3A3A3A] hover:text-white"
+            className="min-h-11 rounded-full border border-[#262626] px-4 py-2 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#3A3A3A] hover:text-white"
           >
             Cancelar
           </button>
@@ -406,7 +444,7 @@ function RatingModal({
             type="button"
             onClick={() => score !== null && onSubmit(score, comment.trim())}
             disabled={score === null}
-            className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-11 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {comment.trim() ? "Publicar valoración" : "Guardar nota"}
           </button>

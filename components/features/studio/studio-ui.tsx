@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, type ReactNode, type CSSProperties } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, type ReactNode, type CSSProperties, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import {
   CheckCircle2, Clock, Pencil, AlertTriangle, Star, Play, ChevronDown,
 } from "lucide-react";
@@ -253,7 +254,85 @@ export function Sparkline({ data = [], w = 92, h = 30, color = C.accent }: {
   );
 }
 
+// Keep dropdowns inside the visible viewport, including the mobile keyboard.
+// Portal rendering avoids clipping by the upload preview and scrollable dialogs.
+export function useStudioDropdown(open: boolean, anchor: RefObject<HTMLElement>, width?: number, align: "left" | "right" = "left") {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
+  useLayoutEffect(() => {
+    if (!open) return;
+    const update = () => {
+      const rect = anchor.current?.getBoundingClientRect();
+      if (!rect) return;
+      const viewport = window.visualViewport;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const viewportLeft = viewport?.offsetLeft ?? 0;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const panelWidth = Math.min(width ?? rect.width, Math.max(0, viewportWidth - 16));
+      const below = Math.max(0, viewportTop + viewportHeight - rect.bottom - 14);
+      const above = Math.max(0, rect.top - viewportTop - 14);
+      const upwards = below < Math.min(panelRef.current?.scrollHeight ?? 280, 280) && above > below;
+      const maxHeight = Math.min(360, Math.max(0, viewportHeight - 16), upwards ? above : below);
+      const panelHeight = Math.min(panelRef.current?.scrollHeight ?? maxHeight, maxHeight);
+      const preferredLeft = align === "right" ? rect.right - panelWidth : rect.left;
+      setPosition({
+        position: "fixed", zIndex: 650, boxSizing: "border-box", width: panelWidth,
+        left: Math.max(viewportLeft + 8, Math.min(preferredLeft, viewportLeft + viewportWidth - panelWidth - 8)),
+        top: Math.max(viewportTop + 8, Math.min(upwards ? rect.top - 6 - panelHeight : rect.bottom + 6, viewportTop + viewportHeight - panelHeight - 8)),
+        maxHeight, overflowY: "auto", overscrollBehavior: "contain", visibility: "visible",
+      });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, [open, anchor, width, align]);
+  return { panelRef, position };
+}
+
 // ── Menu ──────────────────────────────────────────────────────────────────────
+export function useStudioDialog(active: boolean, onClose: () => void) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!active || !dialogRef.current) return;
+    const dialog = dialogRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const controls = () => Array.from(dialog.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )).filter(element => element.getClientRects().length > 0);
+    (controls()[0] ?? dialog).focus({ preventScroll: true });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); return; }
+      if (event.key !== "Tab") return;
+      const elements = controls();
+      const first = elements[0]; const last = elements[elements.length - 1];
+      if (!first || !last) { event.preventDefault(); dialog.focus(); return; }
+      if (!dialog.contains(document.activeElement) || (event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault(); (event.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [active]);
+  return dialogRef;
+}
+
 export interface MenuItem {
   label?: string;
   icon?: ReactNode;
@@ -267,21 +346,24 @@ export function Menu({ trigger, items, align = "right", width = 196 }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { panelRef, position } = useStudioDropdown(open, ref, width, align);
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open]);
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", h);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", h); document.removeEventListener("keydown", key); };
+  }, [open, panelRef]);
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div onClick={() => setOpen(o => !o)}>{trigger}</div>
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", [align]: 0, width, zIndex: 60,
+      {open && createPortal(
+        <div ref={panelRef} style={{
+          ...position,
           background: "#101820", border: `1px solid ${C.border2}`, borderRadius: 12,
           padding: 6, boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)",
           animation: "dropIn 0.14s ease both",
@@ -293,9 +375,9 @@ export function Menu({ trigger, items, align = "right", width = 196 }: {
             <button key={i} onClick={() => { setOpen(false); it.onClick?.(); }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
-                padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                padding: "11px 10px", minHeight: 44, borderRadius: 8, border: "none", cursor: "pointer",
                 background: "transparent", color: it.danger ? C.error : C.textSec,
-                fontSize: 13.5, fontWeight: 600, fontFamily: "inherit",
+                fontSize: 13.5, fontWeight: 600, overflowWrap: "anywhere", fontFamily: "inherit",
                 transition: "background 0.14s, color 0.14s",
               }}
               onMouseEnter={e => {
@@ -310,7 +392,7 @@ export function Menu({ trigger, items, align = "right", width = 196 }: {
               {it.label}
             </button>
           ))}
-        </div>
+        </div>, document.body
       )}
     </div>
   );
@@ -324,23 +406,27 @@ export function StudioSelect({ value, onChange, options }: {
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { panelRef, position } = useStudioDropdown(open, ref);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node) && !panelRef.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", handler);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", handler); document.removeEventListener("keydown", key); };
+  }, [open, panelRef]);
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
         style={{
-          width: "100%", background: C.w4,
+          width: "100%", minWidth: 0, minHeight: 44, background: C.w4,
           border: `1px solid ${open ? C.accent : "#1E2D42"}`,
           borderRadius: 10, padding: "10px 14px",
           color: "#fff", fontSize: 14, fontWeight: 500,
@@ -349,7 +435,7 @@ export function StudioSelect({ value, onChange, options }: {
           outline: "none", transition: "border-color 0.18s",
         }}
       >
-        <span>{value}</span>
+        <span style={{ minWidth: 0, overflowWrap: "anywhere", textAlign: "left" }}>{value}</span>
         <ChevronDown
           size={14}
           color={C.textMuted}
@@ -357,11 +443,11 @@ export function StudioSelect({ value, onChange, options }: {
         />
       </button>
 
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+      {open && createPortal(
+        <div ref={panelRef} style={{
+          ...position,
           background: "#0F1923", border: `1px solid ${C.border2}`,
-          borderRadius: 10, overflow: "hidden", zIndex: 200,
+          borderRadius: 10,
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           animation: "dropIn 0.13s ease both",
         }}>
@@ -371,7 +457,7 @@ export function StudioSelect({ value, onChange, options }: {
               type="button"
               onClick={() => { onChange(opt); setOpen(false); }}
               style={{
-                width: "100%", padding: "10px 14px", textAlign: "left",
+                width: "100%", minHeight: 44, padding: "10px 14px", textAlign: "left", overflowWrap: "anywhere",
                 background: opt === value ? C.accent15 : "transparent",
                 border: "none",
                 color: opt === value ? C.accentH : C.textSec,
@@ -395,7 +481,7 @@ export function StudioSelect({ value, onChange, options }: {
               {opt}
             </button>
           ))}
-        </div>
+        </div>, document.body
       )}
     </div>
   );
