@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 /**
  * Navbar: matriz responsive + teclado.
@@ -16,6 +16,17 @@ async function openHome(page: Page) {
   ]);
   await page.goto("/inicio", { waitUntil: "load" });
   await expect(page.locator("header")).toBeVisible();
+}
+
+/**
+ * Reintenta el clic hasta que la UI responde: en desarrollo el primer clic puede
+ * llegar antes de la hidratación de React y perderse.
+ */
+async function clickUntil(trigger: Locator, expected: Locator) {
+  await expect(async () => {
+    await trigger.click();
+    await expect(expected).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
 }
 
 for (const width of WIDTHS) {
@@ -58,8 +69,7 @@ for (const width of WIDTHS) {
     test("menú de cuenta: role=menu, Escape lo cierra y devuelve el foco", async ({ page }) => {
       await openHome(page);
       const account = page.getByRole("button", { name: "Cuenta" });
-      await account.click();
-      await expect(page.getByRole("menu")).toBeVisible();
+      await clickUntil(account, page.getByRole("menu"));
       await page.keyboard.press("Escape");
       await expect(page.getByRole("menu")).toBeHidden();
       await expect(account).toBeFocused();
@@ -84,9 +94,8 @@ for (const width of WIDTHS) {
         expect(box?.width ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
         expect(box?.height ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
 
-        await trigger.click();
         const dialog = page.getByRole("dialog", { name: "Menú principal" });
-        await expect(dialog).toBeVisible();
+        await clickUntil(trigger, dialog);
         for (const name of ["Home", "Películas", "Cortos", "Mi Espacio"]) {
           await expect(dialog.getByRole("link", { name })).toBeVisible();
         }
