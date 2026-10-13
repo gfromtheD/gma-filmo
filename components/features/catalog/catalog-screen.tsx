@@ -147,7 +147,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
 
   return (
     <motion.div
-      className="mx-auto max-w-360 px-6 pb-20 pt-8"
+      className="px-4 pb-20 pt-6 lg:px-16 lg:pt-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
@@ -156,10 +156,10 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       {/* Collections row */}
       {colecciones && colecciones.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-[13px] font-semibold uppercase tracking-[0.12em] text-[#5A6A7E]">
+          <h2 className="mb-4 text-[24px] font-bold text-white">
             Colecciones
           </h2>
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {colecciones.map((col) => (
               <ColeccionCard
                 key={col.slug}
@@ -200,12 +200,12 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
           <button
             type="button"
             onClick={clearFilters}
-            className="text-[12.5px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+            className="text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
           >
             Limpiar
           </button>
         )}
-        <span className="text-[12.5px] text-[#5A6A7E]">
+        <span className="text-[12.5px] text-[#6D7D94]">
           <span className="font-semibold text-white">{filtered.length}</span>{" "}
           {filtered.length === 1 ? "resultado" : "resultados"}
         </span>
@@ -273,8 +273,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       {/* Grid — cortos */}
       {filtered.length > 0 && (
         <div
-          className="grid gap-4"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
         >
           {filtered.map((item) => (
             <PosterCard
@@ -305,7 +304,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               Películas
             </h2>
             <div className="flex-1" />
-            <span className="text-[12.5px] text-[#5A6A7E]">
+            <span className="text-[12.5px] text-[#6D7D94]">
               <span className="font-semibold text-white">{filteredPeliculas.length}</span>{" "}
               {filteredPeliculas.length === 1 ? "película" : "películas"}
             </span>
@@ -429,11 +428,11 @@ function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#5A6A7E]">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#6D7D94]">
         <GmaIcon name="film" size={28} />
       </div>
       <p className="mb-2 text-[16px] font-bold text-white">Sin resultados</p>
-      <p className="mb-6 text-[13px] text-[#5A6A7E]">
+      <p className="mb-6 text-[13px] text-[#6D7D94]">
         Prueba con otros filtros o explora todo el catálogo.
       </p>
       <button
