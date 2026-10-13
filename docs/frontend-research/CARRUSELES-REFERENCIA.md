@@ -32,3 +32,10 @@ va con 96 px de margen lateral (ancho útil 1248).
   `linear-gradient(90deg, acento 0%, acento/.72 32%, acento/.18 68%, transparente 100%)` más
   `linear-gradient(transparente 42%, rgba(0,0,0,.45) 100%)`. El acento es un color por tarjeta.
 - Etiqueta 17 px/700 blanca abajo a la izquierda (14 px de margen).
+
+## Tamaños a distintos anchos (segunda medición)
+- Las tarjetas apaisadas miden **320 px de celda (316×178 de arte) a cualquier ancho** desde 768 px; hueco de 6 px.
+  Caben 2 a 768 y 1024, 3 a 1280 y 1366, 4 a 1536, 5 a 1920 y 7 a 2560. No se reparten por columnas.
+- Márgenes laterales: 48 px a 768, 80 px a 1024 y 96 px desde 1280. El texto del título arranca 13 px después.
+- Móvil (390): tarjetas de 160 px, margen 24 px.
+- Antes en GMA se repartían por fracciones (1/3, 1/4, 1/5): a 1536 px bajaban a ~269 px; ahora son fijas.
