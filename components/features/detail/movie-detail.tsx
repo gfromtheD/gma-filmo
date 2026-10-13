@@ -35,7 +35,8 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
   const isGuest = useIsGuest();
   const { addMedia, removeMedia, hasMedia } = useWatchlist();
   const inList = hasMedia(movie.numericId);
-  const { avgScore, voteCount } = useCommunityRatings(movie.numericId);
+  const [scoreRefresh, setScoreRefresh] = useState(0);
+  const { avgScore, voteCount } = useCommunityRatings(movie.numericId, scoreRefresh);
   const [activeTab, setActiveTab] = useState<DetailTabId>(autoOpenRating ? "valoraciones" : "detalles");
   const [rateIntent, setRateIntent] = useState(Boolean(autoOpenRating));
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -129,6 +130,7 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
             title={movie.title}
             numericId={movie.numericId}
             autoOpen={rateIntent}
+            onChange={() => setScoreRefresh((k) => k + 1)}
           />
         )}
 
