@@ -4,7 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState, useEffect } from "react";
-import { X, Check, AlertTriangle } from "lucide-react";
+import { Xmark as X, Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
 import { C, row, StatusBadge, Poster, useStudioDialog } from "./studio-ui";
 import type { StudioData, StudioTitle } from "./studio-types";
 

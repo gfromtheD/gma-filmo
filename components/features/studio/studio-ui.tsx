@@ -2,9 +2,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect, type ReactNode, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import {
-  CheckCircle2, Clock, Pencil, AlertTriangle, Star, Play, ChevronDown,
-} from "lucide-react";
+import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Star, Play, NavArrowDown as ChevronDown } from "@/components/ui/icons";
 import type { PosterData, TitleStatus } from "./studio-types";
 
 // ── number helpers ────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Upload, ShieldCheck, Clapperboard, ArrowLeft } from "lucide-react";
+import { Upload, ShieldCheck, MediaVideo as Clapperboard, ArrowLeft } from "@/components/ui/icons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { ThreeDMarquee } from "@/components/ui/three-d-marquee";
 import AnimatedGradientBackground from "@/components/ui/animated-gradient-background";

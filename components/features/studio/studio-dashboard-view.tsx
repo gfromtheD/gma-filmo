@@ -2,7 +2,7 @@
 
 import styles from "./studio-responsive.module.css";
 
-import { Eye, Star, Plus, ArrowUpRight, BarChart2, Calendar, CirclePlay } from "lucide-react";
+import { Eye, Star, Plus, ArrowUpRight, StatsReport as BarChart2, Calendar, Play as CirclePlay } from "@/components/ui/icons";
 import { fmt, C, card, row, Poster } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 

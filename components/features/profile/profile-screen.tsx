@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { EditPencil as Pencil } from "@/components/ui/icons";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useRatings } from "@/hooks/use-ratings";

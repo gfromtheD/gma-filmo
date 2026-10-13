@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { LayoutDashboard, Folders, CloudUpload, BarChart2, User } from "lucide-react";
+import { Dashboard as LayoutDashboard, Folder as Folders, CloudUpload, StatsReport as BarChart2, User } from "@/components/ui/icons";
 import { C, row } from "./studio-ui";
 import type { StudioTabId } from "./studio-types";
 

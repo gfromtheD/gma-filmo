@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2 } from "lucide-react";
+import { ShareAndroid as Share2 } from "@/components/ui/icons";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getDirectorName } from "@/lib/credits";

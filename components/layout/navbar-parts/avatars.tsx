@@ -1,4 +1,4 @@
-import { UserRound } from "lucide-react";
+import { User as UserRound } from "@/components/ui/icons";
 import { renderAvatar } from "@/lib/data/profile-avatars";
 
 interface UserAvatarProps {

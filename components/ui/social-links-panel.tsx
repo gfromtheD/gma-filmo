@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Globe } from "lucide-react";
+import { Globe } from "@/components/ui/icons";
 import { siInstagram, siTiktok, siYoutube, siX, siFacebook, siThreads, siVimeo } from "simple-icons";
 
 export interface SocialPlatform {

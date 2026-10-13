@@ -1,6 +1,6 @@
 "use client";
 import { QRCodeSVG } from "qrcode.react";
-import { X } from "lucide-react";
+import { Xmark as X } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import type { CreatorProfile } from "@/types/creator";
 import { externalUrl } from "@/lib/social-links";

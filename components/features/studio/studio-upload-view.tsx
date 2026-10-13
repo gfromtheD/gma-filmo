@@ -4,7 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Upload, Check, ChevronRight, Plus, Trash2, Play, Info, CheckCircle2, Loader2, HelpCircle } from "lucide-react";
+import { Upload, Check, NavArrowRight as ChevronRight, Plus, Trash as Trash2, Play, InfoCircle as Info, CheckCircle as CheckCircle2, RefreshDouble as Loader2, HelpCircle } from "@/components/ui/icons";
 import { C, card, row, col, Poster, StudioSelect, useStudioDropdown } from "./studio-ui";
 import { UploadOrbital } from "./studio-upload-orbital";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
