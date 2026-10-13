@@ -337,9 +337,11 @@ export function Navbar() {
           {isGuest && (
             <Link
               href="/?register=1"
-              className="mr-1 inline-flex h-8 w-[120px] max-sm:order-last items-center justify-center rounded-[4px] bg-[#22B16B] text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:mr-2 lg:w-auto lg:px-3"
+              aria-label="Registrarse"
+              className="mr-1 inline-flex h-8 shrink-0 max-sm:order-last items-center justify-center rounded-[4px] bg-[#22B16B] px-3 text-[13px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:text-[14px] lg:mr-2"
             >
-              Registrarse
+              <span className="sm:hidden">Registro</span>
+              <span className="hidden sm:inline">Registrarse</span>
             </Link>
           )}
           <Link
