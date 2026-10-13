@@ -180,3 +180,30 @@ test.describe("menú lateral del visitante en móvil", () => {
     await expect(dialog.getByRole("link", { name: "Iniciar sesión" })).toHaveAttribute("href", "/?login=1");
   });
 });
+
+test.describe("cabecera del visitante en móvil: los controles respiran", () => {
+  for (const width of [320, 360, 390, 430]) {
+    test(`a ${width}px, logo, lupa y registro no se tocan (≥ 8 px entre ellos)`, async ({ browser }) => {
+      const context = await browser.newContext({ viewport: { width, height: 800 }, hasTouch: true });
+      const page = await context.newPage();
+      await openHome(page);
+      const header = page.locator("header");
+      const boxes = await Promise.all(
+        [
+          header.getByRole("button", { name: "Abrir menú principal" }),
+          header.getByRole("link", { name: "GMA" }),
+          header.getByRole("link", { name: "Buscador" }),
+          header.getByRole("link", { name: "Registrarse" }),
+        ].map((locator) => locator.boundingBox()),
+      );
+      const [menu, logo, search, register] = boxes;
+      for (const b of boxes) expect(b).not.toBeNull();
+      const gap = (a: NonNullable<typeof menu>, b: NonNullable<typeof menu>) => b.x - (a.x + a.width);
+      expect(gap(menu!, logo!)).toBeGreaterThanOrEqual(0);
+      expect(gap(logo!, search!)).toBeGreaterThanOrEqual(8);
+      expect(gap(search!, register!)).toBeGreaterThanOrEqual(4);
+      expect(register!.x + register!.width).toBeLessThanOrEqual(width);
+      await context.close();
+    });
+  }
+});
