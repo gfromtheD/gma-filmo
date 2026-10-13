@@ -130,7 +130,7 @@ documenta aquí con aviso de riesgo.
 - **Decisiones del usuario aplicadas:** cambio escritorio/móvil en 1024 px; menú lateral en móvil; mantener degradado + blur
   y solidificar tras 8 px de scroll; Studio en móvil como fila horizontal desplazable.
 - **Archivos modificados:** `components/layout/navbar.tsx` (el export `Navbar` y sus stores no cambian),
-  `app/globals.css` (variable `--gma-header_h` → `--gma-header-h`), `components/features/catalog/coming-soon-screen.tsx`
+  `app/globals.css` (nueva variable `--gma-header-h`: 64 px en móvil, 80 px desde 1024 px), `components/features/catalog/coming-soon-screen.tsx`
   (usa la variable), `package.json` (solo el script `test:e2e`), `.gitignore`.
 - **Archivos nuevos:** `components/layout/navbar-parts/{avatars,brand,mobile-menu,account-menu-content,studio-tabs-row}.tsx`,
   `hooks/use-scroll-threshold.ts`, `playwright.config.ts`, `e2e/{global-setup,navbar-responsive.spec}.ts`.
