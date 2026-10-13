@@ -10,15 +10,12 @@ async function openHome(page: Page) {
 test.describe("portada", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("hero bajo la cabecera, con pausa accesible", async ({ page }) => {
+  test("hero bajo la cabecera y sin botón de play/pausa", async ({ page }) => {
     await openHome(page);
     const hero = page.getByRole("region", { name: "Destacados" }).or(page.locator("section[aria-roledescription=carousel]"));
     const box = await hero.first().boundingBox();
     expect(box?.y ?? 99).toBeLessThanOrEqual(1); // empieza en el borde superior (bajo la cabecera)
-    const pause = page.getByRole("button", { name: "Pausar presentación" });
-    await expect(pause).toBeVisible();
-    await pause.click();
-    await expect(page.getByRole("button", { name: "Reanudar presentación" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Pausar presentación|Reanudar presentación/ })).toHaveCount(0);
   });
 
   test("las filas muestran 4 columnas a 1440 px y las flechas reflejan los extremos", async ({ page }) => {

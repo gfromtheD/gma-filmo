@@ -41,7 +41,6 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const hoveredRef    = useRef(false);
   const safetyRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
   const reduceMotion  = useReducedMotion();
 
   function setHovered(val: boolean) {
@@ -65,13 +64,13 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   // Auto-advance: interval ticks every SLIDE_INTERVAL but skips while hovered.
   // featuredIdx in deps resets the timer after every slide change (manual or auto).
   useEffect(() => {
-    if (featuredItems.length <= 1 || isPaused || reduceMotion) return;
+    if (featuredItems.length <= 1 || reduceMotion) return;
     const id = setInterval(() => {
       if (hoveredRef.current) return;
       setFeaturedIdx((i) => (i + 1) % featuredItems.length);
     }, SLIDE_INTERVAL);
     return () => clearInterval(id);
-  }, [featuredItems.length, featuredIdx, isPaused, reduceMotion]);
+  }, [featuredItems.length, featuredIdx, reduceMotion]);
 
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
 
@@ -125,11 +124,9 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           item={featured}
           detailHref={hrefFor(featured)}
           canNavigate={featuredItems.length > 1}
-          isPaused={isPaused}
           onPlay={() => router.push(`/ver/${featured.id}`)}
           onPrev={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
           onNext={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
-          onTogglePause={() => setIsPaused((p) => !p)}
         />
       </div>
 

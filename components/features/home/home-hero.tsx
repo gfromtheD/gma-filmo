@@ -10,11 +10,9 @@ interface HomeHeroProps {
   readonly item: MovieMedia;
   readonly detailHref: string;
   readonly canNavigate: boolean;
-  readonly isPaused: boolean;
   readonly onPlay: () => void;
   readonly onPrev: () => void;
   readonly onNext: () => void;
-  readonly onTogglePause: () => void;
 }
 
 const ROUND_BUTTON =
@@ -28,11 +26,9 @@ export function HomeHero({
   item,
   detailHref,
   canNavigate,
-  isPaused,
   onPlay,
   onPrev,
   onNext,
-  onTogglePause,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
 
@@ -99,15 +95,6 @@ export function HomeHero({
             className={`${ROUND_BUTTON} absolute right-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:right-6`}
           >
             <GmaIcon name="chevronRight" size={22} />
-          </button>
-          <button
-            type="button"
-            aria-label={isPaused ? "Reanudar presentación" : "Pausar presentación"}
-            aria-pressed={isPaused}
-            onClick={onTogglePause}
-            className={`${ROUND_BUTTON} absolute bottom-14 right-4 z-[3] hidden lg:bottom-16 lg:right-16 lg:flex`}
-          >
-            <GmaIcon name={isPaused ? "play" : "pause"} size={18} />
           </button>
         </>
       )}
