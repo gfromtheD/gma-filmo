@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getDirectorName } from "@/lib/credits";
+import { useHeroTrailer } from "@/hooks/use-hero-trailer";
 import type { MovieMedia } from "@/types/catalog";
 
 interface HomeHeroProps {
@@ -13,6 +15,10 @@ interface HomeHeroProps {
   readonly onPlay: () => void;
   readonly onPrev: () => void;
   readonly onNext: () => void;
+  /** Avisa de que un tráiler ocupa el hero (para no pasar de diapositiva mientras suena). */
+  readonly onTrailerActiveChange?: (isActive: boolean) => void;
+  /** El tráiler terminó: el carrusel puede avanzar. */
+  readonly onTrailerEnded?: () => void;
 }
 
 const ROUND_BUTTON =
@@ -29,8 +35,17 @@ export function HomeHero({
   onPlay,
   onPrev,
   onNext,
+  onTrailerActiveChange,
+  onTrailerEnded,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
+  const trailer = useHeroTrailer(item.trailerUrl);
+
+  useEffect(() => {
+    onTrailerActiveChange?.(trailer.isActive);
+    return () => onTrailerActiveChange?.(false);
+  }, [trailer.isActive, onTrailerActiveChange]);
+
 
   return (
     <section
@@ -41,6 +56,31 @@ export function HomeHero({
       <div className="absolute inset-0" style={{ animation: "fadeIn 1.1s ease both" }}>
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
       </div>
+
+      {/* Tráiler opcional: se funde sobre la portada cuando empieza a reproducirse */}
+      {trailer.hasTrailer && trailer.isMounted && (
+        <video
+          ref={trailer.videoRef}
+          src={item.trailerUrl}
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          tabIndex={-1}
+          onPlaying={trailer.handlers.onPlaying}
+          onPause={trailer.handlers.onPause}
+          onEnded={() => {
+            // Una sola vez por reproducción (evento del vídeo), nunca desde un efecto.
+            trailer.handlers.onEnded();
+            onTrailerEnded?.();
+          }}
+          onError={trailer.handlers.onError}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${
+            trailer.isVisible ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
 
       {/* Legibilidad: cabecera arriba, texto a la izquierda y fundido inferior al fondo de la página */}
       <div
@@ -77,6 +117,18 @@ export function HomeHero({
           Ver ahora
         </button>
       </div>
+
+      {trailer.showControl && (
+        <button
+          type="button"
+          onClick={trailer.toggle}
+          aria-label={trailer.isPlaying ? "Pausar tráiler" : "Reproducir tráiler"}
+          aria-pressed={trailer.isPlaying}
+          className={`${ROUND_BUTTON} absolute bottom-6 right-4 z-[3] lg:bottom-16 lg:right-16`}
+        >
+          <GmaIcon name={trailer.isPlaying ? "pause" : "play"} size={18} />
+        </button>
+      )}
 
       {canNavigate && (
         <>

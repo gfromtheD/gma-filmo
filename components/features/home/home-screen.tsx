@@ -42,6 +42,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const hoveredRef    = useRef(false);
   const safetyRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion  = useReducedMotion();
+  const [isTrailerActive, setIsTrailerActive] = useState(false);
 
   function setHovered(val: boolean) {
     hoveredRef.current = val;
@@ -64,13 +65,13 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   // Auto-advance: interval ticks every SLIDE_INTERVAL but skips while hovered.
   // featuredIdx in deps resets the timer after every slide change (manual or auto).
   useEffect(() => {
-    if (featuredItems.length <= 1 || reduceMotion) return;
+    if (featuredItems.length <= 1 || reduceMotion || isTrailerActive) return;
     const id = setInterval(() => {
       if (hoveredRef.current) return;
       setFeaturedIdx((i) => (i + 1) % featuredItems.length);
     }, SLIDE_INTERVAL);
     return () => clearInterval(id);
-  }, [featuredItems.length, featuredIdx, reduceMotion]);
+  }, [featuredItems.length, featuredIdx, reduceMotion, isTrailerActive]);
 
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
 
@@ -127,6 +128,8 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           onPlay={() => router.push(`/ver/${featured.id}`)}
           onPrev={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
           onNext={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
+          onTrailerActiveChange={setIsTrailerActive}
+          onTrailerEnded={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
         />
       </div>
 
