@@ -47,7 +47,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-[#080816]/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080816]/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-5" style={{ height: TAB_BAR_HEIGHT_PX }}>
         {tabs.map(({ id, label, href, match, Icon }) => {
