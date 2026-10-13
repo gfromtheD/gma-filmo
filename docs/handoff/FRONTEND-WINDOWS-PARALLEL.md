@@ -79,3 +79,23 @@ documenta aquí con aviso de riesgo.
 3. Si hay conflictos en archivos sensibles, prevalece la lógica del Mac y se
    reaplica la capa visual de este documento.
 4. No hay migraciones SQL ni cambios de modelo en esta rama.
+
+### 2026-10-13 — Herramienta de investigación: REA (MCP para Claude Code)
+
+- **Alcance:** solo herramienta de investigación del entorno; no toca el código de GMA
+  ni `package.json`/lockfile del proyecto.
+- **Versión:** `rea-agents` 6.4.0, instalado globalmente (`npm install --global rea-agents@6.4.0`)
+  para que el MCP apunte a una ruta estable y no a la caché temporal de npx.
+- **Requisitos:** Node 24.19.0 (válido: 24.x >= 24.11), npm 12.1.0.
+- **Cambios de configuración (solo Claude Code):**
+  - `~/.claude.json`: registro MCP `rea` (copia de seguridad `~/.claude.json.rea.backup`).
+  - `~/.claude/skills/reverse-engineer-anything/` (skill v37, 170 herramientas).
+  - No se configuraron otros clientes, ni Hopper/Ghidra/IDA, ni GitHub, Docker, Vercel o Supabase.
+- **Verificación hecha:** `claude mcp list` muestra `rea ✔ Connected`; `rea setup --client claude_code
+  --skill-client claude_code --dry-run` => registro y skill `aligned`, sin acciones pendientes.
+- **Pendiente:** comprobar desde una sesión NUEVA de Claude Code que las herramientas
+  `mcp__rea__*` están disponibles y ejecutar una inspección de prueba en una página pública.
+  Hasta entonces REA NO se considera plenamente operativo.
+- **Actualizar:** `rea update` (o `npm install --global rea-agents@latest`), después
+  `rea setup --client claude_code --skill-client claude_code` y reiniciar Claude Code.
+- **Retirar:** `rea uninstall` o restaurar `~/.claude.json.rea.backup`.
