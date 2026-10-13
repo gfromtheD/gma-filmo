@@ -12,7 +12,7 @@ const MIN_TOUCH_TARGET = 44;
 
 async function openHome(page: Page) {
   await page.context().addCookies([
-    { name: "gma_guest", value: "1", url: "http://localhost:3000" },
+    { name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
   ]);
   await page.goto("/inicio", { waitUntil: "load" });
   await expect(page.locator("header")).toBeVisible();

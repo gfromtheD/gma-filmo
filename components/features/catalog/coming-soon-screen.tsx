@@ -25,12 +25,12 @@ export function ComingSoonScreen({
         }}
       />
 
-      <div className="relative z-10 flex flex-col items-center gap-6 px-8 py-16 text-center">
-        <span className="text-[26px] font-semibold uppercase tracking-[0.12em] text-[#22B16B]">
+      <div className="relative z-10 flex min-w-0 flex-col items-center gap-4 px-4 py-12 text-center sm:gap-6 sm:px-8 sm:py-16">
+        <span className="text-lg font-semibold uppercase tracking-[0.12em] text-[#22B16B] sm:text-[26px]">
           Próximamente
         </span>
-        <h1 className="text-[64px] font-extrabold leading-tight text-white">{title}</h1>
-        <p className="max-w-[640px] text-[30px] leading-relaxed text-[#B8C5D4]">
+        <h1 className="max-w-full break-words text-[clamp(2rem,7vw,4rem)] font-extrabold leading-tight text-white">{title}</h1>
+        <p className="max-w-[640px] break-words text-lg leading-relaxed text-[#B8C5D4] sm:text-2xl lg:text-[30px]">
           {description}
         </p>
       </div>

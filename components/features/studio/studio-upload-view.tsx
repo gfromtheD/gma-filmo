@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import styles from "./studio-responsive.module.css";
+
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Upload, Check, ChevronRight, Plus, Trash2, Play, Info, CheckCircle2, Loader2, HelpCircle } from "lucide-react";
-import { C, card, row, col, Poster, StudioSelect } from "./studio-ui";
+import { C, card, row, col, Poster, StudioSelect, useStudioDropdown } from "./studio-ui";
 import { UploadOrbital } from "./studio-upload-orbital";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { StudioData, PosterData, StudioTabId } from "./studio-types";
@@ -20,8 +23,10 @@ const DRAFT_KEY = "gma_studio_upload_draft";
 
 function InfoTooltip({ text }: { text: string }) {
   const [show, setShow] = useState(false);
+  const anchor = useRef<HTMLSpanElement>(null);
+  const { panelRef, position } = useStudioDropdown(show, anchor, 230);
   return (
-    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+    <span ref={anchor} style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
       <button
         type="button"
         onMouseEnter={() => setShow(true)}
@@ -31,22 +36,17 @@ function InfoTooltip({ text }: { text: string }) {
       >
         <HelpCircle size={12} />
       </button>
-      {show && (
-        <div style={{
-          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-          width: 230, padding: "10px 13px", borderRadius: 10, zIndex: 200, pointerEvents: "none",
+      {show && createPortal(
+        <div ref={panelRef} role="tooltip" style={{
+          ...position,
+          padding: "10px 13px", borderRadius: 10, pointerEvents: "none",
           background: "#0F1923", border: `1px solid ${C.border2}`,
           boxShadow: "0 10px 32px rgba(0,0,0,0.7)",
           fontSize: 12, color: C.textSec, lineHeight: 1.55,
         }}>
           {text}
-          <span style={{
-            position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
-            display: "block", width: 0, height: 0,
-            borderLeft: "5px solid transparent", borderRight: "5px solid transparent",
-            borderTop: `5px solid ${C.border2}`,
-          }} />
-        </div>
+
+        </div>, document.body
       )}
     </span>
   );
@@ -198,7 +198,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
   }
 
   return (
-    <div style={{ maxWidth: 880, margin: "0 auto" }}>
+    <div className={styles.studio} style={{ maxWidth: 880, margin: "0 auto" }}>
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint, marginBottom: 10 }}>Mi Estudio</div>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em" }}>Subir contenido</h1>
@@ -207,7 +207,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
 
       {/* Draft banner */}
       {hasDraft && (
-        <div style={{
+        <div className={styles.draft} style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "10px 16px", borderRadius: 10, marginBottom: 18,
           background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
@@ -231,10 +231,10 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
       )}
 
       {/* Stepper */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 26, alignItems: "center" }}>
+      <div className={styles.stepper} style={{ display: "flex", gap: 0, marginBottom: 26, alignItems: "center" }}>
         {STEPS.map((s, i) => (
-          <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? "0 0 auto" : "0 0 auto" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div key={s} className={styles.step} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? "0 0 auto" : "0 0 auto" }}>
+            <div className={styles.stepLabel} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: 999, flexShrink: 0,
                 fontSize: 13, fontWeight: 800, transition: "all 0.2s ease",
                 background: i < step ? C.accent : i === step ? C.accent15 : C.w4,
@@ -245,7 +245,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
               <span style={{ fontSize: 13.5, fontWeight: 700, color: i <= step ? "#fff" : C.textMuted }}>{s}</span>
             </div>
             {i < STEPS.length - 1 && (
-              <div style={{ flex: 1, height: 1, margin: "0 16px", minWidth: 40,
+              <div className={styles.stepSeparator} style={{ flex: 1, height: 1, margin: "0 16px", minWidth: 40,
                 background: i < step ? C.accent30 : C.border1 }} />
             )}
           </div>
@@ -270,7 +270,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
             <textarea className="st-textarea" value={form.description} onChange={e => set("description", e.target.value)}
               placeholder="Cuenta de qué va tu película en un par de frases…" />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div className={styles.fields3} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
             <Field label="Duración" required>
               <input className="st-input" value={form.duration} onChange={e => set("duration", e.target.value)} placeholder="14 min" />
             </Field>
@@ -294,7 +294,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
               })}
             </div>
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
+          <div className={styles.fields2} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
             <Field
               label="Póster / thumbnail"
               hint="elige un diseño"
@@ -333,7 +333,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
       {/* Step 2: preview */}
       {step === 2 && (
         <div>
-          <div style={card({ padding: 24, display: "grid", gridTemplateColumns: "190px 1fr", gap: 26 })}>
+          <div className={styles.uploadPreview} style={card({ padding: 24, display: "grid", gridTemplateColumns: "190px 1fr", gap: 26 })}>
             <div>
               {(() => {
                 const hasBoth = !!(assetUrls["poster_h"] && assetUrls["poster_v"]);
@@ -417,7 +417,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
                   ["Archivo", mainFile?.name ?? "—"],
                   ["Tamaño", mainFile?.size ?? "—"],
                 ] as [string, string][]).map(([l, v]) => (
-                  <div key={l} style={{ ...row(), justifyContent: "space-between" }}>
+                  <div key={l} className={styles.metadataRow} style={{ ...row(), justifyContent: "space-between" }}>
                     <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{l}</span>
                     <span style={{ fontSize: 13, color: "#fff" }}>{v}</span>
                   </div>
@@ -436,7 +436,7 @@ export function UploadView({ data, onToast, onNav, onPublished }: Props) {
       )}
 
       {/* Footer nav */}
-      <div style={{ ...row(), justifyContent: "space-between", marginTop: 28 }}>
+      <div className={styles.actions} style={{ ...row(), justifyContent: "space-between", marginTop: 28 }}>
         <button className="st-btn st-btn-ghost" onClick={() => step === 0 ? onNav("titulos") : setStep(step - 1)} disabled={publishing}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
           {step === 0 ? "Cancelar" : "Atrás"}

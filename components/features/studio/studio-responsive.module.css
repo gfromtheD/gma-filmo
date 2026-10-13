@@ -1,0 +1,100 @@
+/* Layout only: upload transport and creator data remain in their existing components. */
+.studio { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.studio *, .modal * { box-sizing: border-box; }
+.studio :global(.st-input), .studio :global(.st-textarea), .studio :global(.st-select),
+.modal :global(.st-input), .modal :global(.st-textarea), .modal :global(.st-select) { min-width: 0; max-width: 100%; }
+.studio :global(.st-btn), .modal :global(.st-btn) { max-width: 100%; white-space: normal; }
+.studio :global(.st-btn) > svg, .modal :global(.st-btn) > svg { flex-shrink: 0; }
+.content { min-width: 0; }
+.actions { flex-wrap: wrap; }
+.fields2 > *, .fields3 > *, .profileEdit > *, .dashboard > *, .uploadPreview > *, .modalBody > * { min-width: 0; }
+.dashboardStats { flex-wrap: wrap; }
+.dashboardHeader > *, .dashboardTableRow > *, .dashboardStack > * { min-width: 0; }
+.metadataRow { align-items: flex-start !important; gap: 12px !important; }
+.metadataRow > :first-child { flex-shrink: 0; min-width: 80px; }
+.metadataRow > :last-child { min-width: 0; text-align: right; }
+.listTools { min-width: 0; }
+.listSearch { min-width: 0; }
+.listRow > * { min-width: 0; }
+.titleGrid { grid-template-columns: repeat(auto-fill, minmax(min(218px, 100%), 1fr)) !important; }
+.orbital, .orbitalLeft, .orbitalRight { min-width: 0; }
+.orbitalFile { grid-template-columns: 14px 26px minmax(0, 1fr) auto 22px !important; }
+.modal { width: 100% !important; max-width: 620px; max-height: calc(var(--visible-viewport-height, 100dvh) - 40px) !important; overflow-wrap: anywhere; }
+.modalHeader, .modalFooter { flex-wrap: wrap; }
+.modalHeader > div { min-width: 0; flex-wrap: wrap; }
+.drawer { max-width: 100%; max-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); overflow-wrap: anywhere; }
+.toast { width: max-content; max-width: calc(100vw - max(16px, env(safe-area-inset-left)) - max(16px, env(safe-area-inset-right))); bottom: calc(28px + env(safe-area-inset-bottom)); }
+.toast > div { width: 100%; box-sizing: border-box; }
+@media (max-width: 1199px) {
+  .dashboardHeader { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+  .dashboardStats { justify-content: flex-start; gap: 24px !important; }
+  .dashboardStats > div { text-align: left !important; }
+  .dashboardStats > div > div { justify-content: flex-start !important; }
+  .dashboard { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas: "progress stack" "featured catalog" "gauge checklist" "table table" !important; }
+}
+@media (max-width: 1023px) {
+  .profileEdit { grid-template-columns: minmax(0, 1fr) !important; }
+  .profilePreview { position: static !important; }
+  .orbital { flex-direction: column !important; }
+  .orbitalLeft, .orbitalRight { width: 100% !important; min-width: 0 !important; flex-basis: auto !important; }
+  .orbitalLeft { border-right: 0 !important; border-bottom: 1px solid #1a1a1a; }
+  .orbitalPreview { min-height: 280px !important; }
+  .orbitalRight { max-height: none; }
+  .listHeader { display: none !important; }
+  .listRow { grid-template-columns: 52px minmax(0, 1fr) 40px !important; gap: 12px !important; }
+  .listRow > :first-child { grid-column: 1; grid-row: 1 / span 2; }
+  .listRow > :nth-child(2) { grid-column: 2; }
+  .listRow > :nth-child(3) { grid-column: 2; grid-row: 2; }
+  .listRow > :nth-child(4) { grid-column: 2 / -1; grid-row: 3; }
+  .listRow > :nth-child(5) { grid-column: 2 / -1; grid-row: 4; justify-self: start; }
+  .listRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #5a6a7e; font-weight: 600; }
+  .listRow > :last-child { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 639px) {
+  .content { padding: 36px 16px calc(40px + env(safe-area-inset-bottom)) !important; }
+  .dashboardHeader h1 { font-size: 30px !important; line-height: 1.12 !important; }
+  .dashboard { grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "progress" "stack" "featured" "catalog" "gauge" "table" "checklist" !important; }
+  .dashboardStack { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; }
+  .dashboardStack > div { grid-row: auto !important; }
+  .dashboardTableRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #5a6a7e; font-weight: 600; }
+  .dashboardStats { gap: 18px !important; }
+  .dashboardStats > div { flex: 1; min-width: 70px; }
+  .dashboardStats > div > div > span { font-size: 30px !important; }
+  .dashboardTableHead { display: none !important; }
+  .dashboardTableRow { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; }
+  .dashboardTableRow > :first-child { grid-column: 1 / -1; }
+  .dashboardTableRow > :last-child { justify-self: end; }
+  .fields2, .fields3, .uploadPreview, .modalBody { grid-template-columns: minmax(0, 1fr) !important; }
+  .uploadPreview, .modalBody { padding: 18px !important; gap: 18px !important; }
+  .uploadPreview > :first-child { width: min(190px, 100%); justify-self: center; }
+  .modalBody > :first-child { width: 110px; justify-self: center; }
+  .modalOverlay { padding: 12px !important; }
+  .modal { max-height: calc(var(--visible-viewport-height, 100dvh) - 24px) !important; }
+  .modalHeader, .modalFooter { padding: 16px 18px !important; gap: 12px !important; }
+  .modalHeader > div { flex: 1; }
+  .stepper { justify-content: space-between; gap: 8px !important; align-items: flex-start !important; }
+  .step { flex: 1 1 0 !important; min-width: 0; justify-content: center; }
+  .stepLabel { flex-direction: column; text-align: center; gap: 7px !important; }
+  .stepLabel > :last-child { font-size: 12px !important; }
+  .stepSeparator { display: none; }
+  .draft { align-items: flex-start !important; flex-wrap: wrap; gap: 12px; }
+  .listTools { width: 100%; }
+  .listSearch { flex: 1; }
+  .listSearch input { width: 100% !important; }
+  .profileCardBody { padding: 0 18px 22px !important; }
+  .profileLogoHelp { min-width: 0 !important; flex-basis: 100%; }
+  .statsRow { flex-wrap: wrap; }
+  .statsRow > :last-child { margin-left: auto; }
+  .drawerActions { flex-direction: column; align-items: stretch !important; }
+  .orbitalFile { grid-template-columns: 14px 26px minmax(0, 1fr) 44px !important; }
+  .orbitalFile > :nth-child(4) { grid-column: 1 / -1; grid-row: 2; flex-direction: row !important; justify-content: flex-end; gap: 6px !important; }
+  .orbitalFile > :last-child { grid-column: 4; grid-row: 1; }
+  .orbitalFile > :nth-child(4) button, .orbitalFile > :last-child { min-width: 44px; min-height: 44px; }
+}
+@media (pointer: coarse) {
+  .studio button, .modal button { min-height: 44px; }
+  .studio :global(.st-btn-icon), .modal :global(.st-btn-icon) { min-width: 44px; }
+  .orbitalFile button { min-height: 44px; }
+}

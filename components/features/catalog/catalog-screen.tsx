@@ -185,17 +185,17 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       )}
 
       {/* Header row */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         {backHref && (
           <Link
             href={backHref}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#262626] bg-[#0D0D0D] text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#262626] bg-[#0D0D0D] text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
             aria-label="Volver"
           >
             <GmaIcon name="chevronLeft" size={16} />
           </Link>
         )}
-        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-white">
+        <h1 className="min-w-0 break-words text-2xl sm:text-[28px] font-extrabold tracking-[-0.02em] text-white">
           {heading}
         </h1>
         <div className="flex-1" />
@@ -213,7 +213,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
           <button
             type="button"
             onClick={clearFilters}
-            className="text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
+            className="min-h-11 text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
           >
             Limpiar
           </button>
@@ -309,8 +309,8 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       {/* Películas section */}
       {filteredPeliculas.length > 0 && (
         <section className="mt-16">
-          <div className="mb-6 flex items-center gap-3">
-            <h2 className="text-[28px] font-extrabold tracking-[-0.02em] text-white">
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <h2 className="min-w-0 break-words text-2xl sm:text-[28px] font-extrabold tracking-[-0.02em] text-white">
               Películas
             </h2>
             <div className="flex-1" />
@@ -321,7 +321,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
           </div>
           <div
             className="grid gap-4"
-            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))" }}
           >
             {filteredPeliculas.map((item) => (
               <PosterCard
@@ -345,12 +345,12 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
 
 function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/8 px-3 py-1 text-[12px] font-semibold text-[#22B16B]">
-      {label}
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#22B16B]/30 bg-[#22B16B]/8 pl-3 pr-1 text-[12px] font-semibold text-[#22B16B]">
+      <span className="min-w-0 break-words">{label}</span>
       <button
         type="button"
         onClick={onRemove}
-        className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-[#22B16B]/60 transition-colors hover:text-[#22B16B]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#22B16B]/60 transition-colors hover:text-[#22B16B]"
         aria-label={`Quitar filtro ${label}`}
       >
         <GmaIcon name="close" size={9} strokeWidth={2.5} />
@@ -374,7 +374,7 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       <button
         type="button"
         onClick={onReset}
-        className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-gma-accent-fg transition-colors hover:bg-[#2AC57A]"
+        className="min-h-11 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-gma-accent-fg transition-colors hover:bg-[#2AC57A]"
       >
         Ver todo
       </button>

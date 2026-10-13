@@ -1,15 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import type { CSSProperties } from "react";
+import styles from "./three-d-marquee.module.css";
 import { cn } from "@/lib/utils";
 
 interface ThreeDMarqueeProps {
   images?: string[];
   className?: string;
   columns?: number;
-  /** Columnas adicionales que extienden el grid hacia la derecha (cubren esquinas
-      que el cuadrado base deja sin poblar). Mantienen el mismo ancho de columna. */
   extraColumns?: number;
+  paused?: boolean;
+  largePostersOnDesktop?: boolean;
 }
 
 // Las 80 portadas del catalogo (generado desde GMA_CONTENT/catalog_r2.json)
@@ -96,95 +98,102 @@ export const GMA_POSTERS = [
   "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev/peliculas/ano-1-antes-de-covid/poster.jpg",
 ];
 
-const COL_DURATIONS = [38, 52, 43, 48, 41];
+const COLUMN_DURATIONS = [112, 138, 124, 146, 118, 132, 128, 142, 122, 136];
+const MIN_ITEMS_PER_GROUP = 16;
 
-// Each animation half must be taller than the container or black gaps show
-// when the loop wraps. Repeat the chunk until one half always covers it.
-const MIN_ITEMS_PER_HALF = 10;
-
-function MarqueeColumn({ images, direction, duration }: {
+function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop }: {
   images: string[];
-  direction: "up" | "down";
-  duration: number;
+  index: number;
+  paused: boolean;
+  className?: string;
+  largePostersOnDesktop: boolean;
 }) {
-  const repeats = Math.max(1, Math.ceil(MIN_ITEMS_PER_HALF / Math.max(images.length, 1)));
-  const half = Array.from({ length: repeats }, () => images).flat();
-  // The animation traverses one half per cycle, so perceived speed depends on
-  // how tall that half is. Normalize: `duration` = seconds per 4 posters.
-  const scaledDuration = (duration / 4) * half.length;
-
-  const animation = direction === "up"
-    ? `marqueeUp ${scaledDuration}s linear infinite`
-    : `marqueeDown ${scaledDuration}s linear infinite`;
+  const repeats = Math.ceil(MIN_ITEMS_PER_GROUP / images.length);
+  const group = Array.from({ length: repeats }, () => images).flat();
+  const duration = (COLUMN_DURATIONS[index % COLUMN_DURATIONS.length] ?? 112) * group.length / MIN_ITEMS_PER_GROUP;
 
   return (
-    <div
-      className="flex flex-col items-start gap-5"
-      style={{ animation, willChange: "transform" }}
-    >
-      {[...half, ...half].map((src, i) => (
-        <div key={i} className="relative shrink-0 w-full">
-          <Image
-            src={src}
-            alt=""
-            width={640}
-            height={360}
-            sizes="220px"
-            draggable={false}
-            // Solo las primeras portadas de cada columna están realmente a la
-            // vista al cargar la página — esas sí van con prioridad alta. El
-            // resto no se pide hasta que el scroll del bucle las acerca a la
-            // pantalla (loading="lazy" es el valor por defecto de next/image).
-            priority={i < 3}
-            loading={i < 3 ? undefined : "lazy"}
-            className="aspect-video w-full rounded-lg object-cover select-none"
-          />
-        </div>
-      ))}
+    <div className={cn(styles.column, className)}>
+      <div
+        className={styles.track}
+        style={{
+          animationDuration: `${duration}s`,
+          animationDelay: `${-index * 19}s`,
+          animationDirection: index % 2 === 0 ? "normal" : "reverse",
+          animationPlayState: paused ? "paused" : "running",
+        }}
+      >
+        {/* Both groups include their trailing gap. Half of the complete track is
+            therefore exactly one repeat, including the seam between groups. */}
+        {[0, 1].map((copy) => (
+          <div key={copy} className={styles.group}>
+            {group.map((src, imageIndex) => (
+              <div
+                key={`${imageIndex}-${src}`}
+                className={styles.poster}
+                style={{ "--poster-depth": `${[16, 0, 8, -6][imageIndex % 4]}px` } as CSSProperties}
+              >
+                <Image
+                  src={src}
+                  alt=""
+                  width={480}
+                  height={270}
+                  sizes={largePostersOnDesktop ? "(min-width: 768px) 28vw, 220px" : "(min-width: 1280px) 300px, (min-width: 768px) 260px, 220px"}
+                  quality={65}
+                  loading="lazy"
+                  draggable={false}
+                  className={styles.image}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-export function ThreeDMarquee({ images = GMA_POSTERS, className, columns = 3, extraColumns = 0 }: ThreeDMarqueeProps) {
-  const totalColumns = columns + extraColumns;
-  const chunkSize = Math.ceil(images.length / totalColumns);
-  const chunks = Array.from({ length: totalColumns }, (_, i) =>
-    images.slice(i * chunkSize, i * chunkSize + chunkSize)
-  );
+export function ThreeDMarquee({
+  images = GMA_POSTERS,
+  className,
+  columns = 4,
+  extraColumns = 0,
+  paused = false,
+  largePostersOnDesktop = false,
+}: ThreeDMarqueeProps) {
+  const posters = images.filter(Boolean);
+  if (!posters.length) return null;
+
+  const mobileColumns = Math.max(4, Math.min(8, Math.floor(columns))) + Math.max(0, Math.floor(extraColumns));
+  const tabletColumns = mobileColumns + 2;
+  const desktopColumns = mobileColumns + 4;
+  // Interleave the actual catalog rather than repeatedly showing one chunk.
+  const chunks = Array.from({ length: desktopColumns }, (_, index) => {
+    const selected = posters.filter((_, posterIndex) => posterIndex % desktopColumns === index);
+    return selected.length ? selected : [posters[index % posters.length]!];
+  });
 
   return (
-    <div className={cn("block h-140 w-full overflow-hidden rounded-md", className)}>
-      <style>{`
-        @keyframes marqueeUp {
-          from { transform: translateY(0); }
-          to { transform: translateY(-50%); }
-        }
-        @keyframes marqueeDown {
-          from { transform: translateY(-50%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
-      <div className="flex size-full items-center justify-center">
-        <div className="aspect-square size-360 shrink-0 scale-115">
-          <div
-            style={{
-              transform: "rotateX(45deg) rotateY(0deg) rotateZ(45deg)",
-              transformStyle: "preserve-3d",
-              gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))`,
-              width: `${(totalColumns / columns) * 100}%`,
-            }}
-            className="relative top-0 left-[35%] grid h-full origin-top-left gap-5"
-          >
-            {chunks.map((col, colIndex) => (
-              <MarqueeColumn
-                key={colIndex}
-                images={col}
-                direction={colIndex % 2 === 0 ? "up" : "down"}
-                duration={COL_DURATIONS[colIndex] ?? 45}
-              />
-            ))}
-          </div>
-        </div>
+    <div
+      aria-hidden="true"
+      className={cn(styles.scene, largePostersOnDesktop && styles.largePosters, "h-[40rem] w-full", className)}
+      style={{
+        "--marquee-columns-mobile": mobileColumns,
+        "--marquee-columns-tablet": tabletColumns,
+        "--marquee-columns-desktop": desktopColumns,
+      } as CSSProperties}
+    >
+      <div className={styles.field}>
+        {chunks.map((chunk, index) => (
+          <MarqueeColumn
+            key={index}
+            images={chunk}
+            index={index}
+            paused={paused}
+            largePostersOnDesktop={largePostersOnDesktop}
+            className={index >= tabletColumns ? styles.desktopBuffer : index >= mobileColumns ? styles.tabletBuffer : undefined}
+          />
+        ))}
       </div>
     </div>
   );

@@ -222,7 +222,7 @@ export default function ConfigurarPerfilCreadorPage() {
   // Existing viewer: ask before showing the creator form
   if (isExistingViewer && conversionConfirmed === null) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4" style={{ background: "#060C14" }}>
+      <div className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-x-clip pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))]" style={{ background: "#060C14" }}>
 
         {/* Fondo — carrusel de portadas a pantalla completa: 4 columnas grandes.
             La extra extiende el grid a la derecha y cubre la esquina inferior. */}
@@ -244,7 +244,7 @@ export default function ConfigurarPerfilCreadorPage() {
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-[560px] rounded-[20px] p-8 md:p-10"
+          className="relative z-10 w-full max-w-[560px] min-w-0 rounded-[20px] p-5 sm:p-8 md:p-10"
           style={{
             background: "rgba(10,18,32,0.74)",
             border: "1px solid rgba(255,255,255,0.09)",
@@ -345,7 +345,7 @@ export default function ConfigurarPerfilCreadorPage() {
 
   return (
     <div
-      className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pt-8 pb-24"
+      className="relative flex min-h-screen min-h-[100dvh] flex-col justify-center overflow-x-clip pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(6rem+env(safe-area-inset-top))] pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pb-[calc(6rem+env(safe-area-inset-bottom))]"
       style={{
         // Rampa cromática de verdes: pino profundo arriba → esmeralda abajo
         background:
@@ -371,7 +371,7 @@ export default function ConfigurarPerfilCreadorPage() {
       <button
         type="button"
         onClick={() => (step > 0 ? setStep((s) => s - 1) : router.push("/"))}
-        className="absolute left-6 top-6 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.07] hover:text-white"
+        className="absolute left-[max(1rem,env(safe-area-inset-left))] top-[calc(1.5rem+env(safe-area-inset-top))] z-20 sm:left-[max(1.5rem,env(safe-area-inset-left))] flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.07] hover:text-white"
       >
         <ArrowLeft size={15} />
         {step > 0 ? "Volver" : "Volver al inicio"}
@@ -389,7 +389,7 @@ export default function ConfigurarPerfilCreadorPage() {
         </div>
 
         {/* Indicador de pasos */}
-        <div className="mb-6 flex items-center justify-center gap-2">
+        <div className="mb-6 grid grid-cols-4 items-start gap-1 sm:flex sm:items-center sm:justify-center sm:gap-2">
           {WIZARD_STEPS.map((label, i) => {
             const isDone = i < step;
             const isActive = i === step;
@@ -399,7 +399,7 @@ export default function ConfigurarPerfilCreadorPage() {
                 type="button"
                 disabled={i >= step}
                 onClick={() => setStep(i)}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors ${
+                className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 transition-colors sm:flex-row sm:gap-2 sm:rounded-full sm:px-3 sm:py-1.5 ${
                   isActive ? "border border-[#3ED98B]/50 bg-white/[0.06]"
                   : isDone ? "border border-transparent hover:bg-white/[0.04]"
                   : "border border-transparent opacity-45"
@@ -418,7 +418,7 @@ export default function ConfigurarPerfilCreadorPage() {
                     </svg>
                   ) : i + 1}
                 </span>
-                <span className={`text-[12px] font-semibold ${isActive ? "text-white" : isDone ? "text-white/65" : "text-white/45"}`}>
+                <span className={`break-words text-center text-[10px] font-semibold sm:text-[12px] ${isActive ? "text-white" : isDone ? "text-white/65" : "text-white/45"}`}>
                   {label}
                 </span>
               </button>
@@ -440,7 +440,7 @@ export default function ConfigurarPerfilCreadorPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -56 }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full rounded-[18px] p-7 md:p-8"
+            className="w-full min-w-0 rounded-[18px] p-5 sm:p-7 md:p-8"
             style={cardStyle}
           >
 
@@ -530,7 +530,7 @@ export default function ConfigurarPerfilCreadorPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col">
                   <div className="mb-1.5 flex items-baseline justify-between">
                     <label className={`${labelCls} mb-0`}>Biografía</label>
                     <span className={`text-[11px] ${bio.length >= 260 ? "text-[#FFC24B]" : "text-white/35"}`}>{bio.length}/280</span>
@@ -604,12 +604,12 @@ export default function ConfigurarPerfilCreadorPage() {
                       </div>
                     </div>
                     {bio.trim() && (
-                      <p className="mt-3.5 text-[12.5px] leading-[1.6] text-white/60">{bio.trim()}</p>
+                      <p className="mt-3.5 break-words text-[12.5px] leading-[1.6] text-white/60">{bio.trim()}</p>
                     )}
                     {socialChips.length > 0 && (
                       <div className="mt-3.5 flex flex-wrap gap-2">
                         {socialChips.map((chip) => (
-                          <span key={chip} className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold text-white/60">
+                          <span key={chip} className="max-w-full break-all rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold text-white/60">
                             {chip}
                           </span>
                         ))}

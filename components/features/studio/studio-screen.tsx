@@ -1,5 +1,7 @@
 "use client";
 
+import styles from "./studio-responsive.module.css";
+
 import { useState, useEffect, useCallback } from "react";
 import { Check, AlertTriangle } from "lucide-react";
 import { DashboardView } from "./studio-dashboard-view";
@@ -11,11 +13,23 @@ import { EditModal }     from "./studio-edit-modal";
 import { C }             from "./studio-ui";
 import { STUDIO_DATA }   from "./studio-data";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
+import { useAuth } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { StudioTitle, StudioTabId } from "./studio-types";
 export type { StudioTabId };
 
+// Las columnas de la migración de subidas aún no figuran en los tipos generados.
+interface StudioTitleRow {
+  slug: string; title: string; synopsis: string | null; year: string | null;
+  duration: string | null; genre: string | null; language: string | null;
+  r2_poster_url: string | null; created_at: string | null; status: string | null;
+}
+
 export function StudioScreen() {
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState("");
   const { activeTab: active, setActiveTab } = useStudioTabStore();
   const [editTitle,  setEditTitle]  = useState<StudioTitle | null>(null);
   const [openTitle,  setOpenTitle]  = useState<StudioTitle | null>(null);
@@ -24,80 +38,61 @@ export function StudioScreen() {
   const [data,       setData]       = useState(STUDIO_DATA);
   const [titlesVersion, setTitlesVersion] = useState(0);
 
-  // Fetch creator profile
   useEffect(() => {
+    let cancelled = false;
+    setLoadedUserId(null);
+    setLoadError("");
+    setData(STUDIO_DATA);
+    if (!userId) return;
+
     void (async () => {
-      const supabase = getSupabaseBrowserClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: row } = await supabase
-        .from("creator_profiles")
-        .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!row) return;
-
-      const socialLinks = (row.social_links ?? {}) as Record<string, string>;
-
-      // Una vez confirmado que existe una fila real, los campos vacíos deben
-      // quedar vacíos — no rellenarse con el texto de muestra de STUDIO_DATA.
-      setData((d) => ({
-        ...d,
-        creator: {
-          ...d.creator,
-          studioName: row.studio_name ?? d.creator.studioName,
-          artistName: row.creator_name ?? d.creator.artistName,
-          bio:        row.bio ?? "",
-          location:   row.location ?? "",
-          role:       row.role ?? "",
-          avatarUrl:  row.avatar_url ?? "",
-          socials: socialLinks,
-        },
-      }));
-    })();
-  }, []);
-
-  // Fetch real titles uploaded by this creator
-  useEffect(() => {
-    void (async () => {
-      const supabase = getSupabaseBrowserClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: rows, error } = await (supabase as any)
-          .from("peliculas")
-          .select("id, slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at")
-          .eq("creator_user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error || !rows) return;
-
-        const realTitles: StudioTitle[] = (rows as Record<string, unknown>[]).map((row) => ({
-          id:          row.slug as string,
-          title:       row.title as string,
-          type:        row.genre === "Película" ? "Película" : "Cortometraje",
-          genre:       (row.genre as string | null) ?? "Cortometraje",
-          year:        parseInt((row.year as string | null) ?? "0") || new Date().getFullYear(),
-          duration:    (row.duration as string | null) ?? "",
-          status:      "publicado" as const,
-          description: (row.synopsis as string | null) ?? "",
-          language:    (row.language as string | null) ?? "Español",
-          subtitles:   [],
-          poster:      { from: "#1c2a38", to: "#0a1119", accent: "#3fae7e" },
-          r2PosterUrl: (row.r2_poster_url as string | null) ?? undefined,
-          publishDate: new Date(row.created_at as string).toLocaleDateString("es-ES"),
-          views:       0,
+        const supabase = getSupabaseBrowserClient();
+        const [profileResult, titlesResult] = await Promise.all([
+          supabase.from("creator_profiles")
+            .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
+            .eq("user_id", userId).maybeSingle(),
+          supabase.from("peliculas")
+            .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at, status")
+            .eq("creator_user_id", userId).order("created_at", { ascending: false }).returns<StudioTitleRow[]>(),
+        ]);
+        if (profileResult.error || titlesResult.error || !profileResult.data) {
+          throw new Error("No se pudo cargar el estudio");
+        }
+        const profile = profileResult.data;
+        const realTitles: StudioTitle[] = (titlesResult.data ?? []).map((row) => ({
+          id: row.slug, title: row.title,
+          type: row.genre === "Película" ? "Película" : "Cortometraje",
+          genre: row.genre ?? "Cortometraje",
+          year: parseInt(row.year ?? "0") || new Date().getFullYear(),
+          duration: row.duration ?? "",
+          status: row.status === "published" ? "publicado" : row.status === "draft" ? "borrador"
+            : row.status === "review" ? "revision" : row.status === "rejected" ? "rechazado" : "borrador",
+          description: row.synopsis ?? "", language: row.language ?? "",
+          subtitles: [], poster: STUDIO_DATA.posters["nieve"]!,
+          r2PosterUrl: row.r2_poster_url ?? undefined,
+          publishDate: row.created_at ? new Date(row.created_at).toLocaleDateString("es-ES") : undefined,
         }));
-
-        setData((d) => ({ ...d, titles: realTitles }));
+        if (cancelled) return;
+        setData({
+          ...STUDIO_DATA,
+          creator: {
+            ...STUDIO_DATA.creator,
+            studioName: profile.studio_name ?? "", artistName: profile.creator_name ?? "",
+            bio: profile.bio ?? "", location: profile.location ?? "", role: profile.role ?? "",
+            avatarUrl: profile.avatar_url ?? "", socials: (profile.social_links ?? {}) as Record<string, string>,
+            stats: { ...STUDIO_DATA.creator.stats, titles: realTitles.length,
+              published: realTitles.filter(t => t.status === "publicado").length },
+          },
+          titles: realTitles,
+        });
+        setLoadedUserId(userId);
       } catch {
-        // Column creator_user_id may not exist yet (migration pending) — keep mock data
+        if (!cancelled) setLoadError("No se pudo cargar tu estudio. Revisa la conexión e inténtalo de nuevo.");
       }
     })();
-  }, [titlesVersion]);
+    return () => { cancelled = true; };
+  }, [userId, titlesVersion]);
 
   const handlePublished = useCallback(() => {
     setTitlesVersion((v) => v + 1);
@@ -118,7 +113,11 @@ export function StudioScreen() {
         showToast((body as { error?: string }).error ?? "Error al eliminar", { error: true });
         return;
       }
-      setData((d) => ({ ...d, titles: d.titles.filter((x) => x.id !== t.id) }));
+      setData((d) => {
+        const titles = d.titles.filter((x) => x.id !== t.id);
+        return { ...d, titles, creator: { ...d.creator, stats: { ...d.creator.stats,
+          titles: titles.length, published: titles.filter(x => x.status === "publicado").length } } };
+      });
       showToast(`«${t.title}» eliminado`);
     } catch {
       showToast("Error de red al eliminar", { error: true });
@@ -141,10 +140,22 @@ export function StudioScreen() {
     setTimeout(() => setOpenTitle(t), 60);
   }
 
+  if (loadError) {
+    return <div role="alert" style={{ padding: "72px 28px", color: C.textSec }}>
+      <p>{loadError}</p>
+      <button className="st-btn st-btn-secondary" onClick={() => setTitlesVersion(v => v + 1)}>Reintentar</button>
+    </div>;
+  }
+  if (authLoading || !user || loadedUserId !== user.id) {
+    return <p role="status" style={{ padding: "72px 28px", color: C.textSec }}>
+      {authLoading || user ? "Cargando tu estudio…" : "Inicia sesión para acceder a tu estudio."}
+    </p>;
+  }
+
   return (
     <div style={{ animation: "fadeIn 0.55s ease both" }}>
       {/* View content */}
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "72px 28px 80px" }}>
+      <div className={styles.content} style={{ maxWidth: 1280, margin: "0 auto", padding: "72px 28px 80px" }}>
         {active === "inicio" && (
           <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} />
         )}
@@ -168,18 +179,18 @@ export function StudioScreen() {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 200, pointerEvents: "none" }}>
+        <div className={styles.toast} style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", zIndex: 200, pointerEvents: "none" }}>
           <div key={toast.key} style={{
             display: "flex", alignItems: "center", gap: 11, animation: "dropIn 0.16s ease both",
             background: "#101820", border: `1px solid ${C.border2}`, borderRadius: 12,
-            padding: "13px 18px", boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)", maxWidth: 440,
+            padding: "13px 18px", boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)", maxWidth: "min(440px, calc(100vw - 32px))",
           }}>
-            <span style={{ display: "grid", placeItems: "center", width: 26, height: 26, borderRadius: 999,
+            <span style={{ display: "grid", placeItems: "center", width: 26, height: 26, flexShrink: 0, borderRadius: 999,
               background: toast.error ? "rgba(255,82,82,0.14)" : C.accent15,
               color: toast.error ? C.errorFg : C.accentH }}>
               {toast.error ? <AlertTriangle size={15} strokeWidth={2.4} /> : <Check size={15} strokeWidth={2.4} />}
             </span>
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff" }}>{toast.msg}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", overflowWrap: "anywhere", minWidth: 0 }}>{toast.msg}</span>
           </div>
         </div>
       )}

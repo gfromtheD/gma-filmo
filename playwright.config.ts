@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 
-const PORT = 3000;
+const PORT = Number(process.env.E2E_PORT ?? 3000);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -17,7 +17,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev",
+    command: `npx next dev -p ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: true,
     timeout: 180_000,

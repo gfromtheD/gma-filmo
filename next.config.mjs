@@ -12,7 +12,7 @@ const r2Hostname = R2_PUBLIC_URL.replace(/^https?:\/\//, "").split("/")[0];
 const ContentSecurityPolicy = [
   "default-src 'self'",
   // Allow inline scripts only from this origin (Next.js hydration requirement)
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com",
   // Tailwind generates inline styles at runtime
   "style-src 'self' 'unsafe-inline'",
   // Images: local + R2 bucket + Cloudflare + legacy thumbnails from generacionmaldita.com

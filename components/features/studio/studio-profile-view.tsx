@@ -1,9 +1,12 @@
 "use client";
 
+import styles from "./studio-responsive.module.css";
+
 import { useState, useEffect, useRef } from "react";
 import { Check, Upload, Image as ImageIcon, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { socialUrl } from "@/lib/social-links";
 import { SocialLinksPanel, SocialPlatformIcon, getSocialPlatform, socialDisplayText } from "@/components/ui/social-links-panel";
 import type { StudioData } from "./studio-types";
 
@@ -45,9 +48,7 @@ export function ProfileView({ data, onToast }: Props) {
   const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
   const setSocial = (k: string, v: string) => { setSocialLinks(s => ({ ...s, [k]: v })); setDirty(true); };
 
-  // `data.creator` llega primero con datos de muestra y se sustituye por los
-  // reales tras el fetch async en StudioScreen — sin este efecto, este estado
-  // local se quedaría congelado con la muestra inicial para siempre.
+  // Sincroniza los datos recargados sin sobrescribir una edición en curso.
   useEffect(() => {
     if (editing) return; // no pisar una edición en curso
     setForm({ studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location });
@@ -147,9 +148,16 @@ export function ProfileView({ data, onToast }: Props) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); onToast("No se pudo guardar: sesión no encontrada", { error: true }); return; }
 
-    const cleanSocialLinks = Object.fromEntries(
+    const cleanSocialLinks: Record<string, string> = Object.fromEntries(
       Object.entries(socialLinks).map(([k, v]) => [k, v.trim()]).filter(([, v]) => !!v)
     );
+
+    const invalidSocial = Object.entries(cleanSocialLinks).find(([key, value]) => !socialUrl(key, value));
+    if (invalidSocial) {
+      setSaving(false);
+      onToast(`Revisa el enlace de ${getSocialPlatform(invalidSocial[0])?.label ?? invalidSocial[0]}`, { error: true });
+      return;
+    }
 
     const { error } = await supabase
       .from("creator_profiles")
@@ -174,7 +182,7 @@ export function ProfileView({ data, onToast }: Props) {
   }
 
   return (
-    <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+    <div className={styles.studio} style={{ maxWidth: 1040, margin: "0 auto" }}>
 
       {/* ── Header ── */}
       <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-end",
@@ -191,7 +199,7 @@ export function ProfileView({ data, onToast }: Props) {
         </div>
 
         {/* Button slot — shared */}
-        <div style={row(10)}>
+        <div className={styles.actions} style={row(10)}>
           {editing && (
             <button className="st-btn st-btn-ghost" onClick={() => setEditing(false)}>
               <X size={15} /> Cancelar
@@ -228,11 +236,11 @@ export function ProfileView({ data, onToast }: Props) {
             </div>
 
             {/* Content */}
-            <div style={{ padding: "0 28px 28px", marginTop: -46 }}>
+            <div className={styles.profileCardBody} style={{ padding: "0 28px 28px", marginTop: -46 }}>
               <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} imageUrl={avatarUrl ?? undefined} />
 
-              <div style={{ ...row(10), marginTop: 16, alignItems: "center" }}>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em" }}>
+              <div style={{ ...row(10), marginTop: 16, alignItems: "center", minWidth: 0 }}>
+                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em", minWidth: 0 }}>
                   {form.studioName}
                 </h2>
                 {c.verified && <CheckCircle2 size={20} color={C.accentH} strokeWidth={2.2} />}
@@ -254,8 +262,8 @@ export function ProfileView({ data, onToast }: Props) {
                 gap: 1, marginTop: 22, background: C.border1, borderRadius: 12, overflow: "hidden" }}>
                 {([
                   ["Títulos",    c.stats.published],
-                  ["Seguidores", fmt(c.stats.followers)],
-                  ["Valoración", c.stats.avgRating.toFixed(1)],
+                  ["Seguidores", c.stats.followers == null ? "—" : fmt(c.stats.followers)],
+                  ["Valoración", c.stats.avgRating?.toFixed(1) ?? "—"],
                 ] as [string, string | number][]).map(([l, v]) => (
                   <div key={l} style={{ background: C.w6, padding: "16px 0", textAlign: "center" }}>
                     <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.02em" }}>{v}</div>
@@ -277,11 +285,12 @@ export function ProfileView({ data, onToast }: Props) {
                 <div style={{ ...row(14), marginTop: 18, flexWrap: "wrap" }}>
                   {Object.entries(socialLinks).filter(([, v]) => v.trim()).map(([key, value]) => {
                     const platform = getSocialPlatform(key);
-                    if (!platform) return null;
+                    const href = socialUrl(key, value);
+                    if (!platform || !href) return null;
                     return (
-                      <span key={key} style={{ ...row(5), color: C.textMuted, fontSize: 13, fontWeight: 600 }}>
+                      <a key={key} href={href} target="_blank" rel="noopener noreferrer" style={{ ...row(5), color: C.textSec, fontSize: 13, fontWeight: 600 }}>
                         <SocialPlatformIcon platform={platform} size={14} /> {socialDisplayText(key, value.trim())}
-                      </span>
+                      </a>
                     );
                   })}
                 </div>
@@ -304,7 +313,7 @@ export function ProfileView({ data, onToast }: Props) {
 
       {/* ── View: formulario de edición ── */}
       {editing && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
+        <div className={styles.profileEdit} style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
 
           {/* Left: form */}
           <div style={col(22)}>
@@ -331,7 +340,7 @@ export function ProfileView({ data, onToast }: Props) {
                     <ImageIcon size={14} />
                   </button>
                 </div>
-                <div style={{ flex: 1, minWidth: 200 }}>
+                <div className={styles.profileLogoHelp} style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontSize: 13, color: C.textSec, marginBottom: 12 }}>
                     Logo o foto del estudio. PNG, JPG o SVG · mín. 400×400px.
                   </div>
@@ -351,7 +360,7 @@ export function ProfileView({ data, onToast }: Props) {
                   </div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className={styles.fields2} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <Field label="Nombre del estudio">
                   <input className="st-input" value={form.studioName} onChange={e => set("studioName", e.target.value)} />
                 </Field>
@@ -389,7 +398,7 @@ export function ProfileView({ data, onToast }: Props) {
 
           {/* Right: live preview */}
           <div>
-            <div style={{ position: "sticky", top: 100 }}>
+            <div className={styles.profilePreview} style={{ position: "sticky", top: 100 }}>
               <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
                 letterSpacing: "0.08em", color: C.textFaint, marginBottom: 12 }}>Vista previa</div>
               <div style={card({ overflow: "hidden" })}>
@@ -410,7 +419,7 @@ export function ProfileView({ data, onToast }: Props) {
                     {form.artistName}{form.role && ` · ${form.role}`}
                   </div>
                   <div style={{ ...row(14), marginTop: 14 }}>
-                    {([["Títulos", c.stats.published], ["Seguidores", fmt(c.stats.followers)], ["Valoración", c.stats.avgRating.toFixed(1)]] as [string, string | number][]).map(([l, v]) => (
+                    {([["Títulos", c.stats.published], ["Seguidores", c.stats.followers == null ? "—" : fmt(c.stats.followers)], ["Valoración", c.stats.avgRating?.toFixed(1) ?? "—"]] as [string, string | number][]).map(([l, v]) => (
                       <div key={l}>
                         <div style={{ fontSize: 16, fontWeight: 800 }}>{v}</div>
                         <div style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{l}</div>

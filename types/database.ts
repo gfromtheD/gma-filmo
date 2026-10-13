@@ -148,6 +148,12 @@ export type Database = {
       }
       peliculas: {
         Row: {
+          r2_subtitle_url: string | null
+          creator_user_id: string | null
+          file_size_bytes: number | null
+          genre: string | null
+          language: string | null
+          status: string | null
           author: string | null
           created_at: string | null
           duration: string | null
@@ -163,6 +169,12 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
+          r2_subtitle_url?: string | null
+          creator_user_id?: string | null
+          file_size_bytes?: number | null
+          genre?: string | null
+          language?: string | null
+          status?: string | null
           author?: string | null
           created_at?: string | null
           duration?: string | null
@@ -178,6 +190,12 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
+          r2_subtitle_url?: string | null
+          creator_user_id?: string | null
+          file_size_bytes?: number | null
+          genre?: string | null
+          language?: string | null
+          status?: string | null
           author?: string | null
           created_at?: string | null
           duration?: string | null

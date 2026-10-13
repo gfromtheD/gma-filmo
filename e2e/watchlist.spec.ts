@@ -21,7 +21,7 @@ function supabaseProjectRef(): string | null {
 const PROJECT_REF = supabaseProjectRef();
 
 async function asGuest(page: Page) {
-  await page.context().addCookies([{ name: "gma_guest", value: "1", url: "http://localhost:3000" }]);
+  await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
 }
 
 async function asFakeUser(page: Page) {
@@ -35,8 +35,8 @@ async function asFakeUser(page: Page) {
   };
   const value = "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url");
   await page.context().addCookies([
-    { name: `sb-${PROJECT_REF}-auth-token`, value, url: "http://localhost:3000" },
-    { name: "gma_guest", value: "1", url: "http://localhost:3000" },
+    { name: `sb-${PROJECT_REF}-auth-token`, value, url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
+    { name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
   ]);
 }
 
@@ -112,7 +112,7 @@ test.describe("con sesión simulada", () => {
 
     await page.getByRole("button", { name: "Guardar" }).first().click();
     await expect(page.getByRole("button", { name: "Guardada" }).first()).toHaveAttribute("aria-pressed", "true");
-    expect(calls).toEqual(["POST"]);
+    await expect.poll(() => calls).toEqual(["POST"]);
     await expect(page.getByRole("status").filter({ hasText: "Inicia sesión" })).toHaveCount(0);
   });
 

@@ -1,0 +1,121 @@
+.scene {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+  container: gma-marquee / size;
+  perspective: 5000px;
+  perspective-origin: 50% 50%;
+  background: #050706;
+}
+
+.field {
+  --poster-gap: 16px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  width: max(180cqw, 150cqh);
+  height: max(190cqh, 130cqw);
+  grid-template-columns: repeat(var(--marquee-columns-mobile), minmax(0, 1fr));
+  gap: var(--poster-gap);
+  transform: translate(-50%, -50%) rotateX(22deg) rotateY(-12deg) rotateZ(-24deg);
+  transform-origin: center;
+  transform-style: preserve-3d;
+}
+
+.column {
+  min-width: 0;
+  height: 100%;
+  overflow: clip;
+  transform-style: preserve-3d;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  transform-style: preserve-3d;
+  animation: gma-poster-scroll 120s linear infinite;
+  will-change: transform;
+}
+
+.group {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--poster-gap);
+  padding-bottom: var(--poster-gap);
+  transform-style: preserve-3d;
+}
+
+.poster {
+  position: relative;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 8px;
+  background: #101614;
+  box-shadow: 0 12px 18px -8px rgb(0 0 0 / 75%), 0 2px 2px rgb(0 0 0 / 35%);
+  transform: translateZ(var(--poster-depth));
+  backface-visibility: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.tabletBuffer,
+.desktopBuffer {
+  display: none;
+}
+
+@container gma-marquee (min-width: 768px) {
+  .field {
+    --poster-gap: 20px;
+    width: max(155cqw, 160cqh);
+    grid-template-columns: repeat(var(--marquee-columns-tablet), minmax(0, 1fr));
+  }
+
+  .tabletBuffer {
+    display: block;
+  }
+}
+
+@container gma-marquee (min-width: 1280px) {
+  .field {
+    --poster-gap: 22px;
+    width: max(150cqw, 170cqh);
+    grid-template-columns: repeat(var(--marquee-columns-desktop), minmax(0, 1fr));
+  }
+
+  .desktopBuffer {
+    display: block;
+  }
+}
+
+/* Keep the mobile composition; show six broader lanes on larger screens. */
+@container gma-marquee (min-width: 768px) {
+  .largePosters .field {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .largePosters .column:nth-child(n + 7) {
+    display: none;
+  }
+}
+
+@keyframes gma-poster-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    will-change: auto;
+  }
+}

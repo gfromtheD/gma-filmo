@@ -23,7 +23,8 @@ export default async function PlayerPage({ params, searchParams }: Props) {
   const item = await getPeliculaBySlug(params.id);
   if (!item) notFound();
 
-  const artistaSlugs = (item.artistas ?? [])
+  const artistaSlugs = [...(item.artistas ?? [])]
+    .sort((a, b) => Number(/director|creador/i.test(b.role)) - Number(/director|creador/i.test(a.role)))
     .map((a) => a.slug)
     .filter((s): s is string => Boolean(s));
 
@@ -45,5 +46,5 @@ export default async function PlayerPage({ params, searchParams }: Props) {
 
   const initialTime = searchParams.t && !isNaN(Number(searchParams.t)) ? Number(searchParams.t) : undefined;
 
-  return <PlayerScreen item={item} nextItem={nextItem} nextUrl={nextUrl} creator={creator} initialTime={initialTime} />;
+  return <PlayerScreen key={item.id} item={item} nextItem={nextItem} nextUrl={nextUrl} creator={creator} initialTime={initialTime} />;
 }

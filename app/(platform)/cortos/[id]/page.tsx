@@ -23,7 +23,8 @@ export default async function CortoDetailPage({ params, searchParams }: Props) {
   const movie = await getPeliculaBySlug(params.id);
   if (!movie) notFound();
 
-  const artistaSlugs = (movie.artistas ?? [])
+  const artistaSlugs = [...(movie.artistas ?? [])]
+    .sort((a, b) => Number(/director|creador/i.test(b.role)) - Number(/director|creador/i.test(a.role)))
     .map((a) => a.slug)
     .filter((s): s is string => Boolean(s));
 

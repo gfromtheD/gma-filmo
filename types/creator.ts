@@ -4,6 +4,8 @@ export interface SocialLink {
 }
 
 export interface CreatorProfile {
+  readonly editorial?: boolean;
+  readonly source_url?: string | null;
   readonly slug: string;
   readonly nombre: string;
   readonly foto_perfil: string | null;

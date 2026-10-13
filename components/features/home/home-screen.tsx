@@ -59,6 +59,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
     return () => {
       document.removeEventListener("visibilitychange", release);
       window.removeEventListener("blur", release);
+      if (safetyRef.current) clearTimeout(safetyRef.current);
     };
   }, []);
 
@@ -189,7 +190,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
             action={
               <Link
                 href="/mi-espacio"
-                className="inline-flex items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
               >
                 Ver todo
               </Link>

@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useRouter } from "next/navigation";
+import styles from "./my-space-screen.module.css";
 import { X, Pencil, Trash2 } from "lucide-react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { PosterArt } from "@/components/ui/poster-art";
@@ -89,24 +92,49 @@ function StarRating({
   const [hover, setHover] = useState<number | null>(null);
   const displayed = hover ?? value;
   return (
-    <div className="flex items-center" style={{ gap }} onMouseLeave={() => !readOnly && setHover(null)}>
+    <div
+      className="flex flex-wrap items-center"
+      style={{ gap }}
+      role={readOnly ? undefined : "group"}
+      aria-label={readOnly ? `${value} de 5 estrellas` : "Selecciona una valoración; las flechas ajustan media estrella"}
+      onMouseLeave={() => !readOnly && setHover(null)}
+    >
       {[1, 2, 3, 4, 5].map((star) => {
         const fill = Math.min(1, Math.max(0, displayed - (star - 1)));
+        if (readOnly) return <div key={star}><StarGlyph fill={fill} size={size} /></div>;
         return (
-          <div
+          <button
             key={star}
-            className={readOnly ? "" : "cursor-pointer"}
-            onMouseMove={readOnly ? undefined : (e) => {
+            type="button"
+            aria-label={`Valorar con ${star} ${star === 1 ? "estrella" : "estrellas"}`}
+            aria-pressed={Math.ceil(value) === star}
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-[#22B16B]"
+            onFocus={() => setHover(null)}
+            onPointerMove={(e) => {
+              if (e.pointerType !== "mouse") return;
               const r = e.currentTarget.getBoundingClientRect();
               setHover(e.clientX < r.left + r.width / 2 ? star - 0.5 : star);
             }}
-            onClick={readOnly ? undefined : (e) => {
+            onClick={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
-              onChange?.(e.clientX < r.left + r.width / 2 ? star - 0.5 : star);
+              setHover(null);
+              onChange?.(e.detail === 0 ? star : e.clientX < r.left + r.width / 2 ? star - 0.5 : star);
+            }}
+            onKeyDown={(e) => {
+              const keys: Record<string, number> = {
+                ArrowLeft: value - 0.5, ArrowDown: value - 0.5,
+                ArrowRight: value + 0.5, ArrowUp: value + 0.5,
+                Home: 0.5, End: 5,
+              };
+              const next = keys[e.key];
+              if (next === undefined) return;
+              e.preventDefault();
+              setHover(null);
+              onChange?.(Math.max(0.5, Math.min(5, next)));
             }}
           >
             <StarGlyph fill={fill} size={size} />
-          </div>
+          </button>
         );
       })}
     </div>
@@ -121,24 +149,45 @@ function RatingModal({
   item: MovieMedia; existing: RatingEntry | null;
   onSave: (rating: number, review: string) => void; onClose: () => void;
 }) {
+  const viewportBounds = useVisibleViewport();
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [review, setReview] = useState(existing?.review ?? "");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previous?.focus();
+    };
+  }, []);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "Tab") {
+        const items = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), textarea, input, [tabindex="0"]') ?? []);
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current || !dialogRef.current?.contains(document.activeElement))) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { e.preventDefault(); first?.focus(); }
+      }
+    }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.75)" }}
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-y-contain p-4"
+      style={{ ...viewportBounds, background: "rgba(0,0,0,0.75)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-[480px] rounded-[16px] border border-[#262626] p-6"
-        style={{ background: "#0D0D0D", animation: "modalIn 0.25s ease both" }}
+        role="dialog" aria-modal="true" aria-label={`Valorar ${item.title}`} ref={dialogRef} tabIndex={-1}
+        className="w-full max-w-[480px] max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-y-contain rounded-[16px] border border-[#262626] p-4 sm:p-6"
+        style={{ background: "#0D0D0D", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - 32px)", animation: "modalIn 0.25s ease both" }}
       >
         <div className="mb-5 flex items-center gap-4">
           <div className="shrink-0 overflow-hidden rounded-[6px]" style={{ width: 48, aspectRatio: "2/3" }}>
@@ -153,8 +202,8 @@ function RatingModal({
               Cortometraje{item.year ? ` · ${item.year}` : ""}
             </p>
           </div>
-          <button type="button" onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white">
+          <button type="button" onClick={onClose} aria-label="Cerrar valoración"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white">
             <X size={16} strokeWidth={1.75} />
           </button>
         </div>
@@ -162,7 +211,7 @@ function RatingModal({
         <div className="mb-5">
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[.1em] text-[#5A6A7E]">Valoración</p>
           <StarRating value={rating} onChange={setRating} size={30} gap={6} />
-          <p className="mt-2 h-4 text-[12px] text-[#22B16B]">{rating > 0 ? RATING_LABELS[rating] : ""}</p>
+          <p role="status" className="mt-2 min-h-4 text-[12px] text-[#22B16B]">{rating > 0 ? `${rating} de 5 · ${RATING_LABELS[rating] ?? ""}` : ""}</p>
         </div>
 
         <div className="mb-5">
@@ -172,23 +221,24 @@ function RatingModal({
           <textarea
             value={review} onChange={(e) => setReview(e.target.value)}
             placeholder="¿Qué te pareció?" rows={3}
-            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#141414] px-4 py-3 text-[13px] text-white placeholder-[#5A6A7E] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]/50"
+            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#141414] px-4 py-3 text-base sm:text-[13px] text-white placeholder-[#5A6A7E] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]/50"
           />
         </div>
 
         <div className="flex gap-3">
           <button type="button" onClick={onClose}
-            className="flex-1 rounded-full border border-[#262626] py-2.5 text-[13px] font-semibold text-[#8A9BB0] transition-colors hover:border-[#3A3A3A] hover:text-white">
+            className="min-h-11 flex-1 rounded-full border border-[#262626] px-2 py-2.5 text-[13px] font-semibold text-[#8A9BB0] transition-colors hover:border-[#3A3A3A] hover:text-white">
             Cancelar
           </button>
           <button type="button" disabled={rating === 0}
             onClick={() => { if (rating > 0) onSave(rating, review.trim()); }}
-            className="flex-1 rounded-full bg-[#22B16B] py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40">
+            className="min-h-11 flex-1 rounded-full bg-[#22B16B] px-2 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40">
             Guardar valoración
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -328,11 +378,11 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
         <ProfileEditModal onClose={() => setEditModalOpen(false)} />
       )
     )}
-    <div className="mx-auto max-w-[1440px] px-6 pb-24 pt-8" style={{ animation: "fadeIn 0.55s ease both" }}>
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-6 pb-24 pt-8" style={{ animation: "fadeIn 0.55s ease both" }}>
 
       {/* ── Profile header ────────────────────────────────────────────────── */}
       <div
-        className="relative mb-6 overflow-hidden rounded-[14px] border border-[#1E1E1E] px-8 py-7"
+        className="relative mb-6 overflow-hidden rounded-[14px] border border-[#1E1E1E] px-4 py-5 sm:px-8 sm:py-7"
         style={{ background: "linear-gradient(135deg, #0D0D0D 0%, #0d1520 100%)" }}
       >
         <div className="pointer-events-none absolute -top-24 left-0 h-64 w-64 rounded-full opacity-15"
@@ -357,7 +407,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
               </div>
             )}
             <button type="button" onClick={() => setEditModalOpen(true)} aria-label="Editar perfil"
-              className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              className="absolute inset-0 flex items-center justify-center rounded-full [@media(hover:none)]:opacity-100 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
               style={{ background: "rgba(0,0,0,0.55)" }}>
               <Pencil size={18} strokeWidth={1.75} className="text-white" />
             </button>
@@ -374,10 +424,10 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
               />
             ) : (
               <button type="button" onClick={startEditName}
-                className="group/name flex items-center gap-2 text-[26px] font-extrabold tracking-[-0.02em] text-white transition-colors hover:text-[#22B16B]"
+                className="group/name flex min-h-11 max-w-full items-center gap-2 text-left text-xl sm:text-[26px] font-extrabold tracking-[-0.02em] text-white transition-colors hover:text-[#22B16B]"
                 title="Editar nombre">
-                {displayName}
-                <Pencil size={14} className="opacity-0 transition-opacity group-hover/name:opacity-60" />
+                <span className="min-w-0 break-words">{displayName}</span>
+                <Pencil size={14} className="shrink-0 opacity-0 [@media(hover:none)]:opacity-60 transition-opacity group-hover/name:opacity-60" />
               </button>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[13px] text-[#6D7D94]">
@@ -403,7 +453,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
 
           {/* Switch profile */}
           <button type="button" onClick={() => router.push("/perfiles")}
-            className="flex items-center gap-1.5 rounded-full border border-[#262626] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] transition-colors hover:border-[#22B16B]/40 hover:text-white">
+            className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#262626] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] transition-colors hover:border-[#22B16B]/40 hover:text-white">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -416,7 +466,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
       </div>
 
       {/* ── Stats cards ───────────────────────────────────────────────────── */}
-      <div className="mb-10 grid grid-cols-4 gap-4 pb-10 border-b border-[#1A1A1A]">
+      <div className="mb-10 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4 pb-10 border-b border-[#1A1A1A]">
         <StatCard value={String(hoursWatched)} unit="h" label="HORAS VISTAS" />
         <StatCard value={String(continueItems.length)} label="EN PROGRESO" />
         <StatCard
@@ -438,7 +488,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
         <div className="mb-14">
           {/* Column headers */}
           <div
-            className="mb-1 grid items-center pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#3A3A3A]"
+            className="mb-1 hidden lg:grid items-center pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#3A3A3A]"
             style={{ gridTemplateColumns: "64px 1fr 140px 110px 80px", gap: 20, ...MONO }}
           >
             <span />
@@ -487,7 +537,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
       {continueItems.length > 0 && (
         <>
           <SectionHead title="Continuar viendo" count={continueItems.length} />
-          <div className="mb-14 grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
+          <div className="mb-14 grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}>
             {continueItems.map((item) => (
               <ContinueCard
                 key={item.id} item={item}
@@ -518,7 +568,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
           </div>
 
           {watchlistItems.length > 0 ? (
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 150px), 1fr))" }}>
               {watchlistItems.map((item) => (
                 <WatchlistCard
                   key={item.id} item={item}
@@ -547,7 +597,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
             {exploredGenres.map((g) => (
               <button key={g} type="button"
                 onClick={() => router.push(`/cortos?genre=${encodeURIComponent(g)}`)}
-                className="rounded-full border border-[#262626] bg-[#0D0D0D] px-5 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/50 hover:text-white">
+                className="min-h-11 max-w-full break-words rounded-full border border-[#262626] bg-[#0D0D0D] px-5 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/50 hover:text-white">
                 {g}
               </button>
             ))}
@@ -584,8 +634,8 @@ function StatCard({
       </div>
       {isChip ? (
         <div className="mt-auto">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(34,177,107,.32)] bg-[rgba(34,177,107,.14)] px-3 py-1.5 text-[14px] font-semibold text-[#22B16B]">
-            {value}
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[rgba(34,177,107,.32)] bg-[rgba(34,177,107,.14)] px-3 py-1.5 text-[14px] font-semibold text-[#22B16B]">
+            <span className="min-w-0 break-words">{value}</span>
           </span>
         </div>
       ) : (
@@ -604,7 +654,7 @@ function StatCard({
 
 function SectionHead({ title, count, sub }: { title: string; count?: number; sub?: string }) {
   return (
-    <div className="mb-5 flex items-baseline gap-3">
+    <div className="mb-5 flex flex-wrap items-baseline gap-3">
       <h2 className="text-[22px] font-extrabold tracking-[-0.015em] text-white">{title}</h2>
       {count != null && count > 0 && (
         <span className="rounded-full bg-[#1A1A1A] px-2.5 py-0.5 text-[12px] font-bold text-[#B8C5D4]" style={MONO}>
@@ -629,8 +679,7 @@ function DiaryRow({
 
   return (
     <div
-      className="group grid items-center border-t border-[#1A1A1A] py-3.5 transition-colors duration-100 hover:bg-white/[0.018]"
-      style={{ gridTemplateColumns: "64px 1fr 140px 110px 80px", gap: 20 }}
+      className={`${styles.diaryRow} group grid items-center border-t border-[#1A1A1A] py-3.5 transition-colors duration-100 hover:bg-white/[0.018]`}
     >
       {/* Thumbnail */}
       <div className="h-16 w-11 shrink-0 overflow-hidden rounded-[4px] bg-[#1A2438]">
@@ -679,11 +728,11 @@ function DiaryRow({
 
       {/* Actions — visible on row hover */}
       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-        <button type="button" onClick={onEdit} title="Editar valoración"
+        <button type="button" onClick={onEdit} aria-label="Editar valoración" title="Editar valoración"
           className="flex h-7 w-7 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-white/[0.06] hover:text-white">
           <Pencil size={13} strokeWidth={1.75} />
         </button>
-        <button type="button" onClick={onRemove} title="Eliminar entrada"
+        <button type="button" onClick={onRemove} aria-label="Eliminar entrada" title="Eliminar entrada"
           className="flex h-7 w-7 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-white/[0.06] hover:text-[#ff5252]">
           <Trash2 size={13} strokeWidth={1.75} />
         </button>
@@ -701,20 +750,20 @@ function ContinueCard({
 }) {
   const pct = Math.round((item.progress ?? 0) * 100);
   return (
-    <div className="group overflow-hidden rounded-[8px] border border-[#1E1E1E] bg-[#0D0D0D] transition-[border-color] duration-200 hover:border-[#22B16B]/25">
+    <div className={`${styles.interactiveCard} group overflow-hidden rounded-[8px] border border-[#1E1E1E] bg-[#0D0D0D] transition-[border-color] duration-200 hover:border-[#22B16B]/25`}>
       <div className="relative" style={{ aspectRatio: "16/9" }}>
         {item.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
           : <PosterArt style={item.style} title="" kind="movie" ratio="landscape" />}
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className={`${styles.cardActions} absolute inset-0 flex items-center justify-center gap-3 bg-black/40 transition-opacity duration-200`}>
           <button type="button" onClick={onPlay}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-[#22B16B] text-[#03200F] transition-transform duration-150 hover:scale-110"
             aria-label="Reproducir">
             <GmaIcon name="play" size={20} />
           </button>
           <button type="button" onClick={onRate}
-            className="rounded-full border border-white/20 bg-black/50 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition-colors hover:border-[#22B16B]/50 hover:text-[#22B16B]">
+            className="min-h-11 rounded-full border border-white/20 bg-black/50 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition-colors hover:border-[#22B16B]/50 hover:text-[#22B16B]">
             Valorar
           </button>
         </div>
@@ -725,14 +774,14 @@ function ContinueCard({
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold text-white">{item.title}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-[#6D7D94]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[#6D7D94]">
             <span>Cortometraje{item.runtime && item.runtime !== "Corto" ? ` · ${item.runtime}` : ""}</span>
             <span className="h-1 w-1 rounded-full bg-[#262626]" />
             <span className="font-semibold text-[#22B16B]">{pct}%</span>
           </div>
         </div>
         <button type="button" onClick={onDetail}
-          className="shrink-0 rounded-full bg-[#1A1A1A] p-2 text-[#B8C5D4] transition-colors hover:bg-[#262626] hover:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1A1A1A] text-[#B8C5D4] transition-colors hover:bg-[#262626] hover:text-white"
           aria-label="Ver detalles">
           <GmaIcon name="info" size={15} />
         </button>
@@ -750,9 +799,9 @@ function WatchlistCard({
   onNavigate: () => void; onRemove: () => void; onRate: () => void;
 }) {
   return (
-    <div className="group relative">
+    <div className={`${styles.interactiveCard} group relative`}>
       <button type="button" onClick={onNavigate}
-        className="w-full overflow-hidden rounded-[6px] border border-transparent transition-[transform,border-color] duration-200 hover:-translate-y-1 hover:border-[rgba(34,177,107,0.25)]">
+        className={`${styles.watchlistPoster} w-full overflow-hidden rounded-[6px] border border-transparent transition-[transform,border-color] duration-200`}>
         {item.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={item.imageUrl} alt={item.title} className="w-full rounded-[6px] object-cover" style={{ aspectRatio: "2/3" }} />
@@ -761,13 +810,13 @@ function WatchlistCard({
 
       <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(); }}
         aria-label="Quitar de Mi Lista"
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 hover:bg-[#ff5252]/80">
+        className={`${styles.cardActions} absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition-opacity duration-150 hover:bg-[#ff5252]/80`}>
         <GmaIcon name="close" size={13} />
       </button>
 
       <button type="button" onClick={(e) => { e.stopPropagation(); onRate(); }}
         aria-label={isRated ? "Editar valoración" : "Valorar"}
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 hover:border-[#22B16B]/50 hover:text-[#22B16B]">
+        className={`${styles.cardActions} absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center whitespace-nowrap rounded-full border border-white/15 bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm transition-opacity duration-150 hover:border-[#22B16B]/50 hover:text-[#22B16B]`}>
         {isRated ? "★ Editar" : "Valorar"}
       </button>
     </div>
@@ -787,7 +836,7 @@ function EmptyState({ icon, title, body, cta, onCta }: {
       <p className="mb-1.5 text-[15px] font-bold text-white">{title}</p>
       <p className="mb-6 max-w-xs text-[13px] text-[#6D7D94]">{body}</p>
       <button type="button" onClick={onCta}
-        className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]">
+        className="min-h-11 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]">
         {cta}
       </button>
     </div>

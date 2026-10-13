@@ -86,17 +86,16 @@ export default function ConfigurarPerfilPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-12"
+      className="flex min-h-screen min-h-[100dvh] items-center justify-center pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pt-[calc(3rem+env(safe-area-inset-top))] sm:pb-[calc(3rem+env(safe-area-inset-bottom))]"
       style={{ background: "#0A0F17" }}
     >
       <div
-        className="w-full"
+        className="w-full min-w-0 p-6 sm:p-9"
         style={{
           maxWidth: 420,
           background: "#111827",
           border: "1px solid #1E2D42",
           borderRadius: 16,
-          padding: "40px 36px",
         }}
       >
         {/* Logo */}
@@ -135,7 +134,7 @@ export default function ConfigurarPerfilPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="¿Cómo te llamas?"
               maxLength={40}
-              className="w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[14px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
+              className="min-w-0 w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[16px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
               required
             />
           </div>
@@ -145,7 +144,7 @@ export default function ConfigurarPerfilPage() {
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
               Color de perfil
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {COLORS.map((c) => (
                 <button
                   key={c.id}
@@ -153,7 +152,7 @@ export default function ConfigurarPerfilPage() {
                   onClick={() => setColor(c.hex)}
                   aria-label={c.label}
                   aria-pressed={color === c.hex}
-                  className="h-8 w-8 rounded-full transition-transform duration-100 hover:scale-110"
+                  className="h-11 w-11 rounded-full transition-transform duration-100 hover:scale-110"
                   style={{
                     background: c.hex,
                     boxShadow:

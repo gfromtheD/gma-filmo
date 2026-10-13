@@ -70,7 +70,10 @@ export function Carousel({ title, action, children }: CarouselProps) {
 
         <div
           ref={scrollRef}
-          className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+          role="region"
+          aria-label={title}
+          tabIndex={0}
+          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
             <div className="shrink-0 basis-1/2 snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5">

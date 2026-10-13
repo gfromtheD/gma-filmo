@@ -15,8 +15,11 @@ import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProgress } from "@/hooks/use-progress";
 import { useCastSupport } from "@/hooks/use-cast-support";
 import { DonationPanel } from "@/components/features/player/donation-panel";
+import { supportMethods } from "@/lib/creator-support";
+import { YouTubeVideo } from "@/components/features/player/youtube-video";
 import type { MediaItem } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
+import styles from "./player-screen.module.css";
 
 // ─── Sprite types ─────────────────────────────────────────────────────────────
 
@@ -125,6 +128,7 @@ function parseDuration(item: MediaItem): number {
 }
 
 function formatTime(s: number): string {
+  if (!Number.isFinite(s) || s < 0) return "—:—";
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = Math.floor(s % 60);
@@ -175,25 +179,24 @@ function DonationBanner({ visible, onClose, onOpenPanel }: {
           animate={{ clipPath: "inset(0 0% 0 0 round 20px)" }}
           exit={{ opacity: 0, transition: { duration: 0.25 } }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute left-5 top-[76px] z-20 flex max-w-[min(85vw,420px)] items-start gap-2.5 rounded-[20px] border border-white/10 px-4 py-2.5"
+          className={`${styles.supportBanner} absolute left-5 top-[76px] z-20 flex max-w-[min(85vw,420px)] items-start gap-2.5 rounded-[20px] border border-white/10 px-4 py-2.5`}
           style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(12px)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <span className="text-[13px] leading-relaxed text-white/90">
-            ¿Te ha gustado? Puedes apoyar al creador de este proyecto{" "}
+          <div className="min-w-0 text-[13px] leading-relaxed text-white/90">
+            <p>¿Te ha gustado? Puedes apoyar al creador para que siga haciendo más.</p>
             <button
               type="button"
               onClick={onOpenPanel}
-              className="font-semibold text-[#22B16B] underline underline-offset-2 transition-opacity hover:opacity-80"
+              className="inline-flex min-h-11 items-center font-semibold text-[#22B16B] underline underline-offset-2 transition-opacity hover:opacity-80"
             >
-              donando aquí
+              Apoyar al creador
             </button>
-            {" "}para que siga haciendo más.
-          </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-1 flex items-center text-white/40 transition-colors hover:text-white"
+            className={`${styles.dismissButton} ml-1 flex h-11 w-11 shrink-0 items-center justify-center text-white/40 transition-colors hover:text-white`}
             aria-label="Cerrar"
           >
             <X size={13} />
@@ -255,6 +258,8 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const [showDonation,  setShowDonation]    = useState(false);
   const [showDonationPanel, setShowDonationPanel] = useState(false);
   const donationShown = useRef(false);
+  const endedRef = useRef(false);
+  const hasSupport = supportMethods(creator ?? null).length > 0;
   const [playbackSpeed, setPlaybackSpeed]   = useState(1);
   const [autoplayNext, setAutoplayNext]     = useState(true);
 
@@ -322,6 +327,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   }
 
   function handlePlaying() {
+    endedRef.current = false;
     hasPlayedOnce.current = true;
     if (bufferDebounceRef.current) { clearTimeout(bufferDebounceRef.current); bufferDebounceRef.current = null; }
     if (bufferTimeoutRef.current)  { clearTimeout(bufferTimeoutRef.current);  bufferTimeoutRef.current  = null; }
@@ -350,14 +356,14 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
     // Countdown: read directly from the video element so the trigger is always
     // exactly 10 s before the real end, regardless of what parseDuration returns.
-    if (nextItem && !countdownDismissRef.current && isFinite(vid.duration) && vid.duration > 0) {
+    if (!hasSupport && nextItem && !countdownDismissRef.current && isFinite(vid.duration) && vid.duration > 0) {
       const rem = vid.duration - t;
       if (rem <= autoplayOffset && rem > 0 && !countdownStartedRef.current) {
         countdownStartedRef.current = true;
         const initial = Math.ceil(rem);
         setCountdownInitial(initial);
         setCountdownSecs(initial);
-        if (!donationShown.current) { donationShown.current = true; setShowDonation(true); }
+        if (hasSupport && !donationShown.current) { donationShown.current = true; setShowDonation(true); }
       } else if (rem > autoplayOffset + 2 && countdownStartedRef.current) {
         // User scrubbed back past the window — allow it to fire again
         countdownStartedRef.current = false;
@@ -390,6 +396,22 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     if (!nextItem || !nextUrl || navigatedRef.current) return;
     navigatedRef.current = true;
     router.replace(nextUrl);
+  }
+
+  function handlePlaybackEnded() {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    setPlaying(false);
+    void saveProgress(item.numericId, videoRef.current?.duration ?? duration, true);
+    if (hasSupport) {
+      donationShown.current = true;
+      countdownDismissRef.current = true;
+      setCountdownSecs(null);
+      setShowDonation(false);
+      setShowDonationPanel(true);
+    } else if (nextItem && !navigatedRef.current) {
+      setCountdownSecs(0);
+    }
   }
 
   // Fallback save on unmount (e.g. browser back, middleware redirect)
@@ -484,20 +506,20 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   // Countdown for YouTube iframes and virtual-timer playback.
   // MP4 videos are handled inside handleTimeUpdate (reads vid.duration live).
   useEffect(() => {
-    if (mp4Url || !nextItem || duration <= 0 || countdownDismissRef.current) return;
+    if (hasSupport || isYT || mp4Url || !nextItem || duration <= 0 || countdownDismissRef.current) return;
     const remaining = duration - currentTime;
     if (remaining <= autoplayOffset && remaining > 0 && !countdownStartedRef.current) {
       countdownStartedRef.current = true;
       const initial = Math.ceil(remaining);
       setCountdownInitial(initial);
       setCountdownSecs(initial);
-      if (!donationShown.current) { donationShown.current = true; setShowDonation(true); }
+      if (hasSupport && !donationShown.current) { donationShown.current = true; setShowDonation(true); }
     }
     if (remaining > autoplayOffset + 2 && countdownStartedRef.current) {
       countdownStartedRef.current = false;
       setCountdownSecs(null);
     }
-  }, [currentTime, duration, nextItem, autoplayOffset, mp4Url]);
+  }, [currentTime, duration, nextItem, autoplayOffset, mp4Url, hasSupport, isYT]);
 
 
   // Tick down every second
@@ -509,23 +531,29 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
   // When countdown hits 0: navigate if autoplay is on, otherwise just hide
   useEffect(() => {
-    if (countdownSecs !== 0 || !nextItem || navigatedRef.current) return;
+    if (hasSupport || countdownSecs !== 0 || !nextItem || navigatedRef.current) return;
     if (autoplayNext && nextUrl) {
       navigatedRef.current = true;
       router.replace(nextUrl);
     } else {
       setCountdownSecs(null);
     }
-  }, [countdownSecs, autoplayNext, nextItem, router]);
+  }, [countdownSecs, autoplayNext, nextItem, nextUrl, router, hasSupport]);
 
   // ── End of autoplay countdown ─────────────────────────────────────────────────
 
   const scheduleHide = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
+    // Interactions inside a YouTube iframe cannot bubble to the surface to
+    // reveal the app controls again. Keep its close/fullscreen bar available.
+    if (isYT) return;
     hideTimer.current = setTimeout(() => {
-      if (playingRef.current) setShowControls(false);
+      const active = document.activeElement;
+      const keyboardControlFocused = active instanceof HTMLElement
+        && containerRef.current?.contains(active) && active.matches(":focus-visible");
+      if (playingRef.current && !keyboardControlFocused) setShowControls(false);
     }, 3000);
-  }, []);
+  }, [isYT]);
 
   const revealControls = useCallback(() => {
     setShowControls(true);
@@ -565,6 +593,17 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     if (pulseTimer.current) clearTimeout(pulseTimer.current);
     pulseTimer.current = setTimeout(() => setPulsing(false), 700);
     revealControls();
+  }
+
+  const revealOnlyTap = useRef(false);
+  function handleSurfaceClick() {
+    if (isYT) return;
+    if (revealOnlyTap.current) {
+      revealOnlyTap.current = false;
+      revealControls();
+      return;
+    }
+    togglePlay();
   }
 
   function seek(delta: number) {
@@ -608,6 +647,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     const vid = videoRef.current;
     if (vid) vid.currentTime = 0;
     else setCurrentTime(0);
+    endedRef.current = false;
     setPlaying(true);
     revealControls();
   }
@@ -627,7 +667,8 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (showDonationPanel || (e.target instanceof HTMLElement
+        && e.target.closest('button, input, textarea, select, a, [role="slider"]'))) return;
       switch (e.key) {
         case " ":           e.preventDefault(); if (!isYT) togglePlay();   break;
         case "ArrowLeft":   e.preventDefault(); if (!isYT) seek(-10);      break;
@@ -638,10 +679,13 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [duration, revealControls, isYT]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [duration, revealControls, isYT, showDonationPanel]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeDuration = videoRef.current?.duration ?? duration;
-  const remaining      = Math.max(0, activeDuration - currentTime);
+  const mediaDuration = videoRef.current?.duration;
+  const activeDuration = typeof mediaDuration === "number" && Number.isFinite(mediaDuration) && mediaDuration > 0
+    ? mediaDuration
+    : Number.isFinite(duration) && duration > 0 ? duration : 0;
+  const remaining = Number.isFinite(currentTime) ? Math.max(0, activeDuration - currentTime) : NaN;
 
   const [supportsAirPlay, setSupportsAirPlay] = useState(false);
   const isCastAvailable = useCastSupport();
@@ -665,10 +709,13 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black"
-      onMouseMove={revealControls}
-      onClick={isYT ? undefined : togglePlay}
-      style={{ cursor: showControls ? "default" : "none" }}
+      className={`${styles.screen} fixed inset-0 flex items-center justify-center overflow-hidden bg-black`}
+      onPointerMove={(event) => { if (event.pointerType === "mouse") revealControls(); }}
+      onPointerDown={(event) => {
+        revealOnlyTap.current = (event.pointerType === "touch" || event.pointerType === "pen") && !showControls;
+      }}
+      onClick={isYT ? undefined : handleSurfaceClick}
+      style={{ cursor: isYT || showControls ? "default" : "none" }}
     >
       {/* ── Video layer ─────────────────────────────────────────────────────
           The media element is not mounted until the intro splash finishes, so
@@ -694,12 +741,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
               if (!vid || !vid.buffered.length || !vid.duration) return;
               setBuffered(vid.buffered.end(vid.buffered.length - 1) / vid.duration);
             }}
-            onEnded={() => {
-              setPlaying(false);
-              saveProgress(item.numericId, videoRef.current?.duration ?? 0, true);
-              // Force countdown to 0 so the navigate useEffect fires immediately
-              if (nextItem && !navigatedRef.current) setCountdownSecs(0);
-            }}
+            onEnded={handlePlaybackEnded}
           >
             {subtitleProxyUrl && (
               <track
@@ -711,11 +753,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             )}
           </video>
         ) : youtubeUrl ? (
-          <iframe
-            src={youtubeUrl} title={item.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen className="h-full w-full border-0"
-          />
+          <YouTubeVideo url={youtubeUrl} title={item.title} onEnded={handlePlaybackEnded} onPlaying={() => { endedRef.current = false; setPlaying(true); }} />
         ) : (
           <PosterArt style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         )}
@@ -727,7 +765,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       {/* Offline / error overlay */}
       {videoError && !isYT && (
         <div
-          className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/85"
+          className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 overflow-y-auto bg-black/85 px-4 py-4"
           style={{ zIndex: 20 }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -782,11 +820,13 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       {/* ── Pause: title + credits ───────────────────────────────────────── */}
       {!isYT && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 px-8 pb-39.5 transition-opacity duration-300 ease-in-out"
-          style={{ opacity: playing ? 0 : 1 }}
+          className={`${styles.pausedContent} absolute inset-x-0 bottom-39.5 px-8 transition-opacity duration-300 ease-in-out`}
+          style={{ opacity: playing ? 0 : 1, pointerEvents: playing ? "none" : "auto" }}
+          aria-hidden={playing}
+          onClick={(event) => event.stopPropagation()}
         >
           <h2
-            className="text-[62px] font-normal leading-[1.05] text-white"
+            className={`${styles.pausedTitle} break-words text-[62px] font-normal leading-[1.05] text-white`}
             style={{
               ...serifItalic,
               textShadow: "0 2px 40px rgba(0,0,0,0.9), 0 1px 8px rgba(0,0,0,1)",
@@ -817,14 +857,14 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
           {credits.length > 0 && (
             <div
-              className="mt-3 inline-flex items-center gap-3.5 rounded-xl border border-white/12 px-3.5 py-2.5 backdrop-blur-md"
+              className={`${styles.credits} mt-3 inline-flex items-center gap-3.5 rounded-xl border border-white/12 px-3.5 py-2.5 backdrop-blur-md`}
               style={{ background: "rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}
             >
               <p className="shrink-0 text-[9px] font-bold tracking-[0.13em] text-white/30 uppercase">
                 Créditos
               </p>
               <div className="h-3.5 w-px bg-white/10" />
-              <div className="flex items-center gap-4">
+              <div className={`${styles.creditsList} flex items-center gap-4`}>
                 {credits.map((c) => {
                   return (
                     <div key={c.name} className="flex items-center gap-2">
@@ -847,11 +887,12 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
                           </div>
                         )}
                       </div>
-                      <div>
+                      <div className="min-w-0 break-words">
                         {c.slug ? (
                           <Link
                             href={`/creadores/${c.slug}`}
-                            className="pointer-events-auto text-[11px] font-semibold leading-none text-white/75 transition-colors hover:text-[#22B16B] hover:underline"
+                            tabIndex={playing ? -1 : 0}
+                            className={`${styles.creditName} text-[11px] font-semibold leading-none text-white/75 transition-colors hover:text-[#22B16B] hover:underline`}
                           >
                             {c.name}
                           </Link>
@@ -871,7 +912,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
       {/* ── Donation banner ─────────────────────────────────────────────── */}
       <DonationBanner
-        visible={showDonation}
+        visible={showDonation && hasSupport}
         onClose={() => setShowDonation(false)}
         onOpenPanel={() => {
           setShowDonationPanel(true);
@@ -884,28 +925,30 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       />
 
       {/* ── Donation panel ──────────────────────────────────────────────── */}
-      {showDonationPanel && (
+      {showDonationPanel && hasSupport && (
         <DonationPanel
           creator={creator ?? null}
-          appUrl={process.env.NEXT_PUBLIC_APP_URL ?? "https://gma-filmo.vercel.app"}
+          appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ""}
+          onContinue={endedRef.current && nextItem ? handlePlayNext : undefined}
           onClose={() => {
             setShowDonationPanel(false);
             // Resume playback from where it was
-            if (!isYT) setPlaying(true);
+            if (!isYT && !endedRef.current) setPlaying(true);
           }}
         />
       )}
 
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
       <div
-        className="absolute inset-x-0 top-0 flex items-center gap-2 px-5 py-4 transition-opacity duration-300"
+        className={`${styles.topBar} absolute inset-x-0 top-0 flex items-center gap-2 px-5 py-4 transition-opacity duration-300`}
         style={{
           background: "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, transparent 100%)",
-          opacity: showControls ? 1 : 0,
-          pointerEvents: showControls ? "auto" : "none",
+          opacity: isYT || showControls ? 1 : 0,
+          pointerEvents: isYT || showControls ? "auto" : "none",
           zIndex: 10,
         }}
         onClick={(e) => e.stopPropagation()}
+        onFocusCapture={revealControls}
       >
         {/* Back */}
         <div
@@ -923,19 +966,19 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
         </div>
 
         {/* Centered title + chapter */}
-        <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-          <span className="max-w-[55%] truncate text-[14px] font-semibold text-white/85">{item.title}</span>
+        <div className={`${styles.topTitleGroup} flex min-w-0 flex-1 flex-col items-center gap-0.5`}>
+          <span className={`${styles.topTitle} max-w-full truncate text-[14px] font-semibold text-white/85`}>{item.title}</span>
           {!isYT && duration > 0 && (
-            <span className="text-[11px] text-white/40">
+            <span className="max-w-full truncate text-[11px] text-white/40">
               {getChapter(currentTime, duration).name}
             </span>
           )}
         </div>
 
         {/* Right actions */}
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className={`${styles.topActions} flex shrink-0 items-center gap-1.5`}>
           {ccTrack && (
-            <span className="rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#22B16B]">
+            <span className={`${styles.ccBadge} rounded-full border border-[#22B16B]/30 bg-[#22B16B]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#22B16B]`}>
               CC
             </span>
           )}
@@ -1015,7 +1058,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       {/* ── Bottom controls ──────────────────────────────────────────────── */}
       {!isYT && (
         <div
-          className="absolute inset-x-0 bottom-0 px-5 pb-4 pt-20 transition-opacity duration-300"
+          className={`${styles.bottomControls} absolute inset-x-0 bottom-0 px-5 pb-4 pt-20 transition-opacity duration-300`}
           style={{
             background: "linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)",
             opacity: showControls ? 1 : 0,
@@ -1023,22 +1066,23 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             zIndex: 10,
           }}
           onClick={(e) => e.stopPropagation()}
+          onFocusCapture={revealControls}
         >
           {/* Row 1 — remaining time, right-aligned */}
-          <div className="mb-1 flex justify-end">
+          <div className={`${styles.timeRow} mb-1 flex justify-end`}>
             <button
               type="button"
               aria-label="Alternar tiempo"
               onClick={(e) => { e.stopPropagation(); setShowRemaining((r) => !r); }}
-              className="text-[13px] tabular-nums text-white/50 transition-colors hover:text-[#22B16B]"
+              className={`${styles.timeButton} text-[13px] tabular-nums text-white/50 transition-colors hover:text-[#22B16B]`}
               style={MONO}
             >
-              {showRemaining ? formatTime(currentTime) : `-${formatTime(remaining)}`}
+              {showRemaining ? formatTime(currentTime) : activeDuration > 0 && Number.isFinite(remaining) ? `-${formatTime(remaining)}` : "—:—"}
             </button>
           </div>
 
           {/* Row 2 — play controls + scrubber inline */}
-          <div className="flex items-center gap-2">
+          <div className={`${styles.playRow} flex items-center gap-2`}>
             <PlayerBtn onClick={() => seek(-10)} label="Retroceder 10s">
               <Skip10 direction="back" />
             </PlayerBtn>
@@ -1061,7 +1105,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
             {/* Volume chip — between controls and scrubber */}
             <div
-              className="flex shrink-0 items-center gap-0.5 rounded-full border border-white/12 px-1.5 py-0.5 backdrop-blur-md"
+              className={`${styles.volumeChip} flex shrink-0 items-center gap-0.5 rounded-full border border-white/12 px-1.5 py-0.5 backdrop-blur-md`}
               style={{ background: "rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1069,7 +1113,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
                 type="button"
                 onClick={() => setMuted((m) => !m)}
                 aria-label={muted ? "Activar sonido" : "Silenciar"}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition-colors hover:text-[#22B16B]"
+                className={`${styles.volumeButton} flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition-colors hover:text-[#22B16B]`}
               >
                 {muted
                   ? <VolumeX size={15} strokeWidth={1.75} />
@@ -1080,7 +1124,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             </div>
 
             {/* Scrubber — fills remaining width */}
-            <div className="flex-1">
+            <div className={`${styles.progress} min-w-0 flex-1`}>
               <Scrubber
                 currentTime={currentTime}
                 duration={activeDuration}
@@ -1107,7 +1151,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
               <span className="w-8.5" />
             )}
 
-            <div className="flex flex-1 items-center justify-center gap-6">
+            <div className={`${styles.secondaryActions} flex flex-1 items-center justify-center gap-6`}>
               {/* START OVER */}
               <button
                 type="button"
@@ -1133,7 +1177,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
             {/* GMA branding */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo-gma.png" alt="GMA filmo" className="h-5 w-auto opacity-30" />
+            <img src="/images/logo-gma.png" alt="GMA filmo" className={`${styles.branding} h-5 w-auto opacity-30`} />
           </div>
         </div>
       )}
@@ -1141,7 +1185,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       {/* Hint for non-video items */}
       {!hasVideo && !playing && (
         <div
-          className="pointer-events-none absolute bottom-36 left-1/2 -translate-x-1/2 text-center"
+          className={`${styles.hint} pointer-events-none absolute bottom-36 left-1/2 -translate-x-1/2 text-center`}
           style={{ animation: "fadeUp 0.5s ease both", animationDelay: "0.6s", opacity: 0 }}
         >
           <p className="text-[12px] font-semibold tracking-[0.08em] text-white/40">
@@ -1188,7 +1232,7 @@ function AutoplayCountdown({
 }) {
   return (
     <div
-      className="absolute bottom-24 right-6 w-80 overflow-hidden rounded-2xl backdrop-blur-xl"
+      className={`${styles.autoplayPanel} absolute bottom-24 right-6 w-80 rounded-2xl backdrop-blur-xl`}
       style={{
         background: "rgba(10,10,12,0.96)",
         boxShadow: "0 16px 56px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(255,255,255,0.06)",
@@ -1206,7 +1250,7 @@ function AutoplayCountdown({
           type="button"
           onClick={onDismiss}
           aria-label="Cerrar"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-white/25 transition-colors duration-150 hover:text-white/90"
+          className={`${styles.dismissButton} flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-white/25 transition-colors duration-150 hover:text-white/90`}
         >
           <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
             <path d="M18 6 6 18M6 6l12 12" />
@@ -1238,7 +1282,7 @@ function AutoplayCountdown({
         <button
           type="button"
           onClick={onPlayNow}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-2.75 text-[13px] font-bold text-[#0a0a0a] transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white py-2.75 text-[13px] font-bold text-[#0a0a0a] transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
         >
           <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M6 4l14 8-14 8V4z" />
@@ -1248,7 +1292,7 @@ function AutoplayCountdown({
         <button
           type="button"
           onClick={onRate}
-          className="flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-[12px] font-medium text-white/60 transition-[background-color,color] duration-150 hover:bg-[#22B16B] hover:text-gma-accent-fg"
+          className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-[12px] font-medium text-white/60 transition-[background-color,color] duration-150 hover:bg-[#22B16B] hover:text-gma-accent-fg"
         >
           <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -1289,6 +1333,8 @@ function Scrubber({
   const thumbVidRef    = useRef<HTMLVideoElement>(null);
   const thumbCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging     = useRef(false);
+  const stopDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopDragRef.current?.(), []);
 
   const [isActive,    setIsActive]    = useState(false);
   const [hoverState,  setHoverState]  = useState<{ time: number; pct: number } | null>(null);
@@ -1350,6 +1396,15 @@ function Scrubber({
 
     let rafId: number | null = null;
 
+    function stopDrag() {
+      isDragging.current = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      stopDragRef.current = null;
+    }
+
     function onMove(ev: PointerEvent) {
       ev.preventDefault();
       const pct  = getPct(ev.clientX);
@@ -1364,18 +1419,19 @@ function Scrubber({
     }
 
     function onUp(ev: PointerEvent) {
-      isDragging.current = false;
-      if (rafId) cancelAnimationFrame(rafId);
       const pct  = getPct(ev.clientX);
       const time = (pct / 100) * duration;
       setHoverState({ time, pct });
       onSeek(snapToSprite(time));
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+      stopDrag();
     }
 
+    function onCancel() { stopDrag(); setIsActive(false); setHoverState(null); }
+
+    stopDragRef.current = stopDrag;
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -1420,14 +1476,30 @@ function Scrubber({
     if (!isActive) setFrameUrl(null);
   }, [isActive]);
 
-  const pct    = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const bufPct = buffered * 100;
+  const pct = Number.isFinite(currentTime) && Number.isFinite(duration) && duration > 0
+    ? Math.max(0, Math.min(100, (currentTime / duration) * 100)) : 0;
+  const bufPct = Number.isFinite(buffered) ? Math.max(0, Math.min(100, buffered * 100)) : 0;
   const chapter = hoverState ? getChapter(hoverState.time, duration) : null;
 
   return (
     <div
       ref={trackRef}
-      className="relative flex cursor-pointer select-none items-center"
+      className={`${styles.scrubber} relative flex cursor-pointer select-none items-center`}
+      role="slider"
+      aria-label="Progreso del vídeo"
+      aria-valuemin={0}
+      aria-valuemax={duration || 0}
+      aria-valuenow={Math.min(duration || 0, Math.max(0, currentTime || 0))}
+      aria-valuetext={`${formatTime(currentTime)} de ${formatTime(duration)}`}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        const movement = event.key === "ArrowRight" || event.key === "ArrowUp" ? 5
+          : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -5 : null;
+        if (movement !== null || event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          onSeek(event.key === "Home" ? 0 : event.key === "End" ? duration : Math.max(0, Math.min(duration, currentTime + movement!)));
+        }
+      }}
       style={{ height: 32, touchAction: "none" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -1544,6 +1616,8 @@ function VolumeSlider({
 }) {
   const trackRef   = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const stopDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopDragRef.current?.(), []);
   const [isActive, setIsActive] = useState(false);
   const displayPct = muted ? 0 : volume * 100;
 
@@ -1566,14 +1640,24 @@ function VolumeSlider({
     }
 
     function onUp(ev: PointerEvent) {
-      isDragging.current = false;
       onVolume(getVol(ev.clientX));
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+      stopDrag();
     }
 
+    function stopDrag() {
+      isDragging.current = false;
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      stopDragRef.current = null;
+    }
+
+    function onCancel() { stopDrag(); setIsActive(false); }
+
+    stopDragRef.current = stopDrag;
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
   }
 
   function onPointerEnter() { setIsActive(true); }
@@ -1582,7 +1666,21 @@ function VolumeSlider({
   return (
     <div
       ref={trackRef}
-      className="relative mx-1 flex cursor-pointer select-none items-center"
+      className={`${styles.volumeTrack} relative mx-1 flex cursor-pointer select-none items-center`}
+      role="slider"
+      aria-label="Volumen"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(displayPct)}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        const movement = event.key === "ArrowRight" || event.key === "ArrowUp" ? 0.05
+          : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -0.05 : null;
+        if (movement !== null || event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          onVolume(event.key === "Home" ? 0 : event.key === "End" ? 1 : Math.max(0, Math.min(1, volume + movement!)));
+        }
+      }}
       style={{ width: 56, height: 20, touchAction: "none" }}
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
@@ -1623,6 +1721,8 @@ function BrightnessSlider({
 }) {
   const trackRef   = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const stopDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopDragRef.current?.(), []);
   const [isActive, setIsActive] = useState(false);
   const displayPct = ((brightness - BRIGHTNESS_MIN) / (BRIGHTNESS_MAX - BRIGHTNESS_MIN)) * 100;
 
@@ -1646,14 +1746,24 @@ function BrightnessSlider({
     }
 
     function onUp(ev: PointerEvent) {
-      isDragging.current = false;
       onBrightness(getBrightness(ev.clientX));
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
+      stopDrag();
     }
 
+    function stopDrag() {
+      isDragging.current = false;
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      stopDragRef.current = null;
+    }
+
+    function onCancel() { stopDrag(); setIsActive(false); }
+
+    stopDragRef.current = stopDrag;
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onCancel);
   }
 
   function onPointerEnter() { setIsActive(true); }
@@ -1662,7 +1772,21 @@ function BrightnessSlider({
   return (
     <div
       ref={trackRef}
-      className="relative flex w-full cursor-pointer select-none items-center"
+      className={`${styles.brightnessTrack} relative flex w-full cursor-pointer select-none items-center`}
+      role="slider"
+      aria-label="Brillo"
+      aria-valuemin={50}
+      aria-valuemax={150}
+      aria-valuenow={Math.round(brightness * 100)}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        const movement = event.key === "ArrowRight" || event.key === "ArrowUp" ? 0.05
+          : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -0.05 : null;
+        if (movement !== null || event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          onBrightness(event.key === "Home" ? BRIGHTNESS_MIN : event.key === "End" ? BRIGHTNESS_MAX : Math.max(BRIGHTNESS_MIN, Math.min(BRIGHTNESS_MAX, brightness + movement!)));
+        }
+      }}
       style={{ height: 20, touchAction: "none" }}
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
@@ -1811,7 +1935,7 @@ function PlayerBtn({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`flex h-9 w-9 items-center justify-center rounded-full transition-[background-color,color] duration-150 ${
+      className={`${styles.playerButton} flex h-9 w-9 items-center justify-center rounded-full transition-[background-color,color] duration-150 ${
         active
           ? "bg-[#22B16B]/20 text-[#22B16B]"
           : "text-white/65 hover:bg-[#22B16B]/15 hover:text-[#22B16B]"
@@ -1837,7 +1961,7 @@ function TopBtn({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`flex h-9 w-9 items-center justify-center rounded-full border border-white/12 backdrop-blur-md transition-[background-color,border-color,color] duration-150 ${
+      className={`${styles.topButton} flex h-9 w-9 items-center justify-center rounded-full border border-white/12 backdrop-blur-md transition-[background-color,border-color,color] duration-150 ${
         active
           ? "border-[#22B16B]/30 bg-[#22B16B]/20 text-[#22B16B]"
           : "bg-white/[0.07] text-white/60 hover:text-[#22B16B]"
@@ -1880,7 +2004,7 @@ function SettingsPanel({
 
   return (
     <div
-      className="absolute right-5 top-18 w-72 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl"
+      className={`${styles.settingsPanel} absolute right-5 top-18 w-72 rounded-2xl border border-white/10 backdrop-blur-xl`}
       style={{ background: "rgba(8,8,8,0.92)", zIndex: 20, boxShadow: "0 8px 48px rgba(0,0,0,0.6)" }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -1892,7 +2016,7 @@ function SettingsPanel({
       {/* Playback speed */}
       <div className="border-b border-white/8 px-4 py-3">
         <p className="mb-2 text-[10px] font-bold tracking-widest uppercase text-white/30">Velocidad</p>
-        <div className="flex gap-1">
+        <div className={`${styles.speedOptions} grid grid-cols-6 gap-1`}>
           {SPEEDS.map((s) => (
             <button
               key={s}

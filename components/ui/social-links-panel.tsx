@@ -34,7 +34,7 @@ export function getSocialPlatform(key: string): SocialPlatform | undefined {
 export function socialDisplayText(key: string, value: string): string {
   const platform = getSocialPlatform(key);
   if (!platform) return value;
-  return platform.handleStyle ? `@${value}` : value;
+  return platform.handleStyle && !value.includes("/") ? `@${value.replace(/^@/, "")}` : value;
 }
 
 export function SocialPlatformIcon({ platform, size = 18 }: { platform: SocialPlatform; size?: number }) {
@@ -57,7 +57,7 @@ export function SocialLinksPanel({ values, onChange, accentColor = "#3ED98B" }: 
   const active = activeKey ? getSocialPlatform(activeKey) : undefined;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap justify-center gap-2.5">
         {SOCIAL_PLATFORMS.map((p) => {
           const filled = !!values[p.key]?.trim();
@@ -100,10 +100,10 @@ export function SocialLinksPanel({ values, onChange, accentColor = "#3ED98B" }: 
             className="overflow-hidden"
           >
             <div
-              className="flex overflow-hidden rounded-[12px] border bg-black/20 transition-colors"
+              className="flex min-w-0 flex-col overflow-hidden rounded-[12px] sm:flex-row border bg-black/20 transition-colors"
               style={{ borderColor: `${accentColor}70` }}
             >
-              <span className="flex shrink-0 items-center gap-1.5 border-r border-white/10 bg-white/[0.04] px-3 text-[12px] font-semibold text-white/50">
+              <span className="flex shrink-0 items-center gap-1.5 border-b sm:border-b-0 sm:border-r border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] font-semibold text-white/50">
                 <SocialPlatformIcon platform={active} size={13} /> {active.prefix}
               </span>
               <input
@@ -112,7 +112,7 @@ export function SocialLinksPanel({ values, onChange, accentColor = "#3ED98B" }: 
                 value={values[active.key] ?? ""}
                 onChange={(e) => onChange(active.key, e.target.value)}
                 placeholder={active.placeholder}
-                className="flex-1 bg-transparent px-3 py-3 text-[14px] text-white placeholder-white/25 outline-none"
+                className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[16px] sm:text-[14px] text-white placeholder-white/25 outline-none"
               />
             </div>
           </motion.div>

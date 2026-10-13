@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import {
   ICON_IDS, ICON_LABELS, COLOR_IDS, COLOR_VALUES,
@@ -98,7 +99,7 @@ function ToggleRow({
   return (
     <div>
       <div className="flex w-full items-center gap-4 px-5 py-4">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 break-words">
           <div className="text-[14px] font-semibold text-white">{label}</div>
           <div className="mt-0.5 text-[12px] text-[#3A4A5A]">{description}</div>
           {learnMore && (
@@ -159,7 +160,7 @@ function PinInput({ value, onChange }: { value: string; onChange: (v: string) =>
   }
 
   return (
-    <div className="flex gap-3 mt-3">
+    <div className="mt-3 flex w-full max-w-[228px] gap-2 sm:gap-3">
       {refs.map((ref, i) => (
         <input
           key={i}
@@ -170,7 +171,8 @@ function PinInput({ value, onChange }: { value: string; onChange: (v: string) =>
           value={value[i] ?? ""}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
-          className="h-12 w-12 rounded-[10px] border border-[#2A2A2A] bg-[#0E1016] text-center text-[20px] font-bold text-white outline-none transition-colors focus:border-[#22B16B]/60"
+          aria-label={`Dígito ${i + 1} del PIN`}
+          className="h-12 min-w-0 flex-1 rounded-[10px] border border-[#2A2A2A] bg-[#0E1016] text-center text-[20px] font-bold text-white outline-none transition-colors focus:border-[#22B16B]/60"
         />
       ))}
     </div>
@@ -201,6 +203,7 @@ interface ProfileEditModalProps {
 type Tab = "foto" | "icono" | "ajustes";
 
 export function ProfileEditModal({ onClose, title, initialValues, onSave, onDelete }: ProfileEditModalProps) {
+  const viewportBounds = useVisibleViewport();
   const {
     displayName, avatarColor, avatarIconId, avatarImageUrl,
     isKids, requirePin, pin, autoplay,
@@ -300,25 +303,34 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
     const idx = TABS.findIndex((t) => t.id === tab);
     const el  = tabRefs.current[idx];
     if (!el) return;
-    setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setPillReady(true);
+    const measure = () => {
+      setTabPill({ left: el.offsetLeft, width: el.offsetWidth });
+      setPillReady(true);
+    };
+    measure();
+    // The tab padding changes at the phone breakpoint and on rotation.
+    const observer = new ResizeObserver(measure);
+    for (const button of tabRefs.current) if (button) observer.observe(button);
+    window.addEventListener("resize", measure);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   return (
     <div
-      className="fixed inset-0 z-[600] flex items-center justify-center px-4 py-8"
-      style={{ background: "rgba(5,8,16,0.82)", backdropFilter: "blur(6px)" }}
+      className="fixed inset-0 z-[600] flex items-center justify-center overflow-y-auto pl-[max(.75rem,env(safe-area-inset-left))] pr-[max(.75rem,env(safe-area-inset-right))] pt-[max(.75rem,env(safe-area-inset-top))] pb-[max(.75rem,env(safe-area-inset-bottom))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.25rem,env(safe-area-inset-top))] sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+      style={{ ...viewportBounds, background: "rgba(5,8,16,0.82)", backdropFilter: "blur(6px)" }}
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-[780px] overflow-hidden rounded-[18px] border border-[#1E1E1E] shadow-2xl"
-        style={{ background: "#0A0A0A", maxHeight: "90vh" }}
+        className="relative flex w-full max-w-[780px] flex-col overflow-y-auto md:flex-row md:overflow-hidden rounded-[18px] border border-[#1E1E1E] shadow-2xl"
+        role="dialog" aria-modal="true" aria-label={title ?? "Editar perfil"}
+        style={{ background: "#0A0A0A", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)))" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Left: live preview ─────────────────────────────────────── */}
         <div
-          className="flex w-[260px] shrink-0 flex-col items-center justify-center gap-5 px-8 py-10 border-r border-[#141414]"
+          className="flex w-full shrink-0 flex-col items-center justify-center gap-3 border-b border-[#141414] px-5 py-5 md:w-[260px] md:gap-5 md:border-b-0 md:border-r md:px-8 md:py-10"
           style={{ background: "linear-gradient(160deg, #0D0D0D 0%, #080F0D 100%)" }}
         >
           <div
@@ -329,7 +341,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           >
             <AvatarPreview name={name || "?"} color={color} iconId={iconId} imageUrl={imageUrl} size={130} />
           </div>
-          <div className="text-center">
+          <div className="min-w-0 max-w-full break-words text-center">
             <p className="text-[18px] font-extrabold tracking-[-0.01em] text-white">
               {name || displayName}
             </p>
@@ -366,21 +378,22 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
         </div>
 
         {/* ── Right: form ────────────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col min-h-0">
+        <div className="flex min-h-0 min-w-0 shrink-0 flex-col md:flex-1">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#141414] px-6 py-4">
-            <span className="text-[16px] font-extrabold text-white">{title ?? "Editar perfil"}</span>
+          <div className="flex items-center justify-between gap-3 border-b border-[#141414] px-6 py-4">
+            <span className="min-w-0 break-words text-[16px] font-extrabold text-white">{title ?? "Editar perfil"}</span>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+              aria-label="Cerrar edición de perfil"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
 
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="min-w-0 flex-1 md:overflow-y-auto">
             {/* Name */}
             <div className="border-b border-[#0E0E0E] px-6 py-5">
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#3A4A5A]"
@@ -415,7 +428,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                     ref={(el) => { tabRefs.current[i] = el; }}
                     type="button"
                     onClick={() => setTab(t.id)}
-                    className="relative z-10 flex h-9 items-center rounded-full px-6 text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                    className="relative z-10 flex h-9 items-center rounded-full px-4 sm:px-6 text-[13.5px] font-semibold transition-colors duration-[260ms]"
                     style={{ color: tab === t.id ? "white" : "#4A5568" }}
                   >
                     {t.label}
@@ -430,7 +443,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
 
                 {/* Gallery grid */}
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                   {GALLERY_IMAGES.map((img) => (
                     <button
                       key={img.key}
@@ -483,7 +496,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
             {/* ── Tab: Icono ──────────────────────────────────────────── */}
             {tab === "icono" && (
               <div className="px-6 py-5">
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                   {ICON_IDS.map((id) => {
                     const selected = id === iconId;
                     return (
@@ -550,7 +563,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                       onClick={onDelete}
                       className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#1A0808]"
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 break-words">
                         <div className="text-[14px] font-semibold text-[#ff5252]">Eliminar perfil</div>
                         <div className="mt-0.5 text-[12px] text-[#3A4A5A]">Esta acción no se puede deshacer</div>
                       </div>
@@ -565,20 +578,20 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           </div>
 
           {/* Footer */}
-          <div className="flex items-center gap-3 border-t border-[#141414] px-6 py-4">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-[#141414] px-4 py-4 sm:px-6">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-[#1E1E1E] px-5 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#2A2A2A] hover:text-white"
+              className="rounded-full border border-[#1E1E1E] px-4 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#2A2A2A] hover:text-white"
             >
               Cancelar
             </button>
-            <div className="flex-1" />
+            <div className="hidden sm:flex sm:flex-1" />
             <button
               type="button"
               onClick={() => void handleSave()}
               disabled={saving || (pinReq && pinVal.length < 4)}
-              className="rounded-full bg-[#22B16B] px-6 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full bg-[#22B16B] px-4 py-2.5 text-[13px] sm:px-6 font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Guardando…" : "Guardar cambios"}
             </button>

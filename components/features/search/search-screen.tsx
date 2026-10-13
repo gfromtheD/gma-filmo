@@ -83,14 +83,10 @@ export function SearchScreen({ items }: SearchScreenProps) {
 
   return (
     <div
-      className="grid"
-      style={{
-        gridTemplateColumns: "380px 1fr",
-        height: "calc(100vh - 72px)",
-      }}
+      className="grid min-w-0 grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] lg:min-h-[calc(100dvh-80px)]"
     >
       {/* ── Left: input + keyboard ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-6 overflow-y-auto border-r border-[#262626] p-6">
+      <div className="flex min-w-0 flex-col gap-6 border-b border-[#262626] p-4 sm:p-6 lg:border-b-0 lg:border-r">
         {/* Search input */}
         <div className="relative">
           <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#6D7D94]">
@@ -102,13 +98,12 @@ export function SearchScreen({ items }: SearchScreenProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Título, colección, autor…"
-            autoFocus
-            className="w-full rounded-[10px] border border-[#262626] bg-[#1A1A1A] py-3 pl-11 pr-10 text-[15px] font-medium text-white placeholder-[#6D7D94] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]"
+            className="w-full rounded-[10px] border border-[#262626] bg-[#1A1A1A] py-3 pl-11 pr-12 text-base font-medium text-white placeholder-[#6D7D94] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]"
           />
           {query && (
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6D7D94] transition-colors hover:text-white"
-              onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+              className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#6D7D94] transition-colors hover:text-white"
+              onClick={(e) => { e.preventDefault(); handleClear(); }}
               type="button"
               aria-label="Borrar búsqueda"
             >
@@ -118,7 +113,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
         </div>
 
         {/* On-screen keyboard */}
-        <div className="flex flex-col gap-1.75">
+        <div className="hidden flex-col gap-1.75 lg:flex">
           {KB_ROWS.map((row, ri) => (
             <div
               key={ri}
@@ -130,7 +125,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
                   key={char}
                   type="button"
                   aria-label={char}
-                  onMouseDown={(e) => { e.preventDefault(); handleKeyPress(char); }}
+                  onClick={(e) => { e.preventDefault(); handleKeyPress(char); }}
                   className="flex h-11 w-8 items-center justify-center rounded-[8px] bg-[#1A1A1A] text-[14px] font-bold text-white transition-[background-color,transform] duration-100 hover:bg-[#262626] active:scale-95 active:bg-[#22B16B]/20"
                 >
                   {char}
@@ -143,7 +138,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
           <div className="flex gap-1.75">
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleBackspace(); }}
+              onClick={(e) => { e.preventDefault(); handleBackspace(); }}
               className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#1A1A1A] text-[13px] font-semibold text-[#B8C5D4] transition-[background-color] duration-100 hover:bg-[#262626] active:bg-[#22B16B]/20"
               aria-label="Borrar"
             >
@@ -152,7 +147,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
             </button>
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleSpace(); }}
+              onClick={(e) => { e.preventDefault(); handleSpace(); }}
               className="flex h-11 flex-2 items-center justify-center rounded-[8px] bg-[#1A1A1A] text-[13px] font-semibold text-[#B8C5D4] transition-[background-color] duration-100 hover:bg-[#262626] active:bg-[#22B16B]/20"
               aria-label="Espacio"
             >
@@ -173,8 +168,8 @@ export function SearchScreen({ items }: SearchScreenProps) {
                   <li key={item.id}>
                     <button
                       type="button"
-                      onMouseDown={(e) => { e.preventDefault(); router.push(`/cortos/${item.id}`); }}
-                      className="flex w-full items-center justify-between rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[#1A1A1A]"
+                      onClick={(e) => { e.preventDefault(); router.push(`/cortos/${item.id}`); }}
+                      className="flex min-h-11 w-full min-w-0 items-center justify-between rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[#1A1A1A]"
                     >
                       <span className="truncate text-[13px] font-semibold text-white">
                         <HighlightedText text={item.title} query={query} />
@@ -192,7 +187,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
       </div>
 
       {/* ── Right: results grid ────────────────────────────────────────────── */}
-      <div className="overflow-y-auto p-6">
+      <div className="min-w-0 p-4 sm:p-6">
         {query ? (
           <>
             <p className="mb-5 text-[13px] font-semibold text-[#B8C5D4]">
@@ -204,8 +199,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
 
             {results.length > 0 ? (
               <div
-                className="grid gap-3"
-                style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4"
               >
                 {results.map((item) => (
                   <PosterCard
@@ -237,7 +231,7 @@ function EmptyState({ query }: { query: string }) {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#6D7D94]">
         <GmaIcon name="search" size={28} />
       </div>
-      <p className="mb-2 text-[16px] font-bold text-white">
+      <p className="mb-2 max-w-full [overflow-wrap:anywhere] text-[16px] font-bold text-white">
         Sin resultados para &ldquo;{query}&rdquo;
       </p>
       <p className="text-[13px] text-[#6D7D94]">
@@ -265,7 +259,7 @@ function BrowseByGenre({ items }: { items: readonly MovieMedia[] }) {
                 key={g}
                 type="button"
                 onClick={() => router.push(`/cortos?genre=${encodeURIComponent(g)}`)}
-                className="rounded-full border border-[#262626] bg-[#1A1A1A] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/40 hover:text-white"
+                className="min-h-11 rounded-full border border-[#262626] bg-[#1A1A1A] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/40 hover:text-white"
               >
                 {g}
               </button>
@@ -278,8 +272,7 @@ function BrowseByGenre({ items }: { items: readonly MovieMedia[] }) {
         <div>
           <p className="mb-5 text-[13px] font-semibold text-[#B8C5D4]">Sugeridos para ti</p>
           <div
-            className="grid gap-3"
-            style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
           >
             {suggested.map((item) => (
               <PosterCard

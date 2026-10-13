@@ -1,11 +1,14 @@
 "use client";
 
+import styles from "./studio-responsive.module.css";
+
+import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState } from "react";
 import {
   Plus, Search, Eye, EyeOff, Pencil, Trash2, MoreHorizontal,
   RefreshCw, BarChart2, X, Clock, AlertTriangle, Upload, LayoutGrid, List, CheckCircle2,
 } from "lucide-react";
-import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, type MenuItem } from "./studio-ui";
+import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 
 interface Props {
@@ -73,17 +76,17 @@ interface Handlers {
 function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
     <div style={card({ padding: 12, display: "flex", flexDirection: "column" })}>
-      <div style={{ position: "relative", cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
+      <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", cursor: "pointer", width: "100%", padding: 0, border: 0, background: "transparent", color: "inherit", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} hover />
         <div style={{ position: "absolute", top: 9, left: 9 }}><StatusBadge status={t.status} size="sm" /></div>
-      </div>
+      </button>
       <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-start", marginTop: 12, gap: 8 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
           <div style={{ fontSize: 12, fontWeight: 600, marginTop: 3, color: C.textMuted }}>{t.type} · {t.duration}</div>
         </div>
         <Menu align="right" trigger={
-          <button className="st-btn st-btn-ghost st-btn-icon" style={{ width: 32, height: 32 }}>
+          <button aria-label={`Opciones de ${t.title}`} className="st-btn st-btn-ghost st-btn-icon" style={{ width: 32, height: 32 }}>
             <MoreHorizontal size={18} />
           </button>
         } items={actionsFor(t, handlers)} />
@@ -121,24 +124,24 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
 
 function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
-    <div style={card({ padding: 12, display: "grid",
+    <div className={styles.listRow} style={card({ padding: 12, display: "grid",
       gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, alignItems: "center" })}>
-      <div style={{ width: 52, cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
+      <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ width: 52, cursor: "pointer", padding: 0, border: 0, background: "transparent", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} rounded={7} />
-      </div>
+      </button>
       <div style={{ minWidth: 0, cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
         <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
         <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 3, color: C.textMuted }}>{t.type} · {t.genre} · {t.duration} · {t.year}</div>
       </div>
       <div><StatusBadge status={t.status} size="sm" /></div>
-      <div>
+      <div data-label="Visualizaciones">
         {t.status === "publicado"
           ? <span style={{ ...row(5), fontSize: 13.5, fontWeight: 700 }}><Eye size={14} color={C.textMuted} /> {fmtFull(t.views)}</span>
           : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}
       </div>
-      <div>{t.status === "publicado" ? <Stars value={t.rating ?? 0} size={12} showNum /> : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}</div>
+      <div data-label="Valoración">{t.status === "publicado" ? <Stars value={t.rating ?? 0} size={12} showNum /> : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}</div>
       <Menu align="right" trigger={
-        <button className="st-btn st-btn-ghost st-btn-icon" style={{ width: 34, height: 34 }}>
+        <button aria-label={`Opciones de ${t.title}`} className="st-btn st-btn-ghost st-btn-icon" style={{ width: 34, height: 34 }}>
           <MoreHorizontal size={18} />
         </button>
       } items={actionsFor(t, handlers)} />
@@ -150,16 +153,18 @@ function Drawer({ t, onClose, onEdit, onStats }: {
   t: StudioTitle | null; onClose: () => void;
   onEdit: (t: StudioTitle) => void; onStats: (t: StudioTitle) => void;
 }) {
+  const viewportBounds = useVisibleViewport(Boolean(t));
+  const dialogRef = useStudioDialog(Boolean(t), onClose);
   if (!t) return null;
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 120, display: "flex", justifyContent: "flex-end",
+    <div style={{ position: "fixed", inset: 0, ...viewportBounds, zIndex: 120, display: "flex", justifyContent: "flex-end",
       background: "rgba(3,6,11,0.62)", backdropFilter: "blur(3px)" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "min(460px, 94vw)", height: "100%", overflowY: "auto",
+      <div ref={dialogRef} tabIndex={-1} className={`${styles.studio} ${styles.drawer}`} role="dialog" aria-modal="true" aria-label={`Detalles de ${t.title}`} onClick={e => e.stopPropagation()} style={{ width: "min(460px, 94vw)", height: "100%", overflowY: "auto",
         background: "#0b0f15", borderLeft: `1px solid ${C.border2}`, animation: "drawerIn 0.32s ease" }}>
         <div style={{ padding: 22 }}>
           <div style={{ ...row(), justifyContent: "space-between", marginBottom: 18 }}>
             <StatusBadge status={t.status} />
-            <button className="st-btn st-btn-ghost st-btn-icon" onClick={onClose}><X size={18} /></button>
+            <button type="button" aria-label="Cerrar detalles de título" className="st-btn st-btn-ghost st-btn-icon" onClick={onClose}><X size={18} /></button>
           </div>
           <div style={{ width: 150, marginBottom: 18 }}><Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} /></div>
           <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700 }}>{t.title}</h2>
@@ -200,14 +205,14 @@ function Drawer({ t, onClose, onEdit, onStats }: {
           <div style={col(11)}>
             {([["Idioma", t.language], ["Subtítulos", t.subtitles.length ? t.subtitles.join(", ") : "Ninguno"],
               ["Publicado", t.publishDate ?? "—"]] as [string, string][]).map(([l, v]) => (
-              <div key={l} style={{ ...row(), justifyContent: "space-between" }}>
+              <div key={l} className={styles.metadataRow} style={{ ...row(), justifyContent: "space-between" }}>
                 <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{l}</span>
                 <span style={{ fontSize: 13, color: "#fff" }}>{v}</span>
               </div>
             ))}
           </div>
 
-          <div style={{ ...row(10), marginTop: 22 }}>
+          <div className={styles.drawerActions} style={{ ...row(10), marginTop: 22 }}>
             {t.status === "publicado" && (
               <button className="st-btn st-btn-secondary" style={{ flex: 1, justifyContent: "center" }}
                 onClick={() => { onStats(t); onClose(); }}>
@@ -247,7 +252,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
   };
 
   return (
-    <div>
+    <div className={styles.studio}>
       <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 16, display: "flex" }}>
         <div>
           <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint, marginBottom: 10 }}>Mi Estudio</div>
@@ -280,19 +285,19 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
             );
           })}
         </div>
-        <div style={row(10)}>
-          <div style={{ position: "relative" }}>
+        <div className={styles.listTools} style={row(10)}>
+          <div className={styles.listSearch} style={{ position: "relative" }}>
             <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.textFaint }} />
             <input className="st-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar título…"
               style={{ width: 200, paddingLeft: 36 }} />
           </div>
           <div style={{ ...row(4), background: C.w4, border: `1px solid ${C.border2}`, borderRadius: 8, padding: 3 }}>
-            <button className="st-btn st-btn-ghost" onClick={() => setLayout("grid")}
+            <button type="button" aria-label="Vista en cuadrícula" aria-pressed={layout === "grid"} className="st-btn st-btn-ghost st-btn-icon" onClick={() => setLayout("grid")}
               style={{ width: 30, height: 30, padding: 0, borderRadius: 6, display: "grid", placeItems: "center",
                 background: layout === "grid" ? C.w8 : "transparent", color: layout === "grid" ? "#fff" : C.textMuted }}>
               <LayoutGrid size={15} />
             </button>
-            <button className="st-btn st-btn-ghost" onClick={() => setLayout("lista")}
+            <button type="button" aria-label="Vista en lista" aria-pressed={layout === "lista"} className="st-btn st-btn-ghost st-btn-icon" onClick={() => setLayout("lista")}
               style={{ width: 30, height: 30, padding: 0, borderRadius: 6, display: "grid", placeItems: "center",
                 background: layout === "lista" ? C.w8 : "transparent", color: layout === "lista" ? "#fff" : C.textMuted }}>
               <List size={15} />
@@ -311,7 +316,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
         </div>
       ) : layout === "lista" ? (
         <div style={col(10)}>
-          <div style={{ display: "grid", gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, padding: "0 12px" }}>
+          <div className={styles.listHeader} style={{ display: "grid", gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, padding: "0 12px" }}>
             {["", "Título", "Estado", "Vistas", "Valoración", ""].map((h, i) => (
               <div key={i} style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{h}</div>
             ))}
@@ -319,7 +324,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
           {list.map(t => <ListRow key={t.id} t={t} handlers={handlers} />)}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(218px, 1fr))", gap: 18 }}>
+        <div className={styles.titleGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(218px, 1fr))", gap: 18 }}>
           {list.map(t => <GridCard key={t.id} t={t} handlers={handlers} />)}
         </div>
       )}
@@ -329,4 +334,3 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
     </div>
   );
 }
-

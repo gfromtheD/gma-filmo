@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? 3000}`;
 
 /**
  * Precalienta las rutas que usan las pruebas: en `next dev` la primera petición

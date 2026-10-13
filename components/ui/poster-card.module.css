@@ -1,0 +1,37 @@
+.card:focus-visible {
+  outline: 2px solid #22b16b;
+  outline-offset: -2px;
+}
+
+.listButton {
+  opacity: 1;
+}
+
+.listButton:focus-visible {
+  outline: 2px solid #22b16b;
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wrap:hover .card {
+    transform: translateY(-3px);
+    border-color: rgba(34, 177, 107, 0.3);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65);
+  }
+
+  .listButton {
+    opacity: 0;
+  }
+
+  .wrap:hover .listButton,
+  .wrap:focus-within .listButton {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .listButton {
+    transition: none;
+  }
+}

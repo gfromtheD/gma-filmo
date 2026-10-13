@@ -9,13 +9,14 @@ import { useHoverPreview } from "@/hooks/use-hover-preview";
 import { loadCommunityScore } from "@/hooks/use-community-score";
 import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { MediaItem, PosterRatio } from "@/types/catalog";
+import styles from "./poster-card.module.css";
 
 type CardSize = "sm" | "md" | "lg";
 
 const WIDTH: Record<CardSize, number> = { sm: 140, md: 180, lg: 340 };
 
 const CARD_CLASS =
-  "relative block w-full overflow-hidden rounded-[6px] border border-transparent bg-transparent transition-[transform,border-color,box-shadow] duration-[220ms] group-hover/card:-translate-y-[3px] group-hover/card:border-[rgba(34,177,107,0.3)] group-hover/card:shadow-[0_14px_32px_rgba(0,0,0,0.65)] active:scale-[0.97]";
+  `relative block w-full overflow-hidden rounded-[6px] border border-transparent bg-transparent transition-[transform,border-color,box-shadow] duration-[220ms] active:scale-[0.97] ${styles.card}`;
 
 interface PosterCardProps {
   readonly item: MediaItem;
@@ -73,8 +74,8 @@ export function PosterCard({
     />
   ) : null;
 
-  const wrapStyle = fluid ? undefined : { width: WIDTH[size] };
-  const wrapClass = `group/card relative text-left${fluid ? " w-full" : " shrink-0"}`;
+  const wrapStyle = fluid ? undefined : { width: `min(${WIDTH[size]}px, 82vw)`, maxWidth: "100%" };
+  const wrapClass = `group/card relative min-w-0 snap-start text-left ${styles.wrap}${fluid ? " w-full" : " shrink-0"}`;
 
   /* ── inner card content ── */
   const cardContent = (
@@ -98,11 +99,12 @@ export function PosterCard({
       type="button"
       onClick={(e) => { e.stopPropagation(); onAddList(); }}
       aria-label={inList ? "Quitar de Mi Lista" : "Añadir a Mi Lista"}
+      aria-pressed={inList}
       className={
         hoverOverlay
           ? "absolute bottom-3 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-transparent p-0 text-white opacity-0 transition-opacity duration-[350ms] hover:text-[#22B16B] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/card:opacity-100 motion-reduce:transition-none"
-          : `absolute right-2.5 top-0 z-20 border-0 bg-transparent p-0 transition-opacity duration-200 ${
-              inList ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"
+          : `absolute right-1 top-0 z-20 flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent p-0 transition-opacity duration-200 ${
+              inList ? "opacity-100" : styles.listButton
             }`
       }
     >

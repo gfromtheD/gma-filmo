@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
 import { PosterCard } from "@/components/ui/poster-card";
 import type { CreatorProfile } from "@/types/creator";
 import type { MovieMedia } from "@/types/catalog";
+import { supportMethods, supportPath } from "@/lib/creator-support";
+import { externalUrl, socialUrl } from "@/lib/social-links";
 
 function slugToHue(slug: string): number {
   let h = 0;
@@ -65,11 +69,15 @@ interface CreatorProfileProps {
 export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
   const hue = slugToHue(creator.slug);
   const hasCover = Boolean(creator.imagen_portada);
+  const availableSupport = supportMethods(creator);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const supportUrl = origin ? new URL(supportPath(creator.slug), origin).toString() : null;
 
   return (
     <div className="min-h-screen" style={{ background: "#0A0F17" }}>
       {/* ── Banner header ──────────────────────────────────────────── */}
-      <div className="relative h-56 overflow-hidden">
+      <div className="relative h-40 overflow-hidden sm:h-56">
         {hasCover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -95,7 +103,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
       </div>
 
       {/* ── Identity row (overlaps banner) ────────────────────────── */}
-      <div className="relative z-10 mx-auto max-w-[1100px] px-6">
+      <div className="relative z-10 mx-auto min-w-0 max-w-[1100px] px-4 sm:px-6">
         <div className="-mt-10 flex flex-wrap items-end gap-5">
           {/* Avatar */}
           <div className="shrink-0 rounded-full ring-2 ring-[#22B16B] ring-offset-2 ring-offset-[#0A0F17]">
@@ -114,21 +122,21 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
           </div>
 
           {/* Name + nationality */}
-          <div className="flex flex-1 flex-col gap-0.5 pb-1">
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.02em] text-white">
+          <div className="flex min-w-0 flex-1 basis-[180px] flex-col gap-0.5 pb-1">
+            <h1 className="break-words text-[24px] font-extrabold leading-tight sm:text-[28px] tracking-[-0.02em] text-white">
               {creator.nombre}
             </h1>
+            {creator.editorial && <p className="break-words text-[12px] text-[#6D7D94]">Ficha del catálogo · No requiere una cuenta del creador</p>}
             {creator.nacionalidad && (
-              <p className="text-[13px] text-[#6D7D94]">{creator.nacionalidad}</p>
+              <p className="break-words text-[13px] text-[#6D7D94]">{creator.nacionalidad}</p>
             )}
           </div>
 
           {/* Donation buttons */}
-          <div className="flex shrink-0 flex-wrap gap-2 pb-1">
+          <div className="flex w-full min-w-0 flex-wrap gap-2 pb-1 sm:w-auto">
             {DONATION_BUTTONS.map(({ key, label, icon }) => {
-              const url = creator[`donacion_${key}`];
-              if (!url) return null;
-              const href = key === "bitcoin" ? `bitcoin:${url}` : url;
+              const href = supportMethods(creator).find(method => method.key === key)?.href;
+              if (!href) return null;
               return (
                 <motion.a
                   key={key}
@@ -137,7 +145,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex items-center gap-2 rounded-full border border-[#1E2D42] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
+                  className="flex min-h-11 max-w-full items-center gap-2 rounded-full border border-[#1E2D42] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
                   style={{ background: "rgba(255,255,255,0.04)" }}
                 >
                   {icon}
@@ -148,11 +156,44 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
           </div>
         </div>
 
+        {availableSupport.length > 0 && (
+          <section aria-label="Apoyar al creador" className="mt-6 flex max-w-xl flex-col items-start gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:flex-row sm:items-center">
+            {supportUrl && <div className="shrink-0 rounded-xl bg-white p-3">
+              <QRCodeSVG value={supportUrl} size={160} marginSize={4} level="M" bgColor="#ffffff" fgColor="#000000" title={`Apoyar a ${creator.nombre}`} />
+            </div>}
+            <div className="min-w-0 break-words">
+              <h2 className="text-lg font-bold text-white">Apoya a {creator.nombre}</h2>
+              <p className="mt-2 text-sm leading-6 text-[#B8C5D4]">Escanea el QR con tu móvil para abrir sus opciones de apoyo. No necesitas iniciar sesión en GMA.</p>
+              <Link href={supportPath(creator.slug)} className="mt-4 inline-flex min-h-12 items-center rounded-full bg-[#22B16B] px-5 font-semibold text-[#031A0E]">Apoyar al creador</Link>
+            </div>
+          </section>
+        )}
+
+        {creator.redes_sociales.length > 0 && (
+          <nav aria-label="Redes sociales del creador" className="mt-6 flex flex-wrap gap-3">
+            {creator.redes_sociales.map(({ platform, url }, index) => {
+              const href = socialUrl(platform.toLowerCase(), url);
+              return href ? <a key={`${platform}-${index}`} href={href} target="_blank" rel="noopener noreferrer"
+                className="flex min-h-11 max-w-full items-center break-words rounded-full border border-white/15 px-4 py-2 text-sm text-[#B8C5D4] transition-colors hover:text-[#22B16B]">
+                {platform === "website" ? "Web" : platform}
+              </a> : null;
+            })}
+          </nav>
+        )}
+
         {/* ── Bio ────────────────────────────────────────────────────── */}
         {creator.bio && (
-          <p className="mt-6 max-w-[680px] text-[15px] leading-[1.7] text-[#B8C5D4]">
+          <p className="mt-6 max-w-[680px] break-words text-[15px] leading-[1.7] text-[#B8C5D4]">
             {creator.bio}
           </p>
+        )}
+
+        {creator.editorial && !creator.bio && (
+          <p className="mt-6 text-sm text-[#6D7D94]">Todavía no disponemos de una biografía de este creador.</p>
+        )}
+        {creator.source_url && externalUrl(creator.source_url) && (
+          <a href={externalUrl(creator.source_url)!} target="_blank" rel="noopener noreferrer"
+            className="mt-4 inline-block text-sm text-[#22B16B] underline">Ficha original en Generación Maldita</a>
         )}
 
         {/* ── Filmography ────────────────────────────────────────────── */}
@@ -165,9 +206,9 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
               Próximamente más contenido de este creador.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {films.map((film) => (
-                <Link key={film.id} href={`/cortos/${film.id}`} className="block">
+                <Link key={film.id} href={`/cortos/${film.id}`} className="block min-w-0">
                   <PosterCard item={film} ratio="portrait" fluid />
                 </Link>
               ))}

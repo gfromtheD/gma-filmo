@@ -65,11 +65,11 @@ export function ProfileScreen() {
   }
 
   return (
-    <div className="mx-auto max-w-[680px] px-6 py-12">
+    <div className="mx-auto min-w-0 max-w-[680px] px-4 py-8 sm:px-6 sm:py-12">
 
       {/* ── Profile card ─────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-[16px] border border-[#262626] p-8"
+        className="relative overflow-hidden rounded-[16px] border border-[#262626] p-5 sm:p-8"
         style={{ background: "linear-gradient(135deg, #0D0D0D 0%, #0d1520 100%)" }}
       >
         <div className="pointer-events-none absolute -top-16 left-0 h-48 w-48 rounded-full opacity-15"
@@ -81,6 +81,8 @@ export function ProfileScreen() {
             type="button"
             onClick={() => setColorPicker((o) => !o)}
             title="Cambiar color"
+            aria-expanded={colorPicker}
+            aria-controls="profile-color-picker"
             className="relative group shrink-0"
           >
             <div
@@ -89,29 +91,13 @@ export function ProfileScreen() {
             >
               {initial}
             </div>
-            <span className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 text-[11px] font-bold text-white">
+            <span className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 opacity-100 transition-opacity md:[@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[11px] font-bold text-white">
               Color
             </span>
           </button>
 
-          {/* Color picker */}
-          {colorPicker && (
-            <div className="absolute left-0 top-28 z-20 flex gap-2 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-3 shadow-2xl">
-              {COLORS.map((c) => (
-                <button
-                  key={c.hex}
-                  type="button"
-                  onClick={() => void handleColorSave(c.hex)}
-                  aria-label={c.label}
-                  className="h-7 w-7 rounded-full transition-transform hover:scale-110"
-                  style={{ background: c.hex }}
-                />
-              ))}
-            </div>
-          )}
-
           {/* Info */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1 basis-[160px]">
             {editingName ? (
               <input
                 autoFocus
@@ -128,10 +114,10 @@ export function ProfileScreen() {
               <button
                 type="button"
                 onClick={startEdit}
-                className="group flex items-center gap-2 text-[24px] font-extrabold tracking-[-0.02em] text-white transition-colors hover:text-[#22B16B]"
+                className="group flex max-w-full items-start gap-2 break-words text-left text-[22px] sm:text-[24px] font-extrabold tracking-[-0.02em] text-white transition-colors hover:text-[#22B16B]"
               >
-                {displayName}
-                <Pencil size={14} className="opacity-0 transition-opacity group-hover:opacity-60" />
+                <span className="min-w-0 break-words">{displayName}</span>
+                <Pencil size={14} className="shrink-0 opacity-60 transition-opacity" />
               </button>
             )}
 
@@ -140,19 +126,36 @@ export function ProfileScreen() {
               {email && (
                 <>
                   <span className="h-1 w-1 rounded-full bg-[#262626]" />
-                  <span className="text-[12px] font-medium text-[#22B16B]">{email}</span>
+                  <span className="min-w-0 break-all text-[12px] font-medium text-[#22B16B]">{email}</span>
                 </>
               )}
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex gap-5">
+          <div className="flex max-w-full flex-wrap gap-5">
             <Stat value={String(mediaIds.length)} label="en lista" />
             <Stat value={String(watchedCount)}    label="vistos" />
             <Stat value={String(ratingCount)}     label="valorados" />
           </div>
         </div>
+        {/* Keep the palette in the card flow so small screens do not clip it. */}
+        {colorPicker && (
+          <div id="profile-color-picker" aria-label="Color del perfil" className="relative mt-5 flex max-w-full flex-wrap gap-2 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-3">
+            {COLORS.map((c) => (
+              <button
+                key={c.hex}
+                type="button"
+                onClick={() => void handleColorSave(c.hex)}
+                aria-label={c.label}
+                aria-pressed={avatarColor === c.hex}
+                className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-110"
+              >
+                <span className="h-7 w-7 rounded-full" style={{ background: c.hex }} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Actions ─────────────────────────────────────────────────── */}
@@ -224,7 +227,7 @@ function ActionRow({
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#1A1A1A] text-[#6D7D94]">
         {iconMap[icon]}
       </div>
-      <div className="flex-1">
+      <div className="min-w-0 flex-1 break-words">
         <div className="text-[14px] font-semibold text-white">{label}</div>
         <div className="text-[12px] text-[#4A5A6E]">{description}</div>
       </div>
