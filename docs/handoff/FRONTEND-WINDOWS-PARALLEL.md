@@ -121,3 +121,26 @@ documenta aquí con aviso de riesgo.
   `CommunityReview`) está descrito en la auditoría; la futura Fase E debe respetarlo.
 - **Pendiente de decisión del usuario:** punto de cambio escritorio/móvil, patrón móvil, estado en
   scroll y Studio en móvil (ver `PLAN-REDISENO.md`).
+
+### 2026-10-13 — Fase B: navegación global (navbar responsive y accesible)
+
+- **Rama / commits:** `feature/frontend-windows` · `9188556` (E2E base, en rojo) → `d8098e0` (`--gma-header-h`) →
+  `2cb683b` (extracción) → `564bfbf` (móvil) → `62b23e5` (accesibilidad) → `dee186b` (reduced-motion, píldora, scroll) →
+  `f5039d1` (arreglo de hidratación) + commits de pruebas y documentación.
+- **Decisiones del usuario aplicadas:** cambio escritorio/móvil en 1024 px; menú lateral en móvil; mantener degradado + blur
+  y solidificar tras 8 px de scroll; Studio en móvil como fila horizontal desplazable.
+- **Archivos modificados:** `components/layout/navbar.tsx` (el export `Navbar` y sus stores no cambian),
+  `app/globals.css` (variable `--gma-header_h` → `--gma-header-h`), `components/features/catalog/coming-soon-screen.tsx`
+  (usa la variable), `package.json` (solo el script `test:e2e`), `.gitignore`.
+- **Archivos nuevos:** `components/layout/navbar-parts/{avatars,brand,mobile-menu,account-menu-content,studio-tabs-row}.tsx`,
+  `hooks/use-scroll-threshold.ts`, `playwright.config.ts`, `e2e/{global-setup,navbar-responsive.spec}.ts`.
+- **Cambios visibles:** en < 1024 px hamburguesa + marca + buscador + cuenta con panel lateral; en ≥ 1024 px la barra es la
+  de siempre (el eslogan solo desde 1280 px); menú de cuenta con teclado; cabecera más sólida tras scroll;
+  respeto de `prefers-reduced-motion` en la navbar.
+- **Dependencias añadidas:** ninguna (usa `radix-ui` ya instalado).
+- **Pruebas:** `tsc` limpio; lint sin avisos nuevos; `next build` correcto; E2E 44/44 (`npm run test:e2e`).
+- **Despliegues:** ninguno. **Push:** ninguno.
+- **Conflictos posibles con el Mac:** bajo. `navbar.tsx` solo importa la constante `STUDIO_TABS` de
+  `features/studio/studio-sub-nav` (no modificada). Si el Mac también cambió `navbar.tsx`, prevalece su lógica
+  y se reaplican las piezas de `navbar-parts/`.
+- **Limitación:** no probado con un creador autenticado (ruleta, «Mi Estudio» en el panel móvil y fila de Studio).
