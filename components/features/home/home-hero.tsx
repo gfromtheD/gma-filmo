@@ -106,7 +106,7 @@ export function HomeHero({
       <div
         role="group"
         aria-roledescription="slide"
-        className="relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-20 text-center md:px-12 lg:items-start lg:px-20 lg:pb-24 xl:px-24 lg:text-left"
+        className="relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-20 text-center lg:items-start lg:px-16 lg:pb-24 lg:text-left"
       >
         <span className="inline-flex h-6 items-center rounded-[3px] bg-[#22B16B] px-2 text-[12px] font-extrabold uppercase text-[#031A0E]">
           {item.tag ?? "Destacado"}

@@ -82,16 +82,17 @@ test("orden de las filas: recién llegados, Top 10, recomendaciones y, al final,
 
 /**
  * Tamaño de las tarjetas: fijo a cualquier ancho (como la referencia), no repartido por columnas.
- * A más pantalla caben más tarjetas, pero ninguna se encoge. Márgenes laterales 48/80/96 px.
+ * A más pantalla caben más tarjetas, pero ninguna se encoge. El margen izquierdo es el de siempre (16 px en
+ * tableta, 64 px desde 1024) y la primera portada queda alineada con la barra del título de la sección.
  */
 const SIZES: ReadonlyArray<readonly [number, number, number]> = [
-  // ancho, margen izquierdo, tarjetas completas visibles
-  [768, 48, 2],
-  [1024, 80, 2],
-  [1280, 96, 3],
-  [1536, 96, 4],
-  [1920, 96, 5],
-  [2560, 96, 7],
+  // ancho, margen izquierdo de la primera portada, tarjetas completas visibles
+  [768, 16, 2],
+  [1024, 64, 2],
+  [1280, 64, 3],
+  [1536, 64, 4],
+  [1920, 64, 5],
+  [2560, 64, 7],
 ];
 
 for (const [width, gutter, visible] of SIZES) {
@@ -108,8 +109,10 @@ for (const [width, gutter, visible] of SIZES) {
       const slots = [...scroller.children] as HTMLElement[];
       const art = slots[0]!.querySelector("a > div") as HTMLElement;
       const box = art.getBoundingClientRect();
+      const titleBar = section.querySelector("h2")!.parentElement!;
       return {
-        slotX: Math.round(slots[0]!.getBoundingClientRect().x),
+        artX: Math.round(box.x),
+        titleX: Math.round(titleBar.getBoundingClientRect().x),
         slotW: Math.round(slots[0]!.getBoundingClientRect().width),
         artW: Math.round(box.width),
         artH: Math.round(box.height),
@@ -119,7 +122,8 @@ for (const [width, gutter, visible] of SIZES) {
     expect(metrics.slotW).toBe(320);
     expect(metrics.artW).toBe(316);
     expect(metrics.artH).toBe(178);
-    expect(metrics.slotX).toBe(gutter);
+    expect(metrics.artX).toBe(gutter);
+    expect(metrics.titleX).toBe(gutter); // la portada y la barra del título empiezan en la misma línea
     expect(metrics.fully).toBe(visible);
     await context.close();
   });
