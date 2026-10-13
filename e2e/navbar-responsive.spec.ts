@@ -61,16 +61,13 @@ for (const width of WIDTHS) {
       const account = page.getByRole("button", { name: "Cuenta" });
       const guestOnPhone = width < GUEST_ACCOUNT_MIN;
 
+      // El buscador (lupa) está siempre en la cabecera.
+      const search = page.locator("header").getByRole("link", { name: "Buscador" });
+      await expect(search).toBeVisible();
       if (isDesktop) {
-        await expect(page.getByRole("link", { name: "Buscador" })).toBeVisible();
         await expect(account).toBeVisible();
         return;
       }
-
-      // Por debajo de 1024 px el buscador vive en la barra inferior, con zona táctil suficiente.
-      const search = tabBar(page).getByRole("link", { name: "Buscar" });
-      await expect(search).toBeVisible();
-      await expect(page.getByRole("link", { name: "Buscador" })).toBeHidden();
       const box = await search.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
@@ -105,11 +102,11 @@ for (const width of WIDTHS) {
         await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
       });
     } else {
-      test("móvil: barra inferior fija con cinco accesos, el activo marcado y sin menú lateral", async ({ page }) => {
+      test("móvil: píldora flotante con cuatro accesos, el activo marcado y sin menú lateral", async ({ page }) => {
         await openHome(page);
         const bar = tabBar(page);
         await expect(bar).toBeVisible();
-        for (const name of ["Inicio", "Películas", "Cortos", "Buscar", "Entrar"]) {
+        for (const name of ["Inicio", "Películas", "Cortos", "Entrar"]) {
           const link = bar.getByRole("link", { name });
           await expect(link).toBeVisible();
           const box = await link.boundingBox();
@@ -117,10 +114,18 @@ for (const width of WIDTHS) {
         }
         await expect(bar.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
         await expect(page.getByRole("button", { name: "Abrir menú principal" })).toHaveCount(0);
+        await expect(bar.getByRole("link", { name: "Buscar" })).toHaveCount(0); // la lupa vive en la cabecera
 
-        // Pegada al borde inferior del viewport.
-        const box = await bar.boundingBox();
-        expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(800);
+        // Es una píldora flotante: redondeada, separada del borde inferior y de los laterales, centrada.
+        const pill = bar.locator("ul");
+        const box = await pill.boundingBox();
+        expect(box).not.toBeNull();
+        const gapBottom = 800 - ((box?.y ?? 0) + (box?.height ?? 0));
+        expect(gapBottom).toBeGreaterThanOrEqual(10);
+        expect(gapBottom).toBeLessThanOrEqual(30);
+        expect(box?.x ?? 0).toBeGreaterThanOrEqual(12);
+        expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - width / 2)).toBeLessThanOrEqual(1);
+        expect(parseFloat(await pill.evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThanOrEqual(30);
       });
     }
   });
@@ -166,10 +171,10 @@ test.describe("barra inferior móvil: navegación", () => {
     await expect(tabBar(page).getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
   });
 
-  test("el visitante ve «Entrar» (login) y «Buscar» lleva al buscador", async ({ page }) => {
+  test("el visitante ve «Entrar» (login) y la lupa de la cabecera lleva al buscador", async ({ page }) => {
     await openHome(page);
     await expect(tabBar(page).getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/?login=1");
-    await expect(tabBar(page).getByRole("link", { name: "Buscar" })).toHaveAttribute("href", "/buscador");
+    await expect(page.locator("header").getByRole("link", { name: "Buscador" })).toHaveAttribute("href", "/buscador");
   });
 
   test("no tapa el final de la página y no desborda en horizontal", async ({ page }) => {
@@ -191,16 +196,19 @@ test.describe("barra inferior móvil: navegación", () => {
 
 test.describe("cabecera del visitante en móvil: los controles respiran", () => {
   for (const width of [320, 360, 390, 430]) {
-    test(`a ${width}px, logo y registro no se tocan (≥ 8 px entre ellos)`, async ({ browser }) => {
+    test(`a ${width}px, logo, lupa y registro no se tocan (≥ 8 px entre ellos)`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width, height: 800 }, hasTouch: true });
       const page = await context.newPage();
       await openHome(page);
       const header = page.locator("header");
       const logo = await header.getByRole("link", { name: "GMA" }).boundingBox();
+      const search = await header.getByRole("link", { name: "Buscador" }).boundingBox();
       const register = await header.getByRole("link", { name: "Registrarse" }).boundingBox();
       expect(logo).not.toBeNull();
+      expect(search).not.toBeNull();
       expect(register).not.toBeNull();
-      expect(register!.x - (logo!.x + logo!.width)).toBeGreaterThanOrEqual(8);
+      expect(search!.x - (logo!.x + logo!.width)).toBeGreaterThanOrEqual(8);
+      expect(register!.x - (search!.x + search!.width)).toBeGreaterThanOrEqual(4);
       expect(register!.x + register!.width).toBeLessThanOrEqual(width);
       await context.close();
     });

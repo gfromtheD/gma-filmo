@@ -346,7 +346,7 @@ export function Navbar() {
           )}
           <Link
             href="/buscador"
-            className="hidden h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:flex lg:h-10 lg:w-10"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:h-10 lg:w-10"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={22} />
