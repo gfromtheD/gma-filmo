@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:e2e": "playwright test",
     "test:secondary": "playwright test --config playwright.secondary.config.ts",
     "test:support": "playwright test --config playwright.support.config.ts",
     "test:responsive": "playwright test --config playwright.responsive.config.ts"

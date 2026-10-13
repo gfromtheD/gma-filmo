@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
 import { rateLimit } from "@/lib/api/rate-limit";
-
-const MAX_REVIEWS = 5;
+import { paginateReviews, parseReviewQuery, sortReviews } from "@/lib/ratings/review-query";
 
 export async function GET(request: Request) {
   const peliculaId = new URL(request.url).searchParams.get("peliculaId");
@@ -18,12 +17,14 @@ export async function GET(request: Request) {
 
   const admin = getSupabaseAdminClient();
   const pid   = Number(peliculaId);
+  // Parámetros opcionales (limit, offset, sort). Sin ellos: 5 reseñas, orden "top" (comportamiento histórico).
+  const query = parseReviewQuery(new URL(request.url).searchParams);
 
   // All ratings + all likes for this film in parallel
   const [{ data: ratings, error }, { data: allLikes }] = await Promise.all([
     admin
       .from("ratings")
-      .select("user_id, score, comment, rated_at")
+      .select("user_id, profile_id, score, comment, rated_at")
       .eq("pelicula_id", pid)
       .gt("score", 0)
       .order("rated_at", { ascending: false }),
@@ -35,10 +36,10 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error("[api/ratings/community GET]", error.code, error.message);
-    return NextResponse.json({ reviews: [], avgScore: null, voteCount: 0 });
+    return NextResponse.json({ reviews: [], avgScore: null, voteCount: 0, total: 0, hasMore: false });
   }
   if (!ratings?.length) {
-    return NextResponse.json({ reviews: [], avgScore: null, voteCount: 0 });
+    return NextResponse.json({ reviews: [], avgScore: null, voteCount: 0, total: 0, hasMore: false });
   }
 
   // Build like count map and current-user like set
@@ -69,11 +70,12 @@ export async function GET(request: Request) {
     avatarMap.set(p.id, { url: p.avatar_url, color: p.avatar_color });
   }
 
-  // Build reviews: only those with a comment, sorted by likes then recency, max 5
-  const reviews = ratings
+  // Build reviews: only those with a comment (orden y paginación según la consulta)
+  const withComment = ratings
     .filter((r) => r.comment?.trim())
     .map((r) => ({
       userId:      r.user_id,
+      profileId:   r.profile_id ?? "",
       displayName: nameMap.get(r.user_id) ?? "Usuario",
       avatarUrl:   avatarMap.get(r.user_id)?.url   ?? null,
       avatarColor: avatarMap.get(r.user_id)?.color ?? null,
@@ -82,15 +84,11 @@ export async function GET(request: Request) {
       ratedAt:     r.rated_at,
       likeCount:   likeCountMap.get(r.user_id) ?? 0,
       likedByMe:   myLikedSet.has(r.user_id),
-    }))
-    .sort((a, b) =>
-      b.likeCount - a.likeCount ||
-      new Date(b.ratedAt).getTime() - new Date(a.ratedAt).getTime(),
-    )
-    .slice(0, MAX_REVIEWS);
+    }));
+  const { page: reviews, total, hasMore } = paginateReviews(sortReviews(withComment, query.sort), query);
 
   const avgRaw   = ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length;
   const avgScore = Math.round(avgRaw * 2 * 10) / 10;
 
-  return NextResponse.json({ reviews, avgScore, voteCount: ratings.length });
+  return NextResponse.json({ reviews, avgScore, voteCount: ratings.length, total, hasMore });
 }

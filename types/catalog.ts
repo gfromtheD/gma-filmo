@@ -30,6 +30,8 @@ interface MediaBase {
   readonly imageUrl?: string;
   readonly videoUrl?: string;
   readonly r2VideoUrl?: string;
+  /** Tráiler opcional (mp4). Si existe, el hero de portada lo reproduce tras unos segundos. */
+  readonly trailerUrl?: string;
   readonly subtitleUrl?: string;
   readonly tags?: readonly string[];
   readonly tag?: string;

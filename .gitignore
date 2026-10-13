@@ -60,3 +60,7 @@ supabase/.temp/
 
 .vercel
 .env*.local
+
+# playwright
+/test-results/
+/playwright-report/

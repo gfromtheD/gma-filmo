@@ -600,6 +600,41 @@ export type Database = {
           },
         ]
       }
+      comment_reports: {
+        Row: {
+          comment_id: number
+          created_at: string
+          id: number
+          reason: string | null
+          reporter_id: string
+          status: string
+        }
+        Insert: {
+          comment_id: number
+          created_at?: string
+          id?: never
+          reason?: string | null
+          reporter_id: string
+          status?: string
+        }
+        Update: {
+          comment_id?: number
+          created_at?: string
+          id?: never
+          reason?: string | null
+          reporter_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comment_likes: {
         Row: {
           comment_id: number

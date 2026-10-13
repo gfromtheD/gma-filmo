@@ -268,9 +268,11 @@ interface PosterArtProps {
   readonly genre?: string;
   readonly ratio?: PosterRatio;
   readonly imageUrl?: string;
+  /** Cubre el contenedor padre (sin proporción propia ni franja de título). */
+  readonly fill?: boolean;
 }
 
-export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl }: PosterArtProps) {
+export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false }: PosterArtProps) {
   const [c1, c2] = style.tone;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const motifFn: MotifFn = (MOTIFS as Record<string, MotifFn | undefined>)[style.motif] ?? (() => null);
@@ -279,7 +281,7 @@ export function PosterArt({ style, title, kind, genre, ratio = "portrait", image
   return (
     <div
       className="group/poster relative isolate overflow-hidden rounded-[6px]"
-      style={{ aspectRatio: aspect, width: "100%" }}
+      style={fill ? { width: "100%", height: "100%" } : { aspectRatio: aspect, width: "100%" }}
     >
       {/* Gradient background — always present as fallback */}
       <div
@@ -321,17 +323,19 @@ export function PosterArt({ style, title, kind, genre, ratio = "portrait", image
       />
 
       {/* Title strip */}
-      <div className="absolute bottom-0 left-0 right-0 px-[14px] pb-[12px] pt-[14px]" style={{ zIndex: 2 }}>
-        <div className="mb-[6px] break-words text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">
-          {genre ?? (kind === "movie" ? "Corto" : "Serie")}
+      {!fill && (
+        <div className="absolute bottom-0 left-0 right-0 px-[14px] pb-[12px] pt-[14px]" style={{ zIndex: 2 }}>
+          <div className="mb-[6px] break-words text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">
+            {genre ?? (kind === "movie" ? "Corto" : "Serie")}
+          </div>
+          <div
+            className="line-clamp-3 break-words text-[16px] font-extrabold leading-[1.1] tracking-[-0.01em] text-white"
+            style={{ textShadow: "0 2px 18px rgba(0,0,0,0.6)" }}
+          >
+            {title}
+          </div>
         </div>
-        <div
-          className="line-clamp-3 break-words text-[16px] font-extrabold leading-[1.1] tracking-[-0.01em] text-white"
-          style={{ textShadow: "0 2px 18px rgba(0,0,0,0.6)" }}
-        >
-          {title}
-        </div>
-      </div>
+      )}
 
       {/* Accent shine on hover (activated by parent .group/card) */}
       <div
