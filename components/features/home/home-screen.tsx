@@ -12,19 +12,26 @@ import { useProgress } from "@/hooks/use-progress";
 import { useRecommendedHero } from "@/hooks/use-recommended-hero";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { parseDuration } from "@/lib/utils";
+import { ColeccionCard } from "@/components/features/catalog/coleccion-card";
+import { collectionsWithContent, pickRecommendedCollections } from "@/lib/recommendation/collection-picks";
+import type { Coleccion } from "@/lib/supabase/queries";
 import type { MovieMedia } from "@/types/catalog";
 
 const SLIDE_INTERVAL = 6000;
 
 interface HomeScreenProps {
   readonly items: readonly MovieMedia[];
+  readonly colecciones?: readonly Coleccion[];
 }
+
+/** Cuántas colecciones se recomiendan en la fila de portada. */
+const RECOMMENDED_COLLECTIONS = 6;
 
 function hrefFor(item: MovieMedia) {
   return `/cortos/${item.id}`;
 }
 
-export function HomeScreen({ items }: HomeScreenProps) {
+export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const router = useRouter();
   const { mediaIds } = useWatchlist();
   const { entries: progressEntries } = useProgress();
@@ -69,7 +76,17 @@ export function HomeScreen({ items }: HomeScreenProps) {
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
 
   // ── Recommendation rows (replaces static trending + newReleases) ─────────────
-  const { homeRows } = useRecommendations(items);
+  const { homeRows, categoryWeights, sessionSeed } = useRecommendations(items);
+  const recommendedCollections = useMemo(
+    () =>
+      pickRecommendedCollections(
+        collectionsWithContent(colecciones, items),
+        categoryWeights,
+        sessionSeed,
+        RECOMMENDED_COLLECTIONS,
+      ),
+    [colecciones, items, categoryWeights, sessionSeed],
+  );
   const watchlistItems = items.filter((x) => mediaIds.includes(x.numericId));
 
   const continueItems = useMemo(() => {
@@ -134,6 +151,24 @@ export function HomeScreen({ items }: HomeScreenProps) {
             <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
           ))}
         </Carousel>
+
+        {recommendedCollections.length > 0 && (
+          <Carousel
+            title="Colecciones para ti"
+            action={
+              <Link
+                href="/cortos"
+                className="text-[14px] font-medium text-[#B8C5D4] transition-colors hover:text-white"
+              >
+                Ver todas
+              </Link>
+            }
+          >
+            {recommendedCollections.map(({ col, filmCount }) => (
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
+            ))}
+          </Carousel>
+        )}
 
         {homeRows.map((row) => (
           <Carousel key={row.title} title={row.title}>

@@ -119,7 +119,7 @@ function seededRandom(seed: number, i: number): number {
 
 // Recommendation seed rotates every 2 hours so home feels different across visits.
 // localStorage (not sessionStorage) so it's consistent across tabs but still expires.
-function getOrCreateSessionSeed(userId = "anon"): number {
+export function getOrCreateSessionSeed(userId = "anon"): number {
   if (typeof localStorage === "undefined") return Math.random();
   const slot = Math.floor(Date.now() / (2 * 3_600_000)); // 2-hour bucket
   const KEY  = `gma-rec-seed-v3:${userId}:${slot}`;
