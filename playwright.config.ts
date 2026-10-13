@@ -12,7 +12,7 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     channel: "chrome",
-    reducedMotion: "reduce",
+    contextOptions: { reducedMotion: "reduce" },
     trace: "retain-on-failure",
   },
   webServer: {
