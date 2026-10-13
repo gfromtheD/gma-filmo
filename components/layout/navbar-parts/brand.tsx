@@ -11,9 +11,9 @@ export function NavbarBrand() {
           filmo
         </span>
       </Link>
-      <span className="h-[18px] w-px bg-[#2A2A2A]" />
+      <span className="hidden h-[18px] w-px bg-[#2A2A2A] xl:block" />
       <span
-        className="text-[13px] text-[#6D7D94]"
+        className="hidden whitespace-nowrap text-[13px] text-[#6D7D94] xl:block"
         style={{ fontFamily: '"Georgia", "Times New Roman", serif', fontStyle: "italic" }}
       >
         el cine es nuestro

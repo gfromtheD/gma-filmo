@@ -7,6 +7,8 @@ import { motion, useAnimation, AnimatePresence } from "motion/react";
 import { ExternalLink, UserRound, MessageCircle } from "lucide-react";
 import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
+import { MobileMenu, type MobileMenuItem } from "@/components/layout/navbar-parts/mobile-menu";
+import { StudioTabsRow } from "@/components/layout/navbar-parts/studio-tabs-row";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -188,6 +190,25 @@ export function Navbar() {
     setTimeout(() => router.push(targetHref), 420);
   }
 
+  function handleStudioTabSelect(id: (typeof STUDIO_TABS)[number]["id"]) {
+    setStudioTab(id);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Elementos del panel móvil: mismas rutas que la píldora; los creadores ven
+  // Mi Espacio y Mi Estudio como destinos separados.
+  const mobileItems: MobileMenuItem[] = [
+    ...NAV_ITEMS.map((item) => ({
+      id: item.id,
+      label: item.label,
+      href: item.href,
+      isActive: item.id === "space" ? pathname.startsWith("/mi-espacio") : isActive(item),
+    })),
+    ...(isCreator
+      ? [{ id: "studio", label: "Mi Estudio", href: "/mi-estudio", isActive: pathname.startsWith("/mi-estudio") }]
+      : []),
+  ];
+
   // Measure active pill position
   useEffect(() => {
     const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
@@ -208,22 +229,17 @@ export function Navbar() {
         WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <div
-        className="mx-auto max-w-[1440px] px-8"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center",
-          height: 80,
-          gap: 32,
-        }}
-      >
-        {/* ── Left: brand ───────────────────────────────────────────── */}
-        <NavbarBrand />
+      <div className="mx-auto grid h-16 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-2 px-3 sm:px-4 lg:h-20 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-8">
+        {/* ── Left: menú móvil + marca ──────────────────────────────── */}
+        <div className="flex items-center gap-1 lg:gap-0">
+          <MobileMenu items={mobileItems} />
+          <NavbarBrand />
+        </div>
 
         {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
-          className="relative flex rounded-full border border-[#262626]"
+          aria-label="Principal"
+          className="relative hidden rounded-full border border-[#262626] lg:flex"
           style={{ background: "rgba(255,255,255,0.04)" }}
         >
           {/* ── Main nav row ─────────────────────────────────────────── */}
@@ -321,10 +337,7 @@ export function Navbar() {
                 <button
                   key={tab.id}
                   ref={(el) => { studioTabRefs.current[i] = el; }}
-                  onClick={() => {
-                    setStudioTab(tab.id);
-                    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
+                  onClick={() => handleStudioTabSelect(tab.id)}
                   style={{
                     position: "relative", zIndex: 10,
                     display: "flex", alignItems: "center", gap: 7,
@@ -347,7 +360,7 @@ export function Navbar() {
         <div className="flex items-center justify-end gap-1">
           <Link
             href="/buscador"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white lg:h-9 lg:w-9"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={19} />
@@ -360,7 +373,7 @@ export function Navbar() {
               aria-label="Cuenta"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 hover:bg-[#1A1A1A]"
+              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
@@ -395,10 +408,10 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap">
+              <span className="hidden max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap lg:block">
                 {isGuest ? "Invitado" : displayName}
               </span>
-              <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94] shrink-0" />
+              <GmaIcon name="chevronDown" size={12} className="hidden shrink-0 text-[#6D7D94] lg:block" />
             </button>
 
             {menuOpen && (
@@ -514,6 +527,10 @@ export function Navbar() {
           </div>
         </div>
       </div>
+
+      {isStudioNav && (
+        <StudioTabsRow tabs={STUDIO_TABS} activeId={studioTab} onSelect={handleStudioTabSelect} />
+      )}
     </header>
   );
 }
