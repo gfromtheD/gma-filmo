@@ -254,20 +254,19 @@ test("reproductor: controles, pausa y paneles en móvil y horizontal", async ({ 
 test("ficha: reseñas largas, comentarios anidados y valoración", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await open(page, "movie");
-  await expect(page.getByText("@" + longName, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(longName, { exact: true }).first()).toBeVisible();
   await expectFits(page, "Reseñas largas");
-  await page.getByRole("button", { name: "Comentarios", exact: true }).click();
+  await page.getByRole("tab", { name: "Comentarios", exact: true }).click();
   await page.getByRole("button", { name: "1 respuesta", exact: true }).click();
   await expect(page.getByText("Una respuesta anidada que se conserva visible.")).toBeVisible();
   await expectFits(page, "Comentarios anidados");
-  await page.getByRole("button", { name: "Valoraciones", exact: true }).click();
-  await page.getByRole("button", { name: "Editar nota", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("tab", { name: "Valoraciones", exact: true }).click();
+  // La valoración se edita en un formulario integrado en la ficha (ya no es un diálogo modal).
+  await page.getByRole("button", { name: "Editar", exact: true }).click();
+  await expect(page.locator("#rating-form-title")).toBeVisible();
   await expectFits(page, "Valoración 5 por 2");
   await page.waitForTimeout(350);
   await page.screenshot({ path: test.info().outputPath("valoracion-320.png") });
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).not.toBeVisible();
 });
 
 for (const width of [320, 768, 1440]) {
@@ -365,7 +364,7 @@ test.describe("teclado de escritorio", () => {
     await edit.focus();
     await expect(edit).toHaveCSS("opacity", "1");
     await page.getByRole("button", { name: "Cuenta", exact: true }).click();
-    await page.getByRole("link", { name: "Configuración", exact: true }).focus();
+    await page.getByRole("menuitem", { name: "Configuración", exact: true }).focus();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Cuenta", exact: true })).toBeFocused();
     await open(page, "settings");
