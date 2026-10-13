@@ -99,3 +99,25 @@ documenta aquí con aviso de riesgo.
 - **Actualizar:** `rea update` (o `npm install --global rea-agents@latest`), después
   `rea setup --client claude_code --skill-client claude_code` y reiniciar Claude Code.
 - **Retirar:** `rea uninstall` o restaurar `~/.claude.json.rea.backup`.
+
+### 2026-10-13 — Fase A: investigación de Filmin y auditoría del frontend (solo documentación)
+
+- **Rama:** `feature/frontend-windows`. **Sin cambios de código** de la aplicación.
+- **Archivos nuevos:** `docs/frontend-research/FILMIN-OBSERVACIONES.md`,
+  `GMA-AUDITORIA-FRONTEND.md`, `MATRIZ-RESPONSIVE.md`, `PLAN-REDISENO.md`.
+- **REA verificado en sesión nueva:** herramientas `mcp__rea__*` disponibles; `list_browser_targets`,
+  `inspect_web_page` y `capture_web_screenshot` probadas sobre una página pública. REA ya se
+  considera operativo.
+- **Navegador de investigación:** Chrome aislado con perfil temporal y CDP solo en `127.0.0.1:9333`
+  (cerrado y perfil eliminado al terminar). Capturas de referencia de Filmin **fuera del repo**
+  (`GMA/_research-filmin/`); no publicar.
+- **Hallazgos principales (comprobados):** no hay breakpoints responsive en la plataforma; la
+  navbar mantiene ~767 px y en móvil deja fuera de pantalla navegación, buscador y cuenta; sin
+  `prefers-reduced-motion`; píldora de creador no operable con teclado; contrastes por debajo de AA
+  en textos de apoyo; 1.047 literales hex frente a 9 usos de tokens.
+- **Dependencias añadidas al proyecto:** ninguna. **Despliegues:** ninguno.
+- **Conflictos con el Mac:** ninguno; no se tocó Studio, Player, APIs ni datos.
+- **Notas para la integración:** el contrato de valoraciones de GMA (1–10, `rating = nota/2`,
+  `CommunityReview`) está descrito en la auditoría; la futura Fase E debe respetarlo.
+- **Pendiente de decisión del usuario:** punto de cambio escritorio/móvil, patrón móvil, estado en
+  scroll y Studio en móvil (ver `PLAN-REDISENO.md`).
