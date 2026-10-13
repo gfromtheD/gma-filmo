@@ -151,7 +151,7 @@ test("navegación: cuenta y pestañas del estudio al girar", async ({ page }) =>
   await open(page, "studio-home");
   // Next synchronizes native history with usePathname without a server navigation.
   await page.evaluate(() => history.pushState(null, "", "/mi-estudio?view=studio-home"));
-  const nav = page.getByRole("navigation");
+  const nav = page.getByRole("group", { name: "Secciones de Mi Estudio" });
   await expect(nav.getByRole("button", { name: "Panel", exact: true })).toBeVisible();
   for (const label of ["Panel", "Mis títulos", "Subir", "Estadísticas", "Perfil"]) {
     const tab = nav.getByRole("button", { name: label, exact: true });
