@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { DropdownMenu } from "radix-ui";
-import { Bookmark, ChatBubble, LogOut, NavArrowRight, OpenNewWindow, Settings, User } from "iconoir-react";
+import { Bookmark, ChatBubble, Dashboard, LogOut, NavArrowRight, OpenNewWindow, Settings, User } from "iconoir-react";
 import { UserAvatar } from "@/components/layout/navbar-parts/avatars";
 
 const ITEM_BASE =
@@ -111,6 +111,15 @@ export function AccountMenuContent({
               <span>Mi Espacio</span>
             </Link>
           </DropdownMenu.Item>
+          {isCreator && (
+            // En escritorio Mi Estudio está en la barra superior; en móvil/tableta solo se llega desde aquí.
+            <DropdownMenu.Item asChild>
+              <Link href="/mi-estudio" className={`${ITEM_CLASS} lg:hidden`}>
+                <Dashboard {...ICON_PROPS} />
+                <span>Mi Estudio</span>
+              </Link>
+            </DropdownMenu.Item>
+          )}
           {isCreator && (
             <DropdownMenu.Item className={ITEM_CLASS} onSelect={onOpenMessages}>
               <ChatBubble {...ICON_PROPS} />

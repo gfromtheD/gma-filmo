@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Xmark as X, ControlSlider as SlidersHorizontal, Check } from "@/components/ui/icons";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import type { MovieMedia } from "@/types/catalog";
+import { lockPageScroll } from "@/lib/scroll-lock";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,8 +198,7 @@ export function CatalogFilterDrawer({
   useEffect(() => {
     if (!open) return;
     const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockPageScroll();
     drawerRef.current?.querySelector<HTMLButtonElement>("[data-filter-close]")?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -223,7 +223,7 @@ export function CatalogFilterDrawer({
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
       previousFocus?.focus();
     };
   }, [open]);

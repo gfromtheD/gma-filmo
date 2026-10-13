@@ -8,7 +8,6 @@ import { DropdownMenu } from "radix-ui";
 import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
 import { AccountMenuContent } from "@/components/layout/navbar-parts/account-menu-content";
-import { MobileMenu, type MobileMenuItem } from "@/components/layout/navbar-parts/mobile-menu";
 import { StudioTabsRow } from "@/components/layout/navbar-parts/studio-tabs-row";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -211,20 +210,6 @@ export function Navbar() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
-  // Elementos del panel móvil: mismas rutas que la píldora; los creadores ven
-  // Mi Espacio y Mi Estudio como destinos separados.
-  const mobileItems: MobileMenuItem[] = [
-    ...NAV_ITEMS.map((item) => ({
-      id: item.id,
-      label: item.label,
-      href: item.href,
-      isActive: item.id === "space" ? pathname.startsWith("/mi-espacio") : isActive(item),
-    })),
-    ...(isCreator
-      ? [{ id: "studio", label: "Mi Estudio", href: "/mi-estudio", isActive: pathname.startsWith("/mi-estudio") }]
-      : []),
-  ];
-
   return (
     <header
       data-scrolled={isScrolled}
@@ -233,7 +218,6 @@ export function Navbar() {
       <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-20 xl:px-24">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
-          <MobileMenu items={mobileItems} isGuest={isGuest} />
           <NavbarBrand />
         </div>
 
@@ -360,14 +344,14 @@ export function Navbar() {
           )}
           <Link
             href="/buscador"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:h-10 lg:w-10"
+            className="hidden h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:flex lg:h-10 lg:w-10"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={22} />
           </Link>
           <Link
             href="/mi-espacio"
-            className="hidden h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white sm:flex"
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:flex"
             aria-label="Mi lista"
           >
             <GmaIcon name="bookmark" size={22} />
