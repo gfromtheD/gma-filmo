@@ -1,7 +1,4 @@
-import type { Metadata } from "next";
 import { BackButton } from "./back-button";
-
-export const metadata: Metadata = { title: "GMA Filmo" };
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (

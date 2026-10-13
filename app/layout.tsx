@@ -26,7 +26,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export const metadata: Metadata = {
   title: {
     default: "GMA Filmo",
-    template: "%s — GMA Filmo",
+    template: "%s · GMA Filmo",
   },
   description: APP_METADATA.description,
 };

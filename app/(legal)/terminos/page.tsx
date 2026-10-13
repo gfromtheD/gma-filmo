@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Condiciones de uso · GMA Filmo" };
+export const metadata: Metadata = { title: "Condiciones de uso" };
 
 export default function TerminosPage() {
   return (

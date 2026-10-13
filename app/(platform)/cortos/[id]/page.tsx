@@ -16,7 +16,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const movie = await getPeliculaBySlug(params.id);
-  return { title: movie?.title ?? "Cortometraje" };
+  return { title: movie?.title ?? "Título no encontrado" };
 }
 
 export default async function CortoDetailPage({ params, searchParams }: Props) {
