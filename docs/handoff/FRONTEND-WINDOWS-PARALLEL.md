@@ -165,3 +165,16 @@ documenta aquí con aviso de riesgo.
   (el Mac cambió reproducción/catálogo). `Player`/`Studio` no se tocaron.
 - **Límites:** perfil autenticado no replicable (no observable públicamente); sin vídeo en el hero; sin pestaña «Extras»
   (GMA no tiene ese contenido); fuente Manrope en lugar de Graphik; creadores autenticados sin probar.
+
+### 2026-10-13 — Experimento: vista previa flotante al pasar el ratón (rama `experiment/filmin-layout`)
+
+- **Observado en Filmin (ratón real, 1440 px):** panel `MediaHoverWrapper` absoluto, abre a ~300 ms, crece ~250 ms
+  centrado sobre la portada (205×308 → 344×432), se ajusta al viewport con 16 px de margen, se cierra al salir; contiene
+  vídeo mudo, nota, CTA, «ver después», título, duración/edad, géneros y sinopsis.
+- **Implementación GMA:** `components/ui/hover-preview-card.tsx` (portal fijo, animación desde la portada),
+  `hooks/use-hover-preview.ts` (retraso, cierre, Escape, scroll), `hooks/use-community-score.ts` (nota con caché y precarga),
+  `lib/hover-preview-layout.ts` (posición pura). `PosterCard` admite `hoverPreview` (activo en portada, catálogo y similares).
+- **Decisiones:** solo puntero de ratón (nunca táctil); sin vídeo (no se acopla a `r2_video_url`/`stream_uid`); la nota usa el
+  mismo endpoint de lectura que la ficha (`/api/ratings/community`), sin cambios de contrato.
+- **Medido en GMA:** aparece a ~330 ms, 379×463 px, dentro de márgenes en primera y última tarjeta; E2E 50/50.
+- **Conflictos posibles con el Mac:** `poster-card.tsx` (compartido con búsqueda y perfil de creador, sin activar allí).
