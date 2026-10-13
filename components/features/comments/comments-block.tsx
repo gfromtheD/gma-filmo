@@ -291,6 +291,7 @@ function CommentCard({
   const [showReplies,  setShowReplies]  = useState(false);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [reported, setReported] = useState(false);
+  const [reportError, setReportError] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -315,14 +316,19 @@ function CommentCard({
 
   async function handleReport() {
     if (!currentUserId || reported) return;
+    setReportError(false);
     try {
-      await fetch("/api/comments/report", {
+      const res = await fetch("/api/comments/report", {
         method:  "POST",
         headers: await authHeaders(),
         body:    JSON.stringify({ commentId: comment.id }),
       });
-      setReported(true);
-    } catch { /* silent */ }
+      const body = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+      if (res.ok && body?.ok === true) setReported(true);
+      else setReportError(true);
+    } catch {
+      setReportError(true);
+    }
   }
 
   async function handleDelete() {
@@ -442,7 +448,7 @@ function CommentCard({
               disabled={reported}
               className={`ml-auto text-[12px] text-[#B8B8CC] transition-colors hover:text-red-300 disabled:opacity-60 ${FOCUS}`}
             >
-              {reported ? "Denunciado" : "Denunciar"}
+              {reported ? "Denunciado" : reportError ? "Error, reintentar" : "Denunciar"}
             </button>
           )}
         </div>
