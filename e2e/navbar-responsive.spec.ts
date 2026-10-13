@@ -9,6 +9,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const DESKTOP_MIN = 1024;
 const WIDTHS = [320, 360, 390, 430, 768, 1023, 1024, 1280, 1440, 1920] as const;
 const MIN_TOUCH_TARGET = 44;
+/** Como en Filmin, el visitante en móvil ve el botón de registro; su acceso a la cuenta va en el menú lateral. */
+const GUEST_ACCOUNT_MIN = 640;
 
 async function openHome(page: Page) {
   await page.context().addCookies([
@@ -56,10 +58,16 @@ for (const width of WIDTHS) {
       await openHome(page);
       const search = page.getByRole("link", { name: "Buscador" });
       const account = page.getByRole("button", { name: "Cuenta" });
+      const guestOnPhone = width < GUEST_ACCOUNT_MIN;
       await expect(search).toBeVisible();
-      await expect(account).toBeVisible();
+      if (guestOnPhone) {
+        await expect(page.getByRole("link", { name: "Registrarse" })).toBeVisible();
+        await expect(account).toBeHidden();
+      } else {
+        await expect(account).toBeVisible();
+      }
       if (!isDesktop) {
-        for (const target of [search, account]) {
+        for (const target of guestOnPhone ? [search] : [search, account]) {
           const box = await target.boundingBox();
           expect(box?.width ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
           expect(box?.height ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
@@ -68,6 +76,7 @@ for (const width of WIDTHS) {
     });
 
     test("menú de cuenta: role=menu, Escape lo cierra y devuelve el foco", async ({ page }) => {
+      test.skip(width < GUEST_ACCOUNT_MIN, "El visitante en móvil accede a la cuenta desde el menú lateral");
       await openHome(page);
       const account = page.getByRole("button", { name: "Cuenta" });
       await clickUntil(account, page.getByRole("menu"));
@@ -156,5 +165,18 @@ test.describe("navbar móvil: navegación", () => {
     for (const layer of await page.locator("[data-state=open].fixed").all()) {
       await expect(layer).toBeHidden();
     }
+  });
+});
+
+test.describe("menú lateral del visitante en móvil", () => {
+  test.use({ viewport: { width: 390, height: 800 }, hasTouch: true });
+
+  test("ofrece registrarse e iniciar sesión", async ({ page }) => {
+    await openHome(page);
+    const trigger = page.getByRole("button", { name: "Abrir menú principal" });
+    const dialog = page.getByRole("dialog", { name: "Menú principal" });
+    await clickUntil(trigger, dialog);
+    await expect(dialog.getByRole("link", { name: "Registrarse" })).toHaveAttribute("href", "/?register=1");
+    await expect(dialog.getByRole("link", { name: "Iniciar sesión" })).toHaveAttribute("href", "/?login=1");
   });
 });

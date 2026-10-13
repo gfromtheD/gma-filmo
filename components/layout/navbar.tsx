@@ -233,7 +233,7 @@ export function Navbar() {
       <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[auto_1fr_auto] lg:gap-8 lg:px-16">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
-          <MobileMenu items={mobileItems} />
+          <MobileMenu items={mobileItems} isGuest={isGuest} />
           <NavbarBrand />
         </div>
 
@@ -353,7 +353,7 @@ export function Navbar() {
           {isGuest && (
             <Link
               href="/?register=1"
-              className="mr-2 hidden h-8 items-center rounded-[4px] bg-[#22B16B] px-3 text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+              className="mr-1 inline-flex h-8 w-[120px] max-sm:order-last items-center justify-center rounded-[4px] bg-[#22B16B] text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:mr-2 lg:w-auto lg:px-3"
             >
               Registrarse
             </Link>
@@ -374,7 +374,7 @@ export function Navbar() {
           </Link>
 
           <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
-          <div className="relative ml-1.5">
+          <div className={`relative ml-1.5 ${isGuest ? "hidden sm:block" : ""}`}>
             <DropdownMenu.Trigger asChild>
             <button
               ref={chipBtnRef}

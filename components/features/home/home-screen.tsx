@@ -147,7 +147,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           </Carousel>
         )}
 
-        <Carousel title="Recién llegados">
+        <Carousel title="Recién llegados" mobileSize="wide">
           {items.slice(0, 15).map((item) => (
             <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
           ))}
