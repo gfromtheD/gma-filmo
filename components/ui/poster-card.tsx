@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { HoverPreviewCard } from "@/components/ui/hover-preview-card";
+import { CardInfoOverlay } from "@/components/ui/card-info-overlay";
 import { useHoverPreview } from "@/hooks/use-hover-preview";
 import { loadCommunityScore } from "@/hooks/use-community-score";
 import type { MediaItem, PosterRatio } from "@/types/catalog";
@@ -27,6 +28,8 @@ interface PosterCardProps {
   readonly inList?: boolean;
   /** Muestra una vista previa flotante al pasar el ratón (no en táctil). */
   readonly hoverPreview?: boolean;
+  /** Para listados grandes: capa oscura con la descripción al pasar el ratón (sin panel flotante). */
+  readonly hoverOverlay?: boolean;
 }
 
 export function PosterCard({
@@ -40,6 +43,7 @@ export function PosterCard({
   onAddList,
   inList = false,
   hoverPreview = false,
+  hoverOverlay = false,
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
   const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : `/cortos/${item.id}`);
@@ -72,6 +76,7 @@ export function PosterCard({
   const cardContent = (
     <>
       <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} />
+      {hoverOverlay && <CardInfoOverlay item={item} />}
       {showProgress && item.progress != null && (
         <div
           className="pointer-events-none absolute bottom-2 left-2 right-2 z-10 h-[3px] overflow-hidden rounded-full"
@@ -89,11 +94,21 @@ export function PosterCard({
       type="button"
       onClick={(e) => { e.stopPropagation(); onAddList(); }}
       aria-label={inList ? "Quitar de Mi Lista" : "Añadir a Mi Lista"}
-      className={`absolute right-2.5 top-0 z-20 border-0 bg-transparent p-0 transition-opacity duration-200 ${
-        inList ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"
-      }`}
+      className={
+        hoverOverlay
+          ? "absolute bottom-3 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-transparent p-0 text-white opacity-0 transition-opacity duration-[350ms] hover:text-[#22B16B] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/card:opacity-100 motion-reduce:transition-none"
+          : `absolute right-2.5 top-0 z-20 border-0 bg-transparent p-0 transition-opacity duration-200 ${
+              inList ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"
+            }`
+      }
     >
-      {inList ? (
+      {hoverOverlay ? (
+        <GmaIcon
+          name={inList ? "check" : "bookmark"}
+          size={22}
+          style={inList ? { color: "#22B16B" } : undefined}
+        />
+      ) : inList ? (
         <GmaIcon
           name="bookmark"
           size={30}
