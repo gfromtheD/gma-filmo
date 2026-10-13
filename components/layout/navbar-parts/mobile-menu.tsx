@@ -35,10 +35,10 @@ export function MobileMenu({ items }: MobileMenuProps) {
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none" />
+        <Dialog.Overlay className="fixed inset-0 z-[300] lg:hidden bg-black/70 backdrop-blur-sm duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-reduce:animate-none" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-y-0 left-0 z-[301] flex w-[min(86vw,320px)] flex-col border-r border-[#262626] bg-[#0D0D0D] shadow-2xl outline-none duration-200 data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:animate-in data-[state=open]:slide-in-from-left motion-reduce:animate-none"
+          className="fixed inset-y-0 left-0 z-[301] flex lg:hidden w-[min(86vw,320px)] flex-col border-r border-[#262626] bg-[#0D0D0D] shadow-2xl outline-none duration-200 data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:animate-in data-[state=open]:slide-in-from-left motion-reduce:animate-none"
         >
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#262626] pl-5 pr-3">
             <Dialog.Title className="text-[14px] font-extrabold text-white">

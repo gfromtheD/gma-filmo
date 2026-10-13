@@ -119,15 +119,29 @@ export function Navbar() {
   const [studioTabPill, setStudioTabPill]           = useState({ left: 0, width: 0 });
   const [studioTabPillReady, setStudioTabPillReady] = useState(false);
   const isStudioNav = isCreator && pathname.startsWith("/mi-estudio");
+  const navRef = useRef<HTMLElement>(null);
 
 
+  // El subrayado se recalcula si la barra cambia de tamaño (p. ej. móvil → escritorio).
   useEffect(() => {
     if (!isStudioNav) { setStudioTabPillReady(false); return; }
-    const idx = STUDIO_TABS.findIndex((t) => t.id === studioTab);
-    const el  = studioTabRefs.current[idx];
-    if (!el) return;
-    setStudioTabPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setStudioTabPillReady(true);
+    function measure() {
+      const idx = STUDIO_TABS.findIndex((t) => t.id === studioTab);
+      const el  = studioTabRefs.current[idx];
+      if (!el || el.offsetWidth === 0) return;
+      setStudioTabPill((prev) =>
+        prev.left === el.offsetLeft && prev.width === el.offsetWidth
+          ? prev
+          : { left: el.offsetLeft, width: el.offsetWidth },
+      );
+      setStudioTabPillReady(true);
+    }
+    measure();
+    const nav = navRef.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
   }, [studioTab, isStudioNav]);
 
   const handleSignOut = useCallback(async () => {
@@ -216,7 +230,6 @@ export function Navbar() {
 
   // Mide la píldora activa y la recalcula si la barra cambia de tamaño
   // (redimensionado, zoom, carga de la fuente, paso de móvil a escritorio).
-  const navRef = useRef<HTMLElement>(null);
   const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
 
   useEffect(() => {

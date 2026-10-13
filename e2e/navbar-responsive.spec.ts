@@ -24,7 +24,8 @@ async function openHome(page: Page) {
  */
 async function clickUntil(trigger: Locator, expected: Locator) {
   await expect(async () => {
-    await trigger.click();
+    // Idempotente: si un intento anterior ya abrió el elemento, no volver a pulsar (sería un toggle).
+    if (!(await expected.isVisible())) await trigger.click();
     await expect(expected).toBeVisible({ timeout: 1_500 });
   }).toPass({ timeout: 20_000 });
 }
@@ -147,5 +148,31 @@ test.describe("navbar: comportamiento", () => {
     await expect(layer).toHaveAttribute("data-scrolled", "false");
     await page.mouse.wheel(0, 400);
     await expect(layer).toHaveAttribute("data-scrolled", "true");
+  });
+});
+
+test.describe("navbar móvil: navegación", () => {
+  test.use({ viewport: { width: 390, height: 800 }, hasTouch: true });
+
+  test("elegir una sección cierra el panel y navega; aria-current marca la activa", async ({ page }) => {
+    await openHome(page);
+    const trigger = page.getByRole("button", { name: "Abrir menú principal" });
+    const dialog = page.getByRole("dialog", { name: "Menú principal" });
+    await clickUntil(trigger, dialog);
+    await expect(dialog.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+    await dialog.getByRole("link", { name: "Películas" }).click();
+    await expect(page).toHaveURL(/peliculas/);
+    await expect(dialog).toBeHidden();
+  });
+
+  test("el panel abierto se oculta al ensanchar a escritorio", async ({ page }) => {
+    await openHome(page);
+    const dialog = page.getByRole("dialog", { name: "Menú principal" });
+    await clickUntil(page.getByRole("button", { name: "Abrir menú principal" }), dialog);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(dialog).toBeHidden();
+    for (const layer of await page.locator("[data-state=open].fixed").all()) {
+      await expect(layer).toBeHidden();
+    }
   });
 });
