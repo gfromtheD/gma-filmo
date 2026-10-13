@@ -257,6 +257,26 @@ body::-webkit-scrollbar {
   to   { opacity: 0; }
 }
 
+/* Fondo líquido de la búsqueda: manchas que derivan despacio (solo transform). */
+@keyframes aurora-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(14vw, 10vh, 0) scale(1.18); }
+}
+@keyframes aurora-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to   { transform: translate3d(-16vw, 14vh, 0) scale(0.92); }
+}
+@keyframes aurora-drift-c {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(12vw, -12vh, 0) scale(1.2); }
+}
+.aurora-a { animation: aurora-drift-a 26s ease-in-out infinite alternate; }
+.aurora-b { animation: aurora-drift-b 32s ease-in-out infinite alternate; }
+.aurora-c { animation: aurora-drift-c 29s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .aurora-a, .aurora-b, .aurora-c { animation: none; }
+}
+
 /* Indicador del hero: el punto activo se llena de izquierda a derecha en 8 s. */
 @keyframes dot-fill-anim {
   from { transform: scaleX(0); }
