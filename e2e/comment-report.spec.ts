@@ -25,8 +25,8 @@ async function signIn(page: Page) {
   };
   const value = "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url");
   await page.context().addCookies([
-    { name: `sb-${REF}-auth-token`, value, url: "http://localhost:3000" },
-    { name: "gma_guest", value: "1", url: "http://localhost:3000" },
+    { name: `sb-${REF}-auth-token`, value, url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
+    { name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
   ]);
 }
 

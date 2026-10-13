@@ -38,7 +38,7 @@ async function mockCommunity(page: Page, state: { failing: boolean; urls: string
 }
 
 async function openFicha(page: Page, hash: string) {
-  await page.context().addCookies([{ name: "gma_guest", value: "1", url: "http://localhost:3000" }]);
+  await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.goto("/inicio", { waitUntil: "load" });
   const href = await page.locator('a[href^="/cortos/"]').evaluateAll((links) =>
     links.map((a) => a.getAttribute("href")).find((h) => h !== null && h.split("/").length === 3),

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** Portada y ficha con la distribución inspirada en Filmin (experimento). */
 async function openHome(page: Page) {
-  await page.context().addCookies([{ name: "gma_guest", value: "1", url: "http://localhost:3000" }]);
+  await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.goto("/inicio", { waitUntil: "load" });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
@@ -138,7 +138,7 @@ test.describe("colecciones recomendadas y overlay de listados", () => {
   });
 
   test("en el catálogo se muestra la descripción sobre la portada, sin panel flotante", async ({ page }) => {
-    await page.context().addCookies([{ name: "gma_guest", value: "1", url: "http://localhost:3000" }]);
+    await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
     await page.goto("/cortos", { waitUntil: "load" });
     const card = page.locator("[class*='group/card']", { has: page.locator("[class*='bg-black/90']") }).first();
     await card.scrollIntoViewIfNeeded();

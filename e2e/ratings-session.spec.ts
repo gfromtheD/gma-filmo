@@ -38,8 +38,8 @@ async function signInFake(page: Page) {
   // @supabase/ssr guarda la sesión en una cookie con prefijo "base64-" (JSON en base64url).
   const value = "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url");
   await page.context().addCookies([
-    { name: `sb-${PROJECT_REF}-auth-token`, value, url: "http://localhost:3000" },
-    { name: "gma_guest", value: "1", url: "http://localhost:3000" },
+    { name: `sb-${PROJECT_REF}-auth-token`, value, url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
+    { name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
   ]);
 }
 
