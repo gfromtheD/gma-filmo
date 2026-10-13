@@ -5,12 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
 import { ExternalLink, UserRound, MessageCircle } from "lucide-react";
+import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
+import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useProfileStore } from "@/store/use-profile-store";
-import { renderAvatar } from "@/lib/data/profile-avatars";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
@@ -32,38 +33,6 @@ const NAV_ITEMS: readonly NavItem[] = [
   { id: "space",  label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
 ];
 
-
-function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: string; imageUrl?: string; iconId?: string }) {
-  if (imageUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={imageUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-    );
-  }
-  if (iconId) {
-    return (
-      <div className="h-7 w-7 overflow-hidden rounded-full">
-        {renderAvatar(iconId, color, 28) as React.ReactNode}
-      </div>
-    );
-  }
-  return (
-    <div
-      className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-extrabold text-[#031A0E]"
-      style={{ background: color }}
-    >
-      {name[0]?.toUpperCase() ?? "U"}
-    </div>
-  );
-}
-
-function GuestAvatarIcon() {
-  return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
-      <UserRound size={15} className="text-[#B8C5D4]" />
-    </div>
-  );
-}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -250,23 +219,7 @@ export function Navbar() {
         }}
       >
         {/* ── Left: brand ───────────────────────────────────────────── */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex shrink-0 items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo-gma.png" alt="GMA" className="h-8 w-auto" />
-            <span className="text-[18px] text-white">·</span>
-            <span className="text-[14px] font-medium uppercase tracking-[0.04em] text-[#22B16B]">
-              filmo
-            </span>
-          </Link>
-          <span className="h-[18px] w-px bg-[#2A2A2A]" />
-          <span
-            className="text-[13px] text-[#6D7D94]"
-            style={{ fontFamily: '"Georgia", "Times New Roman", serif', fontStyle: "italic" }}
-          >
-            el cine es nuestro
-          </span>
-        </div>
+        <NavbarBrand />
 
         {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
