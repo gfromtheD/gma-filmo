@@ -45,16 +45,21 @@ Mismo método (Playwright, viewport exacto, invitado, `reducedMotion: reduce`). 
 
 | Ancho | Alto header | Controles fuera de pantalla | Scroll horizontal | Errores de consola | Patrón |
 |---|---|---|---|---|---|
-| 320 | 64 | **ninguno** | no | 0 | Menú + marca + buscar + cuenta |
-| 360 | 64 | **ninguno** | no | 0 | idem |
-| 390 | 64 | **ninguno** | no | 0 | idem |
-| 430 | 64 | **ninguno** | no | 0 | idem |
-| 768 | 64 | **ninguno** | no | 0 | idem (antes: barra apretada) |
-| 1023 | 64 | ninguno | no | 0 | idem |
-| 1024 | 80 | ninguno | no | 0 | Barra de escritorio (sin eslogan) |
-| 1280 | 80 | ninguno | no | 0 | Barra de escritorio + eslogan |
-| 1440 | 80 | ninguno | no | 0 | idem |
-| 1920 | 80 | ninguno | no | 0 | idem |
+| 320 | 64 | **ninguno** | no | no medido tras el arreglo | Menú + marca + buscar + cuenta |
+| 360 | 64 | **ninguno** | no | no medido tras el arreglo | idem |
+| 390 | 64 | **ninguno** | no | **0** | idem |
+| 430 | 64 | **ninguno** | no | no medido tras el arreglo | idem |
+| 768 | 64 | **ninguno** | no | no medido tras el arreglo | idem (antes: barra apretada) |
+| 1023 | no medido (CSS: 64) | ninguno (E2E) | no medido | no medido | idem |
+| 1024 | 80 | ninguno | no | no medido tras el arreglo | Barra de escritorio (sin eslogan) |
+| 1280 | 80 | ninguno | no | **0** (E2E) | Barra de escritorio + eslogan |
+| 1440 | 80 | ninguno | no | **0** | idem |
+| 1920 | 80 | ninguno | no | no medido tras el arreglo | idem |
+
+Nota: la matriz completa de medición (alto, recortes, scroll) se ejecutó antes de corregir un aviso
+de hidratación; tras el arreglo se repitió solo a 390 y 1440 px, y la prueba E2E de consola cubre
+390 y 1280 px. Las 44 pruebas E2E (recortes y objetivos táctiles en los 10 anchos) pasaron
+después del arreglo.
 
 - Objetivos táctiles de buscador, cuenta y botón de menú ≥ 44×44 px por debajo de 1024 px (probado).
 - Panel móvil: `role=dialog` con nombre «Menú principal», foco atrapado, Escape cierra y devuelve el foco (probado en 320–1023).
