@@ -36,3 +36,26 @@
 
 Fichas (`/cortos/[id]`, `/series/[id]`), catálogo (cuadrícula y filtros), valoraciones y modal
 a 320–430 px; zoom 200 %; texto largo; teclado y táctil; redimensionado continuo.
+
+---
+
+## Después de la Fase B (navbar) — 2026-10-13
+
+Mismo método (Playwright, viewport exacto, invitado, `reducedMotion: reduce`). Rama `feature/frontend-windows` @ `f5039d1`.
+
+| Ancho | Alto header | Controles fuera de pantalla | Scroll horizontal | Errores de consola | Patrón |
+|---|---|---|---|---|---|
+| 320 | 64 | **ninguno** | no | 0 | Menú + marca + buscar + cuenta |
+| 360 | 64 | **ninguno** | no | 0 | idem |
+| 390 | 64 | **ninguno** | no | 0 | idem |
+| 430 | 64 | **ninguno** | no | 0 | idem |
+| 768 | 64 | **ninguno** | no | 0 | idem (antes: barra apretada) |
+| 1023 | 64 | ninguno | no | 0 | idem |
+| 1024 | 80 | ninguno | no | 0 | Barra de escritorio (sin eslogan) |
+| 1280 | 80 | ninguno | no | 0 | Barra de escritorio + eslogan |
+| 1440 | 80 | ninguno | no | 0 | idem |
+| 1920 | 80 | ninguno | no | 0 | idem |
+
+- Objetivos táctiles de buscador, cuenta y botón de menú ≥ 44×44 px por debajo de 1024 px (probado).
+- Panel móvil: `role=dialog` con nombre «Menú principal», foco atrapado, Escape cierra y devuelve el foco (probado en 320–1023).
+- Pendiente: Studio en móvil con sesión de creador (la fila desplazable se construyó y compila pero **no se ha probado con un creador autenticado**: las pruebas usan modo invitado).
