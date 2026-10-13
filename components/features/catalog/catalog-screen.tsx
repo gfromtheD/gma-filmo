@@ -57,6 +57,11 @@ interface CatalogScreenProps {
 }
 
 export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, backHref }: CatalogScreenProps) {
+  // Las colecciones sin ningún corto no se muestran (evita tarjetas vacías).
+  const collectionsWithContent = (colecciones ?? [])
+    .map((col) => ({ col, filmCount: items.filter((x) => x.categories.includes(col.name)).length }))
+    .filter(({ filmCount }) => filmCount > 0);
+
   const searchParams = useSearchParams();
   const router       = useRouter();
   const pathname     = usePathname();
@@ -153,19 +158,15 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       transition={{ duration: 0.55, ease: "easeOut" }}
     >
 
-      {/* Collections row */}
-      {colecciones && colecciones.length > 0 && (
+      {/* Collections row — solo colecciones con contenido */}
+      {collectionsWithContent.length > 0 && (
         <section className="mb-10">
           <h2 className="mb-4 text-[24px] font-bold text-white">
             Colecciones
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-            {colecciones.map((col) => (
-              <ColeccionCard
-                key={col.slug}
-                col={col}
-                filmCount={items.filter((x) => x.categories.includes(col.name)).length}
-              />
+            {collectionsWithContent.map(({ col, filmCount }) => (
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
             ))}
           </div>
         </section>
