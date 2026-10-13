@@ -84,7 +84,7 @@
   --gma-r-pill:         999px;
 
   /* Alto de la cabecera fija: 64px en móvil, 80px desde el punto de cambio de la navbar (lg = 1024px) */
-  --gma-header-h:       64px;
+  --gma-header-h:       56px;
 
   /* shadcn light defaults (unused — app is always .dark) */
   --background: oklch(1 0 0);
@@ -158,7 +158,7 @@
 
 @media (min-width: 1024px) {
   :root {
-    --gma-header-h: 80px;
+    --gma-header-h: 64px;
   }
 }
 
@@ -183,7 +183,7 @@
 
 /* Scrollbar — outside @layer so specificity is never overridden */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
