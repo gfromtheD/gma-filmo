@@ -94,3 +94,36 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ...data, liked_by_me: false, replies: [] });
 }
+
+/**
+ * Borrado lógico del comentario propio (`is_deleted = true`, el mismo flag que ya
+ * filtra el listado). Solo el autor puede borrarlo; las respuestas desaparecen
+ * con él porque el listado solo muestra respuestas de comentarios visibles.
+ */
+export async function DELETE(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!rateLimit(`${ip}/comments-delete`, 20)) {
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+  }
+
+  const userId = await getUserId(request);
+  if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const body = (await request.json().catch(() => null)) as { commentId?: unknown } | null;
+  const commentId = body?.commentId;
+  if (typeof commentId !== "number" || !Number.isInteger(commentId) || commentId <= 0) {
+    return NextResponse.json({ ok: false, error: "commentId required" }, { status: 400 });
+  }
+
+  const { data, error } = await getSupabaseAdminClient()
+    .from("comments")
+    .update({ is_deleted: true })
+    .eq("id", commentId)
+    .eq("user_id", userId)
+    .eq("is_deleted", false)
+    .select("id");
+
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (!data?.length) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
+}
