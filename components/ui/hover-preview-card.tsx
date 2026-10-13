@@ -88,7 +88,7 @@ export function HoverPreviewCard({
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="fixed z-[45] select-none overflow-hidden rounded-[6px] bg-[#181829] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      className="fixed z-[45] cursor-pointer select-none overflow-hidden rounded-[6px] bg-[#181829] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,
@@ -125,7 +125,7 @@ export function HoverPreviewCard({
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="relative z-10 flex gap-2">
           <Link
             href={`/ver/${item.id}`}
             onClick={onClose}
@@ -148,7 +148,9 @@ export function HoverPreviewCard({
         <Link
           href={detailHref}
           onClick={onClose}
-          className="text-[15px] font-bold leading-tight hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          // Enlace extendido: el ::after cubre todo el panel, así cualquier zona (imagen, texto,
+          // metadatos) lleva a la ficha. Los botones llevan z-10 y quedan por encima.
+          className="text-[15px] font-bold leading-tight after:absolute after:inset-0 after:content-[''] hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           {item.title}
         </Link>

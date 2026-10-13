@@ -85,6 +85,23 @@ test.describe("vista previa al pasar el ratón", () => {
     await expect(preview.getByRole("button", { name: /mi lista/i })).toBeVisible();
   });
 
+  test("todo el panel es clicable (imagen y texto llevan a la ficha); los botones no", async ({ page }) => {
+    const preview = await hoverFirstCard(page);
+    await expect(preview).toBeVisible({ timeout: 3_000 });
+    const box = await preview.boundingBox();
+    const start = page.url();
+    // Zona de texto (sinopsis): antes no hacía nada.
+    await page.mouse.click((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) - 40);
+    await expect(page).toHaveURL(/\/cortos\/[^/]+$/);
+    expect(page.url()).not.toBe(start);
+
+    // El botón de ver sigue yendo al reproductor, no a la ficha.
+    const preview2 = await hoverFirstCard(page);
+    await expect(preview2).toBeVisible({ timeout: 3_000 });
+    await preview2.getByRole("link", { name: "Ver ahora" }).click();
+    await expect(page).toHaveURL(/\/ver\//);
+  });
+
   test("se mantiene abierta sobre el panel, se cierra al salir y con Escape sin reabrirse", async ({ page }) => {
     const preview = await hoverFirstCard(page);
     await expect(preview).toBeVisible({ timeout: 3_000 });
