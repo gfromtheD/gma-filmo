@@ -281,6 +281,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               item={item}
               ratio="landscape"
               fluid
+              hoverPreview
               href={`/cortos/${item.id}`}
               onAddList={() =>
                 hasMedia(item.numericId)

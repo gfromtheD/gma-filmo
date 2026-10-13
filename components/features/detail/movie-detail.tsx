@@ -496,7 +496,7 @@ function RelatedGrid({
       <h2 className="mb-4 text-[22px] font-bold text-white">También te puede gustar</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {related.map((m) => (
-          <PosterCard key={m.id} item={m} ratio="landscape" fluid onClick={() => onNavigate(m.id)} />
+          <PosterCard key={m.id} item={m} ratio="landscape" fluid hoverPreview onClick={() => onNavigate(m.id)} />
         ))}
       </div>
     </section>

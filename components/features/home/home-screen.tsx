@@ -124,14 +124,14 @@ export function HomeScreen({ items }: HomeScreenProps) {
         {continueItems.length > 0 && (
           <Carousel title="Continuar viendo">
             {continueItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" fluid showProgress href={`/ver/${item.id}`} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview showProgress href={`/ver/${item.id}`} />
             ))}
           </Carousel>
         )}
 
         <Carousel title="Recién llegados">
           {items.slice(0, 15).map((item) => (
-            <PosterCard key={item.id} item={item} ratio="landscape" fluid href={hrefFor(item)} />
+            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
           ))}
         </Carousel>
 
@@ -141,7 +141,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
               <PosterCard
                 key={item.id}
                 item={item as MovieMedia}
-                ratio="landscape" fluid
+                ratio="landscape" fluid hoverPreview
                 href={hrefFor(item as MovieMedia)}
               />
             ))}
@@ -161,7 +161,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
             }
           >
             {watchlistItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" fluid href={hrefFor(item)} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
             ))}
           </Carousel>
         )}

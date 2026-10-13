@@ -61,3 +61,50 @@ test.describe("ficha", () => {
     expect(page.url()).toMatch(/#(similares|valoraciones)$/);
   });
 });
+
+test.describe("vista previa al pasar el ratón", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  async function hoverFirstCard(page: Page) {
+    await openHome(page);
+    await page.evaluate(() => window.scrollTo(0, 560));
+    const card = page.locator("div.snap-x > div").first();
+    await expect(card).toBeVisible();
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move((box?.x ?? 0) + 20, (box?.y ?? 0) + (box?.height ?? 0) + 120);
+    await page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2, { steps: 5 });
+    return page.locator("[data-hover-preview]");
+  }
+
+  test("aparece tras la espera, dentro del viewport, con ver y guardar", async ({ page }) => {
+    const preview = await hoverFirstCard(page);
+    await expect(preview).toBeVisible({ timeout: 3_000 });
+    const box = await preview.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(340);
+    expect(box?.x ?? 0).toBeGreaterThanOrEqual(15);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(1440 - 15);
+    await expect(preview.getByRole("link", { name: "Ver ahora" })).toBeVisible();
+    await expect(preview.getByRole("button", { name: /mi lista/i })).toBeVisible();
+  });
+
+  test("se mantiene abierta sobre el panel, se cierra al salir y con Escape sin reabrirse", async ({ page }) => {
+    const preview = await hoverFirstCard(page);
+    await expect(preview).toBeVisible({ timeout: 3_000 });
+    const box = await preview.boundingBox();
+    // Cursor sobre el panel pero aún dentro de la huella de la portada original.
+    await page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2 + 12, (box?.y ?? 0) + (box?.height ?? 0) / 2 + 12, { steps: 4 });
+    await page.waitForTimeout(400);
+    await expect(preview).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(preview).toBeHidden();
+    await page.waitForTimeout(800); // más que el retraso de apertura: no debe reabrirse
+    await expect(preview).toBeHidden();
+
+    await page.mouse.move(5, 5, { steps: 4 });
+    await page.mouse.move((box?.x ?? 0) + 40, (box?.y ?? 0) + 40, { steps: 4 });
+    await page.mouse.move(5, 5, { steps: 4 });
+    await expect(preview).toBeHidden();
+  });
+});
