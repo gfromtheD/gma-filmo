@@ -3,8 +3,18 @@
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 
+/** Formato de celda en móvil (fracción del ancho útil), medido en Filmin: panorámica pequeña 1/2, grande 1/1, cartel 1/3. */
+export type CarouselMobileSize = "frame" | "wide" | "poster";
+
+const MOBILE_BASIS: Record<CarouselMobileSize, string> = {
+  frame: "basis-1/2",
+  wide: "basis-full",
+  poster: "basis-1/3",
+};
+
 interface CarouselProps {
   readonly title: string;
+  readonly mobileSize?: CarouselMobileSize;
   readonly action?: ReactNode;
   readonly children: ReactNode;
 }
@@ -17,7 +27,7 @@ const ARROW_CLASS =
  * ancho útil (2 / 3 / 4 / 5 columnas según el ancho de la ventana), de modo que
  * la composición se mantiene al redimensionar. Las flechas reflejan los extremos.
  */
-export function Carousel({ title, action, children }: CarouselProps) {
+export function Carousel({ title, action, children, mobileSize = "frame" }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ atStart: true, atEnd: false });
 
@@ -51,9 +61,9 @@ export function Carousel({ title, action, children }: CarouselProps) {
   }
 
   return (
-    <section className="group/row pt-8 lg:pt-10">
-      <div className="mb-4 flex items-center justify-between px-4 lg:px-16">
-        <h2 className="text-[20px] font-bold leading-tight text-white lg:text-[24px]">{title}</h2>
+    <section className="group/row pt-12 lg:pt-10">
+      <div className="mb-6 flex items-center justify-between gap-3 px-4 lg:mb-4 lg:px-16">
+        <h2 className="min-w-0 text-[18px] font-bold leading-[1.25] text-white lg:text-[24px] lg:leading-tight">{title}</h2>
         {action}
       </div>
 
@@ -76,7 +86,7 @@ export function Carousel({ title, action, children }: CarouselProps) {
           className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
-            <div className="shrink-0 basis-1/2 snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5">
+            <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5`}>
               {child}
             </div>
           ))}

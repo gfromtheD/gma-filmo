@@ -286,7 +286,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       {/* Grid — cortos */}
       {filtered.length > 0 && (
         <div
-          className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
         >
           {filtered.map((item) => (
             <PosterCard
@@ -320,7 +320,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
             </span>
           </div>
           <div
-            className="grid gap-4"
+            className="grid gap-2 sm:gap-4"
             style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))" }}
           >
             {filteredPeliculas.map((item) => (
