@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@/components/ui/icons";
 
 import { TextRotate } from "@/components/ui/text-rotate";
 import { ThreeDMarquee } from "@/components/ui/three-d-marquee";

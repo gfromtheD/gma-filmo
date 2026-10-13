@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Dialog } from "radix-ui";
-import { Menu, X } from "lucide-react";
+import { Menu, Xmark as X } from "@/components/ui/icons";
 
 export interface MobileMenuItem {
   readonly id: string;

@@ -3,12 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  RotateCcw, RotateCw, SkipBack, SkipForward,
-  Volume2, VolumeX,
-  Maximize, Minimize2, ArrowLeft,
-  Settings, Airplay, X,
-} from "lucide-react";
+import { Undo as RotateCcw, Redo as RotateCw, SkipPrev as SkipBack, SkipNext as SkipForward, SoundHigh as Volume2, SoundOff as VolumeX, Maximize, Collapse as Minimize2, ArrowLeft, Settings, Airplay, Xmark as X } from "@/components/ui/icons";
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";

@@ -50,7 +50,9 @@ test("el estudio vacío no presenta actividad, almacenamiento o identidad fictic
   expect(STUDIO_DATA.creator.stats.totalViews).toBeNull();
   expect(html).toContain("Todavía no has subido ningún título");
   expect(html).toContain("El consumo de almacenamiento todavía no está disponible");
-  for (const text of ["Nora Vidal", "Marea baja", "131K", "18%", "3.2", "Completado"]) expect(html).not.toContain(text);
+  // Se ignoran los SVG: las coordenadas de los iconos contienen números como "3.2" que no son datos.
+  const visibleHtml = html.replace(/<svg[\s\S]*?<\/svg>/g, "");
+  for (const text of ["Nora Vidal", "Marea baja", "131K", "18%", "3.2", "Completado"]) expect(visibleHtml).not.toContain(text);
 });
 
 test("estadísticas vacías distinguen métricas pendientes y no inventan gráficos", () => {

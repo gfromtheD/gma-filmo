@@ -3,7 +3,7 @@
 import styles from "./studio-responsive.module.css";
 
 import { useState, useEffect, useRef } from "react";
-import { Check, Upload, Image as ImageIcon, Info, CheckCircle2, Pencil, X, MapPin } from "lucide-react";
+import { Check, Upload, MediaImage as ImageIcon, InfoCircle as Info, CheckCircle as CheckCircle2, EditPencil as Pencil, Xmark as X, MapPin } from "@/components/ui/icons";
 import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { socialUrl } from "@/lib/social-links";

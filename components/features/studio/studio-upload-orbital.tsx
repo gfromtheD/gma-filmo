@@ -4,11 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Upload, X, Play, Pause, Film, Subtitles, Clapperboard,
-  Sparkles, ImageIcon, Check, AlertCircle, Trash2, ChevronDown,
-  RefreshCw, ChevronLeft, ChevronRight, Plus, GripVertical, ChevronUp,
-} from "lucide-react";
+import { Upload, Xmark as X, Play, Pause, Movie as Film, ClosedCaptionsTag as Subtitles, MediaVideo as Clapperboard, Sparks as Sparkles, MediaImage as ImageIcon, Check, WarningCircle as AlertCircle, Trash as Trash2, NavArrowDown as ChevronDown, RefreshDouble as RefreshCw, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Plus, Drag as GripVertical, NavArrowUp as ChevronUp } from "@/components/ui/icons";
 import { C, useStudioDropdown } from "./studio-ui";
 import { createPortal } from "react-dom";
 import { BoxesLoader } from "@/components/ui/boxes-loader";

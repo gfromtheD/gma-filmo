@@ -8,10 +8,7 @@ import dynamic from "next/dynamic";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EmojiPickerReact = dynamic(() => import("emoji-picker-react"), { ssr: false }) as React.ComponentType<any>;
-import {
-  X, Maximize2, Minimize2, Send, Smile,
-  ChevronLeft, MoreHorizontal, Copy, Flag, CornerUpLeft,
-} from "lucide-react";
+import { Xmark as X, Expand as Maximize2, Collapse as Minimize2, Send, EmojiSatisfied as Smile, NavArrowLeft as ChevronLeft, MoreHoriz as MoreHorizontal, Copy, TriangleFlag as Flag, UndoAction as CornerUpLeft } from "@/components/ui/icons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useDMStore } from "@/store/use-dm-store";

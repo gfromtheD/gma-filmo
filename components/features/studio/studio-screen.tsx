@@ -3,7 +3,7 @@
 import styles from "./studio-responsive.module.css";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
 import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
 import { UploadView }    from "./studio-upload-view";

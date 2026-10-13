@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
-import { X, SlidersHorizontal, Check } from "lucide-react";
+import { Xmark as X, ControlSlider as SlidersHorizontal, Check } from "@/components/ui/icons";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import type { MovieMedia } from "@/types/catalog";
 

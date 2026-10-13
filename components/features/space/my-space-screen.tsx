@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useRouter } from "next/navigation";
 import styles from "./my-space-screen.module.css";
-import { X, Pencil, Trash2 } from "lucide-react";
+import { Xmark as X, EditPencil as Pencil, Trash as Trash2 } from "@/components/ui/icons";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { PosterArt } from "@/components/ui/poster-art";
 import { useWatchlist } from "@/hooks/use-watchlist";

@@ -4,10 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState } from "react";
-import {
-  Plus, Search, Eye, EyeOff, Pencil, Trash2, MoreHorizontal,
-  RefreshCw, BarChart2, X, Clock, AlertTriangle, Upload, LayoutGrid, List, CheckCircle2,
-} from "lucide-react";
+import { Plus, Search, Eye, EyeClosed as EyeOff, EditPencil as Pencil, Trash as Trash2, MoreHoriz as MoreHorizontal, RefreshDouble as RefreshCw, StatsReport as BarChart2, Xmark as X, Clock, WarningTriangle as AlertTriangle, Upload, ViewGrid as LayoutGrid, List, CheckCircle as CheckCircle2 } from "@/components/ui/icons";
 import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 
