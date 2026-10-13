@@ -6,8 +6,11 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { ColeccionCard } from "./coleccion-card";
+import { collectionsWithContent } from "@/lib/recommendation/collection-picks";
 import { CatalogFilterDrawer, type CatalogFilters, type SortKey } from "./catalog-filter-drawer";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { MovieMedia } from "@/types/catalog";
 import type { Coleccion } from "@/lib/supabase/queries";
 
@@ -57,10 +60,23 @@ interface CatalogScreenProps {
 }
 
 export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, backHref }: CatalogScreenProps) {
+  // Las colecciones sin ningún corto no se muestran (evita tarjetas vacías).
+  const withContent = collectionsWithContent(colecciones ?? [], items);
+
   const searchParams = useSearchParams();
   const router       = useRouter();
   const pathname     = usePathname();
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
+  const notice = useNoticeToast();
+
+  async function toggleInList(numericId: number) {
+    if (!canSave) {
+      notice.showLoginRequired();
+      return;
+    }
+    const saved = hasMedia(numericId) ? await removeMedia(numericId) : await addMedia(numericId);
+    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
+  }
 
   const cortosItems    = items.filter((x) => x.genre !== "Película");
   const peliculasItems = items.filter((x) => x.genre === "Película");
@@ -147,25 +163,22 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
 
   return (
     <motion.div
-      className="mx-auto max-w-360 px-6 pb-20 pt-8"
+      className="px-4 pb-20 pt-6 lg:px-16 lg:pt-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
     >
+      {notice.toast}
 
-      {/* Collections row */}
-      {colecciones && colecciones.length > 0 && (
+      {/* Collections row — solo colecciones con contenido */}
+      {withContent.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-[13px] font-semibold uppercase tracking-[0.12em] text-[#5A6A7E]">
+          <h2 className="mb-4 text-[24px] font-bold text-white">
             Colecciones
           </h2>
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-            {colecciones.map((col) => (
-              <ColeccionCard
-                key={col.slug}
-                col={col}
-                filmCount={items.filter((x) => x.categories.includes(col.name)).length}
-              />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {withContent.map(({ col, filmCount }) => (
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
             ))}
           </div>
         </section>
@@ -200,12 +213,12 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
           <button
             type="button"
             onClick={clearFilters}
-            className="text-[12.5px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+            className="text-[12.5px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
           >
             Limpiar
           </button>
         )}
-        <span className="text-[12.5px] text-[#5A6A7E]">
+        <span className="text-[12.5px] text-[#6D7D94]">
           <span className="font-semibold text-white">{filtered.length}</span>{" "}
           {filtered.length === 1 ? "resultado" : "resultados"}
         </span>
@@ -273,8 +286,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       {/* Grid — cortos */}
       {filtered.length > 0 && (
         <div
-          className="grid gap-4"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
         >
           {filtered.map((item) => (
             <PosterCard
@@ -282,12 +294,9 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               item={item}
               ratio="landscape"
               fluid
+              hoverOverlay
               href={`/cortos/${item.id}`}
-              onAddList={() =>
-                hasMedia(item.numericId)
-                  ? removeMedia(item.numericId)
-                  : addMedia(item.numericId)
-              }
+              onAddList={() => void toggleInList(item.numericId)}
               inList={hasMedia(item.numericId)}
             />
           ))}
@@ -305,7 +314,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               Películas
             </h2>
             <div className="flex-1" />
-            <span className="text-[12.5px] text-[#5A6A7E]">
+            <span className="text-[12.5px] text-[#6D7D94]">
               <span className="font-semibold text-white">{filteredPeliculas.length}</span>{" "}
               {filteredPeliculas.length === 1 ? "película" : "películas"}
             </span>
@@ -321,11 +330,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
                 ratio="landscape"
                 fluid
                 href={`/cortos/${item.id}`}
-                onAddList={() =>
-                  hasMedia(item.numericId)
-                    ? removeMedia(item.numericId)
-                    : addMedia(item.numericId)
-                }
+                onAddList={() => void toggleInList(item.numericId)}
                 inList={hasMedia(item.numericId)}
               />
             ))}
@@ -333,76 +338,6 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
         </section>
       )}
     </motion.div>
-  );
-}
-
-// ─── Collection card ─────────────────────────────────────────────────────────
-
-const COLECCION_NAME_OVERRIDES: Record<string, string> = {
-  "la-pelicula": "Películas",
-};
-
-function ColeccionCard({ col, filmCount }: { col: Coleccion; filmCount: number }) {
-  const displayName = COLECCION_NAME_OVERRIDES[col.slug] ?? col.name;
-  return (
-    <Link
-      href={`/cortos/coleccion/${col.slug}`}
-      className="group relative block aspect-video overflow-hidden rounded-xl"
-    >
-      {/* Cover image or gradient fallback */}
-      {col.r2_cover_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={col.r2_cover_url}
-          alt={displayName}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      ) : (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(135deg, #0a1a10 0%, #1a3a28 50%, #0d2018 100%)",
-          }}
-        />
-      )}
-
-      {/* Permanent gradient overlay for legibility */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%)",
-        }}
-      />
-
-      {/* Hover tint */}
-      <div className="pointer-events-none absolute inset-0 bg-[#22B16B]/0 transition-colors duration-300 group-hover:bg-[#22B16B]/10" />
-
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#22B16B]">
-              Colección
-            </p>
-            <h3 className="mt-0.5 text-[18px] font-extrabold leading-tight text-white">
-              {displayName}
-            </h3>
-            {filmCount > 0 && (
-              <p className="mt-1 text-[12px] text-[#8A9AAE]">
-                {filmCount}{" "}
-                {col.slug === "la-pelicula"
-                  ? filmCount === 1 ? "film" : "films"
-                  : filmCount === 1 ? "corto" : "cortos"}
-              </p>
-            )}
-          </div>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-200 group-hover:bg-[#22B16B] group-hover:text-gma-accent-fg">
-            <GmaIcon name="chevronRight" size={14} />
-          </span>
-        </div>
-      </div>
-    </Link>
   );
 }
 
@@ -429,11 +364,11 @@ function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#5A6A7E]">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#6D7D94]">
         <GmaIcon name="film" size={28} />
       </div>
       <p className="mb-2 text-[16px] font-bold text-white">Sin resultados</p>
-      <p className="mb-6 text-[13px] text-[#5A6A7E]">
+      <p className="mb-6 text-[13px] text-[#6D7D94]">
         Prueba con otros filtros o explora todo el catálogo.
       </p>
       <button

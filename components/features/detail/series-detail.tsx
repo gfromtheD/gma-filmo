@@ -7,6 +7,7 @@ import { PosterArt } from "@/components/ui/poster-art";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { Episode, SeriesMedia } from "@/types/catalog";
 
 interface SeriesDetailProps {
@@ -17,21 +18,27 @@ interface SeriesDetailProps {
 
 export function SeriesDetail({ series, episodes, related }: SeriesDetailProps) {
   const router = useRouter();
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
+  const notice = useNoticeToast();
   const inList = hasMedia(series.numericId);
 
-  function toggleList() {
-    if (inList) removeMedia(series.numericId);
-    else addMedia(series.numericId);
+  async function toggleList() {
+    if (!canSave) {
+      notice.showLoginRequired();
+      return;
+    }
+    const saved = inList ? await removeMedia(series.numericId) : await addMedia(series.numericId);
+    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
   }
 
   return (
     <div>
+      {notice.toast}
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <Hero
         item={series}
         onPlay={() => router.push(`/ver/${series.id}`)}
-        onAddList={toggleList}
+        onAddList={() => void toggleList()}
         inList={inList}
       />
 

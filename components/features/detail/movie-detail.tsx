@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Hero } from "@/components/features/media/hero";
+import { DetailHeader } from "@/components/features/detail/detail-header";
+import { DetailTabs, detailPanelId, type DetailTabItem } from "@/components/features/detail/detail-tabs";
 import { PosterCard } from "@/components/ui/poster-card";
 import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useIsGuest } from "@/hooks/use-is-guest";
+import { useNoticeToast } from "@/components/ui/notice-toast";
+import { useCommunityRatings } from "@/hooks/use-community-ratings";
 import type { MovieMedia } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
 
@@ -18,73 +22,126 @@ interface MovieDetailProps {
   readonly autoOpenRating?: boolean;
 }
 
+type DetailTabId = "detalles" | "similares" | "valoraciones" | "comentarios";
+
+const TAB_IDS: readonly DetailTabId[] = ["detalles", "similares", "valoraciones", "comentarios"];
+const TAB_PREFIX = "movie";
+
+function isDetailTabId(value: string): value is DetailTabId {
+  return (TAB_IDS as readonly string[]).includes(value);
+}
+
 export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDetailProps) {
   const router = useRouter();
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const isGuest = useIsGuest();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
+  const notice = useNoticeToast();
   const inList = hasMedia(movie.numericId);
-  const [activeTab, setActiveTab] = useState<"valoraciones" | "comentarios">("valoraciones");
+  const [scoreRefresh, setScoreRefresh] = useState(0);
+  const { avgScore, voteCount } = useCommunityRatings(movie.numericId, scoreRefresh);
+  const [activeTab, setActiveTab] = useState<DetailTabId>(autoOpenRating ? "valoraciones" : "detalles");
+  const [rateIntent, setRateIntent] = useState(Boolean(autoOpenRating));
+  const tabsRef = useRef<HTMLDivElement>(null);
 
-  function toggleList() {
-    if (inList) removeMedia(movie.numericId);
-    else addMedia(movie.numericId);
+  const tabs: DetailTabItem<DetailTabId>[] = [
+    { id: "detalles", label: "Detalles" },
+    ...(related.length > 0 ? [{ id: "similares" as const, label: "Similares" }] : []),
+    { id: "valoraciones", label: "Valoraciones" },
+    { id: "comentarios", label: "Comentarios" },
+  ];
+
+  // Estado de pestañas enlazable: /cortos/slug#valoraciones
+  useEffect(() => {
+    const fromHash = window.location.hash.replace("#", "");
+    if (isDetailTabId(fromHash) && (fromHash !== "similares" || related.length > 0)) setActiveTab(fromHash);
+  }, [related.length]);
+
+  function selectTab(id: DetailTabId) {
+    setActiveTab(id);
+    window.history.replaceState(null, "", `#${id}`);
+  }
+
+  async function toggleList() {
+    if (!canSave) {
+      notice.showLoginRequired();
+      return;
+    }
+    const saved = inList ? await removeMedia(movie.numericId) : await addMedia(movie.numericId);
+    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
+  }
+
+  function handleRate() {
+    if (!isGuest) setRateIntent(true);
+    selectTab("valoraciones");
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      tabsRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    });
+  }
+
+  async function handleShare() {
+    const url = window.location.href.split("#")[0] ?? window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: movie.title, url });
+      else await navigator.clipboard.writeText(url);
+    } catch {
+      // El usuario canceló el diálogo de compartir o el portapapeles no está disponible.
+    }
   }
 
   return (
     <div>
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <Hero item={movie} onPlay={() => router.push(`/ver/${movie.id}`)} onAddList={toggleList} inList={inList} backHref="/cortos" />
+      {notice.toast}
+      <DetailHeader
+        movie={movie}
+        avgScore={avgScore}
+        voteCount={voteCount}
+        inList={inList}
+        onPlay={() => router.push(`/ver/${movie.id}`)}
+        onToggleList={() => void toggleList()}
+        onRate={handleRate}
+        onShare={() => void handleShare()}
+      />
 
-      {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1440px] px-6 pb-20 pt-10">
-        <div className="grid gap-10" style={{ gridTemplateColumns: "1fr 304px" }}>
+      <div ref={tabsRef} className="scroll-mt-[var(--gma-header-h)]">
+        <DetailTabs tabs={tabs} activeId={activeTab} onChange={selectTab} idPrefix={TAB_PREFIX} />
+      </div>
 
-          {/* Left: synopsis + stats */}
-          <div className="flex flex-col gap-8">
-            <SynopsisSection movie={movie} />
-            {/* ── Tabs: Valoraciones / Comentarios ──────────────────────── */}
-            <div>
-              <div className="mb-5 flex border-b border-[#262626]">
-                {(["valoraciones", "comentarios"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className="px-5 py-2.5 text-[14px] font-bold capitalize transition-colors"
-                    style={{
-                      color:        activeTab === tab ? "#22B16B" : "#6D7D94",
-                      borderBottom: activeTab === tab ? "2px solid #22B16B" : "2px solid transparent",
-                      marginBottom: -1,
-                      background:   "none",
-                      border:       "none",
-                      cursor:       "pointer",
-                    }}
-                  >
-                    {tab === "valoraciones" ? "Valoraciones" : "Comentarios"}
-                  </button>
-                ))}
-              </div>
-
-              {activeTab === "valoraciones" ? (
-                <RatingsBlock title={movie.title} numericId={movie.numericId} autoOpen={autoOpenRating} />
-              ) : (
-                <CommentsBlock peliculaId={movie.numericId} movieSlug={movie.id} />
-              )}
+      <div
+        role="tabpanel"
+        id={detailPanelId(TAB_PREFIX, activeTab)}
+        aria-labelledby={`${TAB_PREFIX}-tab-${activeTab}`}
+        className="mx-auto max-w-[1240px] px-4 pb-20 pt-10 lg:px-6 lg:pt-12"
+      >
+        {activeTab === "detalles" && (
+          <div className="grid gap-12 lg:grid-cols-[1fr_419px]">
+            <div className="flex flex-col gap-10">
+              <SynopsisSection movie={movie} />
+              <DonationRow creator={creator ?? null} />
             </div>
-            <DonationRow creator={creator ?? null} />
-            {(movie.tags ?? []).length > 0 && <FormatSection tags={movie.tags!} />}
+            <aside className="flex flex-col gap-10">
+              <CreditsSection movie={movie} />
+              <InfoSection movie={movie} />
+              {(movie.tags ?? []).length > 0 && <FormatSection tags={movie.tags!} />}
+            </aside>
           </div>
+        )}
 
-          {/* Right: meta + related */}
-          <aside className="flex flex-col gap-8">
-            <MetaCard movie={movie} />
-            {related.length > 0 && (
-              <RelatedPanel
-                related={related}
-                onNavigate={(id) => router.push(`/cortos/${id}`)}
-              />
-            )}
-          </aside>
-        </div>
+        {activeTab === "similares" && (
+          <RelatedGrid related={related} onNavigate={(id) => router.push(`/cortos/${id}`)} />
+        )}
+
+        {activeTab === "valoraciones" && (
+          <RatingsBlock
+            key={rateIntent ? "rate" : "view"}
+            title={movie.title}
+            numericId={movie.numericId}
+            autoOpen={rateIntent}
+            onChange={() => setScoreRefresh((k) => k + 1)}
+          />
+        )}
+
+        {activeTab === "comentarios" && <CommentsBlock peliculaId={movie.numericId} movieSlug={movie.id} />}
       </div>
     </div>
   );
@@ -126,9 +183,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
 
   return (
     <section>
-      <h2 className="mb-4 text-[20px] font-extrabold tracking-[-0.02em] text-white">
-        Sinopsis
-      </h2>
+      <h2 className="mb-3 text-[22px] font-bold text-white">Sinopsis</h2>
       <p className="text-[15px] leading-[1.7] text-[#D9E2EC]">{movie.synopsis}</p>
 
       {/* AI disclosure + propose CTA */}
@@ -140,7 +195,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#5A6A7E]">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6D7D94]">
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
                   <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.4" />
                   <path d="M6 5.5v3M6 3.5h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -151,7 +206,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="text-[11px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+                className="text-[11px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
               >
                 {open ? "Cancelar" : <>¿No es acorde al contenido? <span className="underline underline-offset-2">Propón una mejor</span></>}
               </button>
@@ -179,7 +234,7 @@ function SynopsisSection({ movie }: { movie: MovieMedia }) {
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#5A6A7E] transition-colors hover:text-white"
+                    className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
                   >
                     Cancelar
                   </button>
@@ -276,9 +331,7 @@ const DONATION_PLATFORMS = [
 function DonationRow({ creator }: { creator: CreatorProfile | null }) {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-[13px] font-bold uppercase tracking-[0.1em] text-[#6D7D94]">
-        Apoya al creador
-      </h3>
+      <h2 className="text-[22px] font-bold text-white">Apoya al creador</h2>
       <div className="grid grid-cols-3 gap-3">
         {DONATION_PLATFORMS.map(({ key, label, color, hoverBg, hoverBorder, icon, getHref }) => (
           <a
@@ -320,9 +373,7 @@ const FORMAT_DESC: Record<string, string> = {
 function FormatSection({ tags }: { tags: readonly string[] }) {
   return (
     <section>
-      <h3 className="mb-4 text-[16px] font-extrabold tracking-[-0.01em] text-white">
-        Calidad disponible
-      </h3>
+      <h2 className="mb-3 text-[22px] font-bold text-white">Calidad disponible</h2>
       <div className="flex flex-col divide-y divide-[#262626] rounded-[12px] border border-[#262626] bg-[#0D0D0D] overflow-hidden">
         {tags.map((t) => (
           <div key={t} className="flex items-center gap-4 px-5 py-3.5">
@@ -341,12 +392,44 @@ function FormatSection({ tags }: { tags: readonly string[] }) {
 
 // ─── Meta card ────────────────────────────────────────────────────────────────
 
-function MetaCard({ movie }: { movie: MovieMedia }) {
+function CreditsSection({ movie }: { movie: MovieMedia }) {
+  const people =
+    movie.artistas && movie.artistas.length > 0
+      ? movie.artistas.map((a) => ({ name: a.name, role: a.role, slug: a.slug ?? null }))
+      : (() => {
+          const { director, illustrator } = parseAuthorField(movie.author, movie.artistas);
+          return [
+            ...(director ? [{ name: director, role: "Director", slug: null }] : []),
+            ...(illustrator ? [{ name: illustrator, role: "Ilustrador", slug: null }] : []),
+          ];
+        })();
+  if (people.length === 0) return null;
+
   return (
-    <div className="rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
-      <h3 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#6D7D94]">
-        Información
-      </h3>
+    <section>
+      <h2 className="mb-3 text-[22px] font-bold text-white">Dirección y reparto</h2>
+      <ul className="flex flex-col gap-2">
+        {people.map((p) => (
+          <li key={`${p.role}-${p.name}`} className="flex flex-col">
+            {p.slug ? (
+              <Link href={`/creadores/${p.slug}`} className="text-[16px] font-medium text-white hover:text-[#22B16B] hover:underline">
+                {p.name}
+              </Link>
+            ) : (
+              <span className="text-[16px] font-medium text-white">{p.name}</span>
+            )}
+            <span className="text-[13px] text-[#6D7D94]">{p.role}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function InfoSection({ movie }: { movie: MovieMedia }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-[22px] font-bold text-white">Más información</h2>
 
       <dl className="flex flex-col gap-3">
         {(() => {
@@ -384,7 +467,7 @@ function MetaCard({ movie }: { movie: MovieMedia }) {
           </div>
         )}
       </dl>
-    </div>
+    </section>
   );
 }
 
@@ -410,7 +493,7 @@ function MetaRow({ label, value, accent, linkHref }: {
 
 // ─── Related panel ────────────────────────────────────────────────────────────
 
-function RelatedPanel({
+function RelatedGrid({
   related,
   onNavigate,
 }: {
@@ -419,18 +502,10 @@ function RelatedPanel({
 }) {
   return (
     <section>
-      <h3 className="mb-4 text-[16px] font-extrabold tracking-[-0.01em] text-white">
-        También te puede gustar
-      </h3>
-      <div className="grid grid-cols-2 gap-3">
+      <h2 className="mb-4 text-[22px] font-bold text-white">También te puede gustar</h2>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {related.map((m) => (
-          <PosterCard
-            key={m.id}
-            item={m}
-            ratio="portrait"
-            fluid
-            onClick={() => onNavigate(m.id)}
-          />
+          <PosterCard key={m.id} item={m} ratio="landscape" fluid hoverOverlay onClick={() => onNavigate(m.id)} />
         ))}
       </div>
     </section>

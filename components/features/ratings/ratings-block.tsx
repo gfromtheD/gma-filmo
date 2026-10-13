@@ -1,417 +1,309 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { GmaIcon } from "@/components/ui/gma-icon";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LoginPromptInput } from "@/components/features/ratings/login-prompt-input";
+import { RatingForm } from "@/components/features/ratings/rating-form";
+import { ReviewCard } from "@/components/features/ratings/review-card";
 import { useIsGuest } from "@/hooks/use-is-guest";
-import { LoginPromptInput } from "./login-prompt-input";
 import { useRatings } from "@/hooks/use-ratings";
 import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community-ratings";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { useActiveProfileId } from "@/hooks/use-active-profile-id";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { starsToScore } from "@/lib/ratings/score-format";
+import type { ReviewSort } from "@/lib/ratings/review-query";
 
-const FALLBACK_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
+/** Reseñas que se cargan por página. */
+const PAGE_SIZE = 10;
+/** Tiempo de cortesía antes de hacer scroll/abrir al llegar con ?valorar=1. */
+const AUTO_OPEN_DELAY_MS = 350;
+
+const SORT_OPTIONS: readonly { readonly id: ReviewSort; readonly label: string }[] = [
+  { id: "top", label: "Más votadas" },
+  { id: "recent", label: "Más recientes" },
+];
 
 interface RatingsBlockProps {
   readonly title:     string;
   readonly numericId: number;
   readonly autoOpen?: boolean;
+  /** Se llama cuando el usuario guarda o quita su valoración (para refrescar la nota de la ficha). */
+  readonly onChange?: () => void;
 }
 
-export function RatingsBlock({ title, numericId, autoOpen }: RatingsBlockProps) {
-  const { getRating, setRating } = useRatings();
-  const currentUserId = useSupabaseUserId();
+type SaveState = { readonly status: "idle" | "saving" } | { readonly status: "error"; readonly message: string };
+
+export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBlockProps) {
   const isGuest = useIsGuest();
+  const currentUserId = useSupabaseUserId();
+  const { displayName, avatarColor, avatarImageUrl } = useUserProfile();
+  const activeProfileId = useActiveProfileId();
+  const { getRating, setRating, removeRating } = useRatings();
   const existingEntry = getRating(numericId);
-  const savedScore = existingEntry ? Math.round(existingEntry.rating * 2) : null;
+  const liveExisting = existingEntry
+    ? { score: starsToScore(existingEntry.rating), comment: existingEntry.review, ratedAt: existingEntry.ratedAt }
+    : null;
+  // Mientras se quita la valoración la entrada local desaparece al instante; esta copia
+  // mantiene la tarjeta visible (y evita que asome el formulario) hasta saber el resultado.
+  const lastExisting = useRef(liveExisting);
+  if (liveExisting) lastExisting.current = liveExisting;
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const existing = liveExisting ?? (isRemoving ? lastExisting.current : null);
 
-  const [modalOpen, setModalOpen]   = useState(false);
+  const [sort, setSort] = useState<ReviewSort>("top");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
+  const [save, setSave] = useState<SaveState>({ status: "idle" });
   const sectionRef = useRef<HTMLElement>(null);
+  const didAutoOpen = useRef(false);
 
-  const { reviews, avgScore, voteCount, loading } = useCommunityRatings(numericId, refreshKey);
+  const { reviews, total, hasMore, loading, loadingMore, hasError, loadMore } = useCommunityRatings(
+    numericId,
+    refreshKey,
+    { pageSize: PAGE_SIZE, sort },
+  );
 
+  // Llegar con ?valorar=1: llevar al formulario...
   useEffect(() => {
     if (!autoOpen) return;
-    // Give the page a moment to finish painting before scrolling + opening
     const id = setTimeout(() => {
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setModalOpen(true);
-    }, 350);
+    }, AUTO_OPEN_DELAY_MS);
     return () => clearTimeout(id);
   }, [autoOpen]);
 
+  // ...y, si el usuario ya había valorado (sus valoraciones cargan después), abrir la edición una vez.
+  const hasExisting = liveExisting !== null;
+  useEffect(() => {
+    if (autoOpen && hasExisting && !didAutoOpen.current) {
+      didAutoOpen.current = true;
+      setIsEditing(true);
+    }
+  }, [autoOpen, hasExisting]);
+
+  const refresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+    onChange?.();
+  }, [onChange]);
+
+  async function handleSubmit(score: number, comment: string) {
+    setSave({ status: "saving" });
+    const saved = await setRating(numericId, score / 2, comment);
+    if (!saved) {
+      setSave({ status: "error", message: "No se pudo guardar tu valoración. Comprueba tu conexión e inténtalo de nuevo." });
+      return;
+    }
+    setSave({ status: "idle" });
+    setIsEditing(false);
+    refresh();
+  }
+
+  async function handleRemove() {
+    setRemoveError(null);
+    setIsRemoving(true);
+    const removed = await removeRating(numericId);
+    setIsRemoving(false);
+    setIsConfirmingRemove(false);
+    if (!removed) {
+      setRemoveError("No se pudo quitar tu valoración. Inténtalo de nuevo.");
+      return;
+    }
+    setIsEditing(false);
+    refresh();
+  }
+
+  const toggleLike = useCallback(
+    async (review: CommunityReview): Promise<boolean> => {
+      if (!currentUserId) return false;
+      try {
+        const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+        if (!session?.access_token) return false;
+        const res = await fetch("/api/ratings/community/like", {
+          method:  "POST",
+          headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+          body:    JSON.stringify({ reviewerUserId: review.userId, peliculaId: numericId }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
+    [currentUserId, numericId],
+  );
+
+  // La valoración del perfil activo se fija arriba (aunque no esté entre las primeras de la lista).
+  // Las de otros perfiles de la misma cuenta se muestran como propias, sin "De acuerdo".
+  const isActiveProfileReview = (r: CommunityReview) =>
+    r.userId === currentUserId && (r.profileId ?? "") === activeProfileId;
+  const others = existing ? reviews.filter((r) => !isActiveProfileReview(r)) : reviews;
+  const isSaving = save.status === "saving";
+  // El formulario no se desmonta mientras se guarda o hay un error: así no se pierde lo escrito.
+  const showForm = !isGuest && !isRemoving && (existing === null || isEditing || save.status !== "idle");
+
   return (
-    <>
-      <section ref={sectionRef}>
-        <h2 className="mb-4 text-[20px] font-extrabold tracking-[-0.02em] text-white">
-          Valoraciones
-        </h2>
+    <section ref={sectionRef} className="flex flex-col gap-10">
+      {isGuest ? (
+        <div className="mx-auto w-full max-w-[768px]">
+          <h2 className="mb-4 text-[clamp(22px,2.4vw,32px)] font-bold text-white">Valoraciones</h2>
+          <LoginPromptInput />
+        </div>
+      ) : showForm ? (
+        <RatingForm
+          key="rating-form"
+          title={title}
+          initial={existing ? { score: existing.score, comment: existing.comment } : null}
+          isSaving={isSaving}
+          errorMessage={save.status === "error" ? save.message : null}
+          onSubmit={(score, comment) => void handleSubmit(score, comment)}
+          onCancel={existing ? () => { setIsEditing(false); setSave({ status: "idle" }); } : undefined}
+          shouldFocus={Boolean(autoOpen)}
+        />
+      ) : null}
 
-        {/* Score row */}
-        <div className="mb-5 flex items-center gap-7 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
-          <div className="shrink-0">
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className="text-[52px] leading-none text-[#22B16B]"
-                style={{
-                  fontFamily: '"Georgia", "Times New Roman", serif',
-                  fontStyle: "italic",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                {loading ? "—" : avgScore !== null ? String(avgScore).replace(".", ",") : "—"}
-              </span>
-              <span className="text-[18px] text-[#6D7D94]">/10</span>
-            </div>
-            <div className="mt-1.5 text-[12.5px] text-[#6D7D94]">
-              <span className="font-mono text-white">{loading ? "…" : voteCount}</span> votos
-            </div>
-          </div>
-
-          <span className="h-14 w-px shrink-0 bg-[#262626]" />
-
-          <div className="flex-1">
-            <div className="text-[14px] text-[#6D7D94]">Tu valoración</div>
-            <div className="mt-1 text-[16px] text-white">
-              {savedScore !== null ? (
-                <span>
-                  <span className="font-bold text-[#22B16B]">{savedScore}/10</span>
-                  {" — ya has valorado."}
+      {/* Tu valoración, fijada arriba con sus acciones */}
+      {existing && !isEditing && !isGuest && (
+        <div className="mx-auto w-full max-w-[768px]">
+          <ReviewCard
+            isOwn
+            review={{
+              displayName: displayName || "Tú",
+              avatarUrl:   avatarImageUrl || null,
+              avatarColor: avatarColor || null,
+              score:       existing.score,
+              comment:     existing.comment,
+              ratedAt:     new Date(existing.ratedAt).toISOString(),
+              likeCount:   reviews.find((r) => r.userId === currentUserId)?.likeCount ?? 0,
+              likedByMe:   false,
+            }}
+            actions={
+              isConfirmingRemove ? (
+                <span className="flex items-center gap-3 text-[13px] font-bold">
+                  <span className="text-white">¿Quitar tu valoración?</span>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemove()}
+                    disabled={isRemoving}
+                    className="text-red-300 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
+                  >
+                    {isRemoving ? "Quitando…" : "Sí, quitar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingRemove(false)}
+                    className="text-[#B8B8CC] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    No
+                  </button>
                 </span>
               ) : (
-                "No has valorado todavía."
-              )}
-            </div>
-          </div>
+                <span className="flex items-center gap-4 text-[13px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => { setSave({ status: "idle" }); setRemoveError(null); setIsEditing(true); }}
+                    className="text-white hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    {existing.comment ? "Editar" : "Añadir comentario"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingRemove(true)}
+                    className="text-[#B8B8CC] hover:text-red-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    Quitar
+                  </button>
+                </span>
+              )
+            }
+          />
+          {removeError && (
+            <p role="alert" className="mt-3 rounded-[6px] border border-red-400/40 bg-red-500/10 px-4 py-3 text-[14px] font-medium text-red-200">
+              {removeError}
+            </p>
+          )}
+        </div>
+      )}
 
-          {isGuest ? (
-            <LoginPromptInput />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="flex shrink-0 items-center gap-2 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]"
-            >
-              <GmaIcon name="star" size={14} strokeWidth={2} />
-              {savedScore !== null ? "Editar nota" : "Valorar"}
-            </button>
+      {/* Valoraciones de otros usuarios */}
+      <div className="mx-auto flex w-full max-w-[768px] flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-[20px] font-bold text-white">
+            Valoraciones de usuarios{total > 0 ? <span className="ml-2 text-[16px] font-medium text-[#B8B8CC]">({total})</span> : null}
+          </h3>
+          {total > 1 && (
+            <div role="group" aria-label="Ordenar valoraciones" className="flex gap-1 rounded-[6px] bg-[#242432] p-1">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={sort === option.id}
+                  onClick={() => setSort(option.id)}
+                  className={`h-8 rounded-[4px] px-3 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                    sort === option.id ? "bg-white/15 text-white" : "text-[#B8B8CC] hover:text-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Reviews header */}
-        <h3 className="mb-4 text-[16px] font-extrabold tracking-[-0.01em] text-white">
-          Valoraciones de usuarios
-        </h3>
-
         {loading ? (
-          <div className="py-6 text-center text-[13px] text-[#4A5568]">Cargando valoraciones…</div>
-        ) : reviews.length === 0 ? (
-          <div className="rounded-[12px] border border-[#262626] bg-[#0D0D0D] px-5 py-8 text-center text-[14px] text-[#4A5568]">
-            Aún no hay comentarios. ¡Sé el primero en valorar!
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {reviews.map((r) => (
-              <ReviewCard
-                key={r.userId + r.ratedAt}
-                review={r}
-                peliculaId={numericId}
-                currentUserId={currentUserId}
-              />
+          <div aria-busy="true" aria-label="Cargando valoraciones" className="flex flex-col gap-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[150px] animate-pulse rounded-[8px] bg-[#242432] motion-reduce:animate-none" />
             ))}
           </div>
-        )}
-      </section>
-
-      {modalOpen && (
-        <RatingModal
-          title={title}
-          initialScore={savedScore}
-          initialComment={existingEntry?.review ?? ""}
-          onClose={() => setModalOpen(false)}
-          onSubmit={(score, comment) => {
-            setRating(numericId, score / 2, comment);
-            setRefreshKey((k) => k + 1);
-            setModalOpen(false);
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-function ReviewAvatar({ displayName, avatarUrl, avatarColor }: { displayName: string; avatarUrl: string | null; avatarColor: string | null }) {
-  const fallback = FALLBACK_COLORS[displayName.length % FALLBACK_COLORS.length];
-  const bg = avatarColor ?? fallback;
-  if (avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
-    );
-  }
-  return (
-    <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold"
-      style={{ background: bg + "33", color: bg }}
-    >
-      {displayName[0]?.toUpperCase() ?? "U"}
-    </div>
-  );
-}
-
-function ReviewCard({
-  review,
-  peliculaId,
-  currentUserId,
-}: {
-  review: CommunityReview;
-  peliculaId: number;
-  currentUserId: string | null;
-}) {
-  const { userId, displayName, avatarUrl, avatarColor, score, comment, ratedAt } = review;
-  const [liked, setLiked] = useState(review.likedByMe);
-  const [count, setCount] = useState(review.likeCount);
-
-  const isHighScore = score >= 8;
-  const isOwn       = currentUserId === userId;
-  const date        = new Date(ratedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
-
-  async function handleLike() {
-    if (!currentUserId || isOwn) return;
-    const newLiked = !liked;
-    setLiked(newLiked);
-    setCount((c) => c + (newLiked ? 1 : -1));
-
-    try {
-      const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
-      if (!session?.access_token) { setLiked(liked); setCount(count); return; }
-
-      const res = await fetch("/api/ratings/community/like", {
-        method:  "POST",
-        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
-        body:    JSON.stringify({ reviewerUserId: userId, peliculaId }),
-      });
-      if (!res.ok) { setLiked(liked); setCount(count); }
-    } catch {
-      setLiked(liked);
-      setCount(count);
-    }
-  }
-
-  return (
-    <div className="flex gap-4 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
-      <ReviewAvatar displayName={displayName} avatarUrl={avatarUrl} avatarColor={avatarColor} />
-
-      <div className="min-w-0 flex-1">
-        <div className="mb-2 flex items-baseline gap-2.5">
-          <span className="text-[14px] font-bold text-white">@{displayName}</span>
-          <span
-            className="rounded px-2 py-0.5 text-[11.5px] font-bold"
-            style={{
-              fontFamily: "ui-monospace, 'Cascadia Code', monospace",
-              background: isHighScore ? "rgba(34,177,107,0.12)" : "rgba(255,255,255,0.06)",
-              color:      isHighScore ? "#22B16B"                : "#6D7D94",
-            }}
-          >
-            {score}/10
-          </span>
-          <span
-            className="text-[11.5px] text-[#4A5568]"
-            style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
-          >
-            {date}
-          </span>
-        </div>
-        <p className="text-[14px] leading-[1.55] text-[#D9E2EC]">{comment}</p>
-
-        {/* Like button */}
-        {!isOwn && currentUserId && (
-          <button
-            type="button"
-            onClick={() => void handleLike()}
-            className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
-            style={{ color: liked ? "#22B16B" : "#4A5568" }}
-          >
-            <GmaIcon
-              name="heart"
-              size={13}
-              strokeWidth={liked ? 0 : 1.8}
-              style={{ fill: liked ? "#22B16B" : "none" }}
-            />
-            {count > 0 && <span>{count}</span>}
-            <span>{liked ? "De acuerdo" : "De acuerdo"}</span>
-          </button>
-        )}
-        {isOwn && count > 0 && (
-          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4A5568]">
-            <GmaIcon name="heart" size={13} strokeWidth={1.8} />
-            <span>{count} {count === 1 ? "persona" : "personas"} de acuerdo</span>
+        ) : hasError && reviews.length === 0 ? (
+          <div role="alert" className="rounded-[8px] bg-[#242432] px-6 py-8 text-center">
+            <p className="text-[16px] font-medium text-white">No se pudieron cargar las valoraciones.</p>
+            <button
+              type="button"
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="mt-4 h-10 rounded-[4px] bg-white/10 px-5 text-[14px] font-bold text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              Reintentar
+            </button>
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RatingModal({
-  title,
-  initialScore,
-  initialComment = "",
-  onClose,
-  onSubmit,
-}: {
-  title: string;
-  initialScore: number | null;
-  initialComment?: string;
-  onClose: () => void;
-  onSubmit: (score: number, comment: string) => void;
-}) {
-  const [score, setScore]     = useState<number | null>(initialScore);
-  const [comment, setComment] = useState(initialComment);
-  const [withProfile, setWithProfile] = useState(true);
-
-  const SCALE_HINTS = [
-    "1 — Horrible",
-    "5 — Mediocre",
-    "10 — Imprescindible",
-  ];
-
-  return (
-    <div
-      className="fixed inset-0 z-[500] flex items-center justify-center px-4"
-      style={{ background: "rgba(5,8,16,0.75)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-[600px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
-        style={{ background: "#0D0D0D" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-3 border-b border-[#262626] px-6 py-5">
-          <GmaIcon name="star" size={20} className="text-[#22B16B]" />
-          <span className="text-[16px] font-bold text-white">
-            Valorar &ldquo;{title}&rdquo;
-          </span>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-          >
-            <GmaIcon name="close" size={16} />
-          </button>
-        </div>
-
-        <div className="px-6 py-6">
-          <p className="mb-4 text-[13px] text-[#6D7D94]">Tu puntuación</p>
-
-          {/* 1–10 number grid */}
-          <div className="relative mb-2 flex gap-1.5">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-              const active = score !== null && n <= score;
+        ) : others.length === 0 && !existing ? (
+          <p className="rounded-[8px] bg-[#242432] px-6 py-8 text-center text-[16px] text-[#B8B8CC]">
+            Aún no hay valoraciones con comentario. ¡Sé el primero en opinar!
+          </p>
+        ) : (
+          <>
+            {others.map((review) => {
+              const isMine = review.userId === currentUserId;
               return (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setScore(n)}
-                  className="relative flex flex-1 items-center justify-center rounded-[8px] border py-3 text-[15px] font-bold transition-colors"
-                  style={{
-                    fontFamily:  "ui-monospace, 'Cascadia Code', monospace",
-                    background:  active ? "rgba(34,177,107,0.10)" : "rgba(255,255,255,0.04)",
-                    borderColor: active ? "#22B16B"                : "#262626",
-                    color:       active ? "#22B16B"                : "#6D7D94",
-                  }}
-                >
-                  {n}
-                  {score === n && (
-                    <span
-                      className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#22B16B]"
-                      style={{ fontFamily: "ui-monospace, monospace" }}
-                    >
-                      Nota
-                    </span>
-                  )}
-                </button>
+                <ReviewCard
+                  // La clave incluye los "De acuerdo": al refrescar se reinicia el estado local de la tarjeta.
+                  key={`${review.userId}-${review.profileId ?? ""}-${review.ratedAt}-${review.likeCount}-${review.likedByMe}`}
+                  review={review}
+                  isOwn={isMine}
+                  onToggleLike={currentUserId && !isMine ? () => toggleLike(review) : undefined}
+                />
               );
             })}
-          </div>
-
-          <div
-            className="mb-6 mt-1 flex justify-between text-[11px] uppercase tracking-[0.06em] text-[#4A5568]"
-            style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
-          >
-            {SCALE_HINTS.map((h) => (
-              <span key={h}>{h}</span>
-            ))}
-          </div>
-
-          {/* Comment */}
-          <p className="mb-2 text-[13px] text-[#6D7D94]">
-            Comentario{" "}
-            <span className="text-[#4A5568]">(opcional)</span>
-          </p>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            maxLength={1000}
-            placeholder="Escribe tu opinión sobre este título..."
-            rows={4}
-            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#0A0A0A] px-4 py-3 text-[14px] leading-[1.55] text-white placeholder-[#4A5568] outline-none transition-colors focus:border-[#3A3A3A]"
-          />
-
-          <div className="mt-2 flex items-center justify-between">
-            <span
-              className="text-[11.5px] text-[#4A5568]"
-              style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
-            >
-              {comment.length} / 1.000 caracteres
-            </span>
-            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#6D7D94]">
-              <span
-                role="checkbox"
-                aria-checked={withProfile}
-                tabIndex={0}
-                onClick={() => setWithProfile((v) => !v)}
-                onKeyDown={(e) => e.key === " " && setWithProfile((v) => !v)}
-                className={`flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded border transition-colors ${
-                  withProfile
-                    ? "border-[#22B16B] bg-[#22B16B]"
-                    : "border-[#262626] bg-transparent"
-                }`}
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => void loadMore()}
+                disabled={loadingMore}
+                className="mx-auto h-12 rounded-[4px] border-2 border-[#3A3A52] px-6 text-[15px] font-bold text-white transition-colors hover:border-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
               >
-                {withProfile && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
-                    <path d="M1 4l2.5 2.5L9 1" stroke="#051910" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-              Publicar con mi perfil
-            </label>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center gap-3 border-t border-[#262626] px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-[#262626] px-4 py-2 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#3A3A3A] hover:text-white"
-          >
-            Cancelar
-          </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => score !== null && onSubmit(score, comment.trim())}
-            disabled={score === null}
-            className="rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {comment.trim() ? "Publicar valoración" : "Guardar nota"}
-          </button>
-        </div>
+                {loadingMore ? "Cargando…" : "Ver más valoraciones"}
+              </button>
+            )}
+            {hasError && reviews.length > 0 && (
+              <p role="alert" className="text-center text-[14px] text-red-200">
+                No se pudieron cargar más valoraciones. Inténtalo de nuevo.
+              </p>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

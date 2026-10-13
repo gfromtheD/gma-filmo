@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
-import { Hero } from "@/components/features/media/hero";
+import { motion, useReducedMotion } from "motion/react";
+import { HomeHero } from "@/components/features/home/home-hero";
 import { Carousel } from "@/components/ui/carousel";
 import { PosterCard } from "@/components/ui/poster-card";
 import { useWatchlist } from "@/hooks/use-watchlist";
@@ -12,21 +12,28 @@ import { useProgress } from "@/hooks/use-progress";
 import { useRecommendedHero } from "@/hooks/use-recommended-hero";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { parseDuration } from "@/lib/utils";
+import { ColeccionCard } from "@/components/features/catalog/coleccion-card";
+import { collectionsWithContent, pickRecommendedCollections } from "@/lib/recommendation/collection-picks";
+import type { Coleccion } from "@/lib/supabase/queries";
 import type { MovieMedia } from "@/types/catalog";
 
 const SLIDE_INTERVAL = 6000;
 
 interface HomeScreenProps {
   readonly items: readonly MovieMedia[];
+  readonly colecciones?: readonly Coleccion[];
 }
+
+/** Cuántas colecciones se recomiendan en la fila de portada. */
+const RECOMMENDED_COLLECTIONS = 6;
 
 function hrefFor(item: MovieMedia) {
   return `/cortos/${item.id}`;
 }
 
-export function HomeScreen({ items }: HomeScreenProps) {
+export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const router = useRouter();
-  const { addMedia, removeMedia, hasMedia, mediaIds } = useWatchlist();
+  const { mediaIds } = useWatchlist();
   const { entries: progressEntries } = useProgress();
 
   // ── Hero carousel state ──────────────────────────────────────────────────────
@@ -34,6 +41,8 @@ export function HomeScreen({ items }: HomeScreenProps) {
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const hoveredRef    = useRef(false);
   const safetyRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reduceMotion  = useReducedMotion();
+  const [isTrailerActive, setIsTrailerActive] = useState(false);
 
   function setHovered(val: boolean) {
     hoveredRef.current = val;
@@ -56,18 +65,28 @@ export function HomeScreen({ items }: HomeScreenProps) {
   // Auto-advance: interval ticks every SLIDE_INTERVAL but skips while hovered.
   // featuredIdx in deps resets the timer after every slide change (manual or auto).
   useEffect(() => {
-    if (featuredItems.length <= 1) return;
+    if (featuredItems.length <= 1 || reduceMotion || isTrailerActive) return;
     const id = setInterval(() => {
       if (hoveredRef.current) return;
       setFeaturedIdx((i) => (i + 1) % featuredItems.length);
     }, SLIDE_INTERVAL);
     return () => clearInterval(id);
-  }, [featuredItems.length, featuredIdx]);
+  }, [featuredItems.length, featuredIdx, reduceMotion, isTrailerActive]);
 
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
 
   // ── Recommendation rows (replaces static trending + newReleases) ─────────────
-  const { homeRows } = useRecommendations(items);
+  const { homeRows, categoryWeights, sessionSeed } = useRecommendations(items);
+  const recommendedCollections = useMemo(
+    () =>
+      pickRecommendedCollections(
+        collectionsWithContent(colecciones, items),
+        categoryWeights,
+        sessionSeed,
+        RECOMMENDED_COLLECTIONS,
+      ),
+    [colecciones, items, categoryWeights, sessionSeed],
+  );
   const watchlistItems = items.filter((x) => mediaIds.includes(x.numericId));
 
   const continueItems = useMemo(() => {
@@ -90,80 +109,31 @@ export function HomeScreen({ items }: HomeScreenProps) {
 
   if (!featured) return null;
 
-  function toggleList(item: MovieMedia) {
-    if (hasMedia(item.numericId)) removeMedia(item.numericId); else addMedia(item.numericId);
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
     >
-      {/* ── Hero carousel ──────────────────────────────────────────────────── */}
+      {/* ── Hero a pantalla completa bajo la cabecera transparente ─────────── */}
       <div
-        className="relative"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* key forces remount → re-triggers all fadeUp / fadeIn animations */}
-        <Hero
+        <HomeHero
           key={featured.id}
           item={featured}
+          detailHref={hrefFor(featured)}
+          canNavigate={featuredItems.length > 1}
           onPlay={() => router.push(`/ver/${featured.id}`)}
-          onDetail={() => router.push(hrefFor(featured))}
-          onAddList={() => toggleList(featured)}
-          inList={hasMedia(featured.numericId)}
+          onPrev={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
+          onNext={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
+          onTrailerActiveChange={setIsTrailerActive}
+          onTrailerEnded={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
         />
-
-        {/* Dot indicators + prev/next arrows */}
-        {featuredItems.length > 1 && (
-          <div
-            className="group absolute bottom-6 left-0 right-0 z-10 flex items-center justify-center gap-3"
-            style={{ animation: "fadeIn 0.55s ease both" }}
-          >
-            <button
-              type="button"
-              aria-label="Anterior"
-              onClick={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
-              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-[6px]">
-              {featuredItems.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Slide ${i + 1}`}
-                  onClick={() => setFeaturedIdx(i)}
-                  className={`h-[5px] rounded-full transition-all duration-300 ${
-                    i === featuredIdx
-                      ? "w-8 bg-[#22B16B]"
-                      : "w-[10px] bg-white/25 hover:bg-white/50"
-                  }`}
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              aria-label="Siguiente"
-              onClick={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
-              className="flex items-center justify-center text-white opacity-0 transition-opacity duration-200 group-hover:opacity-50 hover:!opacity-90 active:scale-95"
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </div>
-        )}
-
       </div>
 
       <motion.div
-        className="mx-auto max-w-[1440px] px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
@@ -171,16 +141,34 @@ export function HomeScreen({ items }: HomeScreenProps) {
         {continueItems.length > 0 && (
           <Carousel title="Continuar viendo">
             {continueItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" size="lg" showProgress href={`/ver/${item.id}`} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview showProgress href={`/ver/${item.id}`} />
             ))}
           </Carousel>
         )}
 
         <Carousel title="Recién llegados">
           {items.slice(0, 15).map((item) => (
-            <PosterCard key={item.id} item={item} ratio="landscape" size="lg" href={hrefFor(item)} />
+            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
           ))}
         </Carousel>
+
+        {recommendedCollections.length > 0 && (
+          <Carousel
+            title="Colecciones para ti"
+            action={
+              <Link
+                href="/cortos"
+                className="text-[14px] font-medium text-[#B8C5D4] transition-colors hover:text-white"
+              >
+                Ver todas
+              </Link>
+            }
+          >
+            {recommendedCollections.map(({ col, filmCount }) => (
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
+            ))}
+          </Carousel>
+        )}
 
         {homeRows.map((row) => (
           <Carousel key={row.title} title={row.title}>
@@ -188,8 +176,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
               <PosterCard
                 key={item.id}
                 item={item as MovieMedia}
-                ratio="landscape"
-                size="lg"
+                ratio="landscape" fluid hoverPreview
                 href={hrefFor(item as MovieMedia)}
               />
             ))}
@@ -209,7 +196,7 @@ export function HomeScreen({ items }: HomeScreenProps) {
             }
           >
             {watchlistItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" size="lg" href={hrefFor(item)} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
             ))}
           </Carousel>
         )}

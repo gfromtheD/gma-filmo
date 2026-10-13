@@ -3,20 +3,25 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { motion, useAnimation, AnimatePresence } from "motion/react";
-import { ExternalLink, UserRound, MessageCircle } from "lucide-react";
+import { motion, useAnimation, AnimatePresence, useReducedMotion } from "motion/react";
+import { DropdownMenu } from "radix-ui";
+import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
+import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
+import { AccountMenuContent } from "@/components/layout/navbar-parts/account-menu-content";
+import { MobileMenu, type MobileMenuItem } from "@/components/layout/navbar-parts/mobile-menu";
+import { StudioTabsRow } from "@/components/layout/navbar-parts/studio-tabs-row";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useProfileStore } from "@/store/use-profile-store";
-import { renderAvatar } from "@/lib/data/profile-avatars";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
 import { STUDIO_TABS } from "@/components/features/studio/studio-sub-nav";
 import { useDMStore } from "@/store/use-dm-store";
+import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
 
 interface NavItem {
   readonly id: string;
@@ -25,6 +30,9 @@ interface NavItem {
   readonly match: string;
 }
 
+/** Espera de la ruleta Mi Espacio ↔ Mi Estudio antes de navegar. */
+const ROULETTE_DELAY_MS = 420;
+
 const NAV_ITEMS: readonly NavItem[] = [
   { id: "home",   label: "Home",       href: "/inicio",     match: "/inicio" },
   { id: "movies", label: "Películas",  href: "/peliculas",  match: "/peliculas" },
@@ -32,38 +40,6 @@ const NAV_ITEMS: readonly NavItem[] = [
   { id: "space",  label: "Mi Espacio", href: "/mi-espacio", match: "/mi-espacio" },
 ];
 
-
-function UserAvatar({ name, color, imageUrl, iconId }: { name: string; color: string; imageUrl?: string; iconId?: string }) {
-  if (imageUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={imageUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-    );
-  }
-  if (iconId) {
-    return (
-      <div className="h-7 w-7 overflow-hidden rounded-full">
-        {renderAvatar(iconId, color, 28) as React.ReactNode}
-      </div>
-    );
-  }
-  return (
-    <div
-      className="flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-extrabold text-[#031A0E]"
-      style={{ background: color }}
-    >
-      {name[0]?.toUpperCase() ?? "U"}
-    </div>
-  );
-}
-
-function GuestAvatarIcon() {
-  return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
-      <UserRound size={15} className="text-[#B8C5D4]" />
-    </div>
-  );
-}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -81,6 +57,8 @@ export function Navbar() {
   const avatarRef    = useRef<HTMLSpanElement>(null);
   const prevPhase    = useRef(phase);
   const avatarCtrl   = useAnimation();
+  const reduceMotion = useReducedMotion();
+  const isScrolled    = useScrollThreshold();
   const [chipReveal,   setChipReveal]   = useState(false);
   const [pillExpanded, setPillExpanded] = useState(true);
 
@@ -117,7 +95,6 @@ export function Navbar() {
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function measure() {
@@ -132,9 +109,6 @@ export function Navbar() {
   }, [setChipPos]);
 
   // ── Sliding pill ─────────────────────────────────────────────────────────
-  const itemRefs   = useRef<(HTMLElement | null)[]>([]);
-  const [pill, setPill]         = useState({ left: 0, width: 0 });
-  const [pillReady, setPillReady] = useState(false);
 
   // ── Studio sub-nav (second row of compound nav) ───────────────────────────
   const { activeTab: studioTab, setActiveTab: setStudioTab } = useStudioTabStore();
@@ -142,15 +116,29 @@ export function Navbar() {
   const [studioTabPill, setStudioTabPill]           = useState({ left: 0, width: 0 });
   const [studioTabPillReady, setStudioTabPillReady] = useState(false);
   const isStudioNav = isCreator && pathname.startsWith("/mi-estudio");
+  const navRef = useRef<HTMLElement>(null);
 
 
+  // El subrayado se recalcula si la barra cambia de tamaño (p. ej. móvil → escritorio).
   useEffect(() => {
     if (!isStudioNav) { setStudioTabPillReady(false); return; }
-    const idx = STUDIO_TABS.findIndex((t) => t.id === studioTab);
-    const el  = studioTabRefs.current[idx];
-    if (!el) return;
-    setStudioTabPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setStudioTabPillReady(true);
+    function measure() {
+      const idx = STUDIO_TABS.findIndex((t) => t.id === studioTab);
+      const el  = studioTabRefs.current[idx];
+      if (!el || el.offsetWidth === 0) return;
+      setStudioTabPill((prev) =>
+        prev.left === el.offsetLeft && prev.width === el.offsetWidth
+          ? prev
+          : { left: el.offsetLeft, width: el.offsetWidth },
+      );
+      setStudioTabPillReady(true);
+    }
+    measure();
+    const nav = navRef.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
   }, [studioTab, isStudioNav]);
 
   const handleSignOut = useCallback(async () => {
@@ -165,16 +153,6 @@ export function Navbar() {
     router.push("/");
     router.refresh();
   }, [router, isGuest]);
-
-  // Close profile menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
 
   // "Mi Espacio" is active when on /mi-espacio OR (creator) /mi-estudio
   const spaceIsActive = useMemo(() => {
@@ -200,6 +178,15 @@ export function Navbar() {
     }
   }, [pathname, phase, isCreator]);
 
+  // Navegación diferida de la ruleta; se cancela al desmontar o al repetir el clic.
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (navTimerRef.current) clearTimeout(navTimerRef.current); }, []);
+
+  function pushAfterRoulette(href: string) {
+    if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => router.push(href), reduceMotion ? 0 : ROULETTE_DELAY_MS);
+  }
+
   // Toggle between Mi Espacio ↔ Mi Estudio with roulette animation on the pill
   function handleSpacePillClick() {
     if (!isCreator) {
@@ -209,106 +196,83 @@ export function Navbar() {
     if (!spaceIsActive) {
       // Creator on any other page: pill takes them to their default (Mi Estudio)
       setRouletteStep(1);
-      setTimeout(() => router.push("/mi-estudio"), 420);
+      pushAfterRoulette("/mi-estudio");
       return;
     }
     // Creator already in space section: toggle between Mi Espacio ↔ Mi Estudio
     const targetHref = pathname.startsWith("/mi-estudio") ? "/mi-espacio" : "/mi-estudio";
     const targetStep = targetHref === "/mi-estudio" ? 1 : 0;
     setRouletteStep(targetStep);
-    setTimeout(() => router.push(targetHref), 420);
+    pushAfterRoulette(targetHref);
   }
 
-  // Measure active pill position
-  useEffect(() => {
-    const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
-    if (activeIdx < 0) return;
-    const el = itemRefs.current[activeIdx];
-    if (!el) return;
-    setPill({ left: el.offsetLeft, width: el.offsetWidth });
-    setPillReady(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, spaceIsActive]);
+  function handleStudioTabSelect(id: (typeof STUDIO_TABS)[number]["id"]) {
+    setStudioTab(id);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  // Elementos del panel móvil: mismas rutas que la píldora; los creadores ven
+  // Mi Espacio y Mi Estudio como destinos separados.
+  const mobileItems: MobileMenuItem[] = [
+    ...NAV_ITEMS.map((item) => ({
+      id: item.id,
+      label: item.label,
+      href: item.href,
+      isActive: item.id === "space" ? pathname.startsWith("/mi-espacio") : isActive(item),
+    })),
+    ...(isCreator
+      ? [{ id: "studio", label: "Mi Estudio", href: "/mi-estudio", isActive: pathname.startsWith("/mi-estudio") }]
+      : []),
+  ];
 
   return (
     <header
-      className="sticky top-0 z-50"
-      style={{
-        background: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0) 100%)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-      }}
+      data-scrolled={isScrolled}
+      className="sticky top-0 z-50 bg-transparent transition-colors duration-300 ease-in data-[scrolled=true]:bg-[#060613] motion-reduce:transition-none"
     >
-      <div
-        className="mx-auto max-w-[1440px] px-8"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center",
-          height: 80,
-          gap: 32,
-        }}
-      >
-        {/* ── Left: brand ───────────────────────────────────────────── */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex shrink-0 items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo-gma.png" alt="GMA" className="h-8 w-auto" />
-            <span className="text-[18px] text-white">·</span>
-            <span className="text-[14px] font-medium uppercase tracking-[0.04em] text-[#22B16B]">
-              filmo
-            </span>
-          </Link>
-          <span className="h-[18px] w-px bg-[#2A2A2A]" />
-          <span
-            className="text-[13px] text-[#6D7D94]"
-            style={{ fontFamily: '"Georgia", "Times New Roman", serif', fontStyle: "italic" }}
-          >
-            el cine es nuestro
-          </span>
+      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[auto_1fr_auto] lg:gap-8 lg:px-16">
+        {/* ── Left: menú móvil + marca ──────────────────────────────── */}
+        <div className="flex items-center gap-1 lg:gap-0">
+          <MobileMenu items={mobileItems} />
+          <NavbarBrand />
         </div>
 
         {/* ── Center: compound nav (single border wraps both rows) ────── */}
         <nav
-          className="relative flex rounded-full border border-[#262626]"
-          style={{ background: "rgba(255,255,255,0.04)" }}
+          ref={navRef}
+          aria-label="Principal"
+          className="relative hidden h-full items-stretch lg:flex"
         >
-          {/* ── Main nav row ─────────────────────────────────────────── */}
-          <div className="relative z-10 flex gap-1 p-1">
-            {pillReady && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-                style={{ left: pill.left, width: pill.width }}
-              />
-            )}
-
-            {NAV_ITEMS.map((item, i) => {
+          <div className="flex items-stretch">
+            {NAV_ITEMS.map((item) => {
               const active = isActive(item);
-              const labelColor = active ? "#051910" : "#B8C5D4";
+              const linkClass =
+                "relative flex h-full items-center px-3.5 text-[16px] font-medium text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white after:absolute after:inset-x-3.5 after:bottom-0 after:h-[3px] after:bg-[#22B16B] after:opacity-0 aria-[current=page]:after:opacity-100";
 
               if (item.id === "space" && isCreator) {
                 return (
-                  <div
+                  <button
                     key={item.id}
-                    ref={(el) => { itemRefs.current[i] = el; }}
-                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
+                    type="button"
+                    aria-label={rouletteStep === 0 ? "Mi Espacio" : "Mi Estudio"}
+                    aria-current={active ? "page" : undefined}
+                    className={`${linkClass} cursor-pointer`}
                     onClick={handleSpacePillClick}
                   >
                     <span
-                      className="inline-block overflow-hidden text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                      style={{ height: "1.2em", lineHeight: "1.2em", color: labelColor }}
+                      className="inline-block overflow-hidden"
+                      style={{ height: "1.2em", lineHeight: "1.2em" }}
                     >
                       <motion.span
                         className="flex flex-col"
                         animate={{ y: rouletteStep === 0 ? "0em" : "-1.2em" }}
-                        transition={{ duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: reduceMotion ? 0 : 0.38, ease: [0.4, 0, 0.2, 1] }}
                       >
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Espacio</span>
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
                       </motion.span>
                     </span>
-                  </div>
+                  </button>
                 );
               }
 
@@ -316,9 +280,8 @@ export function Navbar() {
                 <Link
                   key={item.id}
                   href={item.href}
-                  ref={(el) => { itemRefs.current[i] = el; }}
-                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                  style={{ color: active ? "#051910" : "#B8C5D4" }}
+                  aria-current={active ? "page" : undefined}
+                  className={linkClass}
                 >
                   {item.label}
                 </Link>
@@ -326,16 +289,14 @@ export function Navbar() {
             })}
           </div>
 
-
-          {/* ── Studio tabs: deploy BELOW the main pill, out of normal flow ── */}
+          {/* ── Studio tabs: debajo de la barra, fuera del flujo ── */}
           {isStudioNav && (
             <motion.div
               style={{
                 position: "absolute",
                 top: "100%",
-                marginTop: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
+                marginTop: 8,
+                left: 0,
                 zIndex: 2,
                 display: "flex",
                 gap: 4,
@@ -347,9 +308,9 @@ export function Navbar() {
                 overflow: "hidden",
                 whiteSpace: "nowrap",
               }}
-              initial={{ clipPath: "inset(0 44% 0 44% round 999px)" }}
+              initial={reduceMotion ? false : { clipPath: "inset(0 44% 0 44% round 999px)" }}
               animate={{ clipPath: "inset(0 0% 0 0% round 999px)" }}
-              transition={{ delay: 0.16, type: "spring", stiffness: 260, damping: 28, mass: 0.9 }}
+              transition={reduceMotion ? { duration: 0 } : { delay: 0.16, type: "spring", stiffness: 260, damping: 28, mass: 0.9 }}
             >
               {studioTabPillReady && (
                 <motion.span
@@ -361,17 +322,14 @@ export function Navbar() {
                     pointerEvents: "none",
                   }}
                   animate={{ left: studioTabPill.left, width: studioTabPill.width }}
-                  transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.7 }}
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 38, mass: 0.7 }}
                 />
               )}
               {STUDIO_TABS.map((tab, i) => (
                 <button
                   key={tab.id}
                   ref={(el) => { studioTabRefs.current[i] = el; }}
-                  onClick={() => {
-                    setStudioTab(tab.id);
-                    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
+                  onClick={() => handleStudioTabSelect(tab.id)}
                   style={{
                     position: "relative", zIndex: 10,
                     display: "flex", alignItems: "center", gap: 7,
@@ -391,23 +349,38 @@ export function Navbar() {
         </nav>
 
         {/* ── Right: search + profile ───────────────────────────────── */}
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1 lg:gap-2">
+          {isGuest && (
+            <Link
+              href="/?register=1"
+              className="mr-2 hidden h-8 items-center rounded-[4px] bg-[#22B16B] px-3 text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+            >
+              Registrarse
+            </Link>
+          )}
           <Link
             href="/buscador"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:h-10 lg:w-10"
             aria-label="Buscador"
           >
-            <GmaIcon name="search" size={19} />
+            <GmaIcon name="search" size={22} />
+          </Link>
+          <Link
+            href="/mi-espacio"
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white sm:flex"
+            aria-label="Mi lista"
+          >
+            <GmaIcon name="bookmark" size={22} />
           </Link>
 
-          <div ref={menuRef} className="relative ml-1.5">
+          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+          <div className="relative ml-1.5">
+            <DropdownMenu.Trigger asChild>
             <button
               ref={chipBtnRef}
               type="button"
               aria-label="Cuenta"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] py-1 pl-1 pr-3 hover:bg-[#1A1A1A]"
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none! lg:h-10 lg:w-10"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
@@ -442,125 +415,31 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              <span className="max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap">
-                {isGuest ? "Invitado" : displayName}
-              </span>
-              <GmaIcon name="chevronDown" size={12} className="text-[#6D7D94] shrink-0" />
+              
             </button>
+            </DropdownMenu.Trigger>
 
-            {menuOpen && (
-              <div
-                className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
-                style={{ background: "#0D0D0D" }}
-              >
-                {isGuest ? (
-                  <div className="border-b border-[#262626] px-4 py-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
-                        <UserRound size={18} className="text-[#B8C5D4]" />
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-extrabold text-white">Explorando como invitado</div>
-                        <div className="text-[11px] text-[#5A6A7E]">Acceso limitado</div>
-                      </div>
-                    </div>
-                    <p className="mb-3 text-[11.5px] leading-[1.5] text-[#6D7D94]">
-                      Crea una cuenta gratis para guardar favoritos, llevar tu historial y valorar cortos.
-                    </p>
-                    <div className="flex gap-2">
-                      <Link
-                        href="/?register=1"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex-1 rounded-full bg-[#22B16B] py-1.5 text-center text-[12px] font-bold text-[#031A0E] transition-opacity hover:opacity-90"
-                      >
-                        Registrarse
-                      </Link>
-                      <Link
-                        href="/?login=1"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex-1 rounded-full border border-[#3A4A5A] py-1.5 text-center text-[12px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A]"
-                      >
-                        Iniciar sesión
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    href="/perfiles"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 border-b border-[#262626] px-4 py-3 transition-colors hover:bg-[#1A1A1A]"
-                  >
-                    <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-extrabold text-white">{displayName}</div>
-                      {email && (
-                        <div className="truncate text-[11px] text-[#5A6A7E]">{email}</div>
-                      )}
-                    </div>
-                    <GmaIcon name="chevronRight" size={16} className="text-[#6D7D94]" />
-                  </Link>
-                )}
-
-                <div className="py-1">
-                  <Link
-                    href="/mi-espacio"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                  >
-                    <GmaIcon name="bookmark" size={16} />
-                    <span>Mi Espacio</span>
-                  </Link>
-                  {isCreator && (
-                    <button
-                      type="button"
-                      onClick={() => { setMenuOpen(false); openDM(); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                    >
-                      <MessageCircle size={16} />
-                      <span>Mensajes directos</span>
-                    </button>
-                  )}
-                  {!activeProfile?.isKids && (
-                    <Link
-                      href="/configuracion"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                    >
-                      <GmaIcon name="settings" size={16} />
-                      <span>Configuración</span>
-                    </Link>
-                  )}
-                </div>
-
-                <div className="border-t border-[#262626] py-1">
-                  <a
-                    href="https://generacionmaldita.com/sobre-el-proyecto/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                  >
-                    <ExternalLink size={16} />
-                    <span>Sobre el proyecto</span>
-                  </a>
-                </div>
-
-                <div className="border-t border-[#262626] py-1">
-                  <button
-                    type="button"
-                    onClick={() => void handleSignOut()}
-                    disabled={signingOut}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-[#ff5252] disabled:opacity-50"
-                  >
-                    <GmaIcon name="close" size={16} />
-                    <span>{signingOut ? "Saliendo…" : isGuest ? "Salir al inicio" : "Cerrar sesión"}</span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <AccountMenuContent
+              isGuest={isGuest}
+              displayName={displayName}
+              email={email}
+              avatarColor={avatarColor}
+              avatarImageUrl={avatarImageUrl}
+              avatarIconId={avatarIconId}
+              isCreator={isCreator}
+              canOpenSettings={!activeProfile?.isKids}
+              isSigningOut={signingOut}
+              onOpenMessages={openDM}
+              onSignOut={() => void handleSignOut()}
+            />
           </div>
+          </DropdownMenu.Root>
         </div>
       </div>
+
+      {isStudioNav && (
+        <StudioTabsRow tabs={STUDIO_TABS} activeId={studioTab} onSelect={handleStudioTabSelect} />
+      )}
     </header>
   );
 }

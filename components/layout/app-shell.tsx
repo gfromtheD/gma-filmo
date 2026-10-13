@@ -7,7 +7,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#000000]">
+    <div className="min-h-screen bg-[#060613]">
       <Navbar />
       <main>{children}</main>
       <DMWindow />

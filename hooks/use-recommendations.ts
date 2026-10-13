@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import {
+  buildUserAffinity,
   buildUserProfileFromSupabase,
   buildHomeRows,
+  getOrCreateSessionSeed,
   recommendItems,
   type HomeRow,
 } from "@/lib/recommendation/recommendation-engine";
@@ -40,6 +42,10 @@ function saveShownOnHome(userId: string, items: MediaItem[]) {
 interface UseRecommendationsResult {
   homeRows: HomeRow[];
   picks: MediaItem[];
+  /** Afinidad del espectador por categoría (vacío si no hay historial). */
+  categoryWeights: Record<string, number>;
+  /** Semilla de sesión estable (rota cada 2 h) para variar sin saltos. */
+  sessionSeed: number;
 }
 
 export function useRecommendations(
@@ -52,6 +58,8 @@ export function useRecommendations(
 
   const [homeRows, setHomeRows] = useState<HomeRow[]>([]);
   const [picks, setPicks]       = useState<MediaItem[]>([]);
+  const [categoryWeights, setCategoryWeights] = useState<Record<string, number>>({});
+  const [sessionSeed, setSessionSeed]         = useState(0.5);
 
   useEffect(() => {
     const uid = userId ?? "anonymous";
@@ -68,10 +76,12 @@ export function useRecommendations(
     const rows = buildHomeRows(allItems, profile);
     setHomeRows(rows);
     setPicks(recommendItems(allItems, profile, { count: pickCount }));
+    setCategoryWeights(buildUserAffinity(profile.events, allItems).categoryWeights);
+    setSessionSeed(getOrCreateSessionSeed(uid));
 
     // Mark every item in these rows as shown so they rotate out next time
     saveShownOnHome(uid, rows.flatMap((r) => r.items));
   }, [userId, allItems, progressByNumericId, watchlistNumericIds, pickCount]);
 
-  return { homeRows, picks };
+  return { homeRows, picks, categoryWeights, sessionSeed };
 }
