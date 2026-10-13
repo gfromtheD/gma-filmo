@@ -71,6 +71,16 @@ documenta aquí con aviso de riesgo.
 - **Riesgo de conflicto con el Mac:** bajo (no es Studio, Player, API ni datos).
 - **Despliegue:** ninguno.
 
+### 2026-10-13 — Guardar en la lista: aviso para invitados y escritura verificada
+
+- **Rama:** `experiment/filmin-layout`
+- **Archivos:** `hooks/use-watchlist.ts`, `components/ui/notice-toast.tsx` (nuevo), `poster-card.tsx`, `hover-preview-card.tsx`, `movie-detail.tsx`, `series-detail.tsx`, `catalog-screen.tsx`, `e2e/watchlist.spec.ts` (nuevo).
+- **Cambio visible:** un invitado que pulsa "Guardar" ve un aviso con enlace a iniciar sesión (antes: no pasaba nada o aparecía un falso "Guardada"). Si el servidor rechaza el guardado, se deshace el cambio y se avisa.
+- **Contrato:** `useWatchlist` añade `canSave`; `addMedia/removeMedia` pasan a devolver `Promise<boolean>` (compatible con llamadas que lo ignoran). API `/api/watchlist` sin cambios.
+- **Pruebas:** `tsc`, `next lint` sin errores; suite e2e completa 81/81 (APIs mockeadas, sin escrituras reales).
+- **Riesgo con el Mac:** bajo (no toca Studio, Player ni backend).
+- **Despliegue:** ninguno.
+
 ## 6. Notas para la integración
 
 1. Hacer copia de seguridad de este repo antes de fusionar.

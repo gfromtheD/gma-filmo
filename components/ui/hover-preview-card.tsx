@@ -17,6 +17,9 @@ interface HoverPreviewCardProps {
   readonly onPointerEnter: () => void;
   readonly onPointerLeave: () => void;
   readonly onClose: () => void;
+  /** Invitado: no puede guardar; el aviso lo pinta PosterCard (el panel se cierra al salir el ratón). */
+  readonly onLoginRequired: () => void;
+  readonly onSaveError: () => void;
 }
 
 const ENTER_MS = 250;
@@ -33,12 +36,14 @@ export function HoverPreviewCard({
   onPointerEnter,
   onPointerLeave,
   onClose,
+  onLoginRequired,
+  onSaveError,
 }: HoverPreviewCardProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<PreviewLayout | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
   const inList = hasMedia(item.numericId);
 
   // 1) medir el alto real del panel y calcular su posición final
@@ -63,9 +68,13 @@ export function HoverPreviewCard({
     return () => cancelAnimationFrame(frame);
   }, [layout]);
 
-  function toggleList() {
-    if (inList) removeMedia(item.numericId);
-    else addMedia(item.numericId);
+  async function toggleList() {
+    if (!canSave) {
+      onLoginRequired();
+      return;
+    }
+    const saved = inList ? await removeMedia(item.numericId) : await addMedia(item.numericId);
+    if (!saved) onSaveError();
   }
 
   const width = layout?.width ?? previewWidth(anchorBox.width);
@@ -136,7 +145,7 @@ export function HoverPreviewCard({
           </Link>
           <button
             type="button"
-            onClick={toggleList}
+            onClick={() => void toggleList()}
             aria-pressed={inList}
             aria-label={inList ? "Quitar de mi lista" : "Guardar en mi lista"}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"

@@ -10,6 +10,7 @@ import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useIsGuest } from "@/hooks/use-is-guest";
+import { useNoticeToast } from "@/components/ui/notice-toast";
 import { useCommunityRatings } from "@/hooks/use-community-ratings";
 import type { MovieMedia } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
@@ -33,7 +34,8 @@ function isDetailTabId(value: string): value is DetailTabId {
 export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDetailProps) {
   const router = useRouter();
   const isGuest = useIsGuest();
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
+  const notice = useNoticeToast();
   const inList = hasMedia(movie.numericId);
   const [scoreRefresh, setScoreRefresh] = useState(0);
   const { avgScore, voteCount } = useCommunityRatings(movie.numericId, scoreRefresh);
@@ -59,9 +61,13 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
     window.history.replaceState(null, "", `#${id}`);
   }
 
-  function toggleList() {
-    if (inList) removeMedia(movie.numericId);
-    else addMedia(movie.numericId);
+  async function toggleList() {
+    if (!canSave) {
+      notice.showLoginRequired();
+      return;
+    }
+    const saved = inList ? await removeMedia(movie.numericId) : await addMedia(movie.numericId);
+    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
   }
 
   function handleRate() {
@@ -85,13 +91,14 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
 
   return (
     <div>
+      {notice.toast}
       <DetailHeader
         movie={movie}
         avgScore={avgScore}
         voteCount={voteCount}
         inList={inList}
         onPlay={() => router.push(`/ver/${movie.id}`)}
-        onToggleList={toggleList}
+        onToggleList={() => void toggleList()}
         onRate={handleRate}
         onShare={() => void handleShare()}
       />

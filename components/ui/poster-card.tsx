@@ -7,6 +7,7 @@ import { HoverPreviewCard } from "@/components/ui/hover-preview-card";
 import { CardInfoOverlay } from "@/components/ui/card-info-overlay";
 import { useHoverPreview } from "@/hooks/use-hover-preview";
 import { loadCommunityScore } from "@/hooks/use-community-score";
+import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { MediaItem, PosterRatio } from "@/types/catalog";
 
 type CardSize = "sm" | "md" | "lg";
@@ -46,6 +47,7 @@ export function PosterCard({
   hoverOverlay = false,
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
+  const notice = useNoticeToast();
   const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : `/cortos/${item.id}`);
   const wrapProps = hoverPreview
     ? {
@@ -66,6 +68,8 @@ export function PosterCard({
       onPointerEnter={preview.keepOpen}
       onPointerLeave={preview.scheduleClose}
       onClose={preview.close}
+      onLoginRequired={notice.showLoginRequired}
+      onSaveError={() => notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.")}
     />
   ) : null;
 
@@ -129,6 +133,7 @@ export function PosterCard({
         <Link href={href} className={CARD_CLASS}>{cardContent}</Link>
         {listBtn}
         {previewNode}
+        {notice.toast}
       </div>
     );
   }
@@ -138,6 +143,7 @@ export function PosterCard({
       <button type="button" onClick={onClick} className={CARD_CLASS}>{cardContent}</button>
       {listBtn}
       {previewNode}
+      {notice.toast}
     </div>
   );
 }

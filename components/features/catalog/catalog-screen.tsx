@@ -10,6 +10,7 @@ import { ColeccionCard } from "./coleccion-card";
 import { collectionsWithContent } from "@/lib/recommendation/collection-picks";
 import { CatalogFilterDrawer, type CatalogFilters, type SortKey } from "./catalog-filter-drawer";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { MovieMedia } from "@/types/catalog";
 import type { Coleccion } from "@/lib/supabase/queries";
 
@@ -65,7 +66,17 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
   const searchParams = useSearchParams();
   const router       = useRouter();
   const pathname     = usePathname();
-  const { addMedia, removeMedia, hasMedia } = useWatchlist();
+  const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
+  const notice = useNoticeToast();
+
+  async function toggleInList(numericId: number) {
+    if (!canSave) {
+      notice.showLoginRequired();
+      return;
+    }
+    const saved = hasMedia(numericId) ? await removeMedia(numericId) : await addMedia(numericId);
+    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
+  }
 
   const cortosItems    = items.filter((x) => x.genre !== "Película");
   const peliculasItems = items.filter((x) => x.genre === "Película");
@@ -157,6 +168,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
     >
+      {notice.toast}
 
       {/* Collections row — solo colecciones con contenido */}
       {withContent.length > 0 && (
@@ -284,11 +296,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               fluid
               hoverOverlay
               href={`/cortos/${item.id}`}
-              onAddList={() =>
-                hasMedia(item.numericId)
-                  ? removeMedia(item.numericId)
-                  : addMedia(item.numericId)
-              }
+              onAddList={() => void toggleInList(item.numericId)}
               inList={hasMedia(item.numericId)}
             />
           ))}
@@ -322,11 +330,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
                 ratio="landscape"
                 fluid
                 href={`/cortos/${item.id}`}
-                onAddList={() =>
-                  hasMedia(item.numericId)
-                    ? removeMedia(item.numericId)
-                    : addMedia(item.numericId)
-                }
+                onAddList={() => void toggleInList(item.numericId)}
                 inList={hasMedia(item.numericId)}
               />
             ))}
