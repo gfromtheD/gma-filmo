@@ -109,9 +109,6 @@ export function Navbar() {
   }, [setChipPos]);
 
   // ── Sliding pill ─────────────────────────────────────────────────────────
-  const itemRefs   = useRef<(HTMLElement | null)[]>([]);
-  const [pill, setPill]         = useState({ left: 0, width: 0 });
-  const [pillReady, setPillReady] = useState(false);
 
   // ── Studio sub-nav (second row of compound nav) ───────────────────────────
   const { activeTab: studioTab, setActiveTab: setStudioTab } = useStudioTabStore();
@@ -228,44 +225,12 @@ export function Navbar() {
       : []),
   ];
 
-  // Mide la píldora activa y la recalcula si la barra cambia de tamaño
-  // (redimensionado, zoom, carga de la fuente, paso de móvil a escritorio).
-  const activeIdx = NAV_ITEMS.findIndex((item) => isActive(item));
-
-  useEffect(() => {
-    function measure() {
-      const el = activeIdx >= 0 ? itemRefs.current[activeIdx] : null;
-      if (!el || el.offsetWidth === 0) return;
-      setPill((prev) =>
-        prev.left === el.offsetLeft && prev.width === el.offsetWidth
-          ? prev
-          : { left: el.offsetLeft, width: el.offsetWidth },
-      );
-      setPillReady(true);
-    }
-    measure();
-    const nav = navRef.current;
-    if (!nav || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [activeIdx]);
-
   return (
     <header
-      className="sticky top-0 z-50"
-      style={{
-        background: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.85) 80%, rgba(0,0,0,0) 100%)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
-      }}
+      data-scrolled={isScrolled}
+      className="sticky top-0 z-50 bg-transparent transition-colors duration-300 ease-in data-[scrolled=true]:bg-[#060613] motion-reduce:transition-none"
     >
-      <span
-        aria-hidden="true"
-        data-scrolled={isScrolled}
-        className="pointer-events-none absolute inset-0 border-b border-white/5 bg-black/90 opacity-0 transition-opacity duration-200 data-[scrolled=true]:opacity-100 motion-reduce:transition-none"
-      />
-      <div className="relative mx-auto grid h-16 max-w-[1440px] grid-cols-[1fr_auto] items-center gap-2 px-3 sm:px-4 lg:h-20 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-8">
+      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[auto_1fr_auto] lg:gap-8 lg:px-16">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
           <MobileMenu items={mobileItems} />
@@ -276,38 +241,27 @@ export function Navbar() {
         <nav
           ref={navRef}
           aria-label="Principal"
-          className="relative hidden rounded-full border border-[#262626] lg:flex"
-          style={{ background: "rgba(255,255,255,0.04)" }}
+          className="relative hidden h-full items-stretch lg:flex"
         >
-          {/* ── Main nav row ─────────────────────────────────────────── */}
-          <div className="relative z-10 flex gap-1 p-1">
-            {pillReady && (
-              <span
-                aria-hidden="true"
-                data-nav-pill=""
-                className="pointer-events-none absolute top-1 h-9 rounded-full bg-[#22B16B] transition-[left,width] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
-                style={{ left: pill.left, width: pill.width }}
-              />
-            )}
-
-            {NAV_ITEMS.map((item, i) => {
+          <div className="flex items-stretch">
+            {NAV_ITEMS.map((item) => {
               const active = isActive(item);
-              const labelColor = active ? "#051910" : "#B8C5D4";
+              const linkClass =
+                "relative flex h-full items-center px-3.5 text-[16px] font-medium text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white after:absolute after:inset-x-3.5 after:bottom-0 after:h-[3px] after:bg-[#22B16B] after:opacity-0 aria-[current=page]:after:opacity-100";
 
               if (item.id === "space" && isCreator) {
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    ref={(el) => { itemRefs.current[i] = el; }}
                     aria-label={rouletteStep === 0 ? "Mi Espacio" : "Mi Estudio"}
                     aria-current={active ? "page" : undefined}
-                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5 focus-visible:outline-2 focus-visible:outline-white"
+                    className={`${linkClass} cursor-pointer`}
                     onClick={handleSpacePillClick}
                   >
                     <span
-                      className="inline-block overflow-hidden text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                      style={{ height: "1.2em", lineHeight: "1.2em", color: labelColor }}
+                      className="inline-block overflow-hidden"
+                      style={{ height: "1.2em", lineHeight: "1.2em" }}
                     >
                       <motion.span
                         className="flex flex-col"
@@ -326,10 +280,8 @@ export function Navbar() {
                 <Link
                   key={item.id}
                   href={item.href}
-                  ref={(el) => { itemRefs.current[i] = el; }}
                   aria-current={active ? "page" : undefined}
-                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms] focus-visible:outline-2 focus-visible:outline-white"
-                  style={{ color: active ? "#051910" : "#B8C5D4" }}
+                  className={linkClass}
                 >
                   {item.label}
                 </Link>
@@ -337,16 +289,14 @@ export function Navbar() {
             })}
           </div>
 
-
-          {/* ── Studio tabs: deploy BELOW the main pill, out of normal flow ── */}
+          {/* ── Studio tabs: debajo de la barra, fuera del flujo ── */}
           {isStudioNav && (
             <motion.div
               style={{
                 position: "absolute",
                 top: "100%",
-                marginTop: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
+                marginTop: 8,
+                left: 0,
                 zIndex: 2,
                 display: "flex",
                 gap: 4,
@@ -399,13 +349,28 @@ export function Navbar() {
         </nav>
 
         {/* ── Right: search + profile ───────────────────────────────── */}
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1 lg:gap-2">
+          {isGuest && (
+            <Link
+              href="/?register=1"
+              className="mr-2 hidden h-8 items-center rounded-[4px] bg-[#22B16B] px-3 text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+            >
+              Registrarse
+            </Link>
+          )}
           <Link
             href="/buscador"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white focus-visible:outline-2 focus-visible:outline-white lg:h-9 lg:w-9"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:h-10 lg:w-10"
             aria-label="Buscador"
           >
-            <GmaIcon name="search" size={19} />
+            <GmaIcon name="search" size={22} />
+          </Link>
+          <Link
+            href="/mi-espacio"
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white sm:flex"
+            aria-label="Mi lista"
+          >
+            <GmaIcon name="bookmark" size={22} />
           </Link>
 
           <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
@@ -415,7 +380,7 @@ export function Navbar() {
               ref={chipBtnRef}
               type="button"
               aria-label="Cuenta"
-              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none! lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none! lg:h-10 lg:w-10"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
@@ -450,10 +415,7 @@ export function Navbar() {
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
               </span>
-              <span className="hidden max-w-[120px] truncate text-[13px] font-semibold text-white whitespace-nowrap lg:block">
-                {isGuest ? "Invitado" : displayName}
-              </span>
-              <GmaIcon name="chevronDown" size={12} className="hidden shrink-0 text-[#6D7D94] lg:block" />
+              
             </button>
             </DropdownMenu.Trigger>
 
