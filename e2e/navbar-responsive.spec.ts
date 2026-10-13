@@ -108,6 +108,18 @@ for (const width of WIDTHS) {
 }
 
 test.describe("navbar: comportamiento", () => {
+  for (const width of [390, 1280]) {
+    test(`sin errores de consola ni de hidratación al cargar (${width}px)`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
+      page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
+      await page.setViewportSize({ width, height: 800 });
+      await openHome(page);
+      await page.waitForTimeout(1_500);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test("la píldora se alinea al pasar de móvil a escritorio (reduced-motion: sin transición)", async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 900 });
     await openHome(page);

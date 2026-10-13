@@ -402,14 +402,14 @@ export function Navbar() {
               ref={chipBtnRef}
               type="button"
               aria-label="Cuenta"
-              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] focus-visible:outline-2 focus-visible:outline-white lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
+              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none! lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
                 clipPath: pillExpanded
                   ? "inset(0% 0% 0% 0% round 9999px)"
                   : "inset(0% calc(100% - 32px) 0% 0% round 9999px)",
-                transition: pillExpanded && !reduceMotion
+                transition: pillExpanded
                   ? "clip-path 0.38s cubic-bezier(0.22,1,0.36,1), background-color 0.2s"
                   : "none",
               }}
