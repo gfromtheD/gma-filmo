@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, useAnimation, AnimatePresence } from "motion/react";
-import { ExternalLink, UserRound, MessageCircle } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
+import { AccountMenuContent } from "@/components/layout/navbar-parts/account-menu-content";
 import { MobileMenu, type MobileMenuItem } from "@/components/layout/navbar-parts/mobile-menu";
 import { StudioTabsRow } from "@/components/layout/navbar-parts/studio-tabs-row";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -88,7 +89,6 @@ export function Navbar() {
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function measure() {
@@ -136,16 +136,6 @@ export function Navbar() {
     router.push("/");
     router.refresh();
   }, [router, isGuest]);
-
-  // Close profile menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
 
   // "Mi Espacio" is active when on /mi-espacio OR (creator) /mi-estudio
   const spaceIsActive = useMemo(() => {
@@ -258,10 +248,13 @@ export function Navbar() {
 
               if (item.id === "space" && isCreator) {
                 return (
-                  <div
+                  <button
                     key={item.id}
+                    type="button"
                     ref={(el) => { itemRefs.current[i] = el; }}
-                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5"
+                    aria-label={rouletteStep === 0 ? "Mi Espacio" : "Mi Estudio"}
+                    aria-current={active ? "page" : undefined}
+                    className="relative z-10 flex h-9 cursor-pointer items-center rounded-full px-5 focus-visible:outline-2 focus-visible:outline-white"
                     onClick={handleSpacePillClick}
                   >
                     <span
@@ -277,7 +270,7 @@ export function Navbar() {
                         <span style={{ height: "1.2em", lineHeight: "1.2em", display: "block", whiteSpace: "nowrap" }}>Mi Estudio</span>
                       </motion.span>
                     </span>
-                  </div>
+                  </button>
                 );
               }
 
@@ -286,7 +279,8 @@ export function Navbar() {
                   key={item.id}
                   href={item.href}
                   ref={(el) => { itemRefs.current[i] = el; }}
-                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms]"
+                  aria-current={active ? "page" : undefined}
+                  className="relative z-10 flex h-9 items-center rounded-full px-5 text-[13.5px] font-semibold transition-colors duration-[260ms] focus-visible:outline-2 focus-visible:outline-white"
                   style={{ color: active ? "#051910" : "#B8C5D4" }}
                 >
                   {item.label}
@@ -360,20 +354,20 @@ export function Navbar() {
         <div className="flex items-center justify-end gap-1">
           <Link
             href="/buscador"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white lg:h-9 lg:w-9"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white focus-visible:outline-2 focus-visible:outline-white lg:h-9 lg:w-9"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={19} />
           </Link>
 
-          <div ref={menuRef} className="relative ml-1.5">
+          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+          <div className="relative ml-1.5">
+            <DropdownMenu.Trigger asChild>
             <button
               ref={chipBtnRef}
               type="button"
               aria-label="Cuenta"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((o) => !o)}
-              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
+              className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#262626] bg-[#0D0D0D] hover:bg-[#1A1A1A] focus-visible:outline-2 focus-visible:outline-white lg:h-auto lg:min-w-0 lg:justify-start lg:py-1 lg:pl-1 lg:pr-3"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
                 pointerEvents: phase === "contracting" ? "none" : "auto",
@@ -413,118 +407,23 @@ export function Navbar() {
               </span>
               <GmaIcon name="chevronDown" size={12} className="hidden shrink-0 text-[#6D7D94] lg:block" />
             </button>
+            </DropdownMenu.Trigger>
 
-            {menuOpen && (
-              <div
-                className="absolute right-0 top-[calc(100%+8px)] z-[200] w-[280px] overflow-hidden rounded-[14px] border border-[#262626] shadow-2xl"
-                style={{ background: "#0D0D0D" }}
-              >
-                {isGuest ? (
-                  <div className="border-b border-[#262626] px-4 py-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#3A4A5A] bg-[#1A2535]">
-                        <UserRound size={18} className="text-[#B8C5D4]" />
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-extrabold text-white">Explorando como invitado</div>
-                        <div className="text-[11px] text-[#5A6A7E]">Acceso limitado</div>
-                      </div>
-                    </div>
-                    <p className="mb-3 text-[11.5px] leading-[1.5] text-[#6D7D94]">
-                      Crea una cuenta gratis para guardar favoritos, llevar tu historial y valorar cortos.
-                    </p>
-                    <div className="flex gap-2">
-                      <Link
-                        href="/?register=1"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex-1 rounded-full bg-[#22B16B] py-1.5 text-center text-[12px] font-bold text-[#031A0E] transition-opacity hover:opacity-90"
-                      >
-                        Registrarse
-                      </Link>
-                      <Link
-                        href="/?login=1"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex-1 rounded-full border border-[#3A4A5A] py-1.5 text-center text-[12px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A]"
-                      >
-                        Iniciar sesión
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    href="/perfiles"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 border-b border-[#262626] px-4 py-3 transition-colors hover:bg-[#1A1A1A]"
-                  >
-                    <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-extrabold text-white">{displayName}</div>
-                      {email && (
-                        <div className="truncate text-[11px] text-[#5A6A7E]">{email}</div>
-                      )}
-                    </div>
-                    <GmaIcon name="chevronRight" size={16} className="text-[#6D7D94]" />
-                  </Link>
-                )}
-
-                <div className="py-1">
-                  <Link
-                    href="/mi-espacio"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                  >
-                    <GmaIcon name="bookmark" size={16} />
-                    <span>Mi Espacio</span>
-                  </Link>
-                  {isCreator && (
-                    <button
-                      type="button"
-                      onClick={() => { setMenuOpen(false); openDM(); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                    >
-                      <MessageCircle size={16} />
-                      <span>Mensajes directos</span>
-                    </button>
-                  )}
-                  {!activeProfile?.isKids && (
-                    <Link
-                      href="/configuracion"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                    >
-                      <GmaIcon name="settings" size={16} />
-                      <span>Configuración</span>
-                    </Link>
-                  )}
-                </div>
-
-                <div className="border-t border-[#262626] py-1">
-                  <a
-                    href="https://generacionmaldita.com/sobre-el-proyecto/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-                  >
-                    <ExternalLink size={16} />
-                    <span>Sobre el proyecto</span>
-                  </a>
-                </div>
-
-                <div className="border-t border-[#262626] py-1">
-                  <button
-                    type="button"
-                    onClick={() => void handleSignOut()}
-                    disabled={signingOut}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:bg-[#1A1A1A] hover:text-[#ff5252] disabled:opacity-50"
-                  >
-                    <GmaIcon name="close" size={16} />
-                    <span>{signingOut ? "Saliendo…" : isGuest ? "Salir al inicio" : "Cerrar sesión"}</span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <AccountMenuContent
+              isGuest={isGuest}
+              displayName={displayName}
+              email={email}
+              avatarColor={avatarColor}
+              avatarImageUrl={avatarImageUrl}
+              avatarIconId={avatarIconId}
+              isCreator={isCreator}
+              canOpenSettings={!activeProfile?.isKids}
+              isSigningOut={signingOut}
+              onOpenMessages={openDM}
+              onSignOut={() => void handleSignOut()}
+            />
           </div>
+          </DropdownMenu.Root>
         </div>
       </div>
 
