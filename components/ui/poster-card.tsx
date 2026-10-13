@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { HoverPreviewCard } from "@/components/ui/hover-preview-card";
+import { useHoverPreview } from "@/hooks/use-hover-preview";
+import { loadCommunityScore } from "@/hooks/use-community-score";
 import type { MediaItem, PosterRatio } from "@/types/catalog";
 
 type CardSize = "sm" | "md" | "lg";
@@ -22,6 +25,8 @@ interface PosterCardProps {
   readonly onClick?: () => void;
   readonly onAddList?: () => void;
   readonly inList?: boolean;
+  /** Muestra una vista previa flotante al pasar el ratón (no en táctil). */
+  readonly hoverPreview?: boolean;
 }
 
 export function PosterCard({
@@ -34,7 +39,32 @@ export function PosterCard({
   onClick,
   onAddList,
   inList = false,
+  hoverPreview = false,
 }: PosterCardProps) {
+  const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
+  const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : `/cortos/${item.id}`);
+  const wrapProps = hoverPreview
+    ? {
+        ref: preview.anchorRef,
+        onPointerEnter: (event: React.PointerEvent) => {
+          preview.onPointerEnter(event);
+          // Precarga la nota durante la espera de apertura para que el panel nazca con su altura final.
+          if (event.pointerType === "mouse") void loadCommunityScore(item.numericId);
+        },
+        onPointerLeave: preview.onPointerLeave,
+      }
+    : {};
+  const previewNode = preview.anchorBox ? (
+    <HoverPreviewCard
+      item={item}
+      anchorBox={preview.anchorBox}
+      detailHref={detailHref}
+      onPointerEnter={preview.keepOpen}
+      onPointerLeave={preview.scheduleClose}
+      onClose={preview.close}
+    />
+  ) : null;
+
   const wrapStyle = fluid ? undefined : { width: WIDTH[size] };
   const wrapClass = `group/card relative text-left${fluid ? " w-full" : " shrink-0"}`;
 
@@ -80,17 +110,19 @@ export function PosterCard({
 
   if (href) {
     return (
-      <div className={wrapClass} style={wrapStyle}>
+      <div className={wrapClass} style={wrapStyle} {...wrapProps}>
         <Link href={href} className={CARD_CLASS}>{cardContent}</Link>
         {listBtn}
+        {previewNode}
       </div>
     );
   }
 
   return (
-    <div className={wrapClass} style={wrapStyle}>
+    <div className={wrapClass} style={wrapStyle} {...wrapProps}>
       <button type="button" onClick={onClick} className={CARD_CLASS}>{cardContent}</button>
       {listBtn}
+      {previewNode}
     </div>
   );
 }
