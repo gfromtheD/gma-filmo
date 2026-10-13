@@ -1,58 +1,93 @@
 "use client";
 
-import { useRef } from "react";
+import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 
 interface CarouselProps {
   readonly title: string;
-  readonly action?: React.ReactNode;
-  readonly children: React.ReactNode;
+  readonly action?: ReactNode;
+  readonly children: ReactNode;
 }
 
+const ARROW_CLASS =
+  "absolute top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/90 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/row:opacity-100 disabled:pointer-events-none disabled:!opacity-0 lg:flex motion-reduce:transition-none";
+
+/**
+ * Fila horizontal con scroll-snap. El ancho de cada tarjeta es una fracción del
+ * ancho útil (2 / 3 / 4 / 5 columnas según el ancho de la ventana), de modo que
+ * la composición se mantiene al redimensionar. Las flechas reflejan los extremos.
+ */
 export function Carousel({ title, action, children }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ atStart: true, atEnd: false });
 
-  function scrollBy(dir: -1 | 1) {
-    scrollRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+  const updateEdges = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setEdges({
+      atStart: el.scrollLeft <= 1,
+      atEnd: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1,
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateEdges();
+    el.addEventListener("scroll", updateEdges, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateEdges);
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateEdges);
+      observer?.disconnect();
+    };
+  }, [updateEdges]);
+
+  function scrollByPage(direction: -1 | 1) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: reduce ? "auto" : "smooth" });
   }
 
   return (
-    <section className="mb-10">
-      {/* Section header */}
-      <div className="mb-4 flex items-baseline justify-between">
-        <h3
-          className="text-[24px] font-bold tracking-[-0.01em] text-white"
-        >
-          {title}
-        </h3>
-        <div className="flex items-center gap-2">
-          {action}
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-            onClick={() => scrollBy(-1)}
-            aria-label="Anterior"
-            type="button"
-          >
-            <GmaIcon name="chevronLeft" size={16} />
-          </button>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#B8C5D4] transition-colors hover:bg-[#1A1A1A] hover:text-white"
-            onClick={() => scrollBy(1)}
-            aria-label="Siguiente"
-            type="button"
-          >
-            <GmaIcon name="chevronRight" size={16} />
-          </button>
-        </div>
+    <section className="group/row pt-8 lg:pt-10">
+      <div className="mb-4 flex items-center justify-between px-4 lg:px-16">
+        <h2 className="text-[20px] font-bold leading-tight text-white lg:text-[24px]">{title}</h2>
+        {action}
       </div>
 
-      {/* Scroll row */}
-      <div
-        ref={scrollRef}
-        className="flex gap-[14px] overflow-x-auto pb-2"
-        style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none" }}
-      >
-        {children}
+      <div className="relative">
+        <button
+          type="button"
+          aria-label="Anterior"
+          disabled={edges.atStart}
+          onClick={() => scrollByPage(-1)}
+          className={`${ARROW_CLASS} left-4`}
+        >
+          <GmaIcon name="chevronLeft" size={22} />
+        </button>
+
+        <div
+          ref={scrollRef}
+          className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+        >
+          {Children.map(children, (child) => (
+            <div className="shrink-0 basis-1/2 snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5">
+              {child}
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-label="Siguiente"
+          disabled={edges.atEnd}
+          onClick={() => scrollByPage(1)}
+          className={`${ARROW_CLASS} right-4`}
+        >
+          <GmaIcon name="chevronRight" size={22} />
+        </button>
       </div>
     </section>
   );
