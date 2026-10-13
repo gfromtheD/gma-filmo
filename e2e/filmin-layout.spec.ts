@@ -108,3 +108,33 @@ test.describe("vista previa al pasar el ratón", () => {
     await expect(preview).toBeHidden();
   });
 });
+
+test.describe("colecciones recomendadas y overlay de listados", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("la portada tiene una fila de colecciones con contenido, y mantiene el panel flotante", async ({ page }) => {
+    await openHome(page);
+    const row = page.locator("section", { has: page.getByRole("heading", { name: "Colecciones para ti" }) });
+    await expect(row).toBeVisible();
+    const cards = row.locator('a[href^="/cortos/coleccion/"]');
+    const total = await cards.count();
+    expect(total).toBeGreaterThan(0);
+    expect(total).toBeLessThanOrEqual(6);
+    for (const text of await cards.allInnerTexts()) expect(text).toMatch(/\d+\s+(cortos?|films?)/i);
+  });
+
+  test("en el catálogo se muestra la descripción sobre la portada, sin panel flotante", async ({ page }) => {
+    await page.context().addCookies([{ name: "gma_guest", value: "1", url: "http://localhost:3000" }]);
+    await page.goto("/cortos", { waitUntil: "load" });
+    const card = page.locator("[class*='group/card']", { has: page.locator("[class*='bg-black/90']") }).first();
+    await card.scrollIntoViewIfNeeded();
+    const overlay = card.locator("[class*='bg-black/90']");
+    await expect(overlay).toHaveCSS("opacity", "0");
+    const box = await card.boundingBox();
+    await page.mouse.move((box?.x ?? 0) - 40, (box?.y ?? 0) + (box?.height ?? 0) + 60);
+    await page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2, { steps: 5 });
+    await expect(overlay).toHaveCSS("opacity", "1");
+    await page.waitForTimeout(700);
+    await expect(page.locator("[data-hover-preview]")).toHaveCount(0);
+  });
+});
