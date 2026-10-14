@@ -230,7 +230,7 @@ export function Navbar() {
       data-scrolled={isScrolled}
       className="sticky top-0 z-50 bg-transparent transition-colors duration-300 ease-in data-[scrolled=true]:bg-[#060613] motion-reduce:transition-none"
     >
-      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[auto_1fr_auto] lg:gap-8 lg:px-16">
+      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-16">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
           <MobileMenu items={mobileItems} isGuest={isGuest} />
@@ -349,7 +349,7 @@ export function Navbar() {
         </nav>
 
         {/* ── Right: search + profile ───────────────────────────────── */}
-        <div className="flex items-center justify-end gap-1 lg:gap-2">
+        <div className="flex items-center justify-end gap-1 lg:gap-2 lg:justify-self-end">
           {isGuest && (
             <Link
               href="/?register=1"

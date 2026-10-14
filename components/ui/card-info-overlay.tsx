@@ -27,9 +27,7 @@ export function CardInfoOverlay({ item }: CardInfoOverlayProps) {
           <p className="line-clamp-5 text-[12px] font-medium leading-[18px] text-white">{item.synopsis}</p>
         )}
       </div>
-      {item.rating && (
-        <span className="self-start text-[14px] font-extrabold leading-none text-white">{item.rating}</span>
-      )}
+      {/* La clasificación por edad no se muestra hasta que exista el dato real (hoy es un valor fijo). */}
     </div>
   );
 }
