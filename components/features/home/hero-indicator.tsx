@@ -8,19 +8,19 @@ interface HeroIndicatorProps {
   readonly isPaused: boolean;
   /** El llenado del punto activo terminó: toca pasar a la siguiente diapositiva. */
   readonly onComplete: () => void;
-  /** Sin avance automático (movimiento reducido): el punto activo se muestra lleno y quieto. */
-  readonly isStatic: boolean;
 }
 
 /**
  * Indicador de diapositivas del hero. El punto activo se alarga a 32 px y se llena de izquierda a
  * derecha en 8 s (animación CSS `dot-fill-anim`); al terminar avisa con `onComplete`, así el
- * temporizador y lo que se ve son siempre la misma cosa.
+ * temporizador y lo que se ve son siempre la misma cosa. Con movimiento reducido el CSS desactiva
+ * la animación: el punto queda lleno y no hay avance automático (sin depender de JS, sin desajuste
+ * de hidratación).
  */
-export function HeroIndicator({ count, activeIndex, onSelect, isPaused, onComplete, isStatic }: HeroIndicatorProps) {
+export function HeroIndicator({ count, activeIndex, onSelect, isPaused, onComplete }: HeroIndicatorProps) {
   if (count < 2) return null;
   return (
-    <div className="absolute bottom-32 right-16 z-30 hidden items-center gap-2 lg:flex" role="group" aria-label="Diapositivas destacadas">
+    <div className="absolute bottom-10 left-1/2 z-30 hidden -translate-x-1/2 items-center gap-2 lg:flex" role="group" aria-label="Diapositivas destacadas">
       {Array.from({ length: count }, (_, i) => {
         const isActive = i === activeIndex;
         return (
@@ -38,9 +38,9 @@ export function HeroIndicator({ count, activeIndex, onSelect, isPaused, onComple
               <span
                 // Se reinicia al cambiar de diapositiva (key) y se detiene con `isPaused`.
                 key={activeIndex}
-                className={`block h-full w-full origin-left bg-white ${isStatic ? "" : "dot-filling"}`}
-                style={isStatic ? undefined : { animationPlayState: isPaused ? "paused" : "running" }}
-                onAnimationEnd={isStatic ? undefined : onComplete}
+                className="dot-filling block h-full w-full bg-white"
+                style={{ animationPlayState: isPaused ? "paused" : "running" }}
+                onAnimationEnd={onComplete}
               />
             )}
           </button>

@@ -271,6 +271,13 @@ body::-webkit-scrollbar {
   animation: dot-fill-anim var(--hero-slide-ms, 8000ms) linear 0s 1 normal forwards running;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dot-filling {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
 @keyframes progressDrain {
   from { width: 100%; }
   to   { width: 0%; }

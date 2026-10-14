@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { HomeHero } from "@/components/features/home/home-hero";
 import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
 import { HeroIndicator } from "@/components/features/home/hero-indicator";
@@ -42,7 +42,6 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   // ── Hero carousel state ──────────────────────────────────────────────────────
   const featuredItems = useRecommendedHero(items, progressEntries);
   const [featuredIdx, setFeaturedIdx] = useState(0);
-  const reduceMotion  = useReducedMotion();
   const [isTrailerActive, setIsTrailerActive] = useState(false);
 
   // El avance lo marca el llenado del punto activo (8 s, ver HeroIndicator); aquí solo se cambia de índice.
@@ -145,7 +144,6 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           activeIndex={featuredIdx}
           onSelect={setFeaturedIdx}
           isPaused={isTrailerActive}
-          isStatic={Boolean(reduceMotion)}
           onComplete={goNext}
         />
       </div>
