@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { HomeHero } from "@/components/features/home/home-hero";
 import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
+import { HeroIndicator } from "@/components/features/home/hero-indicator";
 import { Carousel } from "@/components/ui/carousel";
 import { PosterCard } from "@/components/ui/poster-card";
 import { useWatchlist } from "@/hooks/use-watchlist";
@@ -18,7 +19,6 @@ import { collectionsWithContent, pickRecommendedCollections } from "@/lib/recomm
 import type { Coleccion } from "@/lib/supabase/queries";
 import type { MovieMedia } from "@/types/catalog";
 
-const SLIDE_INTERVAL = 6000;
 
 interface HomeScreenProps {
   readonly items: readonly MovieMedia[];
@@ -27,6 +27,8 @@ interface HomeScreenProps {
 
 /** Cuántas colecciones se recomiendan en la fila de portada. */
 const RECOMMENDED_COLLECTIONS = 6;
+
+const HERO_CROSSFADE_MS = 1000;
 
 function hrefFor(item: MovieMedia) {
   return `/cortos/${item.id}`;
@@ -40,42 +42,28 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   // ── Hero carousel state ──────────────────────────────────────────────────────
   const featuredItems = useRecommendedHero(items, progressEntries);
   const [featuredIdx, setFeaturedIdx] = useState(0);
-  const hoveredRef    = useRef(false);
-  const safetyRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion  = useReducedMotion();
   const [isTrailerActive, setIsTrailerActive] = useState(false);
 
-  function setHovered(val: boolean) {
-    hoveredRef.current = val;
-    if (safetyRef.current) { clearTimeout(safetyRef.current); safetyRef.current = null; }
-    // Safety valve: even if mouseLeave never fires, resume after 8s
-    if (val) safetyRef.current = setTimeout(() => { hoveredRef.current = false; }, 8000);
-  }
-
-  // Reset hover on tab switch / window blur so the carousel never stays stuck
-  useEffect(() => {
-    function release() { setHovered(false); }
-    document.addEventListener("visibilitychange", release);
-    window.addEventListener("blur", release);
-    return () => {
-      document.removeEventListener("visibilitychange", release);
-      window.removeEventListener("blur", release);
-      if (safetyRef.current) clearTimeout(safetyRef.current);
-    };
-  }, []);
-
-  // Auto-advance: interval ticks every SLIDE_INTERVAL but skips while hovered.
-  // featuredIdx in deps resets the timer after every slide change (manual or auto).
-  useEffect(() => {
-    if (featuredItems.length <= 1 || reduceMotion || isTrailerActive) return;
-    const id = setInterval(() => {
-      if (hoveredRef.current) return;
-      setFeaturedIdx((i) => (i + 1) % featuredItems.length);
-    }, SLIDE_INTERVAL);
-    return () => clearInterval(id);
-  }, [featuredItems.length, featuredIdx, reduceMotion, isTrailerActive]);
+  // El avance lo marca el llenado del punto activo (8 s, ver HeroIndicator); aquí solo se cambia de índice.
+  const goNext = useCallback(
+    () => setFeaturedIdx((i) => (i + 1) % Math.max(featuredItems.length, 1)),
+    [featuredItems.length],
+  );
 
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
+
+  // Copia saliente: durante 1 s la diapositiva anterior se desvanece sobre la nueva (fundido cruzado).
+  const [leaving, setLeaving] = useState<MovieMedia | null>(null);
+  const previousRef = useRef<MovieMedia | null>(null);
+  useEffect(() => {
+    const previous = previousRef.current;
+    previousRef.current = featured ?? null;
+    if (!previous || !featured || previous.id === featured.id) return;
+    setLeaving(previous);
+    const timer = setTimeout(() => setLeaving(null), HERO_CROSSFADE_MS);
+    return () => clearTimeout(timer);
+  }, [featured]);
 
   // ── Recommendation rows (replaces static trending + newReleases) ─────────────
   const { homeRows, categoryWeights, sessionSeed } = useRecommendations(items);
@@ -120,10 +108,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
       <AmbientBackdrop imageUrl={featured.imageUrl} style={featured.style} />
 
       {/* ── Hero a pantalla completa bajo la cabecera transparente ─────────── */}
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+      <div className="relative">
         <HomeHero
           key={featured.id}
           item={featured}
@@ -131,9 +116,37 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           canNavigate={featuredItems.length > 1}
           onPlay={() => router.push(`/ver/${featured.id}`)}
           onPrev={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
-          onNext={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
+          onNext={goNext}
           onTrailerActiveChange={setIsTrailerActive}
-          onTrailerEnded={() => setFeaturedIdx((i) => (i + 1) % featuredItems.length)}
+          onTrailerEnded={goNext}
+        />
+
+        {leaving && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-[1]"
+            style={{ animation: `fadeOut ${HERO_CROSSFADE_MS}ms ease both` }}
+          >
+            <HomeHero
+              key={`out-${leaving.id}`}
+              isOverlay
+              item={leaving}
+              detailHref={hrefFor(leaving)}
+              canNavigate={false}
+              onPlay={() => undefined}
+              onPrev={() => undefined}
+              onNext={() => undefined}
+            />
+          </div>
+        )}
+
+        <HeroIndicator
+          count={featuredItems.length}
+          activeIndex={featuredIdx}
+          onSelect={setFeaturedIdx}
+          isPaused={isTrailerActive}
+          isStatic={Boolean(reduceMotion)}
+          onComplete={goNext}
         />
       </div>
 

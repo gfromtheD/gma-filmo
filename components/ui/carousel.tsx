@@ -61,9 +61,9 @@ export function Carousel({ title, action, children, mobileSize = "frame" }: Caro
   }
 
   return (
-    <section className="group/row pt-12 lg:pt-10">
+    <section className="group/row pt-12">
       <div className="mb-6 flex items-center justify-between gap-3 px-4 lg:mb-4 lg:px-16">
-        <h2 className="min-w-0 text-[18px] font-bold leading-[1.25] text-white lg:text-[24px] lg:leading-tight">{title}</h2>
+        <h2 className="min-w-0 text-[18px] font-bold leading-[1.25] text-white lg:text-[20px] lg:font-semibold lg:leading-7 lg:text-white/90">{title}</h2>
         {action}
       </div>
 
@@ -83,7 +83,7 @@ export function Carousel({ title, action, children, mobileSize = "frame" }: Caro
           role="region"
           aria-label={title}
           tabIndex={0}
-          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:pb-10 lg:pt-4 lg:[scroll-padding-inline:56px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
             <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5`}>

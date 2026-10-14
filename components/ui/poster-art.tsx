@@ -270,9 +270,13 @@ interface PosterArtProps {
   readonly imageUrl?: string;
   /** Cubre el contenedor padre (sin proporción propia ni franja de título). */
   readonly fill?: boolean;
+  /** Ancla el recorte de la imagen (arriba conserva la parte superior de la portada). */
+  readonly anchor?: "center" | "top";
+  /** Carga inmediata (imágenes sobre el pliegue, como el hero). */
+  readonly priority?: boolean;
 }
 
-export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false }: PosterArtProps) {
+export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false, anchor = "center", priority = false }: PosterArtProps) {
   const [c1, c2] = style.tone;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const motifFn: MotifFn = (MOTIFS as Record<string, MotifFn | undefined>)[style.motif] ?? (() => null);
@@ -295,8 +299,8 @@ export function PosterArt({ style, title, kind, genre, ratio = "portrait", image
         <img
           src={imageUrl}
           alt={title}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
+          className={`absolute inset-0 h-full w-full object-cover ${anchor === "top" ? "object-top" : ""}`}
+          loading={priority ? "eager" : "lazy"}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       ) : (

@@ -252,6 +252,25 @@ body::-webkit-scrollbar {
   to   { opacity: 1; }
 }
 
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Indicador del hero: el punto activo se llena de izquierda a derecha en 8 s. */
+@keyframes dot-fill-anim {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.dot-filling {
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+  animation: dot-fill-anim var(--hero-slide-ms, 8000ms) linear 0s 1 normal forwards running;
+}
+
 @keyframes progressDrain {
   from { width: 100%; }
   to   { width: 0%; }

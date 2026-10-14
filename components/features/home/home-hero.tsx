@@ -19,6 +19,8 @@ interface HomeHeroProps {
   readonly onTrailerActiveChange?: (isActive: boolean) => void;
   /** El tráiler terminó: el carrusel puede avanzar. */
   readonly onTrailerEnded?: () => void;
+  /** Copia saliente durante el fundido: sin tráiler, sin interacción, superpuesta a la nueva. */
+  readonly isOverlay?: boolean;
 }
 
 const ROUND_BUTTON =
@@ -37,9 +39,10 @@ export function HomeHero({
   onNext,
   onTrailerActiveChange,
   onTrailerEnded,
+  isOverlay = false,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
-  const trailer = useHeroTrailer(item.trailerUrl);
+  const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl);
 
   useEffect(() => {
     onTrailerActiveChange?.(trailer.isActive);
@@ -51,19 +54,19 @@ export function HomeHero({
     <section
       aria-roledescription="carousel"
       aria-label="Destacados"
-      className="relative -mt-14 h-[clamp(520px,85vh,900px)] w-full lg:-mt-16"
+      className={isOverlay ? "absolute inset-0" : "relative -mt-14 h-[clamp(520px,85vh,900px)] w-full lg:-mt-16"}
     >
       {/* Imagen más alta que el hero (+20vh) con máscara: se desvanece hacia el resplandor ambiental */}
       <div
         className="absolute inset-x-0 top-0 z-0 overflow-hidden"
         style={{
           height: "calc(100% + 20vh)",
-          animation: "fadeIn 1.1s ease both",
+          animation: isOverlay ? undefined : "fadeIn 1000ms ease both",
           maskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
           WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
         }}
       >
-        <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+        <PosterArt fill anchor="top" priority style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         {/* Tráiler opcional: se funde sobre la portada cuando empieza a reproducirse */}
         {trailer.hasTrailer && trailer.isMounted && (
           <video
@@ -103,7 +106,7 @@ export function HomeHero({
       <div
         role="group"
         aria-roledescription="slide"
-        className="relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-14 text-center lg:items-start lg:px-16 lg:pb-16 lg:text-left"
+        className="relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-20 text-center lg:items-start lg:px-16 lg:pb-24 lg:text-left"
       >
         <span className="inline-flex h-6 items-center rounded-[3px] bg-[#22B16B] px-2 text-[12px] font-extrabold uppercase text-[#031A0E]">
           {item.tag ?? "Destacado"}
@@ -138,13 +141,13 @@ export function HomeHero({
         </button>
       )}
 
-      {canNavigate && (
+      {canNavigate && !isOverlay && (
         <>
           <button
             type="button"
             aria-label="Anterior"
             onClick={onPrev}
-            className={`${ROUND_BUTTON} absolute left-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:left-6`}
+            className={`${ROUND_BUTTON} absolute left-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:hidden`}
           >
             <GmaIcon name="chevronLeft" size={22} />
           </button>
@@ -152,7 +155,7 @@ export function HomeHero({
             type="button"
             aria-label="Siguiente"
             onClick={onNext}
-            className={`${ROUND_BUTTON} absolute right-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:right-6`}
+            className={`${ROUND_BUTTON} absolute right-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:hidden`}
           >
             <GmaIcon name="chevronRight" size={22} />
           </button>

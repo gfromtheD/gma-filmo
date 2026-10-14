@@ -9,6 +9,11 @@ interface AmbientBackdropProps {
   readonly style: PosterStyle;
 }
 
+const TOP_FADE_MASK = {
+  maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+} as const;
+
 /** Duración del fundido entre diapositivas (la misma que el hero). */
 const CROSSFADE_MS = 1000;
 
@@ -26,6 +31,7 @@ function LayerArt({ layer, fadeIn }: { layer: Layer; fadeIn: boolean }) {
   const animation = fadeIn ? { animation: `fadeIn ${CROSSFADE_MS}ms ease both` } : undefined;
   return (
     <div className="absolute inset-0 motion-reduce:![animation:none]" style={animation}>
+      {/* Capa 1: toda la pantalla, muy desenfocada y a media opacidad */}
       {layer.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={layer.imageUrl} alt="" className="h-full w-full scale-[1.2] object-cover opacity-50 blur-[80px]" />
@@ -35,6 +41,18 @@ function LayerArt({ layer, fadeIn }: { layer: Layer; fadeIn: boolean }) {
           style={{ background: `linear-gradient(135deg, ${layer.tone[0]}, ${layer.tone[1]})` }}
         />
       )}
+      {/* Capa 2: franja superior (~48 % de la altura), menos desenfocada y opaca, que se desvanece hacia abajo */}
+      <div className="absolute inset-x-0 top-0 h-[48vh]" style={TOP_FADE_MASK}>
+        {layer.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={layer.imageUrl} alt="" className="h-full w-full scale-[1.2] object-cover blur-[50px]" />
+        ) : (
+          <div
+            className="h-full w-full scale-[1.2] blur-[50px]"
+            style={{ background: `linear-gradient(135deg, ${layer.tone[0]}, ${layer.tone[1]})` }}
+          />
+        )}
+      </div>
     </div>
   );
 }
