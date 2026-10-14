@@ -2,6 +2,7 @@
 
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { SectionHeader } from "@/components/ui/section-header";
 
 /** Formato de celda en móvil (fracción del ancho útil), medido en Filmin: panorámica pequeña 1/2, grande 1/1, cartel 1/3. */
 export type CarouselMobileSize = "frame" | "wide" | "poster";
@@ -14,6 +15,8 @@ const MOBILE_BASIS: Record<CarouselMobileSize, string> = {
 
 interface CarouselProps {
   readonly title: string;
+  /** Línea secundaria bajo el título (qué contiene la fila). */
+  readonly subtitle?: string;
   readonly mobileSize?: CarouselMobileSize;
   readonly action?: ReactNode;
   readonly children: ReactNode;
@@ -27,7 +30,7 @@ const ARROW_CLASS =
  * ancho útil (2 / 3 / 4 / 5 columnas según el ancho de la ventana), de modo que
  * la composición se mantiene al redimensionar. Las flechas reflejan los extremos.
  */
-export function Carousel({ title, action, children, mobileSize = "frame" }: CarouselProps) {
+export function Carousel({ title, subtitle, action, children, mobileSize = "frame" }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ atStart: true, atEnd: false });
 
@@ -61,11 +64,8 @@ export function Carousel({ title, action, children, mobileSize = "frame" }: Caro
   }
 
   return (
-    <section className="group/row pt-12">
-      <div className="mb-6 flex items-center justify-between gap-3 px-4 lg:mb-4 lg:px-16">
-        <h2 className="min-w-0 text-[18px] font-bold leading-[1.25] text-white lg:text-[20px] lg:font-semibold lg:leading-7 lg:text-white/90">{title}</h2>
-        {action}
-      </div>
+    <section className="group/row pt-12 lg:pt-16">
+      <SectionHeader title={title} subtitle={subtitle} action={action} />
 
       <div className="relative">
         <button
@@ -83,7 +83,7 @@ export function Carousel({ title, action, children, mobileSize = "frame" }: Caro
           role="region"
           aria-label={title}
           tabIndex={0}
-          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:pb-10 lg:pt-4 lg:[scroll-padding-inline:56px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
             <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5`}>
