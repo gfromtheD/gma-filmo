@@ -277,6 +277,8 @@ interface PosterArtProps {
 }
 
 export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false, anchor = "center", priority = false }: PosterArtProps) {
+  // Los cortos no llevan etiqueta (todos lo son); se conservan "Película", "Serie" y los géneros propios.
+  const label = genre === "Cortometraje" || (genre === undefined && kind === "movie") ? null : (genre ?? "Serie");
   const [c1, c2] = style.tone;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const motifFn: MotifFn = (MOTIFS as Record<string, MotifFn | undefined>)[style.motif] ?? (() => null);
@@ -329,9 +331,9 @@ export function PosterArt({ style, title, kind, genre, ratio = "portrait", image
       {/* Title strip */}
       {!fill && (
         <div className="absolute bottom-0 left-0 right-0 px-[14px] pb-[12px] pt-[14px]" style={{ zIndex: 2 }}>
-          <div className="mb-[6px] break-words text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">
-            {genre ?? (kind === "movie" ? "Corto" : "Serie")}
-          </div>
+          {label && (
+            <div className="mb-[6px] break-words text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{label}</div>
+          )}
           <div
             className="line-clamp-3 break-words text-[16px] font-extrabold leading-[1.1] tracking-[-0.01em] text-white"
             style={{ textShadow: "0 2px 18px rgba(0,0,0,0.6)" }}
