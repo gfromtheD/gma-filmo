@@ -187,6 +187,17 @@ html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+/*
+ * Los menús modales de Radix bloquean el scroll con `overflow: hidden` en <body>. Con eso <body> pasa a ser
+ * un contenedor de scroll y la cabecera pegajosa (position: sticky) salta al principio del documento: desaparece
+ * y la pantalla queda bloqueada a la altura del scroll. `clip` recorta igual pero NO crea contenedor de scroll
+ * (la cabecera se mantiene) y se anula el margen que compensa una barra de scroll que aquí no existe.
+ */
+html body[data-scroll-locked] {
+  overflow: clip !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;

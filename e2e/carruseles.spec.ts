@@ -79,3 +79,48 @@ test("orden de las filas: recién llegados, Top 10, recomendaciones y, al final,
   // Cualquier fila recomendada (Porque viste…, Más de…, Creemos que…) queda entre el Top 10 y las colecciones.
   expect(titles.at(-1)?.trim()).toBe("Colecciones para ti");
 });
+
+/**
+ * Tamaño de las tarjetas: fijo a cualquier ancho (como la referencia), no repartido por columnas.
+ * A más pantalla caben más tarjetas, pero ninguna se encoge. Márgenes laterales 48/80/96 px.
+ */
+const SIZES: ReadonlyArray<readonly [number, number, number]> = [
+  // ancho, margen izquierdo, tarjetas completas visibles
+  [768, 48, 2],
+  [1024, 80, 2],
+  [1280, 96, 3],
+  [1536, 96, 4],
+  [1920, 96, 5],
+  [2560, 96, 7],
+];
+
+for (const [width, gutter, visible] of SIZES) {
+  test(`a ${width}px las tarjetas miden 316×178 con margen de ${gutter}px y caben ${visible}`, async ({ browser }) => {
+    const baseURL = `http://localhost:${process.env.E2E_PORT ?? 3000}`;
+    const context = await browser.newContext({ baseURL, viewport: { width, height: Math.round(width * 0.6) }, reducedMotion: "reduce" });
+    await context.addCookies([{ name: "gma_guest", value: "1", url: baseURL }]);
+    const page = await context.newPage();
+    await page.goto("/inicio", { waitUntil: "load" });
+    const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
+    await row.scrollIntoViewIfNeeded();
+    const metrics = await row.evaluate((section) => {
+      const scroller = section.querySelector("div.overflow-x-auto") as HTMLElement;
+      const slots = [...scroller.children] as HTMLElement[];
+      const art = slots[0]!.querySelector("a > div") as HTMLElement;
+      const box = art.getBoundingClientRect();
+      return {
+        slotX: Math.round(slots[0]!.getBoundingClientRect().x),
+        slotW: Math.round(slots[0]!.getBoundingClientRect().width),
+        artW: Math.round(box.width),
+        artH: Math.round(box.height),
+        fully: slots.filter((s) => s.getBoundingClientRect().right <= window.innerWidth + 1).length,
+      };
+    });
+    expect(metrics.slotW).toBe(320);
+    expect(metrics.artW).toBe(316);
+    expect(metrics.artH).toBe(178);
+    expect(metrics.slotX).toBe(gutter);
+    expect(metrics.fully).toBe(visible);
+    await context.close();
+  });
+}

@@ -18,6 +18,7 @@ import { ProfileEditModal, type SubProfileValues } from "@/components/features/p
 import { renderAvatar, COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
 import { useProfileStore } from "@/store/use-profile-store";
 import type { MovieMedia } from "@/types/catalog";
+import { lockPageScroll } from "@/lib/scroll-lock";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -155,11 +156,10 @@ function RatingModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockPageScroll();
     dialogRef.current?.focus();
     return () => {
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
       previous?.focus();
     };
   }, []);

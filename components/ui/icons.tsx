@@ -22,6 +22,8 @@ import {
   Eye as IconoirEye,
   EyeClosed as IconoirEyeClosed,
   Folder as IconoirFolder,
+  Home as IconoirHome,
+  LogIn as IconoirLogIn,
   Globe as IconoirGlobe,
   HelpCircle as IconoirHelpCircle,
   InfoCircle as IconoirInfoCircle,
@@ -107,6 +109,8 @@ export const Expand = createIcon(IconoirExpand);
 export const Eye = createIcon(IconoirEye);
 export const EyeClosed = createIcon(IconoirEyeClosed);
 export const Folder = createIcon(IconoirFolder);
+export const Home = createIcon(IconoirHome);
+export const LogIn = createIcon(IconoirLogIn);
 export const Globe = createIcon(IconoirGlobe);
 export const HelpCircle = createIcon(IconoirHelpCircle);
 export const InfoCircle = createIcon(IconoirInfoCircle);

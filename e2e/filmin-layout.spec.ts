@@ -18,17 +18,16 @@ test.describe("portada", () => {
     await expect(page.getByRole("button", { name: /Pausar presentación|Reanudar presentación/ })).toHaveCount(0);
   });
 
-  test("las filas muestran 4 columnas a 1440 px y las flechas reflejan los extremos", async ({ page }) => {
+  test("las tarjetas miden 320 px fijos a 1440 px y las flechas reflejan los extremos", async ({ page }) => {
     await openHome(page);
     const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
     await row.scrollIntoViewIfNeeded();
     await expect(row).toBeVisible();
-    const widths = await row.evaluate((el) => {
+    const first = await row.evaluate((el) => {
       const scroller = el.querySelector("div.overflow-x-auto") as HTMLElement;
-      const items = [...scroller.children] as HTMLElement[];
-      return { first: Math.round(items[0]!.getBoundingClientRect().width), content: Math.round(scroller.clientWidth - 112) };
+      return Math.round((scroller.children[0] as HTMLElement).getBoundingClientRect().width);
     });
-    expect(Math.abs(widths.first - widths.content / 4)).toBeLessThanOrEqual(2);
+    expect(first).toBe(320);
     await row.hover();
     await expect(row.getByRole("button", { name: "Anterior" })).toBeDisabled();
     await expect(row.getByRole("button", { name: "Siguiente" })).toBeEnabled();

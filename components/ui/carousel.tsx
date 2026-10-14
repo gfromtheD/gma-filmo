@@ -83,10 +83,10 @@ export function Carousel({ title, subtitle, action, children, mobileSize = "fram
           role="region"
           aria-label={title}
           tabIndex={0}
-          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-14 lg:[scroll-padding-inline:56px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] md:gap-1.5 md:px-12 lg:px-20 xl:px-24 md:[scroll-padding-inline:48px] lg:[scroll-padding-inline:80px] xl:[scroll-padding-inline:96px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
-            <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 lg:px-2 xl:basis-1/4 2xl:basis-1/5`}>
+            <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 md:w-[320px] md:basis-auto md:px-0.5`}>
               {child}
             </div>
           ))}

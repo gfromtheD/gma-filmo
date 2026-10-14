@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useLayoutEffect, type ReactNode, type CSSP
 import { createPortal } from "react-dom";
 import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Star, Play, NavArrowDown as ChevronDown } from "@/components/ui/icons";
 import type { PosterData, TitleStatus } from "./studio-types";
+import { lockPageScroll } from "@/lib/scroll-lock";
 
 // ── number helpers ────────────────────────────────────────────────────────────
 export function fmt(n: number | null | undefined): string {
@@ -305,8 +306,7 @@ export function useStudioDialog(active: boolean, onClose: () => void) {
     if (!active || !dialogRef.current) return;
     const dialog = dialogRef.current;
     const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockPageScroll();
     const controls = () => Array.from(dialog.querySelectorAll<HTMLElement>(
       'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     )).filter(element => element.getClientRects().length > 0);
@@ -324,7 +324,7 @@ export function useStudioDialog(active: boolean, onClose: () => void) {
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
       if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [active]);
