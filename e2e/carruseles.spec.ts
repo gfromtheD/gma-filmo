@@ -68,3 +68,14 @@ test.describe("Top 10", () => {
     await expect(page).toHaveURL(/\/ver\//);
   });
 });
+
+test("orden de las filas: recién llegados, Top 10, recomendaciones y, al final, colecciones", async ({ page }) => {
+  await openHome(page);
+  const titles = await page.getByRole("heading", { level: 2 }).allInnerTexts();
+  const at = (text: string) => titles.findIndex((t) => t.trim() === text);
+  expect(at("Recién llegados")).toBeGreaterThanOrEqual(0);
+  expect(at("Recién llegados")).toBeLessThan(at("Top 10 en GMA"));
+  expect(at("Top 10 en GMA")).toBeLessThan(at("Colecciones para ti"));
+  // Cualquier fila recomendada (Porque viste…, Más de…, Creemos que…) queda entre el Top 10 y las colecciones.
+  expect(titles.at(-1)?.trim()).toBe("Colecciones para ti");
+});

@@ -163,6 +163,12 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           </Carousel>
         )}
 
+        <Carousel title="Recién llegados" subtitle="Lo último que se ha añadido al catálogo" mobileSize="wide">
+          {items.slice(0, 15).map((item) => (
+            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
+          ))}
+        </Carousel>
+
         {featuredItems.length >= 4 && (
           <TopTenRow
             title="Top 10 en GMA"
@@ -170,31 +176,6 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
             items={featuredItems.slice(0, 10)}
             hrefFor={hrefFor}
           />
-        )}
-
-        <Carousel title="Recién llegados" subtitle="Lo último que se ha añadido al catálogo" mobileSize="wide">
-          {items.slice(0, 15).map((item) => (
-            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
-          ))}
-        </Carousel>
-
-        {recommendedCollections.length > 0 && (
-          <Carousel
-            title="Colecciones para ti"
-            subtitle="Selecciones de cortos para descubrir"
-            action={
-              <Link
-                href="/cortos"
-                className="text-[14px] font-medium text-[#B8C5D4] transition-colors hover:text-white"
-              >
-                Ver todas
-              </Link>
-            }
-          >
-            {recommendedCollections.map(({ col, filmCount }) => (
-              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
-            ))}
-          </Carousel>
         )}
 
         {homeRows.map((row) => (
@@ -225,6 +206,25 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           >
             {watchlistItems.map((item) => (
               <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
+            ))}
+          </Carousel>
+        )}
+
+        {recommendedCollections.length > 0 && (
+          <Carousel
+            title="Colecciones para ti"
+            subtitle="Selecciones de cortos para descubrir"
+            action={
+              <Link
+                href="/cortos"
+                className="text-[14px] font-medium text-[#B8C5D4] transition-colors hover:text-white"
+              >
+                Ver todas
+              </Link>
+            }
+          >
+            {recommendedCollections.map(({ col, filmCount }) => (
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
             ))}
           </Carousel>
         )}
