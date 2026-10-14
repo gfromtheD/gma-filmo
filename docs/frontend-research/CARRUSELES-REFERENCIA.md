@@ -39,3 +39,6 @@ va con 96 px de margen lateral (ancho útil 1248).
 - Márgenes laterales: 48 px a 768, 80 px a 1024 y 96 px desde 1280. El texto del título arranca 13 px después.
 - Móvil (390): tarjetas de 160 px, margen 24 px.
 - Antes en GMA se repartían por fracciones (1/3, 1/4, 1/5): a 1536 px bajaban a ~269 px; ahora son fijas.
+
+## Nota sobre márgenes (corrección)
+Se probaron los márgenes de la referencia (48/80/96 px), pero en GMA se notaban como una columna vacía a la izquierda. Se mantienen los de siempre: 16 px en tableta/móvil y 64 px desde 1024. Solo se adoptó el tamaño fijo de 320 px por tarjeta.

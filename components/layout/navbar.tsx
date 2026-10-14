@@ -215,7 +215,7 @@ export function Navbar() {
       data-scrolled={isScrolled}
       className="sticky top-0 z-50 bg-transparent transition-colors duration-300 ease-in data-[scrolled=true]:bg-[#060613] motion-reduce:transition-none"
     >
-      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-20 xl:px-24">
+      <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[1fr_auto_1fr] lg:gap-8 lg:px-16">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
           <NavbarBrand />
@@ -346,7 +346,7 @@ export function Navbar() {
           )}
           <Link
             href="/buscador"
-            className="hidden h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:flex lg:h-10 lg:w-10"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-white lg:h-10 lg:w-10"
             aria-label="Buscador"
           >
             <GmaIcon name="search" size={22} />

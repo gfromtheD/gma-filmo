@@ -66,7 +66,7 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
 
         <div
           ref={ref}
-          className="flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scroll-padding-inline:12px] [scrollbar-width:none] md:px-12 lg:px-20 xl:px-24 md:[scroll-padding-inline:48px] lg:[scroll-padding-inline:80px] xl:[scroll-padding-inline:96px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_4%,black_96%,transparent_100%)] [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scroll-padding-inline:12px] [scrollbar-width:none] lg:px-16 lg:[scroll-padding-inline:64px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_4%,black_96%,transparent_100%)] [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, index) => {
             const isActive = index === activeIndex;
