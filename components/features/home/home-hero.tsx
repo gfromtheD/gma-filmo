@@ -51,46 +51,54 @@ export function HomeHero({
     <section
       aria-roledescription="carousel"
       aria-label="Destacados"
-      className="relative isolate -mt-14 h-[clamp(520px,78vh,720px)] w-full overflow-hidden lg:-mt-16 lg:h-[clamp(520px,69vh,760px)]"
+      className="relative -mt-14 h-[clamp(520px,85vh,900px)] w-full lg:-mt-16"
     >
-      <div className="absolute inset-0" style={{ animation: "fadeIn 1.1s ease both" }}>
-        <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
-      </div>
-
-      {/* Tráiler opcional: se funde sobre la portada cuando empieza a reproducirse */}
-      {trailer.hasTrailer && trailer.isMounted && (
-        <video
-          ref={trailer.videoRef}
-          src={item.trailerUrl}
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          tabIndex={-1}
-          onPlaying={trailer.handlers.onPlaying}
-          onPause={trailer.handlers.onPause}
-          onEnded={() => {
-            // Una sola vez por reproducción (evento del vídeo), nunca desde un efecto.
-            trailer.handlers.onEnded();
-            onTrailerEnded?.();
-          }}
-          onError={trailer.handlers.onError}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${
-            trailer.isVisible ? "opacity-100" : "opacity-0"
-          }`}
-        />
-      )}
-
-      {/* Legibilidad: cabecera arriba, texto a la izquierda y fundido inferior al fondo de la página */}
+      {/* Imagen más alta que el hero (+20vh) con máscara: se desvanece hacia el resplandor ambiental */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[1]"
+        className="absolute inset-x-0 top-0 z-0 overflow-hidden"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(6,6,19,0.78) 0%, rgba(6,6,19,0) 24%), linear-gradient(90deg, rgba(6,6,19,0.72) 0%, rgba(6,6,19,0) 58%), linear-gradient(180deg, rgba(6,6,19,0) 58%, #060613 100%)",
+          height: "calc(100% + 20vh)",
+          animation: "fadeIn 1.1s ease both",
+          maskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
         }}
-      />
+      >
+        <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+        {/* Tráiler opcional: se funde sobre la portada cuando empieza a reproducirse */}
+        {trailer.hasTrailer && trailer.isMounted && (
+          <video
+            ref={trailer.videoRef}
+            src={item.trailerUrl}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            tabIndex={-1}
+            onPlaying={trailer.handlers.onPlaying}
+            onPause={trailer.handlers.onPause}
+            onEnded={() => {
+              // Una sola vez por reproducción (evento del vídeo), nunca desde un efecto.
+              trailer.handlers.onEnded();
+              onTrailerEnded?.();
+            }}
+            onError={trailer.handlers.onError}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${
+              trailer.isVisible ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
+
+        {/* Legibilidad: cabecera arriba, texto a la izquierda y base algo más oscura; el fundido al fondo lo hace la máscara de la imagen */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(6,6,19,0.6) 0%, rgba(6,6,19,0) 22%), linear-gradient(90deg, rgba(6,6,19,0.6) 0%, rgba(6,6,19,0) 55%), linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%)",
+          }}
+        />
+      </div>
 
       <div
         role="group"

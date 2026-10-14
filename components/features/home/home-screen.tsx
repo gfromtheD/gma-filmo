@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { HomeHero } from "@/components/features/home/home-hero";
+import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
 import { Carousel } from "@/components/ui/carousel";
 import { PosterCard } from "@/components/ui/poster-card";
 import { useWatchlist } from "@/hooks/use-watchlist";
@@ -116,6 +117,8 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.55, ease: "easeOut" }}
     >
+      <AmbientBackdrop imageUrl={featured.imageUrl} style={featured.style} />
+
       {/* ── Hero a pantalla completa bajo la cabecera transparente ─────────── */}
       <div
         onMouseEnter={() => setHovered(true)}
@@ -135,6 +138,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
       </div>
 
       <motion.div
+        className="relative z-[1]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
