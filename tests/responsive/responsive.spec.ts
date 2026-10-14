@@ -333,10 +333,10 @@ test("listas, búsqueda y próximamente en móvil, tablet y escritorio", async (
     await open(page, "coming-soon");
     await expectFits(page, `Próximamente ${width}px`);
     await open(page, "search");
-    await page.getByPlaceholder("Título, colección, autor…").fill("Un cortometraje");
+    await page.getByPlaceholder("Buscar cortos, películas y autores…").fill("Un cortometraje");
     await page.waitForTimeout(500);
     await expectFits(page, `Resultados de búsqueda ${width}px`);
-    await page.getByPlaceholder("Título, colección, autor…").fill("Unabúsquedaextremadamentelargasinresultadosniseparadores");
+    await page.getByPlaceholder("Buscar cortos, películas y autores…").fill("Unabúsquedaextremadamentelargasinresultadosniseparadores");
     await page.waitForTimeout(500);
     await expect(page.getByText(/Sin resultados para/)).toBeVisible();
     await expectFits(page, `Búsqueda vacía ${width}px`);

@@ -13,7 +13,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const col = await getColeccionBySlug(params.slug);
-  return { title: col?.name ?? "Colección" };
+  return { title: col?.name ?? "Colección no encontrada" };
 }
 
 export default async function ColeccionPage({ params }: Props) {

@@ -23,6 +23,37 @@ interface HoverPreviewCardProps {
 }
 
 const ENTER_MS = 250;
+/** Espera con el panel abierto antes de sustituir la portada por el tráiler. */
+const TRAILER_DELAY_MS = 1500;
+
+/** Tráiler mudo que se funde sobre la portada; si falla o termina, queda la portada. */
+function PanelTrailer({ src }: { readonly src: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
+  if (hasFailed) return null;
+  return (
+    <>
+      <video
+        src={src}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        onPlaying={() => setIsPlaying(true)}
+        onError={() => setHasFailed(true)}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 motion-reduce:transition-none ${isPlaying ? "opacity-100" : "opacity-0"}`}
+      />
+      {isPlaying && (
+        <span aria-hidden="true" className="pointer-events-none absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
+          <GmaIcon name="mute" size={14} />
+        </span>
+      )}
+    </>
+  );
+}
 
 /**
  * Vista previa flotante que "sale" de la portada: imagen, nota, ver / guardar,
@@ -42,6 +73,7 @@ export function HoverPreviewCard({
   const panelRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<PreviewLayout | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
   const inList = hasMedia(item.numericId);
@@ -67,6 +99,14 @@ export function HoverPreviewCard({
     const frame = requestAnimationFrame(() => setHasEntered(true));
     return () => cancelAnimationFrame(frame);
   }, [layout]);
+
+  // 3) con tráiler asociado, pasada la espera se reproduce en el mismo recuadro (no con movimiento reducido)
+  useEffect(() => {
+    if (!item.trailerUrl || !hasEntered) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = setTimeout(() => setShowTrailer(true), TRAILER_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [item.trailerUrl, hasEntered]);
 
   async function toggleList() {
     if (!canSave) {
@@ -113,6 +153,7 @@ export function HoverPreviewCard({
     >
       <div className="relative aspect-video w-full overflow-hidden">
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+        {showTrailer && item.trailerUrl && <PanelTrailer src={item.trailerUrl} />}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"

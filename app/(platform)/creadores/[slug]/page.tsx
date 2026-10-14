@@ -11,8 +11,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const creator = await getCreatorBySlug(params.slug);
-  if (!creator) return { title: "Creador" };
-  return { title: `${creator.nombre} — GMA Filmo` };
+  if (!creator) return { title: "Creador no encontrado" };
+  return { title: creator.nombre };
 }
 
 export default async function CreatorPage({ params }: Props) {

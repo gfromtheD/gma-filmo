@@ -8,6 +8,7 @@ import { HomeHero } from "@/components/features/home/home-hero";
 import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
 import { HeroIndicator } from "@/components/features/home/hero-indicator";
 import { Carousel } from "@/components/ui/carousel";
+import { TopTenRow } from "@/components/features/home/top-ten-row";
 import { PosterCard } from "@/components/ui/poster-card";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useProgress } from "@/hooks/use-progress";
@@ -155,22 +156,64 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
         transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
       >
         {continueItems.length > 0 && (
-          <Carousel title="Continuar viendo">
+          <Carousel title="Continuar viendo" subtitle="Retoma donde lo dejaste">
             {continueItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview showProgress href={`/ver/${item.id}`} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption showProgress href={`/ver/${item.id}`} />
             ))}
           </Carousel>
         )}
 
-        <Carousel title="Recién llegados" mobileSize="wide">
+        <Carousel title="Recién llegados" subtitle="Lo último que se ha añadido al catálogo" mobileSize="wide">
           {items.slice(0, 15).map((item) => (
-            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
+            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
           ))}
         </Carousel>
+
+        {featuredItems.length >= 4 && (
+          <TopTenRow
+            title="Top 10 en GMA"
+            subtitle="Los títulos más destacados ahora mismo"
+            items={featuredItems.slice(0, 10)}
+            hrefFor={hrefFor}
+          />
+        )}
+
+        {homeRows.map((row) => (
+          <Carousel key={row.title} title={row.title} subtitle={row.subtitle}>
+            {row.items.map((item) => (
+              <PosterCard
+                key={item.id}
+                item={item as MovieMedia}
+                ratio="landscape" fluid hoverPreview caption
+                href={hrefFor(item as MovieMedia)}
+              />
+            ))}
+          </Carousel>
+        ))}
+
+        {watchlistItems.length > 0 && (
+          <Carousel
+            title="Mi Lista"
+            subtitle="Lo que has guardado para ver después"
+            action={
+              <Link
+                href="/mi-espacio"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
+              >
+                Ver todo
+              </Link>
+            }
+          >
+            {watchlistItems.map((item) => (
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
+            ))}
+          </Carousel>
+        )}
 
         {recommendedCollections.length > 0 && (
           <Carousel
             title="Colecciones para ti"
+            subtitle="Selecciones de cortos para descubrir"
             action={
               <Link
                 href="/cortos"
@@ -182,37 +225,6 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           >
             {recommendedCollections.map(({ col, filmCount }) => (
               <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
-            ))}
-          </Carousel>
-        )}
-
-        {homeRows.map((row) => (
-          <Carousel key={row.title} title={row.title}>
-            {row.items.map((item) => (
-              <PosterCard
-                key={item.id}
-                item={item as MovieMedia}
-                ratio="landscape" fluid hoverPreview
-                href={hrefFor(item as MovieMedia)}
-              />
-            ))}
-          </Carousel>
-        ))}
-
-        {watchlistItems.length > 0 && (
-          <Carousel
-            title="Mi Lista"
-            action={
-              <Link
-                href="/mi-espacio"
-                className="inline-flex min-h-11 items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
-              >
-                Ver todo
-              </Link>
-            }
-          >
-            {watchlistItems.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview href={hrefFor(item)} />
             ))}
           </Carousel>
         )}

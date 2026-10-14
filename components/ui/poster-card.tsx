@@ -18,6 +18,9 @@ const WIDTH: Record<CardSize, number> = { sm: 140, md: 180, lg: 340 };
 const CARD_CLASS =
   `relative block w-full overflow-hidden rounded-[6px] border border-transparent bg-transparent transition-[transform,border-color,box-shadow] duration-[220ms] active:scale-[0.97] ${styles.card}`;
 
+const CAPTION_LINK_CLASS =
+  "block w-full rounded-[8px] text-left outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#22B16B]";
+
 interface PosterCardProps {
   readonly item: MediaItem;
   readonly ratio?: PosterRatio;
@@ -32,6 +35,8 @@ interface PosterCardProps {
   readonly hoverPreview?: boolean;
   /** Para listados grandes: capa oscura con la descripción al pasar el ratón (sin panel flotante). */
   readonly hoverOverlay?: boolean;
+  /** Título y datos (año · categoría) debajo de la imagen, en lugar del título sobre ella. */
+  readonly caption?: boolean;
 }
 
 export function PosterCard({
@@ -46,6 +51,7 @@ export function PosterCard({
   inList = false,
   hoverPreview = false,
   hoverOverlay = false,
+  caption = false,
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
   const notice = useNoticeToast();
@@ -80,7 +86,15 @@ export function PosterCard({
   /* ── inner card content ── */
   const cardContent = (
     <>
-      <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} />
+      {caption ? (
+        <div className="relative aspect-video w-full overflow-hidden rounded-[8px]">
+          <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none">
+            <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+          </div>
+        </div>
+      ) : (
+        <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} />
+      )}
       {hoverOverlay && <CardInfoOverlay item={item} />}
       {showProgress && item.progress != null && (
         <div
@@ -92,6 +106,24 @@ export function PosterCard({
       )}
     </>
   );
+
+  const category = item.categories.find((c) => c !== "Cortometraje");
+  const captionNode = caption ? (
+    <div className="mt-2.5 px-0.5">
+      <h3 className="line-clamp-1 text-[13px] font-medium leading-snug text-[#EEF1F6] transition-colors duration-200 group-hover/card:text-[#22B16B] motion-reduce:transition-none">
+        {item.title}
+      </h3>
+      <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] leading-[11px] text-[#8A94A6]">
+        <span className="tabular-nums">{item.year}</span>
+        {category && (
+          <>
+            <span aria-hidden="true" className="text-white/20">·</span>
+            <span className="line-clamp-1">{category}</span>
+          </>
+        )}
+      </p>
+    </div>
+  ) : null;
 
   /* ── watchlist ribbon — sibling to the card, NOT nested inside it ── */
   const listBtn = onAddList ? (
@@ -132,7 +164,10 @@ export function PosterCard({
   if (href) {
     return (
       <div className={wrapClass} style={wrapStyle} {...wrapProps}>
-        <Link href={href} className={CARD_CLASS}>{cardContent}</Link>
+        <Link href={href} className={caption ? CAPTION_LINK_CLASS : CARD_CLASS}>
+          {cardContent}
+          {captionNode}
+        </Link>
         {listBtn}
         {previewNode}
         {notice.toast}
@@ -142,7 +177,10 @@ export function PosterCard({
 
   return (
     <div className={wrapClass} style={wrapStyle} {...wrapProps}>
-      <button type="button" onClick={onClick} className={CARD_CLASS}>{cardContent}</button>
+      <button type="button" onClick={onClick} className={caption ? CAPTION_LINK_CLASS : CARD_CLASS}>
+        {cardContent}
+        {captionNode}
+      </button>
       {listBtn}
       {previewNode}
       {notice.toast}

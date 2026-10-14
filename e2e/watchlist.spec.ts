@@ -83,8 +83,10 @@ test.describe("invitado", () => {
     await asGuest(page);
     const calls = await trackWatchlistPosts(page, 200);
     await page.goto("/inicio", { waitUntil: "load" });
-    await page.evaluate(() => window.scrollTo(0, 560));
-    const card = page.locator("div.snap-x > div").first();
+    const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
+    await row.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 240));
+    const card = row.locator("div.snap-x > div").first();
     const box = await card.boundingBox();
     await page.mouse.move((box?.x ?? 0) + 20, (box?.y ?? 0) + (box?.height ?? 0) + 120);
     await page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2, { steps: 5 });

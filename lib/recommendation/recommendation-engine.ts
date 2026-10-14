@@ -96,6 +96,8 @@ export interface ScoredItem {
 export interface HomeRow {
   /** Display label for the carousel */
   title: string;
+  /** Línea secundaria que explica qué contiene la fila */
+  subtitle?: string;
   items: MediaItem[];
 }
 
@@ -469,7 +471,7 @@ export function buildHomeRows(
     );
 
     if (related.length > 0) {
-      rows.push({ title: `Porque viste "${anchor.title}"`, items: related });
+      rows.push({ title: `Porque viste "${anchor.title}"`, subtitle: "Títulos con rasgos parecidos a los que has visto", items: related });
     }
   }
 
@@ -500,7 +502,7 @@ export function buildHomeRows(
   if (newForYouItems.length > 0) {
     const titleSeed = getVisitTitleSeed();
     const newForYouTitle = NEW_FOR_YOU_TITLES[Math.floor(titleSeed * NEW_FOR_YOU_TITLES.length)] ?? NEW_FOR_YOU_TITLES[0]!;
-    rows.push({ title: newForYouTitle, items: newForYouItems });
+    rows.push({ title: newForYouTitle, subtitle: "Una selección según lo que sueles ver", items: newForYouItems });
   }
 
   // ── "Más de <dominantCategory>" ────────────────────────────────────────
@@ -517,7 +519,7 @@ export function buildHomeRows(
     );
 
     if (moodItems.length > 0) {
-      rows.push({ title: `Más de ${mood}`, items: moodItems });
+      rows.push({ title: `Más de ${mood}`, subtitle: "Más títulos de la categoría que más ves", items: moodItems });
     }
   }
 
@@ -525,6 +527,7 @@ export function buildHomeRows(
   if (rows.length === 0) {
     rows.push({
       title: "Lo más destacado",
+      subtitle: "Lo mejor del catálogo ahora mismo",
       items: coldStartFallback(allItems, seed, REC.COUNT_DEFAULT),
     });
   }

@@ -20,7 +20,8 @@ test.describe("portada", () => {
 
   test("las filas muestran 4 columnas a 1440 px y las flechas reflejan los extremos", async ({ page }) => {
     await openHome(page);
-    const row = page.locator("section.group\\/row").first();
+    const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
+    await row.scrollIntoViewIfNeeded();
     await expect(row).toBeVisible();
     const widths = await row.evaluate((el) => {
       const scroller = el.querySelector("div.overflow-x-auto") as HTMLElement;
@@ -64,8 +65,10 @@ test.describe("vista previa al pasar el ratón", () => {
 
   async function hoverFirstCard(page: Page) {
     await openHome(page);
-    await page.evaluate(() => window.scrollTo(0, 560));
-    const card = page.locator("div.snap-x > div").first();
+    const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
+    await row.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 240));
+    const card = row.locator("div.snap-x > div").first();
     await expect(card).toBeVisible();
     const box = await card.boundingBox();
     expect(box).not.toBeNull();
