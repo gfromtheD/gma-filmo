@@ -600,6 +600,71 @@ export type Database = {
           },
         ]
       }
+      pelicula_extras: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          id: number
+          kind: string
+          media_ref: string | null
+          pelicula_id: number
+          poster_url: string | null
+          provider: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: never
+          kind?: string
+          media_ref?: string | null
+          pelicula_id: number
+          poster_url?: string | null
+          provider?: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: never
+          kind?: string
+          media_ref?: string | null
+          pelicula_id?: number
+          poster_url?: string | null
+          provider?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pelicula_extras_pelicula_id_fkey"
+            columns: ["pelicula_id"]
+            isOneToOne: false
+            referencedRelation: "peliculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comment_reports: {
         Row: {
           comment_id: number

@@ -72,3 +72,15 @@ export interface ProfileEntry {
   readonly id: string;
   readonly name: string;
 }
+
+/** Contenido extra de un título (making of, entrevistas, escenas eliminadas…). */
+export interface MovieExtra {
+  readonly id: number;
+  readonly title: string;
+  readonly description: string | null;
+  readonly kind: string;
+  readonly kindLabel: string;
+  readonly videoUrl: string;
+  readonly posterUrl: string | null;
+  readonly durationLabel: string | null;
+}

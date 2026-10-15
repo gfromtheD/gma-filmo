@@ -8,11 +8,13 @@ import { DetailTabs, detailPanelId, type DetailTabItem } from "@/components/feat
 import { PosterCard } from "@/components/ui/poster-card";
 import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
+import { ExtrasPanel } from "@/components/features/detail/extras-panel";
+import { useExtras } from "@/hooks/use-extras";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useNoticeToast } from "@/components/ui/notice-toast";
 import { useCommunityRatings } from "@/hooks/use-community-ratings";
-import type { MovieMedia } from "@/types/catalog";
+import type { MovieExtra, MovieMedia } from "@/types/catalog";
 import { externalUrl } from "@/lib/social-links";
 import type { CreatorProfile } from "@/types/creator";
 
@@ -20,19 +22,20 @@ interface MovieDetailProps {
   readonly movie: MovieMedia;
   readonly related: readonly MovieMedia[];
   readonly creator?: CreatorProfile | null;
+  readonly extras?: readonly MovieExtra[];
   readonly autoOpenRating?: boolean;
 }
 
-type DetailTabId = "detalles" | "similares" | "valoraciones" | "comentarios";
+type DetailTabId = "detalles" | "extras" | "similares" | "valoraciones" | "comentarios";
 
-const TAB_IDS: readonly DetailTabId[] = ["detalles", "similares", "valoraciones", "comentarios"];
+const TAB_IDS: readonly DetailTabId[] = ["detalles", "extras", "similares", "valoraciones", "comentarios"];
 const TAB_PREFIX = "movie";
 
 function isDetailTabId(value: string): value is DetailTabId {
   return (TAB_IDS as readonly string[]).includes(value);
 }
 
-export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDetailProps) {
+export function MovieDetail({ movie, related, creator, extras: initialExtras = [], autoOpenRating }: MovieDetailProps) {
   const router = useRouter();
   const isGuest = useIsGuest();
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
@@ -43,9 +46,11 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
   const [activeTab, setActiveTab] = useState<DetailTabId>(autoOpenRating ? "valoraciones" : "detalles");
   const [rateIntent, setRateIntent] = useState(Boolean(autoOpenRating));
   const tabsRef = useRef<HTMLDivElement>(null);
+  const extras = useExtras(movie.numericId, initialExtras);
 
   const tabs: DetailTabItem<DetailTabId>[] = [
     { id: "detalles", label: "Detalles" },
+    ...(extras.length > 0 ? [{ id: "extras" as const, label: "Extras" }] : []),
     ...(related.length > 0 ? [{ id: "similares" as const, label: "Similares" }] : []),
     { id: "valoraciones", label: "Valoraciones" },
     { id: "comentarios", label: "Comentarios" },
@@ -54,8 +59,9 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
   // Estado de pestañas enlazable: /cortos/slug#valoraciones
   useEffect(() => {
     const fromHash = window.location.hash.replace("#", "");
-    if (isDetailTabId(fromHash) && (fromHash !== "similares" || related.length > 0)) setActiveTab(fromHash);
-  }, [related.length]);
+    const available = (fromHash !== "similares" || related.length > 0) && (fromHash !== "extras" || extras.length > 0);
+    if (isDetailTabId(fromHash) && available) setActiveTab(fromHash);
+  }, [related.length, extras.length]);
 
   function selectTab(id: DetailTabId) {
     setActiveTab(id);
@@ -127,6 +133,8 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
             </aside>
           </div>
         )}
+
+        {activeTab === "extras" && extras.length > 0 && <ExtrasPanel extras={extras} />}
 
         {activeTab === "similares" && (
           <RelatedGrid related={related} onNavigate={(id) => router.push(`/cortos/${id}`)} />

@@ -6,6 +6,7 @@ import {
   getRelatedPeliculas,
   getCreatorByArtistaSlugs,
 } from "@/lib/supabase/queries";
+import { getExtrasByPeliculaId } from "@/lib/extras/queries";
 
 export const revalidate = 3600;
 
@@ -28,12 +29,13 @@ export default async function CortoDetailPage({ params, searchParams }: Props) {
     .map((a) => a.slug)
     .filter((s): s is string => Boolean(s));
 
-  const [related, creator] = await Promise.all([
+  const [related, creator, extras] = await Promise.all([
     getRelatedPeliculas(movie.id, movie.categories, 4, {
       author: movie.author,
       year: movie.year,
     }),
     getCreatorByArtistaSlugs(artistaSlugs),
+    getExtrasByPeliculaId(movie.numericId),
   ]);
 
   return (
@@ -41,6 +43,7 @@ export default async function CortoDetailPage({ params, searchParams }: Props) {
       movie={movie}
       related={related}
       creator={creator}
+      extras={extras}
       autoOpenRating={searchParams.valorar === "1"}
     />
   );
