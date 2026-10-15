@@ -44,7 +44,7 @@ export function DetailTabs<T extends string>({ tabs, activeId, onChange, idPrefi
     <div
       role="tablist"
       aria-label="Secciones de la ficha"
-      className="flex gap-6 overflow-x-auto border-b border-white/10 px-4 [scrollbar-width:none] lg:px-16 [&::-webkit-scrollbar]:hidden"
+      className="flex gap-6 overflow-x-auto border-b [&>*:first-child]:ml-auto [&>*:last-child]:mr-auto border-white/10 px-4 [scrollbar-width:none] lg:px-16 [&::-webkit-scrollbar]:hidden"
     >
       {tabs.map((tab, index) => {
         const isActive = tab.id === activeId;
