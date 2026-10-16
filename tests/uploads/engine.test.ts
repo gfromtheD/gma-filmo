@@ -73,11 +73,12 @@ test('publication ready gate, full roles, repeat request, edit, retire and legac
  await command(db,'retire',{slug:title.slug});
  const original=await db.query('SELECT * FROM peliculas WHERE slug=\'legacy\'');assert.equal(original.rows.length,1);
 }finally{await db.close();}});
-test('RLS browser owner SELECT only; authenticated cannot execute privileged RPC',async()=>{const db=await setup();try{
+test('owner may read their media session; foreign owner and authenticated writes/private state remain denied',async()=>{const db=await setup();try{
  const d=await draft(db);await reserve(db,d);
  await db.exec(`SET ROLE authenticated; SET request.jwt.claim.sub='${OTHER}'`);
- const rows=await db.query('SELECT * FROM gma_upload_sessions');assert.equal(rows.rows.length,0);
+ assert.equal((await db.query('SELECT * FROM gma_upload_sessions')).rows.length,0);
  await db.exec(`SET request.jwt.claim.sub='${OWNER}'`);assert.equal((await db.query('SELECT * FROM gma_upload_sessions')).rows.length,1);
+ await assert.rejects(db.query('SELECT * FROM gma_media_provider_private'),/permission denied/);
  await assert.rejects(command(db,'cancel',{session_id:randomUUID()}),/permission denied/);
  await assert.rejects(db.query('UPDATE gma_media_assets SET state=\'ready\''),/permission denied/);
  await db.exec('RESET ROLE');

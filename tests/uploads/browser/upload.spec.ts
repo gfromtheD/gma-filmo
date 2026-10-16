@@ -1,12 +1,15 @@
 import {test,expect} from '@playwright/test';
 import {createHash} from 'node:crypto';
-const owner='11111111-1111-4111-8111-111111111111',draftId='33333333-3333-4333-8333-333333333333',sid='44444444-4444-4444-8444-444444444444',aid='55555555-5555-4555-8555-555555555555';
+import {authenticateLocal} from '../../responsive/local-auth';
+let owner='';
+test.beforeEach(async({page,request})=>{owner=await authenticateLocal(page,request);await page.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'||['data:','blob:'].includes(u.protocol)?r.continue():r.abort();});});
+const draftId='33333333-3333-4333-8333-333333333333',sid='44444444-4444-4444-8444-444444444444',aid='55555555-5555-4555-8555-555555555555';
 test('current UI: real hash worker, direct auxiliary PUT, ready gate and recovery after reload',async({page})=>{
  const file=Buffer.from('1\n00:00:01,000 --> 00:00:02,000\nHola\n');
  const draft={id:draftId,owner_id:owner,purpose:'title',state:'draft',revision:0,metadata:{},title_id:null};
  let session:Record<string,unknown>|null=null,asset:Record<string,unknown>|null=null,received=false,complete=false,reservations=0;
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.route('https://gma-filmo-test.supabase.co/**',route=>route.fulfill({json:route.request().url().includes('/auth/')?{id:owner,email:'test@example.invalid',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{}}:[]}));
+ await page.route('http://127.0.0.1:54341/**',route=>route.request().url().includes('/auth/')?route.continue():route.fulfill({json:[]}));
  await page.route('https://test.r2.cloudflarestorage.com/**',async route=>{
    expect(route.request().method()).toBe('PUT');expect(route.request().postDataBuffer()).toEqual(file);received=true;await route.fulfill({status:200});
  });
@@ -38,10 +41,9 @@ test('multipart: lost part response, reload, full SHA reselection and expired pa
  const draft={id:draftId,owner_id:owner,purpose:'title',state:'draft',revision:0,metadata:{},title_id:null};
  let session:Record<string,unknown>|null=null,asset:Record<string,unknown>|null=null,reservations=0,phase=0,complete=false,secondAttempts=0,expiredJwt=false,refreshes=0;
  const received=new Set<number>(),puts:number[]=[];
- await page.route('https://gma-filmo-test.supabase.co/**',route=>{
-  const user={id:owner,email:'test@example.invalid',aud:'authenticated',role:'authenticated',app_metadata:{},user_metadata:{}};
-  if(route.request().url().includes('/token?')){refreshes++;const encode=(value:unknown)=>Buffer.from(JSON.stringify(value)).toString('base64url');const token=encode({alg:'HS256',typ:'JWT'})+'.'+encode({exp:Math.floor(Date.now()/1000)+3600,sub:owner,aud:'authenticated',role:'authenticated'})+'.test';return route.fulfill({json:{access_token:token,refresh_token:'local-fake-token',expires_in:3600,token_type:'bearer',user}});}
-  return route.fulfill({json:route.request().url().includes('/auth/')?user:[]});
+ await page.route('http://127.0.0.1:54341/**',route=>{
+  if(route.request().url().includes('/auth/')){if(route.request().url().includes('/token?'))refreshes++;return route.continue();}
+  return route.fulfill({json:[]});
  });
  await page.route('https://test.r2.cloudflarestorage.com/**',async route=>{
   const number=Number(new URL(route.request().url()).searchParams.get('partNumber'));puts.push(number);

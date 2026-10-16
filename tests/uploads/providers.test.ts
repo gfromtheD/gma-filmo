@@ -1,3 +1,4 @@
+import {legacyMediaWritesGate} from '../../lib/media/legacy-writes';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
@@ -5,7 +6,7 @@ import sharp from 'sharp';
 import {AuxiliaryProvider,normalizeSubtitles} from '../../lib/uploads/auxiliary';
 import {StreamProvider} from '../../lib/uploads/stream';
 import {UploadRepository,translateDatabaseError} from '../../lib/uploads/repository';
-import {UploadService} from '../../lib/uploads/service';
+import {UploadService} from '../../lib/uploads/legacy-service';
 import {getUploadConfig} from '../../lib/uploads/config';
 import type {S3Client} from '@aws-sdk/client-s3';
 import type {UploadSession,UploadJob} from '../../lib/uploads/types';
@@ -65,7 +66,7 @@ test('SUB-R02/R03 reproducible baseline legacy route: concurrent over-allocation
  function load(source:string,failed=false){
  const module={exports:{} as {POST:(req:Request)=>Promise<Response>}};
  const db={from:()=>({select:()=>({eq:async()=>({data:failed?null:[],error:failed?{message:'schema unavailable'}:null})})})};
- const mocks:Record<string,unknown>={'next/server':{NextResponse:{json:Response.json}},'@aws-sdk/client-s3':{PutObjectCommand:class{}},'@aws-sdk/s3-request-presigner':{getSignedUrl:async()=> 'https://example.invalid/temporary'},
+ const mocks:Record<string,unknown>={'@/lib/media/legacy-writes':{legacyMediaWritesGate},'next/server':{NextResponse:{json:Response.json}},'@aws-sdk/client-s3':{PutObjectCommand:class{}},'@aws-sdk/s3-request-presigner':{getSignedUrl:async()=> 'https://example.invalid/temporary'},
  '@/lib/r2/client':{r2:{},R2_BUCKET:'test',R2_PUBLIC_URL:'https://example.invalid',UPLOAD_CAPS:{main:4*1024**3},SESSION_CAP:6*1024**3,FREE_QUOTA:10*1024**3},
  '@/lib/api/auth':{getUserId:async()=> 'owner'},'@/lib/supabase/admin':{getSupabaseAdminClient:()=>db},'@/lib/uploads/config':{uploadEngineEnabled:()=>false}};
  vm.runInNewContext(ts.transpile(source,{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}),{exports:module.exports,module,require:(name:string)=>{if(!(name in mocks))throw new Error(name);return mocks[name];},process:{env:{}},crypto:{randomUUID},console});
@@ -98,7 +99,7 @@ test('cleanup awaiting signature expiry is scheduled at expiry instead of exhaus
 });
 test('PostgREST composite RPC works with row and array representations; empty claim is not a job',async()=>{
  const job={id:randomUUID(),kind:'provision'};let value:unknown=[job];
- const repo=new UploadRepository({rpc:async()=>({data:value,error:null})});
+ const repo=new UploadRepository({rpc:async()=>({data:value,error:null})} as never);
  assert.equal((await repo.claimSession(null,null,'worker'))?.id,job.id);
  assert.equal((await repo.rpc<{id:string}>('helper',{})).id,job.id);
  value=job;assert.equal((await repo.claimSession(null,null,'worker'))?.id,job.id);

@@ -1,0 +1,9 @@
+{
+  "request": { "method": "POST", "path": "/api/v1/videos/66666666-6666-4666-8666-666666666666/token" },
+  "response": {
+    "files": {
+      "token": "TEST_ONLY_REDACTED_FILE_TOKEN",
+      "expires": "2026-10-07T10:05:00.000Z"
+    }
+  }
+}

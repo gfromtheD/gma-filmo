@@ -13,6 +13,7 @@ export function fixtureRepository(db:Awaited<ReturnType<typeof database>>,loseRe
    if(action==='ready'&&loseReadyResponse){loseReadyResponse=false;throw new Error('SQL committed but response lost');}return result;
   },
   jobLease:async(id:string)=>(await db.query('SELECT state,lease_owner,lease_until FROM gma_upload_jobs WHERE id=$1',[id])).rows[0]??null,
+  claimR2Process:async(worker:string)=>(await db.query<{j:unknown}>('SELECT to_jsonb(gma_media_claim_job($1,false,true)) j',[worker])).rows[0]!.j,
   claimSession:async(id:string|null,kind:string|null,worker:string)=>(await db.query<{j:unknown}>('SELECT to_jsonb(gma_upload_claim_session_job($1,$2,$3,120)) j',[id,kind,worker])).rows[0]!.j,
   finishJob:async(id:string,worker:string,success:boolean,error?:string,retry?:string)=>{await db.query('SELECT gma_upload_finish_job($1,$2,$3,$4,$5)',[id,worker,success,error??null,retry??null]);}
  } as unknown as UploadRepository;

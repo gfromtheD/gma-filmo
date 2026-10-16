@@ -103,10 +103,16 @@ test("la página de apoyo muestra identidad, destinos válidos y Bitcoin sin exi
 for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
   test(`bienvenida abre opciones y permite invitado sin datos (${viewport.width}px)`, async ({ page, context }) => {
     await page.setViewportSize(viewport);
-    await page.route("https://gma-filmo-test.supabase.co/**", route => route.abort());
+    await page.route("**/*", route => {
+      const url = new URL(route.request().url());
+      return ["data:", "blob:", "about:"].includes(url.protocol) || url.origin === "http://127.0.0.1:4318"
+        ? route.continue() : route.abort();
+    });
     await page.route("**/inicio", route => route.fulfill({ contentType: "text/html", body: "<h1>Destino invitado de prueba</h1>" }));
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "El lugar para descubrir, compartir, sentir y disfrutar cine." })).toBeVisible();
+    // LandingHero is server-rendered. Wait for its client hydration before the first interaction.
+    await page.waitForTimeout(800);
     await page.getByRole("button", { name: "Entrar a GMA Filmo" }).click();
     const button = page.getByRole("button", { name: "Continuar como invitado", exact: true });
     await expect(button).toBeVisible();

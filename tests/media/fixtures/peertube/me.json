@@ -1,0 +1,9 @@
+{
+  "response": {
+    "id": 41,
+    "username": "gma-technical-fixture",
+    "videoChannels": [
+      { "id": 73, "name": "GMA Fixture Channel", "uuid": "55555555-5555-4555-8555-555555555555" }
+    ]
+  }
+}

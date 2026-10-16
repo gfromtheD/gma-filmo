@@ -2,9 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFile } from 'node:fs/promises';
 export const OWNER='11111111-1111-4111-8111-111111111111';
 export const OTHER='22222222-2222-4222-8222-222222222222';
-export async function database() {
- const db=new PGlite();
- await db.exec(`CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+export const baselineSql=`CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
  CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
  GRANT USAGE ON SCHEMA public,auth TO authenticated,service_role;
@@ -17,12 +15,27 @@ export async function database() {
  INSERT INTO auth.users VALUES('${OWNER}'),('${OTHER}');
  INSERT INTO creator_profiles VALUES('${OWNER}','Creator',null),('${OTHER}','Other',null);
  ALTER TABLE peliculas ENABLE ROW LEVEL SECURITY; CREATE POLICY public_read ON peliculas FOR SELECT USING (true); GRANT SELECT ON peliculas TO anon,authenticated;
- INSERT INTO peliculas(slug,title,r2_video_url,status) VALUES('legacy','Original','https://legacy.example/video.mp4','published');`);
+ INSERT INTO peliculas(slug,title,r2_video_url,status) VALUES('legacy','Original','https://legacy.example/video.mp4','published');`;
+export async function database() {
+ const db=new PGlite();
+ await db.exec(baselineSql);
  await db.exec(await readFile('supabase/migrations/20261005_upload_engine_v2.sql','utf8'));
  await db.exec(await readFile('supabase/migrations/20261006_upload_engine_r2_first.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/20261007_r2_capacity.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610080001_media_provider_neutral.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610080002_media_commands.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610080003_media_publish_lifecycle.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/2026100800031_media_title_lifecycle.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610080004_media_delivery_security.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202610080005_media_coordination.sql','utf8'));
  return db;
 }
 export async function command<T=Record<string,unknown>>(db:PGlite,action:string,payload:unknown,owner=OWNER):Promise<T> {
- const result=await db.query<{result:T}>('SELECT gma_upload_command($1,$2,$3::jsonb) AS result',[owner,action,JSON.stringify(payload)]);
+ let input=payload;
+ if(action==='publish' && payload && typeof payload==='object' && !('main_media_id' in payload)) {
+  const draftId=(payload as {draft_id?:unknown}).draft_id;
+  if(typeof draftId==='string') { const main=await db.query<{asset_id:string}>('SELECT asset_id FROM gma_draft_media WHERE draft_id=$1 AND role=\'main\' AND slot=\'main\'',[draftId]); if(main.rows[0]) input={...payload as Record<string,unknown>,main_media_id:main.rows[0].asset_id}; }
+ }
+ const result=await db.query<{result:T}>('SELECT gma_upload_command($1,$2,$3::jsonb) AS result',[owner,action,JSON.stringify(input)]);
  return result.rows[0]!.result;
 }

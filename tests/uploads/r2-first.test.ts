@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {S3Client,CreateMultipartUploadCommand,ListMultipartUploadsCommand,ListPartsCommand,HeadObjectCommand,CompleteMultipartUploadCommand,AbortMultipartUploadCommand,DeleteObjectCommand,ListObjectsV2Command,DeleteObjectsCommand} from '@aws-sdk/client-s3';
 import {R2VideoProvider} from '../../lib/uploads/r2-video';
 import {getUploadConfig,videoProvider} from '../../lib/uploads/config';
-import {UploadService} from '../../lib/uploads/service';
+import {UploadService} from '../../lib/uploads/legacy-service';
 import {UploadRepository} from '../../lib/uploads/repository';
 import {database,command,OWNER,OTHER} from './database';
 import {hlsObject,rewritePlaylist} from '../../lib/uploads/hls-delivery';
