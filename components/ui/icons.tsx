@@ -49,6 +49,7 @@ import {
   Send as IconoirSend,
   Settings as IconoirSettings,
   ShareAndroid as IconoirShareAndroid,
+  Shuffle as IconoirShuffle,
   ShieldCheck as IconoirShieldCheck,
   SkipNext as IconoirSkipNext,
   SkipPrev as IconoirSkipPrev,
@@ -141,6 +142,7 @@ export const SkipNext = createIcon(IconoirSkipNext);
 export const SkipPrev = createIcon(IconoirSkipPrev);
 export const SoundHigh = createIcon(IconoirSoundHigh);
 export const SoundOff = createIcon(IconoirSoundOff);
+export const Shuffle = createIcon(IconoirShuffle);
 export const Sparks = createIcon(IconoirSparks);
 export const Star = createIcon(IconoirStar);
 export const StatsReport = createIcon(IconoirStatsReport);

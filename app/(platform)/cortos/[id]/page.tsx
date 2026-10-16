@@ -10,6 +10,9 @@ import { getExtrasByPeliculaId } from "@/lib/extras/queries";
 
 export const revalidate = 3600;
 
+/** «También te puede gustar»: 3 filas de 4 en escritorio. */
+const RELATED_COUNT = 15;
+
 interface Props {
   params: { id: string };
   searchParams: { valorar?: string };
@@ -30,7 +33,7 @@ export default async function CortoDetailPage({ params, searchParams }: Props) {
     .filter((s): s is string => Boolean(s));
 
   const [related, creator, extras] = await Promise.all([
-    getRelatedPeliculas(movie.id, movie.categories, 4, {
+    getRelatedPeliculas(movie.id, movie.categories, RELATED_COUNT, {
       author: movie.author,
       year: movie.year,
     }),

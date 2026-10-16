@@ -128,7 +128,7 @@ function LoginGate({
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         className="w-full overflow-hidden rounded-2xl border border-white/10 p-6"
         style={{
-          background: "rgba(8,11,17,0.99)",
+          background: "color-mix(in srgb, var(--gma-surface-2) 99%, transparent)",
           boxShadow: "0 -24px 80px rgba(0,0,0,0.7)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -141,7 +141,7 @@ function LoginGate({
             <h2 className="mt-1 text-[18px] font-bold leading-snug text-white">
               Para donar en {platform}
             </h2>
-            <p className="mt-1 text-[13px]" style={{ color: "#6D7D94" }}>
+            <p className="mt-1 text-[13px]" style={{ color: "#7C7C7C" }}>
               Inicia sesión con tu cuenta GMA primero.
             </p>
           </div>
@@ -220,14 +220,14 @@ export default function DonaTestPage() {
       {/* Full-screen page — no card container, full bleed */}
       <div
         className="flex min-h-dvh flex-col"
-        style={{ background: "#080B11" }}
+        style={{ background: "var(--gma-surface-2)" }}
       >
         {/* ── Banner full-bleed ───────────────────────────────────────── */}
         <div
           className="relative w-full"
           style={{
             height: 160,
-            background: "linear-gradient(160deg, #0e2218 0%, #133326 40%, #080B11 100%)",
+            background: "linear-gradient(160deg, #0e2218 0%, #133326 40%, var(--gma-surface-2) 100%)",
             flexShrink: 0,
           }}
         >
@@ -247,7 +247,7 @@ export default function DonaTestPage() {
           {/* Avatar */}
           <div
             className="h-[88px] w-[88px] overflow-hidden rounded-full border-4"
-            style={{ borderColor: "#080B11" }}
+            style={{ borderColor: "var(--gma-surface-2)" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -262,7 +262,7 @@ export default function DonaTestPage() {
             <p className="mt-0.5 text-[13px] font-medium" style={{ color: "#22B16B" }}>
               @carlos.mendoza
             </p>
-            <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "#8A9AB0" }}>
+            <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "#999999" }}>
               Documentalista independiente. Cuento historias que otros prefieren
               no ver. Cada contribución hace posible el próximo proyecto.
             </p>
@@ -279,7 +279,7 @@ export default function DonaTestPage() {
         <div className="flex flex-1 flex-col px-5 pt-5 pb-8">
           <p
             className="mb-4 text-[11px] font-semibold uppercase tracking-widest"
-            style={{ color: "#4A5A6A" }}
+            style={{ color: "#585858" }}
           >
             Apoya el trabajo de Carlos
           </p>
@@ -301,7 +301,7 @@ export default function DonaTestPage() {
                   <p className="text-[15px] font-bold" style={{ color: opt.labelColor }}>
                     {opt.name}
                   </p>
-                  <p className="truncate text-[12px]" style={{ color: "#5A6A7A" }}>
+                  <p className="truncate text-[12px]" style={{ color: "#686868" }}>
                     {opt.detail}
                   </p>
                 </div>
@@ -310,7 +310,7 @@ export default function DonaTestPage() {
                   height={16}
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#4A5A6A"
+                  stroke="#585858"
                   strokeWidth={2}
                   aria-hidden="true"
                 >

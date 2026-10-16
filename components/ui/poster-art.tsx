@@ -81,7 +81,7 @@ const MOTIFS: Record<MotifName, MotifFn> = {
     <>
       <circle cx="50" cy="65" r="32" stroke={a} strokeWidth="1.5" fill="none" opacity="0.7"/>
       <circle cx="50" cy="65" r="20" stroke={a} strokeWidth="0.8" fill="none" opacity="0.5"/>
-      <text x="50" y="72" textAnchor="middle" fontFamily="Manrope" fontWeight="800" fontSize="18" fill={a} opacity="0.85">76</text>
+      <text x="50" y="72" textAnchor="middle" style={{ fontFamily: "var(--font-sans)" }} fontWeight="800" fontSize="18" fill={a} opacity="0.85">76</text>
       {VAULT_LINES.map((d) => (
         <line key={d} x1="50" y1="65"
               x2={50 + Math.cos((d * Math.PI) / 180) * 30}
@@ -91,14 +91,14 @@ const MOTIFS: Record<MotifName, MotifFn> = {
     </>
   ),
   monogram: (a) => (
-    <text x="50" y="80" textAnchor="middle" fontFamily="Manrope" fontWeight="900" fontSize="64" fill={a} opacity="0.85" letterSpacing="-3">R</text>
+    <text x="50" y="80" textAnchor="middle" style={{ fontFamily: "var(--font-sans)" }} fontWeight="900" fontSize="64" fill={a} opacity="0.85" letterSpacing="-3">R</text>
   ),
   cipher: (a) => (
     <>
       {CIPHER_GRID.map((row, r) =>
         row.map((cell, c) => (
           <text key={`${r}-${c}`} x={5 + c * 10} y={20 + r * 15}
-                fontFamily="monospace" fontSize="9" fill={a} opacity={cell.opacity}>
+                style={{ fontFamily: "var(--font-sans)" }} fontSize="9" fill={a} opacity={cell.opacity}>
             {cell.char}
           </text>
         ))
@@ -125,7 +125,7 @@ const MOTIFS: Record<MotifName, MotifFn> = {
     <>
       <rect x="20" y="55" width="60" height="35" rx="3" stroke={a} strokeWidth="0.8" fill="none" opacity="0.7"/>
       <circle cx="28" cy="63" r="2" stroke={a} strokeWidth="0.8" fill="none"/>
-      <text x="50" y="78" textAnchor="middle" fontFamily="Manrope" fontWeight="800" fontSize="12" fill={a} opacity="0.85" letterSpacing="2">RYAN</text>
+      <text x="50" y="78" textAnchor="middle" style={{ fontFamily: "var(--font-sans)" }} fontWeight="800" fontSize="12" fill={a} opacity="0.85" letterSpacing="2">RYAN</text>
     </>
   ),
   lightning: (a) => (
@@ -134,7 +134,7 @@ const MOTIFS: Record<MotifName, MotifFn> = {
   cap: (a) => (
     <>
       <path d="M 25 70 Q 50 40, 75 70" stroke={a} strokeWidth="1.5" fill="none" opacity="0.7"/>
-      <text x="50" y="85" textAnchor="middle" fontFamily="Manrope" fontWeight="900" fontSize="22" fill={a} opacity="0.85">V</text>
+      <text x="50" y="85" textAnchor="middle" style={{ fontFamily: "var(--font-sans)" }} fontWeight="900" fontSize="22" fill={a} opacity="0.85">V</text>
     </>
   ),
   cloud: (a) => (
@@ -261,6 +261,10 @@ const MOTIFS: Record<MotifName, MotifFn> = {
   ),
 };
 
+/** Título que se desenfoca (3 px) al pasar el cursor; entra en 350 ms y sale en 250 ms, como el fundido de la capa. */
+const TITLE_BLUR_CLASS =
+  "transition-[filter] duration-[250ms] ease-out group-hover/card:blur-[3px] group-hover/card:duration-[350ms] group-has-[:focus-visible]/card:blur-[3px] motion-reduce:transition-none";
+
 interface PosterArtProps {
   readonly style: PosterStyle;
   readonly title: string;
@@ -274,9 +278,11 @@ interface PosterArtProps {
   readonly anchor?: "center" | "top";
   /** Carga inmediata (imágenes sobre el pliegue, como el hero). */
   readonly priority?: boolean;
+  /** Desenfoca el título al pasar el cursor por la tarjeta (el padre `.group/card` lo activa): queda detrás de la capa de descripción. */
+  readonly blurTitleOnHover?: boolean;
 }
 
-export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false, anchor = "center", priority = false }: PosterArtProps) {
+export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false, anchor = "center", priority = false, blurTitleOnHover = false }: PosterArtProps) {
   // Los cortos no llevan etiqueta (todos lo son); se conservan "Película", "Serie" y los géneros propios.
   const label = genre === "Cortometraje" || (genre === undefined && kind === "movie") ? null : (genre ?? "Serie");
   const [c1, c2] = style.tone;
@@ -330,7 +336,11 @@ export function PosterArt({ style, title, kind, genre, ratio = "portrait", image
 
       {/* Title strip */}
       {!fill && (
-        <div className="absolute bottom-0 left-0 right-0 px-[14px] pb-[12px] pt-[14px]" style={{ zIndex: 2 }}>
+        <div
+          data-poster-title
+          className={`absolute bottom-0 left-0 right-0 px-[14px] pb-[12px] pt-[14px] ${blurTitleOnHover ? TITLE_BLUR_CLASS : ""}`}
+          style={{ zIndex: 2 }}
+        >
           {label && (
             <div className="mb-[6px] break-words text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{label}</div>
           )}

@@ -94,12 +94,105 @@ for (const width of WIDTHS) {
       test("escritorio: secciones en la barra superior, sin barra inferior ni botón de menú", async ({ page }) => {
         await openHome(page);
         const nav = page.getByRole("navigation", { name: "Principal" });
-        for (const name of ["Home", "Películas", "Cortos", "Mi Espacio"]) {
+        for (const name of ["Home", "Películas", "Cortos"]) {
           await expect(nav.getByRole("link", { name })).toBeVisible();
         }
+        // Mi Espacio ya no está en el menú: se abre desde el icono de guardados.
+        await expect(nav.getByRole("link", { name: "Mi Espacio" })).toHaveCount(0);
+        await expect(page.locator("header").getByRole("link", { name: "Mi lista" })).toHaveAttribute("href", "/mi-espacio");
         await expect(page.getByRole("button", { name: "Abrir menú principal" })).toHaveCount(0);
         await expect(tabBar(page)).toBeHidden();
         await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+      });
+
+      test("escritorio: las secciones van a la izquierda, pegadas a la marca, no centradas", async ({ page }) => {
+        await openHome(page);
+        const brand = (await page.locator("header").getByRole("link", { name: "GMA" }).first().boundingBox())!;
+        const nav = (await page.getByRole("navigation", { name: "Principal" }).boundingBox())!;
+        const search = (await page.locator("header").getByRole("link", { name: "Buscador" }).boundingBox())!;
+        // Empieza justo después de la marca (separación corta): no está centrado en la cabecera.
+        expect(nav.x - (brand.x + brand.width)).toBeGreaterThanOrEqual(8);
+        expect(nav.x - (brand.x + brand.width)).toBeLessThanOrEqual(24); // todavía más pegado: como en Filmin
+        // Y no invade los controles de la derecha.
+        expect(nav.x + nav.width).toBeLessThan(search.x - 24);
+      });
+
+      test("escritorio: la sección actual no lleva línea verde debajo (solo queda marcada para lectores de pantalla)", async ({ page }) => {
+        await openHome(page);
+        const nav = page.getByRole("navigation", { name: "Principal" });
+        const home = nav.getByRole("link", { name: "Home" });
+        await expect(home).toHaveAttribute("aria-current", "page");
+        const underline = await home.evaluate((el) => {
+          const after = getComputedStyle(el, "::after");
+          const visible = after.content !== "none" && after.content !== "normal" && parseFloat(after.opacity) > 0 && parseFloat(after.height) > 0;
+          return { visible, content: after.content };
+        });
+        expect(underline.visible, JSON.stringify(underline)).toBe(false);
+        // Ningún elemento propio del menú dibuja una línea verde fija en la parte inferior.
+        const greenBars = await nav.evaluate((n) =>
+          [...n.querySelectorAll("*")].filter((el) => {
+            const cs = getComputedStyle(el);
+            const b = el.getBoundingClientRect();
+            return b.height > 0 && b.height <= 4 && b.width > 20 && cs.backgroundColor === "rgb(34, 177, 107)";
+          }).length,
+        );
+        expect(greenBars).toBe(0);
+      });
+
+      test("escritorio: la sección actual también se ilumina al pasar el cursor; al pulsarla queda en blanco hasta que el cursor sale", async ({ page }) => {
+        await openHome(page);
+        const nav = page.getByRole("navigation", { name: "Principal" });
+        const home = nav.getByRole("link", { name: "Home" });
+        const color = () => home.evaluate((el) => getComputedStyle(el).color);
+        await expect(home).toHaveAttribute("aria-current", "page");
+
+        // Estando en Home, pasar por Home lo ilumina (si no, parecería un fallo).
+        await home.hover();
+        await expect.poll(color).toBe("rgb(34, 177, 107)");
+
+        // Al pulsarlo (recarga la sección) vuelve a blanco aunque el cursor siga encima...
+        await home.click();
+        await expect.poll(color, { timeout: 5000 }).toBe("rgb(255, 255, 255)");
+
+        // ...y al salir y volver a entrar se ilumina otra vez.
+        await page.mouse.move(2, 400);
+        await expect.poll(color).toBe("rgb(255, 255, 255)");
+        await home.hover();
+        await expect.poll(color).toBe("rgb(34, 177, 107)");
+      });
+
+      test("escritorio: la marca es solo el logo (sin el punto ni la palabra «filmo»)", async ({ page }) => {
+        await openHome(page);
+        const brand = page.locator("header").getByRole("link", { name: "GMA" }).first();
+        expect((await brand.innerText()).trim()).toBe("");
+        await expect(page.locator("header").getByText(/filmo/i)).toHaveCount(0);
+      });
+
+      test("escritorio: lupa, guardados y avatar son más grandes", async ({ page }) => {
+        await openHome(page);
+        const header = page.locator("header");
+        const iconSize = async (name: string) => {
+          const svg = header.getByRole("link", { name }).locator("svg").first();
+          const box = (await svg.boundingBox())!;
+          return Math.round(box.width);
+        };
+        expect(await iconSize("Buscador")).toBeGreaterThanOrEqual(26);
+        expect(await iconSize("Mi lista")).toBeGreaterThanOrEqual(26);
+        const avatar = (await header.getByRole("button", { name: "Cuenta" }).locator("span").first().boundingBox())!;
+        expect(avatar.height).toBeGreaterThanOrEqual(34);
+      });
+
+      test("escritorio: la palabra se colorea al pasar el cursor y vuelve a blanco al hacer clic y llegar", async ({ page }) => {
+        await openHome(page);
+        const nav = page.getByRole("navigation", { name: "Principal" });
+        const color = (name: string) => nav.getByRole("link", { name }).evaluate((el) => getComputedStyle(el).color);
+        const link = nav.getByRole("link", { name: "Películas" });
+        expect(await color("Películas")).toBe("rgb(255, 255, 255)");
+        await link.hover();
+        await expect.poll(() => color("Películas")).toBe("rgb(34, 177, 107)");
+        await link.click(); // el cursor se queda encima
+        await expect(page).toHaveURL(/\/peliculas/);
+        await expect.poll(() => color("Películas"), { timeout: 5000 }).toBe("rgb(255, 255, 255)");
       });
     } else {
       test("móvil: píldora flotante con cuatro accesos, el activo marcado y sin menú lateral", async ({ page }) => {
@@ -179,8 +272,8 @@ test.describe("barra inferior móvil: navegación", () => {
 
   test("no tapa el final de la página y no desborda en horizontal", async ({ page }) => {
     await openHome(page);
-    // La página reserva el alto de la barra (56 px + zona segura) para que no tape lo último.
-    const reserved = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("main")!).paddingBottom));
+    // La página reserva el alto de la barra (56 px + zona segura) bajo el pie de página para que no tape lo último.
+    const reserved = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("footer")!.parentElement!).paddingBottom));
     expect(reserved).toBeGreaterThanOrEqual(56);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
   });
@@ -244,15 +337,15 @@ test.describe("abrir un menú con la página desplazada no rompe la cabecera", (
     await context.close();
   });
 
-  test("móvil: un diálogo modal (filtros del catálogo) tampoco desplaza la cabecera ni la barra inferior", async ({ browser }) => {
+  test("móvil: el menú de un filtro del catálogo tampoco desplaza la cabecera ni la barra inferior", async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.context().addCookies([
       { name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` },
     ]);
     await page.goto("/cortos", { waitUntil: "load" });
-    const trigger = page.getByRole("button", { name: /Filtros/ }).first();
-    // Se baja hasta el botón (así la página queda bien desplazada) y se anota esa posición.
+    const trigger = page.getByRole("button", { name: /^Año/ }).first();
+    // Se baja hasta la píldora (así la página queda bien desplazada) y se anota esa posición.
     await trigger.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy(0, 200));
     const scrolled = await page.evaluate(() => Math.round(window.scrollY));
@@ -260,11 +353,11 @@ test.describe("abrir un menú con la página desplazada no rompe la cabecera", (
     await expect(async () => {
       expect(await headerTop(page)).toBe(0);
     }).toPass({ timeout: 5_000 });
-    await clickUntil(trigger, page.getByRole("dialog"));
+    await clickUntil(trigger, page.getByRole("menu"));
     expect(await headerTop(page)).toBe(0);
     expect(await page.evaluate(() => Math.round(window.scrollY))).toBe(scrolled);
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page.getByRole("menu")).toBeHidden();
     expect(await headerTop(page)).toBe(0);
     expect(await page.evaluate(() => Math.round(window.scrollY))).toBe(scrolled);
     await context.close();

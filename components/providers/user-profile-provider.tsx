@@ -11,6 +11,8 @@ import {
   DEFAULT_SETTINGS,
 } from "@/hooks/use-profile-settings";
 import { useProfileStore } from "@/store/use-profile-store";
+import { avatarContentFromId, pickAvatar } from "@/lib/profiles/avatar";
+import { resizeToAvatarDataUrl } from "@/lib/profiles/image-resize";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +25,11 @@ export interface UserProfile {
   // existe, gana sobre el avatar de espectador para la píldora del navbar —
   // ver useActiveProfileDisplay.
   creatorAvatarUrl: string;
+  // Foto de la cuenta de Google (profiles.avatar_url): último recurso antes de la inicial.
+  providerPhotoUrl: string;
+  // Avatar elegido para el perfil principal (profiles.avatar_id): icono, ruta o imagen reducida.
+  // null = nunca eligió; "" = eligió expresamente no tener avatar (inicial).
+  chosenAvatarId:   string | null;
 }
 
 interface UserProfileContextValue extends UserProfile, ProfileSettings {
@@ -51,6 +58,8 @@ const UserProfileContext = createContext<UserProfileContextValue>({
   memberSince:       null,
   avatarColor:       "#22B16B",
   creatorAvatarUrl:  "",
+  providerPhotoUrl:  "",
+  chosenAvatarId:    null,
   userId:            null,
   isLoaded:          false,
   ...DEFAULT_SETTINGS,
@@ -80,6 +89,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     memberSince:      null,
     avatarColor:      "#22B16B",
     creatorAvatarUrl: "",
+    providerPhotoUrl: "",
+    chosenAvatarId:   null,
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -95,7 +106,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         supabase.auth.getUser(),
         supabase
           .from("profiles")
-          .select("display_name, avatar_color")
+          .select("display_name, avatar_color, avatar_url, avatar_id")
           .eq("id", userId!)
           .maybeSingle(),
         supabase
@@ -127,6 +138,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         memberSince:      user.created_at ? new Date(user.created_at) : null,
         avatarColor:      savedColor || defaultColor,
         creatorAvatarUrl: creatorRow?.avatar_url ?? "",
+        providerPhotoUrl: profileRow?.avatar_url ?? "",
+        chosenAvatarId:   profileRow?.avatar_id ?? null,
       });
       setIsLoaded(true);
     }
@@ -164,21 +177,61 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       .eq("id", userId);
   }, [userId]);
 
+  // El avatar del perfil principal vive en la base de datos (profiles.avatar_id), no solo en el navegador:
+  // así lo ven los demás (comentarios, valoraciones…) y es el mismo en todos tus dispositivos.
+  const saveChosenAvatar = useCallback(async (avatarId: string | null) => {
+    if (!userId) return;
+    setProfile((prev) => ({ ...prev, chosenAvatarId: avatarId }));
+    await getSupabaseBrowserClient().from("profiles").update({ avatar_id: avatarId }).eq("id", userId);
+  }, [userId]);
+
+  const updateSettingsAndAvatar = useCallback((patch: Partial<ProfileSettings>) => {
+    updateSettings(patch);
+    if ("avatarIconId" in patch || "avatarImageUrl" in patch) {
+      const next = { avatarIconId: settings.avatarIconId, avatarImageUrl: settings.avatarImageUrl, ...patch };
+      // Sin foto ni icono = eligió la inicial ("" explícito).
+      void saveChosenAvatar(next.avatarImageUrl || next.avatarIconId || "");
+    }
+  }, [updateSettings, saveChosenAvatar, settings.avatarIconId, settings.avatarImageUrl]);
+
+  // Migración única: si el avatar solo existía en este navegador (localStorage), se sube a la base de datos
+  // (reducido si es una imagen grande) para que lo vean todos.
+  useEffect(() => {
+    if (!isLoaded || !userId || profile.chosenAvatarId !== null) return;
+    const legacy = settings.avatarImageUrl || settings.avatarIconId;
+    if (!legacy || !avatarContentFromId(legacy)) return;
+    let cancelled = false;
+    void (async () => {
+      let avatarId = legacy;
+      if (legacy.startsWith("data:")) {
+        try { avatarId = await resizeToAvatarDataUrl(legacy); } catch { return; }
+      }
+      if (!cancelled) await saveChosenAvatar(avatarId);
+    })();
+    return () => { cancelled = true; };
+  }, [isLoaded, userId, profile.chosenAvatarId, settings.avatarImageUrl, settings.avatarIconId, saveChosenAvatar]);
+
+  // Un solo criterio para todo el sitio: foto de creador → avatar elegido → foto de la cuenta → inicial.
+  const avatar = pickAvatar({
+    creatorPhoto: profile.creatorAvatarUrl || null,
+    chosen: profile.chosenAvatarId ?? (settings.avatarImageUrl || settings.avatarIconId || null),
+    providerPhoto: profile.providerPhotoUrl || null,
+  });
+
   return (
     <UserProfileContext.Provider
       value={{
         ...profile,
         ...settings,
-        // La foto de creador gana sobre el avatar de espectador aquí mismo —
-        // así cualquier consumidor de useUserProfile() (píldora, selector de
-        // perfiles, etc.) recibe ya el valor correcto sin repetir la lógica.
-        avatarImageUrl: profile.creatorAvatarUrl || settings.avatarImageUrl,
-        avatarIconId:   profile.creatorAvatarUrl ? "" : settings.avatarIconId,
+        // Mismo criterio que ve el resto de usuarios (ver pickAvatar): cualquier consumidor de
+        // useUserProfile() (píldora, selector de perfiles, ajustes…) recibe ya el valor correcto.
+        avatarImageUrl: avatar.kind === "image" ? avatar.src : "",
+        avatarIconId:   avatar.kind === "icon" ? avatar.iconId : "",
         userId,
         isLoaded,
         updateDisplayName,
         updateAvatarColor,
-        updateSettings,
+        updateSettings: updateSettingsAndAvatar,
         refreshCreatorAvatar,
       }}
     >

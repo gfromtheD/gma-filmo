@@ -69,8 +69,8 @@ export function ProfileScreen() {
 
       {/* ── Profile card ─────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-[16px] border border-[#262626] p-5 sm:p-8"
-        style={{ background: "linear-gradient(135deg, #0D0D0D 0%, #0d1520 100%)" }}
+        className="relative overflow-hidden rounded-[16px] border border-gma-border p-5 sm:p-8"
+        style={{ background: "linear-gradient(135deg, var(--gma-surface-2) 0%, var(--gma-panel) 100%)" }}
       >
         <div className="pointer-events-none absolute -top-16 left-0 h-48 w-48 rounded-full opacity-15"
           style={{ background: "radial-gradient(circle, #22B16B 0%, transparent 70%)" }} />
@@ -108,7 +108,7 @@ export function ProfileScreen() {
                   if (e.key === "Enter") void saveName();
                   if (e.key === "Escape") setEditingName(false);
                 }}
-                className="w-full max-w-xs rounded-[8px] border border-[#22B16B]/40 bg-[#141414] px-3 py-1.5 text-[22px] font-extrabold text-white outline-none"
+                className="w-full max-w-xs rounded-[8px] border border-[#22B16B]/40 bg-gma-panel px-3 py-1.5 text-[22px] font-extrabold text-white outline-none"
               />
             ) : (
               <button
@@ -121,11 +121,11 @@ export function ProfileScreen() {
               </button>
             )}
 
-            <div className="mt-1 flex flex-wrap items-center gap-3 text-[13px] text-[#6D7D94]">
+            <div className="mt-1 flex flex-wrap items-center gap-3 text-[13px] text-[#7C7C7C]">
               {memberSince && <span>Miembro desde {formatSince(memberSince)}</span>}
               {email && (
                 <>
-                  <span className="h-1 w-1 rounded-full bg-[#262626]" />
+                  <span className="h-1 w-1 rounded-full bg-gma-border" />
                   <span className="min-w-0 break-all text-[12px] font-medium text-[#22B16B]">{email}</span>
                 </>
               )}
@@ -141,7 +141,7 @@ export function ProfileScreen() {
         </div>
         {/* Keep the palette in the card flow so small screens do not clip it. */}
         {colorPicker && (
-          <div id="profile-color-picker" aria-label="Color del perfil" className="relative mt-5 flex max-w-full flex-wrap gap-2 rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-3">
+          <div id="profile-color-picker" aria-label="Color del perfil" className="relative mt-5 flex max-w-full flex-wrap gap-2 rounded-[12px] border border-gma-border bg-gma-surface-2 p-3">
             {COLORS.map((c) => (
               <button
                 key={c.hex}
@@ -185,7 +185,7 @@ export function ProfileScreen() {
         type="button"
         onClick={() => void handleSignOut()}
         disabled={signingOut}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-full border border-[#262626] py-3 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#ff5252]/40 hover:text-[#ff5252] disabled:opacity-50"
+        className="mt-8 flex w-full items-center justify-center gap-2 rounded-full border border-gma-border py-3 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:border-[#ff5252]/40 hover:text-[#ff5252] disabled:opacity-50"
       >
         {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
       </button>
@@ -199,7 +199,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5 text-center">
       <span className="text-[20px] font-extrabold leading-none text-white">{value}</span>
-      <span className="text-[11px] text-[#6D7D94]">{label}</span>
+      <span className="text-[11px] text-[#7C7C7C]">{label}</span>
     </div>
   );
 }
@@ -222,14 +222,14 @@ function ActionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-[12px] border border-[#1A1A1A] bg-[#0D0D0D] px-5 py-4 text-left transition-[border-color,background] hover:border-[#262626] hover:bg-[#111111]"
+      className="flex w-full items-center gap-4 rounded-[12px] border border-gma-surface bg-gma-surface-2 px-5 py-4 text-left transition-[border-color,background] hover:border-gma-border hover:bg-gma-panel"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#1A1A1A] text-[#6D7D94]">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-gma-surface text-[#7C7C7C]">
         {iconMap[icon]}
       </div>
       <div className="min-w-0 flex-1 break-words">
         <div className="text-[14px] font-semibold text-white">{label}</div>
-        <div className="text-[12px] text-[#4A5A6E]">{description}</div>
+        <div className="text-[12px] text-[#585858]">{description}</div>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A4A5E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>

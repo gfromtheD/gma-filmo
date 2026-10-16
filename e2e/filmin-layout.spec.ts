@@ -18,7 +18,7 @@ test.describe("portada", () => {
     await expect(page.getByRole("button", { name: /Pausar presentación|Reanudar presentación/ })).toHaveCount(0);
   });
 
-  test("las tarjetas miden 320 px fijos a 1440 px y las flechas reflejan los extremos", async ({ page }) => {
+  test("las tarjetas miden ~438 px a 1440 px (como Filmin) y las flechas reflejan los extremos", async ({ page }) => {
     await openHome(page);
     const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
     await row.scrollIntoViewIfNeeded();
@@ -27,7 +27,7 @@ test.describe("portada", () => {
       const scroller = el.querySelector("div.overflow-x-auto") as HTMLElement;
       return Math.round((scroller.children[0] as HTMLElement).getBoundingClientRect().width);
     });
-    expect(first).toBe(320);
+    expect(Math.abs(first - 438)).toBeLessThanOrEqual(6);
     await row.hover();
     await expect(row.getByRole("button", { name: "Anterior" })).toBeDisabled();
     await expect(row.getByRole("button", { name: "Siguiente" })).toBeEnabled();
@@ -87,7 +87,7 @@ test.describe("vista previa al pasar el ratón", () => {
     await expect(preview.getByRole("button", { name: /mi lista/i })).toBeVisible();
   });
 
-  test("todo el panel es clicable (imagen y texto llevan a la ficha); los botones no", async ({ page }) => {
+  test("de la imagen hacia abajo el panel es clicable (lleva a la ficha); los botones no", async ({ page }) => {
     const preview = await hoverFirstCard(page);
     await expect(preview).toBeVisible({ timeout: 3_000 });
     const box = await preview.boundingBox();
@@ -142,9 +142,9 @@ test.describe("colecciones recomendadas y overlay de listados", () => {
   test("en el catálogo se muestra la descripción sobre la portada, sin panel flotante", async ({ page }) => {
     await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
     await page.goto("/cortos", { waitUntil: "load" });
-    const card = page.locator("[class*='group/card']", { has: page.locator("[class*='bg-black/90']") }).first();
+    const card = page.locator("[class*='group/card']", { has: page.locator("[data-card-overlay]") }).first();
     await card.scrollIntoViewIfNeeded();
-    const overlay = card.locator("[class*='bg-black/90']");
+    const overlay = card.locator("[data-card-overlay]");
     await expect(overlay).toHaveCSS("opacity", "0");
     const box = await card.boundingBox();
     await page.mouse.move((box?.x ?? 0) - 40, (box?.y ?? 0) + (box?.height ?? 0) + 60);

@@ -10,7 +10,7 @@ export function ComingSoonScreen({
   description = "Estamos preparando una selección de cortometrajes. Vuelve pronto.",
 }: ComingSoonScreenProps) {
   return (
-    <section className="relative flex min-h-[calc(100svh-var(--gma-header-h))] w-full items-center justify-center overflow-hidden bg-[#0A0F17]">
+    <section className="relative flex min-h-[calc(100svh-var(--gma-header-h))] w-full items-center justify-center overflow-hidden bg-gma-surface-2">
       {/* Fondo: carrusel de portadas bajando (como en la pantalla de login) */}
       <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
         <ThreeDMarquee className="h-full w-full" columns={5} />
@@ -21,7 +21,7 @@ export function ComingSoonScreen({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 70% at 50% 50%, rgba(5,10,16,0.45) 0%, rgba(5,10,16,0.75) 55%, rgba(5,10,16,0.96) 100%)",
+            "radial-gradient(ellipse 80% 70% at 50% 50%, color-mix(in srgb, var(--gma-bg) 45%, transparent) 0%, color-mix(in srgb, var(--gma-bg) 75%, transparent) 55%, color-mix(in srgb, var(--gma-bg) 96%, transparent) 100%)",
         }}
       />
 
@@ -30,7 +30,7 @@ export function ComingSoonScreen({
           Próximamente
         </span>
         <h1 className="max-w-full break-words text-[clamp(2rem,7vw,4rem)] font-extrabold leading-tight text-white">{title}</h1>
-        <p className="max-w-[640px] break-words text-lg leading-relaxed text-[#B8C5D4] sm:text-2xl lg:text-[30px]">
+        <p className="max-w-[640px] break-words text-lg leading-relaxed text-[#C4C4C4] sm:text-2xl lg:text-[30px]">
           {description}
         </p>
       </div>

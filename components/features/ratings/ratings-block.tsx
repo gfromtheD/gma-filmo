@@ -7,7 +7,7 @@ import { ReviewCard } from "@/components/features/ratings/review-card";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useRatings } from "@/hooks/use-ratings";
 import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community-ratings";
-import { useUserProfile } from "@/hooks/use-user-profile";
+import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useActiveProfileId } from "@/hooks/use-active-profile-id";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -37,7 +37,8 @@ type SaveState = { readonly status: "idle" | "saving" } | { readonly status: "er
 export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBlockProps) {
   const isGuest = useIsGuest();
   const currentUserId = useSupabaseUserId();
-  const { displayName, avatarColor, avatarImageUrl } = useUserProfile();
+  // El perfil activo del selector (foto o icono, color y nombre), el mismo con el que se guarda la valoración.
+  const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
   const activeProfileId = useActiveProfileId();
   const { getRating, setRating, removeRating } = useRatings();
   const existingEntry = getRating(numericId);
@@ -171,6 +172,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
             review={{
               displayName: displayName || "Tú",
               avatarUrl:   avatarImageUrl || null,
+              avatarIconId: avatarIconId || null,
               avatarColor: avatarColor || null,
               score:       existing.score,
               comment:     existing.comment,
@@ -193,7 +195,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
                   <button
                     type="button"
                     onClick={() => setIsConfirmingRemove(false)}
-                    className="text-[#B8B8CC] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    className="text-[#BBBBBB] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     No
                   </button>
@@ -210,7 +212,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
                   <button
                     type="button"
                     onClick={() => setIsConfirmingRemove(true)}
-                    className="text-[#B8B8CC] hover:text-red-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    className="text-[#BBBBBB] hover:text-red-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     Quitar
                   </button>
@@ -230,10 +232,10 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
       <div className="mx-auto flex w-full max-w-[768px] flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-[20px] font-bold text-white">
-            Valoraciones de usuarios{total > 0 ? <span className="ml-2 text-[16px] font-medium text-[#B8B8CC]">({total})</span> : null}
+            Valoraciones de usuarios{total > 0 ? <span className="ml-2 text-[16px] font-medium text-[#BBBBBB]">({total})</span> : null}
           </h3>
           {total > 1 && (
-            <div role="group" aria-label="Ordenar valoraciones" className="flex gap-1 rounded-[6px] bg-[#242432] p-1">
+            <div role="group" aria-label="Ordenar valoraciones" className="flex gap-1 rounded-[6px] border border-white/10 bg-black/40 p-1">
               {SORT_OPTIONS.map((option) => (
                 <button
                   key={option.id}
@@ -241,7 +243,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
                   aria-pressed={sort === option.id}
                   onClick={() => setSort(option.id)}
                   className={`h-8 rounded-[4px] px-3 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                    sort === option.id ? "bg-white/15 text-white" : "text-[#B8B8CC] hover:text-white"
+                    sort === option.id ? "bg-white/15 text-white" : "text-[#BBBBBB] hover:text-white"
                   }`}
                 >
                   {option.label}
@@ -254,11 +256,11 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
         {loading ? (
           <div aria-busy="true" aria-label="Cargando valoraciones" className="flex flex-col gap-4">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-[150px] animate-pulse rounded-[8px] bg-[#242432] motion-reduce:animate-none" />
+              <div key={i} className="h-[150px] animate-pulse rounded-[8px] bg-white/5 motion-reduce:animate-none" />
             ))}
           </div>
         ) : hasError && reviews.length === 0 ? (
-          <div role="alert" className="rounded-[8px] bg-[#242432] px-6 py-8 text-center">
+          <div role="alert" className="rounded-[8px] border border-white/10 bg-black/40 backdrop-blur-md px-6 py-8 text-center">
             <p className="text-[16px] font-medium text-white">No se pudieron cargar las valoraciones.</p>
             <button
               type="button"
@@ -269,7 +271,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
             </button>
           </div>
         ) : others.length === 0 && !existing ? (
-          <p className="rounded-[8px] bg-[#242432] px-6 py-8 text-center text-[16px] text-[#B8B8CC]">
+          <p className="rounded-[8px] border border-white/10 bg-black/40 backdrop-blur-md px-6 py-8 text-center text-[16px] text-[#BBBBBB]">
             Aún no hay valoraciones con comentario. ¡Sé el primero en opinar!
           </p>
         ) : (

@@ -16,6 +16,8 @@ function projectRef(): string | null {
 }
 const REF = projectRef();
 test.skip(!REF, "Sin NEXT_PUBLIC_SUPABASE_URL en .env.local");
+// El botón «Denunciar» se retiró de los comentarios (pendiente de rediseñar, ver docs/PENDIENTES-EXTRAS.md). La API sigue activa.
+test.skip(true, "Botón «Denunciar» retirado de la interfaz");
 
 async function signIn(page: Page) {
   const session = {

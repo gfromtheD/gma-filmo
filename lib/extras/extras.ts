@@ -81,6 +81,8 @@ function isHttpsUrl(value: string): boolean {
 export function rowToExtra(row: ExtraRow): MovieExtra | null {
   if (row.status !== "published" || !isHttpsUrl(row.video_url)) return null;
   const description = row.description?.trim() ?? "";
+  const mediaType = inferMediaType(row.video_url);
+  const poster = row.poster_url && isHttpsUrl(row.poster_url) ? row.poster_url : null;
   return {
     id: row.id,
     title: row.title.trim(),
@@ -88,8 +90,9 @@ export function rowToExtra(row: ExtraRow): MovieExtra | null {
     kind: row.kind,
     kindLabel: extraKindLabel(row.kind),
     videoUrl: row.video_url,
-    posterUrl: row.poster_url && isHttpsUrl(row.poster_url) ? row.poster_url : null,
-    durationLabel: formatExtraDuration(row.duration_seconds),
+    mediaType,
+    posterUrl: poster ?? (mediaType === "image" ? row.video_url : null),
+    durationLabel: mediaType === "video" ? formatExtraDuration(row.duration_seconds) : null,
   };
 }
 
@@ -97,23 +100,15 @@ export function sortExtras<T extends { readonly id: number; readonly sort_order:
   return [...items].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
 }
 
-export interface ExtraKindGroup {
-  readonly kind: string;
-  readonly label: string;
-  readonly count: number;
-}
+const IMAGE_EXTENSIONS = /.(jpe?g|png|webp|avif|gif)$/i;
 
-/** Tipos presentes (orden estable del catálogo de tipos) con su recuento, para los filtros. */
-export function groupExtraKinds(extras: readonly MovieExtra[]): ExtraKindGroup[] {
-  const counts = new Map<string, number>();
-  for (const extra of extras) counts.set(extra.kind, (counts.get(extra.kind) ?? 0) + 1);
-  const rank = (kind: string) => {
-    const index = EXTRA_KINDS.indexOf(kind as ExtraKind);
-    return index === -1 ? EXTRA_KINDS.length : index;
-  };
-  return [...counts.entries()]
-    .sort((a, b) => rank(a[0]) - rank(b[0]))
-    .map(([kind, count]) => ({ kind, label: extraKindLabel(kind), count }));
+/** Imagen o vídeo según la extensión de la URL (sin consulta ni fragmento); sin extensión se asume vídeo. */
+export function inferMediaType(url: string): "video" | "image" {
+  try {
+    return IMAGE_EXTENSIONS.test(new URL(url).pathname) ? "image" : "video";
+  } catch {
+    return "video";
+  }
 }
 
 const httpsUrl = z.string().trim().max(2048).refine(isHttpsUrl, "Debe ser una URL https");

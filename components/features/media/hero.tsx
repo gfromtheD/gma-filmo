@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { SaveIcon } from "@/components/ui/save-icon";
 import type { MediaItem, MovieMedia } from "@/types/catalog";
 
 interface HeroProps {
@@ -69,7 +70,7 @@ function HeroCredits({ item }: { item: MediaItem }) {
   return (
     <div className="mt-4 flex flex-col gap-1">
       {parts.map(({ role, name, slug }) => (
-        <p key={`${role}-${name}`} className="break-words text-[13px] text-[#B8C5D4]">
+        <p key={`${role}-${name}`} className="break-words text-[13px] text-[#C4C4C4]">
           {role} {slug ? <Link href={`/creadores/${encodeURIComponent(slug)}`} className="transition-colors hover:text-[#22B16B] hover:underline">{name}</Link> : name}
         </p>
       ))}
@@ -127,7 +128,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             transition={{ duration: 0.7, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             {/* Eyebrow label */}
-            <div className="mb-3 break-words text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D7D94]">
+            <div className="mb-3 break-words text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7C7C7C]">
               {tag ?? item.tag ?? "DESTACADO"}
             </div>
 
@@ -139,7 +140,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             </h1>
 
             {/* Meta row */}
-            <div className="my-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:my-4.5 text-[14px] font-semibold text-[#B8C5D4]">
+            <div className="my-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:my-4.5 text-[14px] font-semibold text-[#C4C4C4]">
               {item.kind === "movie" && (item as MovieMedia).approvalScore != null && (
                 <span className="font-extrabold text-[#22B16B]">
                   {(item as MovieMedia).approvalScore}%
@@ -151,7 +152,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
                 {item.tags?.slice(0, 3).map((t) => (
                 <span
                   key={t}
-                  className="max-w-full break-words rounded border border-[#262626] px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#B8C5D4]"
+                  className="max-w-full break-words rounded border border-gma-border px-2 py-0.75 text-[11px] tracking-[0.06em] text-[#C4C4C4]"
                 >
                   {t}
                 </span>
@@ -160,7 +161,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
 
             {/* Tagline / hook */}
             {item.synopsis && (
-              <p className="break-words text-sm leading-[1.55] text-[#D9E2EC] sm:text-[15px]" style={{ maxWidth: 560, marginTop: 8 }}>
+              <p className="break-words text-sm leading-[1.55] text-[#DDE3DF] sm:text-[15px]" style={{ maxWidth: 560, marginTop: 8 }}>
                 {shortText(item.synopsis, item.tagline)}
               </p>
             )}
@@ -179,7 +180,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onTrailer && (
                 <button
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#262626] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-gma-surface px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-gma-border active:scale-[0.96]"
                   onClick={onTrailer}
                   type="button"
                 >
@@ -189,7 +190,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onDetail && (
                 <button
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-white/6 px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-[#0a0a0a] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-white/6 px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-gma-surface-2 active:scale-[0.96]"
                   onClick={onDetail}
                   type="button"
                 >
@@ -202,33 +203,14 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
                   className="flex h-11 w-11 items-center justify-center rounded-full backdrop-blur-sm transition-[transform,background-color,color] duration-300 active:scale-[0.92]"
                   style={{
                     background: inList ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.06)",
-                    color: inList ? "#0a0a0a" : "white",
+                    color: inList ? "var(--gma-surface-2)" : "white",
                   }}
                   onClick={onAddList}
                   aria-label={inList ? "Quitar de Mi Lista" : "Agregar a Mi Lista"}
                   aria-pressed={inList}
                   type="button"
                 >
-                  <div className="relative h-5 w-5">
-                    <span
-                      className="absolute inset-0 flex items-center justify-center transition-[transform,opacity] duration-300 ease-in-out"
-                      style={{
-                        transform: inList ? "rotate(180deg) scale(0.3)" : "rotate(0deg) scale(1)",
-                        opacity: inList ? 0 : 1,
-                      }}
-                    >
-                      <GmaIcon name="plus" size={20} />
-                    </span>
-                    <span
-                      className="absolute inset-0 flex items-center justify-center transition-[transform,opacity] duration-300 ease-in-out"
-                      style={{
-                        transform: inList ? "rotate(0deg) scale(1)" : "rotate(-180deg) scale(0.3)",
-                        opacity: inList ? 1 : 0,
-                      }}
-                    >
-                      <GmaIcon name="check" size={20} />
-                    </span>
-                  </div>
+                  <SaveIcon saved={inList ?? false} size={20} />
                 </button>
               )}
             </div>

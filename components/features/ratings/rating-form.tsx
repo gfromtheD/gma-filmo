@@ -59,7 +59,7 @@ export function RatingForm({ title, initial, isSaving, errorMessage, onSubmit, o
       {score !== null && (
         <div className="mx-auto mt-8 w-full max-w-[768px]">
           <label htmlFor="rating-comment" className="mb-2 block text-[14px] font-bold text-white">
-            Tu comentario <span className="font-medium text-[#8C8CA5]">(opcional)</span>
+            Tu comentario <span className="font-medium text-[#909090]">(opcional)</span>
           </label>
           <textarea
             id="rating-comment"
@@ -70,9 +70,9 @@ export function RatingForm({ title, initial, isSaving, errorMessage, onSubmit, o
             rows={4}
             disabled={isSaving}
             placeholder="¿Qué te ha parecido? Cuéntanos sin destripar el final…"
-            className="w-full resize-y rounded-[8px] border-2 border-[#3A3A52] bg-[#242432] px-4 py-3 text-[16px] leading-[1.5] text-white placeholder-[#8C8CA5] outline-none transition-colors focus:border-[#22B16B] disabled:opacity-60"
+            className="w-full resize-y rounded-[8px] border-2 border-white/15 bg-black/40 px-4 py-3 text-[16px] leading-[1.5] text-white placeholder-[#909090] outline-none transition-colors focus:border-[#22B16B] disabled:opacity-60"
           />
-          <div className="mt-2 flex items-center justify-between text-[13px] text-[#B8B8CC]">
+          <div className="mt-2 flex items-center justify-between text-[13px] text-[#BBBBBB]">
             <span aria-live="polite">{comment.length} / {MAX_COMMENT_CHARS.toLocaleString("es-ES")} caracteres</span>
           </div>
 

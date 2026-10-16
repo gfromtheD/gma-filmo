@@ -31,7 +31,7 @@ function MailIcon() {
 }
 
 const inputClass =
-  "w-full rounded-[10px] border border-[#1E2D42] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors duration-150 focus:border-[#22B16B]";
+  "w-full rounded-[10px] border border-gma-line-strong bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors duration-150 focus:border-[#22B16B]";
 
 const pillClass =
   "flex w-full items-center justify-center gap-3 rounded-full border border-[#22B16B]/40 bg-[#22B16B]/[0.06] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#22B16B]/[0.12] active:scale-[0.98] disabled:opacity-50";
@@ -152,7 +152,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
           <span className="text-[11px] font-bold uppercase tracking-widest text-[#22B16B]">Perfil Creador</span>
         </div>
         <h1 className="text-2xl font-extrabold text-white md:text-3xl">Únete como creador</h1>
-        <p className="mt-1.5 text-sm text-[#B8C5D4]">Comparte tu obra con la comunidad.</p>
+        <p className="mt-1.5 text-sm text-[#C4C4C4]">Comparte tu obra con la comunidad.</p>
       </div>
 
       {error && (
@@ -169,7 +169,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
       {pendingUpgrade && (
         <div className="w-full rounded-2xl border border-[#22B16B]/30 bg-[#22B16B]/[0.06] p-5">
           <h2 className="text-[16px] font-extrabold text-white">Convertir tu cuenta en creador</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-[#B8C5D4]">
+          <p className="mt-2 text-[13px] leading-relaxed text-[#C4C4C4]">
             El correo <span className="font-semibold text-white">{email}</span> ya tiene una cuenta de
             espectador. Si continúas, se convertirá <span className="font-semibold text-white">también</span>{" "}
             en cuenta de creador: conservarás todo tu acceso actual y se desbloqueará{" "}
@@ -188,7 +188,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
               type="button"
               onClick={() => { setPendingUpgrade(null); setError(""); }}
               disabled={loading}
-              className="w-full rounded-full border border-[#1E2D42] py-3 text-[14px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.04] disabled:opacity-50"
+              className="w-full rounded-full border border-gma-line-strong py-3 text-[14px] font-semibold text-[#C4C4C4] transition-colors hover:bg-white/[0.04] disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -254,7 +254,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
                 placeholder="Confirmar contraseña (solo si es cuenta nueva)"
                 className={inputClass}
               />
-              <p className="text-[11px] text-[#4A5A6E]">
+              <p className="text-[11px] text-[#585858]">
                 Si ya tienes cuenta, deja la confirmación vacía e introduce tus credenciales.
               </p>
               <button
@@ -269,7 +269,7 @@ export function CreatorRegisterCard({ onBack, onLogin }: CreatorRegisterCardProp
         )}
       </AnimatePresence>
 
-      <p className="text-center text-[13px] text-[#6D7D94]">
+      <p className="text-center text-[13px] text-[#7C7C7C]">
         ¿Ya tienes cuenta?{" "}
         <button type="button" onClick={onLogin} className="font-semibold text-white transition-colors hover:text-[#22B16B]">
           Inicia sesión →

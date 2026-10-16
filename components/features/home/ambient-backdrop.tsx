@@ -83,7 +83,7 @@ export function AmbientBackdrop({ imageUrl, style }: AmbientBackdropProps) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#060613]"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-gma-bg"
       style={{ contain: "strict" }}
     >
       {leaving && <LayerArt key={`out-${leaving.key}`} layer={leaving} fadeIn={false} />}

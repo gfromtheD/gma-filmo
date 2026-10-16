@@ -15,6 +15,7 @@ import { useProgress } from "@/hooks/use-progress";
 import { useRecommendedHero } from "@/hooks/use-recommended-hero";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { parseDuration } from "@/lib/utils";
+import { preloadImage, whenImageReady } from "@/lib/home/image-ready";
 import { ColeccionCard } from "@/components/features/catalog/coleccion-card";
 import { collectionsWithContent, pickRecommendedCollections } from "@/lib/recommendation/collection-picks";
 import type { Coleccion } from "@/lib/supabase/queries";
@@ -37,36 +38,62 @@ function hrefFor(item: MovieMedia) {
 
 export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const router = useRouter();
-  const { mediaIds } = useWatchlist();
+  const { mediaIds, loadedMediaIds } = useWatchlist();
   const { entries: progressEntries } = useProgress();
 
   // ── Hero carousel state ──────────────────────────────────────────────────────
   const featuredItems = useRecommendedHero(items, progressEntries);
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [isTrailerActive, setIsTrailerActive] = useState(false);
+  /** Cuántas veces se ha cambiado de portada: la primera no lleva entrada de texto, las siguientes sí. */
+  const [slideChanges, setSlideChanges] = useState(0);
+  const latestChange = useRef(0);
+  const [leaving, setLeaving] = useState<MovieMedia | null>(null);
+
+  // Cambio de portada: antes de fundir se espera a que la nueva esté cargada (como mucho 1,5 s), para que no aparezca
+  // de golpe a mitad del fundido. Si llega otro cambio mientras se espera, manda el último.
+  const goTo = useCallback(
+    (target: number) => {
+      const count = featuredItems.length;
+      if (count === 0) return;
+      const index = ((target % count) + count) % count;
+      if (index === featuredIdx) return;
+      const token = ++latestChange.current;
+      void whenImageReady(featuredItems[index]?.imageUrl).then(() => {
+        if (token !== latestChange.current) return;
+        // La portada que se va se monta en el MISMO instante que entra la nueva: si se montara un fotograma después,
+        // habría un fotograma en blanco (la nueva empieza transparente) y se vería como un golpe.
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        setLeaving(reduceMotion ? null : (featuredItems[featuredIdx] ?? null));
+        setFeaturedIdx(index);
+        setSlideChanges((n) => n + 1);
+      });
+    },
+    [featuredItems, featuredIdx],
+  );
 
   // El avance lo marca el llenado del punto activo (8 s, ver HeroIndicator); aquí solo se cambia de índice.
-  const goNext = useCallback(
-    () => setFeaturedIdx((i) => (i + 1) % Math.max(featuredItems.length, 1)),
-    [featuredItems.length],
-  );
+  const goNext = useCallback(() => goTo(featuredIdx + 1), [goTo, featuredIdx]);
+
+  // Las portadas de alrededor se precargan para que el cambio sea inmediato.
+  useEffect(() => {
+    const count = featuredItems.length;
+    if (count < 2) return;
+    for (const offset of [1, 2, count - 1]) preloadImage(featuredItems[(featuredIdx + offset) % count]?.imageUrl);
+  }, [featuredItems, featuredIdx]);
 
   const featured = featuredItems[featuredIdx] ?? featuredItems[0];
 
-  // Copia saliente: durante 1 s la diapositiva anterior se desvanece sobre la nueva (fundido cruzado).
-  const [leaving, setLeaving] = useState<MovieMedia | null>(null);
-  const previousRef = useRef<MovieMedia | null>(null);
+  // Copia saliente: durante 1 s la diapositiva anterior queda debajo, al 100 %, mientras la nueva se funde por encima
+  // (así nunca se transparenta el fondo). Con movimiento reducido no hay copia: el cambio es directo.
   useEffect(() => {
-    const previous = previousRef.current;
-    previousRef.current = featured ?? null;
-    if (!previous || !featured || previous.id === featured.id) return;
-    setLeaving(previous);
-    const timer = setTimeout(() => setLeaving(null), HERO_CROSSFADE_MS);
+    if (!leaving) return;
+    const timer = setTimeout(() => setLeaving(null), HERO_CROSSFADE_MS + 50);
     return () => clearTimeout(timer);
-  }, [featured]);
+  }, [leaving]);
 
   // ── Recommendation rows (replaces static trending + newReleases) ─────────────
-  const { homeRows, categoryWeights, sessionSeed } = useRecommendations(items);
+  const { homeRows, newArrivals, categoryWeights, sessionSeed } = useRecommendations(items);
   const recommendedCollections = useMemo(
     () =>
       pickRecommendedCollections(
@@ -78,6 +105,9 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
     [colecciones, items, categoryWeights, sessionSeed],
   );
   const watchlistItems = items.filter((x) => mediaIds.includes(x.numericId));
+  // «Mi Lista» solo aparece si ya tenías algo guardado al cargar la página. Si apareciera al guardar el primer título,
+  // empujaría las filas de abajo justo bajo el cursor y la tarjeta parecería desaparecer; se verá en la próxima visita.
+  const hasSavedBeforeThisVisit = items.some((x) => loadedMediaIds.includes(x.numericId));
 
   const continueItems = useMemo(() => {
     return items
@@ -109,24 +139,10 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
 
       {/* ── Hero a pantalla completa bajo la cabecera transparente ─────────── */}
       <div className="relative">
-        <HomeHero
-          key={featured.id}
-          item={featured}
-          detailHref={hrefFor(featured)}
-          canNavigate={featuredItems.length > 1}
-          onPlay={() => router.push(`/ver/${featured.id}`)}
-          onPrev={() => setFeaturedIdx((i) => (i - 1 + featuredItems.length) % featuredItems.length)}
-          onNext={goNext}
-          onTrailerActiveChange={setIsTrailerActive}
-          onTrailerEnded={goNext}
-        />
-
+        {/* Portada que se va: va ANTES de la nueva en el DOM, así su imagen queda debajo (opaca) y la nueva se funde
+            por encima. Solo su texto se desvanece (rápido), no toda la capa. */}
         {leaving && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-[1]"
-            style={{ animation: `fadeOut ${HERO_CROSSFADE_MS}ms ease both` }}
-          >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <HomeHero
               key={`out-${leaving.id}`}
               isOverlay
@@ -140,10 +156,23 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           </div>
         )}
 
+        <HomeHero
+          key={featured.id}
+          item={featured}
+          detailHref={hrefFor(featured)}
+          canNavigate={featuredItems.length > 1}
+          isTransition={slideChanges > 0}
+          onPlay={() => router.push(`/ver/${featured.id}`)}
+          onPrev={() => goTo(featuredIdx - 1)}
+          onNext={goNext}
+          onTrailerActiveChange={setIsTrailerActive}
+          onTrailerEnded={goNext}
+        />
+
         <HeroIndicator
           count={featuredItems.length}
           activeIndex={featuredIdx}
-          onSelect={setFeaturedIdx}
+          onSelect={goTo}
           isPaused={isTrailerActive}
           onComplete={goNext}
         />
@@ -163,9 +192,9 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           </Carousel>
         )}
 
-        <Carousel title="Recién llegados" subtitle="Lo último que se ha añadido al catálogo" mobileSize="wide">
-          {items.slice(0, 15).map((item) => (
-            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item)} />
+        <Carousel key={newArrivals.map((item) => item.id).join(",")} title="Recién llegados" subtitle="Lo último que se ha añadido al catálogo" mobileSize="wide">
+          {newArrivals.map((item) => (
+            <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={hrefFor(item as MovieMedia)} />
           ))}
         </Carousel>
 
@@ -191,16 +220,16 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           </Carousel>
         ))}
 
-        {watchlistItems.length > 0 && (
+        {hasSavedBeforeThisVisit && watchlistItems.length > 0 && (
           <Carousel
             title="Mi Lista"
             subtitle="Lo que has guardado para ver después"
             action={
               <Link
                 href="/mi-espacio"
-                className="inline-flex min-h-11 items-center rounded-full bg-[#1A1A1A] px-[14px] py-[6px] text-[12px] font-semibold text-white hover:bg-[#262626]"
+                className="inline-flex min-h-11 items-center text-[14px] font-medium text-[#C4C4C4] transition-colors hover:text-white"
               >
-                Ver todo
+                Ver todas
               </Link>
             }
           >
@@ -217,7 +246,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
             action={
               <Link
                 href="/cortos"
-                className="text-[14px] font-medium text-[#B8C5D4] transition-colors hover:text-white"
+                className="inline-flex min-h-11 items-center text-[14px] font-medium text-[#C4C4C4] transition-colors hover:text-white"
               >
                 Ver todas
               </Link>

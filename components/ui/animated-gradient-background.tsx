@@ -20,7 +20,7 @@ export default function AnimatedGradientBackground({
   startingGap = 125,
   Breathing = false,
   gradientColors = [
-    "#0A0A0A",
+    "var(--gma-surface-2)",
     "#2979FF",
     "#FF80AB",
     "#FF6D00",

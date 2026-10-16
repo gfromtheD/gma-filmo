@@ -25,6 +25,8 @@ interface MediaBase {
   readonly rating: string;
   readonly categories: readonly string[];
   readonly synopsis: string;
+  /** Sinopsis larga de la tarjeta «Sinopsis»; si falta, se usa `synopsis`. */
+  readonly fullSynopsis?: string;
   readonly tagline?: string;
   readonly style: PosterStyle;
   readonly imageUrl?: string;
@@ -39,6 +41,10 @@ interface MediaBase {
   readonly author?: string;
   readonly artistas?: readonly ArtistCredit[];
   readonly genre?: string;
+  /** Nota media de la gente (0–10) y nº de votos; solo existe si el título ya tiene valoraciones. */
+  readonly communityScore?: { readonly average: number; readonly votes: number };
+  /** Idioma original del audio, si se conoce. */
+  readonly language?: string;
 }
 
 export interface SeriesMedia extends MediaBase {
@@ -80,7 +86,9 @@ export interface MovieExtra {
   readonly description: string | null;
   readonly kind: string;
   readonly kindLabel: string;
+  /** URL del archivo: vídeo o imagen según `mediaType`. */
   readonly videoUrl: string;
+  readonly mediaType: "video" | "image";
   readonly posterUrl: string | null;
   readonly durationLabel: string | null;
 }

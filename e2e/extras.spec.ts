@@ -7,9 +7,9 @@ import { expect, test, type Page } from "@playwright/test";
 test.use({ viewport: { width: 1280, height: 900 } });
 
 const EXTRAS = [
-  { id: 1, title: "Así se hizo", description: "El proceso de animación.", kind: "making_of", kindLabel: "Making of", videoUrl: "https://example.test/making.mp4", posterUrl: null, durationLabel: "2:05" },
-  { id: 2, title: "Charla con el director", description: null, kind: "entrevista", kindLabel: "Entrevista", videoUrl: "https://example.test/charla.mp4", posterUrl: null, durationLabel: "10:30" },
-  { id: 3, title: "Otra entrevista", description: null, kind: "entrevista", kindLabel: "Entrevista", videoUrl: "https://example.test/otra.mp4", posterUrl: null, durationLabel: null },
+  { id: 1, title: "Así se hizo", description: "El proceso de animación.", kind: "making_of", kindLabel: "Making of", mediaType: "video", videoUrl: "https://example.test/making.mp4", posterUrl: null, durationLabel: "2:05" },
+  { id: 2, title: "Charla con el director", description: null, kind: "entrevista", kindLabel: "Entrevista", mediaType: "video", videoUrl: "https://example.test/charla.mp4", posterUrl: null, durationLabel: "10:30" },
+  { id: 3, title: "Foto del rodaje", description: null, kind: "galeria", kindLabel: "Galería", mediaType: "image", videoUrl: "https://example.test/foto.png", posterUrl: "https://example.test/foto.png", durationLabel: null },
 ];
 
 async function mockExtras(page: Page, extras: unknown[]) {
@@ -25,7 +25,7 @@ async function openFicha(page: Page) {
   await page.goto(href as string, { waitUntil: "load" });
 }
 
-test("con extras aparece la pestaña, filtra por tipo y abre el reproductor", async ({ page }) => {
+test("con extras aparece la pestaña con todos juntos (sin filtros) y abre el reproductor", async ({ page }) => {
   await mockExtras(page, EXTRAS);
   await openFicha(page);
 
@@ -33,23 +33,39 @@ test("con extras aparece la pestaña, filtra por tipo y abre el reproductor", as
   await expect(tab).toBeVisible();
   await tab.click();
   await expect(page).toHaveURL(/#extras$/);
-  await expect(page.getByRole("button", { name: "Ver Así se hizo" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ver Charla con el director" })).toBeVisible();
-
-  const filters = page.getByRole("list", { name: "Filtrar extras por tipo" });
-  await filters.getByRole("button", { name: /Entrevista/ }).click();
-  await expect(page.getByRole("button", { name: "Ver Así se hizo" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Ver Charla con el director" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ver Otra entrevista" })).toBeVisible();
-  await filters.getByRole("button", { name: /Todos/ }).click();
-  await expect(page.getByRole("button", { name: "Ver Así se hizo" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Filtrar extras por tipo" })).toHaveCount(0);
+  for (const title of ["Así se hizo", "Charla con el director", "Foto del rodaje"]) {
+    await expect(page.getByRole("button", { name: `Ver ${title}` })).toBeVisible();
+  }
 
   await page.getByRole("button", { name: "Ver Así se hizo" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("video")).toHaveAttribute("src", "https://example.test/making.mp4");
+  await expect(dialog.getByRole("button", { name: "Extra anterior" })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
+});
+
+test("las flechas del visor recorren el resto de extras, vídeos e imágenes", async ({ page }) => {
+  await mockExtras(page, EXTRAS);
+  await openFicha(page);
+  await page.getByRole("tab", { name: "Extras" }).click();
+  await page.getByRole("button", { name: "Ver Así se hizo" }).click();
+  const dialog = page.getByRole("dialog");
+
+  await dialog.getByRole("button", { name: "Extra siguiente" }).click();
+  await expect(dialog.getByRole("heading", { name: "Charla con el director" })).toBeVisible();
+  await expect(dialog.locator("video")).toHaveAttribute("src", "https://example.test/charla.mp4");
+
+  await dialog.getByRole("button", { name: "Extra siguiente" }).click();
+  await expect(dialog.getByRole("heading", { name: "Foto del rodaje" })).toBeVisible();
+  await expect(dialog.locator("video")).toHaveCount(0);
+  await expect(dialog.getByRole("img", { name: "Foto del rodaje" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Extra siguiente" })).toHaveCount(0);
+
+  await dialog.getByRole("button", { name: "Extra anterior" }).click();
+  await expect(dialog.getByRole("heading", { name: "Charla con el director" })).toBeVisible();
 });
 
 test("la cabecera sigue fija mientras se ve y se cierra un extra", async ({ page }) => {
@@ -70,9 +86,8 @@ test("sin extras no hay pestaña", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "Extras" })).toHaveCount(0);
 });
 
-test("si la API falla, la ficha funciona igual sin la pestaña", async ({ page }) => {
+test("si la API falla, la ficha sigue funcionando", async ({ page }) => {
   await page.route("**/api/extras?**", (route) => route.fulfill({ status: 500, json: { extras: [] } }));
   await openFicha(page);
   await expect(page.getByRole("tab", { name: "Detalles" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Extras" })).toHaveCount(0);
 });

@@ -3,7 +3,7 @@ import {
   EXTRA_KINDS,
   extraKindLabel,
   formatExtraDuration,
-  groupExtraKinds,
+  inferMediaType,
   parseExtraInput,
   rowToExtra,
   sortExtras,
@@ -66,16 +66,18 @@ test("ordena por sort_order y después por id, sin mutar la lista original", () 
   expect(items.map((r) => r.id)).toEqual(snapshot);
 });
 
-test("agrupa los tipos presentes en orden estable con su recuento", () => {
-  const extras = [
-    rowToExtra(row({ id: 1, kind: "entrevista" })),
-    rowToExtra(row({ id: 2, kind: "making_of" })),
-    rowToExtra(row({ id: 3, kind: "entrevista" })),
-  ].filter((e) => e !== null);
-  expect(groupExtraKinds(extras)).toEqual([
-    { kind: "making_of", label: "Making of", count: 1 },
-    { kind: "entrevista", label: "Entrevista", count: 2 },
-  ]);
+test("distingue imágenes de vídeos por la extensión de la URL (ignorando consulta y mayúsculas)", () => {
+  expect(inferMediaType("https://cdn.example.com/a.mp4")).toBe("video");
+  expect(inferMediaType("https://cdn.example.com/a.webm?x=1")).toBe("video");
+  expect(inferMediaType("https://cdn.example.com/foto.JPG")).toBe("image");
+  expect(inferMediaType("https://cdn.example.com/foto.webp?v=2#x")).toBe("image");
+  expect(inferMediaType("https://cdn.example.com/sin-extension")).toBe("video");
+});
+
+test("un extra con imagen se marca como imagen y usa la propia imagen de miniatura", () => {
+  const extra = rowToExtra(row({ video_url: "https://cdn.example.com/galeria/1.png", duration_seconds: null }));
+  expect(extra).toMatchObject({ mediaType: "image", posterUrl: "https://cdn.example.com/galeria/1.png", durationLabel: null });
+  expect(rowToExtra(row())?.mediaType).toBe("video");
 });
 
 test("valida la entrada de un creador: título, tipo, https y límites", () => {

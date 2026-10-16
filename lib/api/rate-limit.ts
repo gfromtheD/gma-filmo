@@ -12,15 +12,27 @@ setInterval(() => {
   }
 }, 300_000).unref();
 
-export function rateLimit(key: string, limit: number, windowMs = 60_000): boolean {
-  const now   = Date.now();
+export interface RateLimitResult {
+  readonly allowed: boolean;
+  /** Segundos que faltan para poder volver a intentarlo (solo si `allowed` es falso). */
+  readonly retryAfterSeconds: number;
+}
+
+/** Como `rateLimit`, pero indica cuánto hay que esperar al bloquear (para la cabecera `Retry-After`). */
+export function rateLimitCheck(key: string, limit: number, windowMs = 60_000, now = Date.now()): RateLimitResult {
   const entry = store.get(key);
 
   if (!entry || now > entry.resetAt) {
     store.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+    return { allowed: true, retryAfterSeconds: 0 };
   }
-  if (entry.count >= limit) return false;
+  if (entry.count >= limit) {
+    return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) };
+  }
   entry.count++;
-  return true;
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+export function rateLimit(key: string, limit: number, windowMs = 60_000): boolean {
+  return rateLimitCheck(key, limit, windowMs).allowed;
 }

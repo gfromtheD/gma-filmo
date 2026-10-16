@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Children, isValidElement, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { SectionHeader } from "@/components/ui/section-header";
 
@@ -26,9 +26,10 @@ const ARROW_CLASS =
   "absolute top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/90 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/row:opacity-100 disabled:pointer-events-none disabled:!opacity-0 lg:flex motion-reduce:transition-none";
 
 /**
- * Fila horizontal con scroll-snap. El ancho de cada tarjeta es una fracción del
- * ancho útil (2 / 3 / 4 / 5 columnas según el ancho de la ventana), de modo que
- * la composición se mantiene al redimensionar. Las flechas reflejan los extremos.
+ * Fila horizontal con scroll-snap. Desde 768 px cada celda se calcula para que quepan N tarjetas completas más
+ * un trozo (0,16) de la siguiente, que invita a deslizar (medido en Filmin: 438 px de celda a 1440 px). N = 2 en
+ * tableta, 3 desde 1000 px y 4 desde 1500 px; la imagen es 16:9 y deja 8 px a cada lado. Las flechas reflejan los
+ * extremos.
  */
 export function Carousel({ title, subtitle, action, children, mobileSize = "frame" }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -42,6 +43,21 @@ export function Carousel({ title, subtitle, action, children, mobileSize = "fram
       atEnd: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1,
     });
   }, []);
+
+  // Si las tarjetas se reordenan (por ejemplo al llegar los datos del usuario), el scroll-snap del navegador sigue
+  // a la tarjeta que estaba primero a su nueva posición y la fila arranca a mitad. Se vuelve al principio; si solo
+  // se añaden tarjetas al final, no se toca.
+  const keys = Children.toArray(children).map((child) => (isValidElement(child) ? String(child.key) : ""));
+  const previousKeys = useRef(keys);
+  useLayoutEffect(() => {
+    const previous = previousKeys.current;
+    previousKeys.current = keys;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onlyAppended = previous.length <= keys.length && previous.every((key, i) => key === keys[i]);
+    if (!onlyAppended) el.scrollTo({ left: 0, behavior: "instant" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys.join("|")]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -83,10 +99,10 @@ export function Carousel({ title, subtitle, action, children, mobileSize = "fram
           role="region"
           aria-label={title}
           tabIndex={0}
-          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] md:gap-1.5 md:px-3.5 lg:px-[62px] md:[scroll-padding-inline:14px] lg:[scroll-padding-inline:62px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
+          className="flex min-w-0 snap-x snap-mandatory focus-visible:outline-2 focus-visible:outline-[#22B16B] overflow-x-auto scroll-smooth px-3 [scroll-padding-inline:12px] [scrollbar-width:none] md:px-2 lg:px-14 md:[scroll-padding-inline:8px] lg:[scroll-padding-inline:56px] [--n:2] min-[1000px]:[--n:3] min-[1500px]:[--n:4] [--pad-r:8px] lg:[--pad-r:56px] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)] [&::-webkit-scrollbar]:hidden motion-reduce:scroll-auto"
         >
           {Children.map(children, (child) => (
-            <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 md:w-[320px] md:basis-auto md:px-0.5`}>
+            <div className={`shrink-0 ${MOBILE_BASIS[mobileSize]} snap-start px-1 sm:basis-1/3 md:w-[calc((100%+var(--pad-r))/(var(--n)+0.16))] md:basis-auto md:px-2`}>
               {child}
             </div>
           ))}

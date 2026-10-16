@@ -38,17 +38,17 @@ export function DonationPanel({ creator, appUrl, onClose, onContinue }: Donation
   const url = baseUrl ? new URL(path, baseUrl).toString() : null;
   return <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 p-4" onClick={event => event.stopPropagation()}>
     <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="support-title"
-      className="relative max-h-[90svh] w-full max-w-xl overflow-y-auto rounded-2xl border border-white/15 bg-[#0A0F17] p-6 text-white">
+      className="relative max-h-[90svh] w-full max-w-xl overflow-y-auto rounded-2xl border border-white/15 bg-gma-surface-2 p-6 text-white">
       <button type="button" onClick={onClose} aria-label="Cerrar panel de apoyo" className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/15"><X size={20} /></button>
       <p className="pr-12 text-xs font-bold tracking-widest text-[#22B16B]">GMA FILMO</p>
       <h2 id="support-title" className="mt-3 pr-8 text-2xl font-bold">Apoya a {creator.nombre}</h2>
-      <p className="mt-2 text-sm text-[#B8C5D4]">Escanea desde el móvil y elige cómo apoyar al creador. No necesitas iniciar sesión en GMA.</p>
+      <p className="mt-2 text-sm text-[#C4C4C4]">Escanea desde el móvil y elige cómo apoyar al creador. No necesitas iniciar sesión en GMA.</p>
       {url && <div className="mt-6 hidden justify-center sm:flex">
         <div className="rounded-xl bg-white p-4"><QRCodeSVG value={url} size={192} bgColor="#ffffff" fgColor="#000000" level="M" marginSize={4} title={`Apoyar a ${creator.nombre}`} /></div>
       </div>}
       <a href={url ?? path} target="_blank" rel="noopener noreferrer" className="mt-6 flex min-h-12 items-center justify-center rounded-xl bg-[#22B16B] p-3 font-semibold text-[#031A0E]">Abrir página de apoyo</a>
-      <p className="mt-3 text-center text-xs text-[#6D7D94]">{methods.map(method => method.key === "bitcoin" ? "Bitcoin" : method.key === "paypal" ? "PayPal" : "Patreon").join(" · ")}</p>
-      {onContinue && <button type="button" onClick={onContinue} className="mt-4 min-h-11 w-full text-sm text-[#B8C5D4] underline">Siguiente corto</button>}
+      <p className="mt-3 text-center text-xs text-[#7C7C7C]">{methods.map(method => method.key === "bitcoin" ? "Bitcoin" : method.key === "paypal" ? "PayPal" : "Patreon").join(" · ")}</p>
+      {onContinue && <button type="button" onClick={onContinue} className="mt-4 min-h-11 w-full text-sm text-[#C4C4C4] underline">Siguiente corto</button>}
     </div>
   </div>;
 }

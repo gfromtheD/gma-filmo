@@ -24,7 +24,7 @@
   }
 
   .wrap:hover .listButton,
-  .wrap:focus-within .listButton {
+  .wrap:has(:focus-visible) .listButton {
     opacity: 1;
   }
 }

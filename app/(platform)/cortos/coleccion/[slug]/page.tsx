@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CatalogScreen } from "@/components/features/catalog/catalog-screen";
 import { ComingSoonScreen } from "@/components/features/catalog/coming-soon-screen";
 import { getColeccionBySlug, getPeliculasByColeccion } from "@/lib/supabase/queries";
+import { withCommunityScores } from "@/lib/ratings/summary-server";
 
 export const revalidate = 60;
 
@@ -17,12 +18,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ColeccionPage({ params }: Props) {
-  const [col, items] = await Promise.all([
+  const [col, films] = await Promise.all([
     getColeccionBySlug(params.slug),
     getPeliculasByColeccion(params.slug),
   ]);
 
   if (!col) notFound();
+  const items = await withCommunityScores(films);
 
   // Colecciones aún sin cortos → banner "Próximamente" (como en /peliculas)
   if (items.length === 0) {

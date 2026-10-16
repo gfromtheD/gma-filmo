@@ -15,7 +15,9 @@ import { useRatings, type RatingEntry } from "@/hooks/use-ratings";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
-import { renderAvatar, COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
+import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
+import { RemoveFromListButton } from "@/components/features/space/remove-from-list-button";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { useProfileStore } from "@/store/use-profile-store";
 import type { MovieMedia } from "@/types/catalog";
 import { lockPageScroll } from "@/lib/scroll-lock";
@@ -23,7 +25,7 @@ import { lockPageScroll } from "@/lib/scroll-lock";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MONO: React.CSSProperties = {
-  fontFamily: "ui-monospace, 'Cascadia Code', monospace",
+  fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums",
 };
 
 const STAR_PATH =
@@ -73,7 +75,7 @@ function StarGlyph({ fill, size }: { fill: number; size: number }) {
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox="0 0 24 24">
-        <path d={STAR_PATH} fill="#2A2A2A" />
+        <path d={STAR_PATH} fill="#2C4334" />
       </svg>
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${Math.min(1, Math.max(0, fill)) * 100}%` }}>
         <svg width={size} height={size} viewBox="0 0 24 24">
@@ -186,8 +188,8 @@ function RatingModal({
     >
       <div
         role="dialog" aria-modal="true" aria-label={`Valorar ${item.title}`} ref={dialogRef} tabIndex={-1}
-        className="w-full max-w-[480px] max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-y-contain rounded-[16px] border border-[#262626] p-4 sm:p-6"
-        style={{ background: "#0D0D0D", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - 32px)", animation: "modalIn 0.25s ease both" }}
+        className="w-full max-w-[480px] max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-y-contain rounded-[16px] border border-gma-border p-4 sm:p-6"
+        style={{ background: "var(--gma-surface-2)", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - 32px)", animation: "modalIn 0.25s ease both" }}
       >
         <div className="mb-5 flex items-center gap-4">
           <div className="shrink-0 overflow-hidden rounded-[6px]" style={{ width: 48, aspectRatio: "2/3" }}>
@@ -198,36 +200,36 @@ function RatingModal({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-[16px] font-extrabold text-white">{item.title}</h3>
-            <p className="text-[12px] text-[#6D7D94]">
+            <p className="text-[12px] text-[#7C7C7C]">
               Cortometraje{item.year ? ` · ${item.year}` : ""}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar valoración"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white">
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#686868] transition-colors hover:bg-gma-surface hover:text-white">
             <X size={16} strokeWidth={1.75} />
           </button>
         </div>
 
         <div className="mb-5">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[.1em] text-[#5A6A7E]">Valoración</p>
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[.1em] text-[#686868]">Valoración</p>
           <StarRating value={rating} onChange={setRating} size={30} gap={6} />
           <p role="status" className="mt-2 min-h-4 text-[12px] text-[#22B16B]">{rating > 0 ? `${rating} de 5 · ${RATING_LABELS[rating] ?? ""}` : ""}</p>
         </div>
 
         <div className="mb-5">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.1em] text-[#5A6A7E]">
-            Reseña <span className="normal-case font-normal text-[#3A3A3A]">(opcional)</span>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[.1em] text-[#686868]">
+            Reseña <span className="normal-case font-normal text-gma-line-strong">(opcional)</span>
           </p>
           <textarea
             value={review} onChange={(e) => setReview(e.target.value)}
             placeholder="¿Qué te pareció?" rows={3}
-            className="w-full resize-none rounded-[10px] border border-[#262626] bg-[#141414] px-4 py-3 text-base sm:text-[13px] text-white placeholder-[#5A6A7E] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]/50"
+            className="w-full resize-none rounded-[10px] border border-gma-border bg-gma-panel px-4 py-3 text-base sm:text-[13px] text-white placeholder-[#686868] outline-none transition-[border-color] duration-150 focus:border-[#22B16B]/50"
           />
         </div>
 
         <div className="flex gap-3">
           <button type="button" onClick={onClose}
-            className="min-h-11 flex-1 rounded-full border border-[#262626] px-2 py-2.5 text-[13px] font-semibold text-[#8A9BB0] transition-colors hover:border-[#3A3A3A] hover:text-white">
+            className="min-h-11 flex-1 rounded-full border border-gma-border px-2 py-2.5 text-[13px] font-semibold text-[#999999] transition-colors hover:border-gma-line-strong hover:text-white">
             Cancelar
           </button>
           <button type="button" disabled={rating === 0}
@@ -341,7 +343,6 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
     [diaryItems, ratingEntries],
   );
 
-  const initial = displayName[0]?.toUpperCase() ?? "M";
 
   function handleSaveSubFromSpace(values: SubProfileValues) {
     if (!subProfile) return;
@@ -382,8 +383,8 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
 
       {/* ── Profile header ────────────────────────────────────────────────── */}
       <div
-        className="relative mb-6 overflow-hidden rounded-[14px] border border-[#1E1E1E] px-4 py-5 sm:px-8 sm:py-7"
-        style={{ background: "linear-gradient(135deg, #0D0D0D 0%, #0d1520 100%)" }}
+        className="relative mb-6 overflow-hidden rounded-[14px] border border-gma-surface px-4 py-5 sm:px-8 sm:py-7"
+        style={{ background: "linear-gradient(135deg, var(--gma-surface-2) 0%, var(--gma-panel) 100%)" }}
       >
         <div className="pointer-events-none absolute -top-24 left-0 h-64 w-64 rounded-full opacity-15"
           style={{ background: "radial-gradient(circle, #22B16B 0%, transparent 70%)" }} />
@@ -391,21 +392,10 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
         <div className="relative flex flex-wrap items-center gap-6">
           {/* Avatar */}
           <div className="group relative shrink-0">
-            {avatarImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarImageUrl} alt="" className="h-[88px] w-[88px] rounded-full object-cover"
-                style={{ boxShadow: `inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 32px ${avatarColor}44` }} />
-            ) : avatarIconId ? (
-              <div className="h-[88px] w-[88px] overflow-hidden rounded-full"
-                style={{ boxShadow: `inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 32px ${avatarColor}44` }}>
-                {renderAvatar(avatarIconId, avatarColor, 88) as React.ReactNode}
-              </div>
-            ) : (
-              <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full text-[36px] font-extrabold text-[#03200F]"
-                style={{ background: avatarColor, boxShadow: `inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 32px ${avatarColor}44` }}>
-                {initial}
-              </div>
-            )}
+            <div className="h-[88px] w-[88px] overflow-hidden rounded-full"
+              style={{ boxShadow: `inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 32px ${avatarColor}44` }}>
+              <ProfileAvatar name={displayName} color={avatarColor} url={avatarImageUrl || null} iconId={avatarIconId || null} size="fill" />
+            </div>
             <button type="button" onClick={() => setEditModalOpen(true)} aria-label="Editar perfil"
               className="absolute inset-0 flex items-center justify-center rounded-full [@media(hover:none)]:opacity-100 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
               style={{ background: "rgba(0,0,0,0.55)" }}>
@@ -420,7 +410,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
                 onChange={(e) => setNameInput(e.target.value)}
                 onBlur={saveName}
                 onKeyDown={(e) => { if (e.key === "Enter") void saveName(); if (e.key === "Escape") setEditingName(false); }}
-                className="w-full max-w-xs rounded-[8px] border border-[#22B16B]/40 bg-[#141414] px-3 py-1.5 text-[22px] font-extrabold tracking-[-0.02em] text-white outline-none"
+                className="w-full max-w-xs rounded-[8px] border border-[#22B16B]/40 bg-gma-panel px-3 py-1.5 text-[22px] font-extrabold tracking-[-0.02em] text-white outline-none"
               />
             ) : (
               <button type="button" onClick={startEditName}
@@ -430,15 +420,15 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
                 <Pencil size={14} className="shrink-0 opacity-0 [@media(hover:none)]:opacity-60 transition-opacity group-hover/name:opacity-60" />
               </button>
             )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[13px] text-[#6D7D94]">
+            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[13px] text-[#7C7C7C]">
               {!isSubProfile && memberSince && (
                 <>
                   <span>Miembro desde {formatMemberSince(memberSince)}</span>
-                  <span className="h-1 w-1 rounded-full bg-[#3A3A3A]" />
+                  <span className="h-1 w-1 rounded-full bg-gma-line-strong" />
                 </>
               )}
               {isSubProfile ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2A2A2A] bg-[#111] px-2.5 py-0.5 text-[11px] font-semibold tracking-[.06em] text-[#6D7D94]"
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-gma-line-strong bg-[#111] px-2.5 py-0.5 text-[11px] font-semibold tracking-[.06em] text-[#7C7C7C]"
                   style={MONO}>
                   SUB-PERFIL
                 </span>
@@ -453,7 +443,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
 
           {/* Switch profile */}
           <button type="button" onClick={() => router.push("/perfiles")}
-            className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#262626] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] transition-colors hover:border-[#22B16B]/40 hover:text-white">
+            className="flex min-h-11 items-center gap-1.5 rounded-full border border-gma-border px-4 py-1.5 text-[12px] font-semibold text-[#7C7C7C] transition-colors hover:border-[#22B16B]/40 hover:text-white">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -466,7 +456,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
       </div>
 
       {/* ── Stats cards ───────────────────────────────────────────────────── */}
-      <div className="mb-10 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4 pb-10 border-b border-[#1A1A1A]">
+      <div className="mb-10 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4 pb-10 border-b border-gma-surface">
         <StatCard value={String(hoursWatched)} unit="h" label="HORAS VISTAS" />
         <StatCard value={String(continueItems.length)} label="EN PROGRESO" />
         <StatCard
@@ -488,7 +478,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
         <div className="mb-14">
           {/* Column headers */}
           <div
-            className="mb-1 hidden lg:grid items-center pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#3A3A3A]"
+            className="mb-1 hidden lg:grid items-center pb-2 text-[10px] font-bold uppercase tracking-[.14em] text-gma-line-strong"
             style={{ gridTemplateColumns: "64px 1fr 140px 110px 80px", gap: 20, ...MONO }}
           >
             <span />
@@ -502,7 +492,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
             <div key={month}>
               {/* Month divider */}
               <div
-                className={`py-3 text-[11px] font-bold uppercase tracking-[.14em] text-[#4A5A6E] border-t border-[#1A1A1A] ${gi === 0 ? "border-t-0 pt-0" : ""}`}
+                className={`py-3 text-[11px] font-bold uppercase tracking-[.14em] text-[#585858] border-t border-gma-surface ${gi === 0 ? "border-t-0 pt-0" : ""}`}
                 style={MONO}
               >
                 {month}
@@ -554,14 +544,14 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
       <SectionHead title="Mis Listas" />
       <div className="mb-14">
         {/* Ver más tarde — default list card */}
-        <div className="rounded-[12px] border border-[#1E1E1E] bg-[#0D0D0D] p-5">
+        <div className="rounded-[12px] border border-gma-surface bg-gma-surface-2 p-5">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[rgba(34,177,107,0.12)] text-[#22B16B]">
               <GmaIcon name="bookmark" size={17} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[16px] font-bold text-white">Ver más tarde</div>
-              <div className="text-[12px] text-[#5A6A7E]" style={MONO}>
+              <div className="text-[12px] text-[#686868]" style={MONO}>
                 {watchlistItems.length} {watchlistItems.length === 1 ? "corto" : "cortos"} · Lista predeterminada
               </div>
             </div>
@@ -572,18 +562,16 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
               {watchlistItems.map((item) => (
                 <WatchlistCard
                   key={item.id} item={item}
-                  isRated={ratingEntries[item.numericId] != null}
                   onNavigate={() => router.push(`/cortos/${item.id}`)}
                   onRemove={() => removeMedia(item.numericId)}
-                  onRate={() => setRatingTarget(item)}
                 />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-[8px] border border-dashed border-[#262626] py-12 text-center">
-              <GmaIcon name="bookmark" size={22} className="mb-3 text-[#3A3A3A]" />
-              <p className="text-[14px] font-semibold text-[#5A6A7E]">Aún no has guardado ningún corto</p>
-              <p className="mt-1 text-[12px] text-[#3A3A3A]">Usa el botón + en cualquier cartel para añadirlo aquí</p>
+            <div className="flex flex-col items-center justify-center rounded-[8px] border border-dashed border-gma-border py-12 text-center">
+              <GmaIcon name="bookmark" size={22} className="mb-3 text-gma-line-strong" />
+              <p className="text-[14px] font-semibold text-[#686868]">Aún no has guardado ningún corto</p>
+              <p className="mt-1 text-[12px] text-gma-line-strong">Usa el botón + en cualquier cartel para añadirlo aquí</p>
             </div>
           )}
         </div>
@@ -597,7 +585,7 @@ export function MySpaceScreen({ items }: MySpaceScreenProps) {
             {exploredGenres.map((g) => (
               <button key={g} type="button"
                 onClick={() => router.push(`/cortos?genre=${encodeURIComponent(g)}`)}
-                className="min-h-11 max-w-full break-words rounded-full border border-[#262626] bg-[#0D0D0D] px-5 py-2.5 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/50 hover:text-white">
+                className="min-h-11 max-w-full break-words rounded-full border border-gma-border bg-gma-surface-2 px-5 py-2.5 text-[13px] font-semibold text-[#C4C4C4] transition-colors hover:border-[#22B16B]/50 hover:text-white">
                 {g}
               </button>
             ))}
@@ -627,9 +615,9 @@ function StatCard({
   value: string; unit?: string; label: string; sub?: string; isChip?: boolean;
 }) {
   return (
-    <div className="flex min-h-[110px] flex-col gap-1.5 overflow-hidden rounded-[12px] border border-[#1A1A1A] p-5 relative"
-      style={{ background: "#0F1622" }}>
-      <div className="text-[10.5px] font-bold uppercase tracking-[.14em] text-[#4A5A6E]" style={MONO}>
+    <div className="flex min-h-[110px] flex-col gap-1.5 overflow-hidden rounded-[12px] border border-gma-surface p-5 relative"
+      style={{ background: "var(--gma-panel)" }}>
+      <div className="text-[10.5px] font-bold uppercase tracking-[.14em] text-[#585858]" style={MONO}>
         {label}
       </div>
       {isChip ? (
@@ -642,10 +630,10 @@ function StatCard({
         <div className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.02em] text-white"
           style={{ fontVariantNumeric: "tabular-nums" }}>
           {value}
-          {unit && <span className="ml-1.5 text-[14px] font-medium text-[#4A5A6E]">{unit}</span>}
+          {unit && <span className="ml-1.5 text-[14px] font-medium text-[#585858]">{unit}</span>}
         </div>
       )}
-      {sub && <div className="mt-auto text-[12px] text-[#B8C5D4]">{sub}</div>}
+      {sub && <div className="mt-auto text-[12px] text-[#C4C4C4]">{sub}</div>}
     </div>
   );
 }
@@ -657,11 +645,11 @@ function SectionHead({ title, count, sub }: { title: string; count?: number; sub
     <div className="mb-5 flex flex-wrap items-baseline gap-3">
       <h2 className="text-[22px] font-extrabold tracking-[-0.015em] text-white">{title}</h2>
       {count != null && count > 0 && (
-        <span className="rounded-full bg-[#1A1A1A] px-2.5 py-0.5 text-[12px] font-bold text-[#B8C5D4]" style={MONO}>
+        <span className="rounded-full bg-gma-surface px-2.5 py-0.5 text-[12px] font-bold text-[#C4C4C4]" style={MONO}>
           {count}
         </span>
       )}
-      {sub && <span className="text-[12px] text-[#5A6A7E]">{sub}</span>}
+      {sub && <span className="text-[12px] text-[#686868]">{sub}</span>}
     </div>
   );
 }
@@ -679,10 +667,10 @@ function DiaryRow({
 
   return (
     <div
-      className={`${styles.diaryRow} group grid items-center border-t border-[#1A1A1A] py-3.5 transition-colors duration-100 hover:bg-white/[0.018]`}
+      className={`${styles.diaryRow} group grid items-center border-t border-gma-surface py-3.5 transition-colors duration-100 hover:bg-white/[0.018]`}
     >
       {/* Thumbnail */}
-      <div className="h-16 w-11 shrink-0 overflow-hidden rounded-[4px] bg-[#1A2438]">
+      <div className="h-16 w-11 shrink-0 overflow-hidden rounded-[4px] bg-gma-border">
         {item.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
@@ -694,12 +682,12 @@ function DiaryRow({
         <div className="truncate text-[15px] font-bold tracking-[-0.005em] text-white">
           {item.title}
         </div>
-        <div className="mt-1 text-[12px] text-[#5A6A7E]" style={MONO}>
+        <div className="mt-1 text-[12px] text-[#686868]" style={MONO}>
           {item.year || "—"}
           {item.runtime && item.runtime !== "Corto" ? ` · ${item.runtime}` : ""}
         </div>
         {entry.review && (
-          <div className="mt-1.5 line-clamp-1 text-[11.5px] italic text-[#4A5A6E]">
+          <div className="mt-1.5 line-clamp-1 text-[11.5px] italic text-[#585858]">
             &ldquo;{entry.review}&rdquo;
           </div>
         )}
@@ -713,7 +701,7 @@ function DiaryRow({
         >
           {day}
         </span>
-        <span className="text-[10.5px] uppercase tracking-[.1em] text-[#5A6A7E]" style={MONO}>
+        <span className="text-[10.5px] uppercase tracking-[.1em] text-[#686868]" style={MONO}>
           {mo}
         </span>
       </div>
@@ -721,7 +709,7 @@ function DiaryRow({
       {/* Rating */}
       <div className="flex items-center gap-2">
         <StarRating value={entry.rating} readOnly size={13} gap={2} />
-        <span className="text-[12px] text-[#5A6A7E]" style={MONO}>
+        <span className="text-[12px] text-[#686868]" style={MONO}>
           {entry.rating.toFixed(1)}
         </span>
       </div>
@@ -729,11 +717,11 @@ function DiaryRow({
       {/* Actions — visible on row hover */}
       <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
         <button type="button" onClick={onEdit} aria-label="Editar valoración" title="Editar valoración"
-          className="flex h-7 w-7 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-white/[0.06] hover:text-white">
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#686868] transition-colors hover:bg-white/[0.06] hover:text-white">
           <Pencil size={13} strokeWidth={1.75} />
         </button>
         <button type="button" onClick={onRemove} aria-label="Eliminar entrada" title="Eliminar entrada"
-          className="flex h-7 w-7 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-white/[0.06] hover:text-[#ff5252]">
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[#686868] transition-colors hover:bg-white/[0.06] hover:text-[#ff5252]">
           <Trash2 size={13} strokeWidth={1.75} />
         </button>
       </div>
@@ -750,7 +738,7 @@ function ContinueCard({
 }) {
   const pct = Math.round((item.progress ?? 0) * 100);
   return (
-    <div className={`${styles.interactiveCard} group overflow-hidden rounded-[8px] border border-[#1E1E1E] bg-[#0D0D0D] transition-[border-color] duration-200 hover:border-[#22B16B]/25`}>
+    <div className={`${styles.interactiveCard} group overflow-hidden rounded-[8px] border border-gma-surface bg-gma-surface-2 transition-[border-color] duration-200 hover:border-[#22B16B]/25`}>
       <div className="relative" style={{ aspectRatio: "16/9" }}>
         {item.imageUrl
           // eslint-disable-next-line @next/next/no-img-element
@@ -774,14 +762,14 @@ function ContinueCard({
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold text-white">{item.title}</div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[#6D7D94]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[#7C7C7C]">
             <span>Cortometraje{item.runtime && item.runtime !== "Corto" ? ` · ${item.runtime}` : ""}</span>
-            <span className="h-1 w-1 rounded-full bg-[#262626]" />
+            <span className="h-1 w-1 rounded-full bg-gma-border" />
             <span className="font-semibold text-[#22B16B]">{pct}%</span>
           </div>
         </div>
         <button type="button" onClick={onDetail}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1A1A1A] text-[#B8C5D4] transition-colors hover:bg-[#262626] hover:text-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gma-surface text-[#C4C4C4] transition-colors hover:bg-gma-border hover:text-white"
           aria-label="Ver detalles">
           <GmaIcon name="info" size={15} />
         </button>
@@ -793,10 +781,10 @@ function ContinueCard({
 // ─── Watchlist card ───────────────────────────────────────────────────────────
 
 function WatchlistCard({
-  item, isRated, onNavigate, onRemove, onRate,
+  item, onNavigate, onRemove,
 }: {
-  item: MovieMedia; isRated: boolean;
-  onNavigate: () => void; onRemove: () => void; onRate: () => void;
+  item: MovieMedia;
+  onNavigate: () => void; onRemove: () => void;
 }) {
   return (
     <div className={`${styles.interactiveCard} group relative`}>
@@ -808,17 +796,7 @@ function WatchlistCard({
           : <PosterArt style={item.style} title={item.title} kind="movie" ratio="portrait" />}
       </button>
 
-      <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        aria-label="Quitar de Mi Lista"
-        className={`${styles.cardActions} absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition-opacity duration-150 hover:bg-[#ff5252]/80`}>
-        <GmaIcon name="close" size={13} />
-      </button>
-
-      <button type="button" onClick={(e) => { e.stopPropagation(); onRate(); }}
-        aria-label={isRated ? "Editar valoración" : "Valorar"}
-        className={`${styles.cardActions} absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center whitespace-nowrap rounded-full border border-white/15 bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm transition-opacity duration-150 hover:border-[#22B16B]/50 hover:text-[#22B16B]`}>
-        {isRated ? "★ Editar" : "Valorar"}
-      </button>
+      <RemoveFromListButton onRemove={onRemove} className={`${styles.cardActions} absolute right-0 top-0 transition-opacity duration-150`} />
     </div>
   );
 }
@@ -829,12 +807,12 @@ function EmptyState({ icon, title, body, cta, onCta }: {
   icon: "play" | "bookmark"; title: string; body: string; cta: string; onCta: () => void;
 }) {
   return (
-    <div className="mb-14 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#262626] bg-[#0A0A0A] py-16 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A1A1A] text-[#5A6A7E]">
+    <div className="mb-14 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-gma-border bg-gma-surface-2 py-16 text-center">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gma-surface text-[#686868]">
         <GmaIcon name={icon} size={24} />
       </div>
       <p className="mb-1.5 text-[15px] font-bold text-white">{title}</p>
-      <p className="mb-6 max-w-xs text-[13px] text-[#6D7D94]">{body}</p>
+      <p className="mb-6 max-w-xs text-[13px] text-[#7C7C7C]">{body}</p>
       <button type="button" onClick={onCta}
         className="min-h-11 rounded-full bg-[#22B16B] px-5 py-2.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A]">
         {cta}

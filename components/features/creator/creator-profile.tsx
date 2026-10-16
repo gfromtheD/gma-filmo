@@ -75,7 +75,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
   const supportUrl = origin ? new URL(supportPath(creator.slug), origin).toString() : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "#0A0F17" }}>
+    <div className="min-h-screen" style={{ background: "var(--gma-surface-2)" }}>
       {/* ── Banner header ──────────────────────────────────────────── */}
       <div className="relative h-40 overflow-hidden sm:h-56">
         {hasCover ? (
@@ -97,7 +97,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, transparent 20%, rgba(10,15,23,0.7) 60%, #0A0F17 100%)",
+              "linear-gradient(to bottom, transparent 20%, color-mix(in srgb, var(--gma-surface-2) 70%, transparent) 60%, var(--gma-surface-2) 100%)",
           }}
         />
       </div>
@@ -106,7 +106,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
       <div className="relative z-10 mx-auto min-w-0 max-w-[1100px] px-4 sm:px-6">
         <div className="-mt-10 flex flex-wrap items-end gap-5">
           {/* Avatar */}
-          <div className="shrink-0 rounded-full ring-2 ring-[#22B16B] ring-offset-2 ring-offset-[#0A0F17]">
+          <div className="shrink-0 rounded-full ring-2 ring-[#22B16B] ring-offset-2 ring-offset-gma-surface-2">
             {creator.foto_perfil ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -126,9 +126,9 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             <h1 className="break-words text-[24px] font-extrabold leading-tight sm:text-[28px] tracking-[-0.02em] text-white">
               {creator.nombre}
             </h1>
-            {creator.editorial && <p className="break-words text-[12px] text-[#6D7D94]">Ficha del catálogo · No requiere una cuenta del creador</p>}
+            {creator.editorial && <p className="break-words text-[12px] text-[#7C7C7C]">Ficha del catálogo · No requiere una cuenta del creador</p>}
             {creator.nacionalidad && (
-              <p className="break-words text-[13px] text-[#6D7D94]">{creator.nacionalidad}</p>
+              <p className="break-words text-[13px] text-[#7C7C7C]">{creator.nacionalidad}</p>
             )}
           </div>
 
@@ -145,7 +145,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex min-h-11 max-w-full items-center gap-2 rounded-full border border-[#1E2D42] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
+                  className="flex min-h-11 max-w-full items-center gap-2 rounded-full border border-gma-line-strong px-4 py-2 text-[13px] font-semibold text-[#C4C4C4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
                   style={{ background: "rgba(255,255,255,0.04)" }}
                 >
                   {icon}
@@ -163,7 +163,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             </div>}
             <div className="min-w-0 break-words">
               <h2 className="text-lg font-bold text-white">Apoya a {creator.nombre}</h2>
-              <p className="mt-2 text-sm leading-6 text-[#B8C5D4]">Escanea el QR con tu móvil para abrir sus opciones de apoyo. No necesitas iniciar sesión en GMA.</p>
+              <p className="mt-2 text-sm leading-6 text-[#C4C4C4]">Escanea el QR con tu móvil para abrir sus opciones de apoyo. No necesitas iniciar sesión en GMA.</p>
               <Link href={supportPath(creator.slug)} className="mt-4 inline-flex min-h-12 items-center rounded-full bg-[#22B16B] px-5 font-semibold text-[#031A0E]">Apoyar al creador</Link>
             </div>
           </section>
@@ -174,7 +174,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             {creator.redes_sociales.map(({ platform, url }, index) => {
               const href = socialUrl(platform.toLowerCase(), url);
               return href ? <a key={`${platform}-${index}`} href={href} target="_blank" rel="noopener noreferrer"
-                className="flex min-h-11 max-w-full items-center break-words rounded-full border border-white/15 px-4 py-2 text-sm text-[#B8C5D4] transition-colors hover:text-[#22B16B]">
+                className="flex min-h-11 max-w-full items-center break-words rounded-full border border-white/15 px-4 py-2 text-sm text-[#C4C4C4] transition-colors hover:text-[#22B16B]">
                 {platform === "website" ? "Web" : platform}
               </a> : null;
             })}
@@ -183,13 +183,13 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
 
         {/* ── Bio ────────────────────────────────────────────────────── */}
         {creator.bio && (
-          <p className="mt-6 max-w-[680px] break-words text-[15px] leading-[1.7] text-[#B8C5D4]">
+          <p className="mt-6 max-w-[680px] break-words text-[15px] leading-[1.7] text-[#C4C4C4]">
             {creator.bio}
           </p>
         )}
 
         {creator.editorial && !creator.bio && (
-          <p className="mt-6 text-sm text-[#6D7D94]">Todavía no disponemos de una biografía de este creador.</p>
+          <p className="mt-6 text-sm text-[#7C7C7C]">Todavía no disponemos de una biografía de este creador.</p>
         )}
         {creator.source_url && externalUrl(creator.source_url) && (
           <a href={externalUrl(creator.source_url)!} target="_blank" rel="noopener noreferrer"
@@ -202,7 +202,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             Filmografía en GMA Filmo
           </h2>
           {films.length === 0 ? (
-            <p className="text-[14px] text-[#6D7D94]">
+            <p className="text-[14px] text-[#7C7C7C]">
               Próximamente más contenido de este creador.
             </p>
           ) : (

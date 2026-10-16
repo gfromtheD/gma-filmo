@@ -1,0 +1,208 @@
+/*
+ * Navegación del visor de extras según el ancho de la ventana (punto de corte: 760 px).
+ * - Ancho: flechas laterales, a ambos lados del reproductor.
+ * - Estrecho: las flechas laterales se desvanecen antes de tocar el borde de la ventana o el
+ *   reproductor, y después nace el chip inferior (esfera que rebota y se ensancha, luego aparecen las
+ *   flechas y el contador). Las animaciones tienen duración propia: no dependen de cuánto se siga
+ *   estrechando la ventana. En ventana ancha la fila inferior no ocupa espacio ni recibe foco.
+ */
+.row {
+  height: 0;
+  overflow: hidden;
+  visibility: hidden; /* en ventana ancha no ocupa espacio ni recibe foco */
+}
+
+.chip {
+  width: min(100%, 260px);
+  height: 48px;
+}
+
+.chipItem {
+  opacity: 1;
+}
+
+@media (min-width: 760px) {
+  .sideArrow {
+    animation: arrowIn 0.2s ease-out both;
+  }
+}
+
+@media (max-width: 759px) {
+  .sideArrow {
+    animation: arrowOut 0.14s ease-in both;
+  }
+
+  .row {
+    visibility: visible;
+    height: 64px;
+    animation: rowGrow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
+  }
+
+  .chip {
+    animation: orbExpand 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  }
+
+  .chipItem {
+    animation: chipItemIn 0.2s ease-out 0.45s both;
+  }
+}
+
+@keyframes arrowOut {
+  from { opacity: 1; visibility: visible; }
+  99% { visibility: visible; }
+  to { opacity: 0; visibility: hidden; }
+}
+
+@keyframes arrowIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rowGrow {
+  from { height: 0; }
+  to { height: var(--row-h, 64px); }
+}
+
+/* Esfera: aparece y rebota (0–40 %), después se ensancha hacia los lados (40–100 %). */
+@keyframes orbExpand {
+  0% { width: 48px; transform: scale(0); opacity: 0; }
+  22% { transform: scale(1.12); opacity: 1; }
+  40% { width: 48px; transform: scale(1); }
+  100% { width: min(100%, 260px); transform: scale(1); opacity: 1; }
+}
+
+@keyframes chipItemIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .chip,
+  .chipItem,
+  .sideArrow {
+    animation: none;
+  }
+}
+
+/* Sin animaciones: por debajo del corte, las flechas laterales simplemente no se muestran. */
+@media (prefers-reduced-motion: reduce) and (max-width: 759px) {
+  .sideArrow {
+    visibility: hidden;
+  }
+}
+
+/*
+ * Móvil (pantalla táctil, sea cual sea su ancho, también en horizontal): sin flechas laterales ni hueco
+ * lateral. La navegación es siempre el chip bajo el reproductor, con su animación de nacimiento al abrir.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .content {
+    --g: 0px !important;
+  }
+
+  .sideArrow {
+    display: none;
+  }
+
+  .row {
+    --row-h: 80px; /* el chip queda 16 px bajo el reproductor (en escritorio, 8 px) */
+    visibility: visible;
+    height: var(--row-h);
+    animation: rowGrow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
+  }
+
+  .chip {
+    animation: orbExpand 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  }
+
+  .chipItem {
+    animation: chipItemIn 0.2s ease-out 0.45s both;
+  }
+}
+
+/*
+ * «+ Más info» (todas las pantallas): el texto del extra va plegado y se despliega con un degradado que lo
+ * va revelando de arriba abajo. En móvil en vertical, además, al abrirlo el chip sube (ver más abajo).
+ */
+.moreButton {
+  display: flex;
+}
+
+.info {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.info[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.infoInner {
+  min-height: 0;
+  overflow: hidden;
+  visibility: hidden; /* cerrado: fuera del foco y de los lectores de pantalla */
+  -webkit-mask-image: linear-gradient(to bottom, #000 33.33%, transparent 66.66%);
+  mask-image: linear-gradient(to bottom, #000 33.33%, transparent 66.66%);
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+  -webkit-mask-position: 0 100%;
+  mask-position: 0 100%;
+  transition: mask-position 0.6s ease, -webkit-mask-position 0.6s ease, visibility 0s linear 0.45s;
+}
+
+.info[data-open="true"] .infoInner {
+  visibility: visible;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
+  transition: mask-position 0.7s ease 0.1s, -webkit-mask-position 0.7s ease 0.1s, visibility 0s;
+}
+
+/* Pantallas bajas (móvil en horizontal…): no hay sitio para el texto, así que tampoco el botón. */
+@media (max-height: 500px) {
+  .moreButton {
+    display: none;
+  }
+}
+
+/* Móvil en vertical: el chip va siempre abajo (72 px bajo el reproductor) y sube al abrir el texto (16 px). */
+@media (hover: none) and (pointer: coarse) and (min-height: 501px) {
+  .row {
+    --row-h: 120px;
+    align-items: flex-end;
+    animation: rowGrow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s backwards;
+    transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .row[data-info-open="true"] {
+    --row-h: 64px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) and (max-height: 500px) {
+  .content {
+    --reserve: 188px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (hover: none) and (pointer: coarse) {
+  .row,
+  .chip,
+  .chipItem {
+    animation: none;
+    transition: none;
+  }
+
+  .info,
+  .infoInner {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info,
+  .infoInner {
+    transition: none !important;
+  }
+}

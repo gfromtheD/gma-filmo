@@ -10,7 +10,10 @@ export interface PreviewLayout {
   readonly left: number;
   readonly top: number;
   readonly width: number;
-  /** Desplazamiento y escala de partida para que el panel "salga" de la portada. */
+  /**
+   * Desplazamiento y escala de partida para que el panel "salga" de la portada. Con `transform-origin` arriba al
+   * centro, la imagen de la tarjeta (16:9) queda exactamente sobre la portada (16:9).
+   */
   readonly from: { readonly dx: number; readonly dy: number; readonly scale: number };
 }
 
@@ -54,7 +57,7 @@ export function computePreviewLayout(
     width,
     from: {
       dx: anchorCx - (left + width / 2),
-      dy: anchorCy - (top + panelHeight / 2),
+      dy: anchor.top - top,
       scale: anchor.width / width,
     },
   };

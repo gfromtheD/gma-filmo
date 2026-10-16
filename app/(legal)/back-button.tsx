@@ -13,12 +13,12 @@ export function BackButton() {
         alignItems: "center",
         gap: 6,
         background: "transparent",
-        border: "1px solid #1E2D42",
+        border: "1px solid var(--gma-line-strong)",
         borderRadius: 999,
         padding: "6px 14px",
         fontSize: 13,
         fontWeight: 600,
-        color: "#6D7D94",
+        color: "#7C7C7C",
         cursor: "pointer",
         transition: "color 0.15s, border-color 0.15s",
       }}
@@ -27,8 +27,8 @@ export function BackButton() {
         (e.currentTarget as HTMLButtonElement).style.borderColor = "#3A4A5E";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.color = "#6D7D94";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "#1E2D42";
+        (e.currentTarget as HTMLButtonElement).style.color = "#7C7C7C";
+        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--gma-line-strong)";
       }}
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

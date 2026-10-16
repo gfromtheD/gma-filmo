@@ -213,7 +213,7 @@ export default function ConfigurarPerfilCreadorPage() {
 
   if (init) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: "#060C14" }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--gma-bg)" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#22B16B] border-t-transparent" />
       </div>
     );
@@ -222,7 +222,7 @@ export default function ConfigurarPerfilCreadorPage() {
   // Existing viewer: ask before showing the creator form
   if (isExistingViewer && conversionConfirmed === null) {
     return (
-      <div className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-x-clip pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))]" style={{ background: "#060C14" }}>
+      <div className="relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-x-clip pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))]" style={{ background: "var(--gma-bg)" }}>
 
         {/* Fondo — carrusel de portadas a pantalla completa: 4 columnas grandes.
             La extra extiende el grid a la derecha y cubre la esquina inferior. */}
@@ -232,11 +232,11 @@ export default function ConfigurarPerfilCreadorPage() {
         {/* Oscurecido para legibilidad */}
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at center, rgba(6,12,20,0.5) 0%, rgba(6,12,20,0.72) 55%, rgba(6,12,20,0.94) 100%)" }}
+          style={{ background: "radial-gradient(ellipse at center, color-mix(in srgb, var(--gma-bg) 50%, transparent) 0%, color-mix(in srgb, var(--gma-bg) 72%, transparent) 55%, color-mix(in srgb, var(--gma-bg) 94%, transparent) 100%)" }}
         />
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0 h-52"
-          style={{ background: "linear-gradient(to top, rgba(6,12,20,0.92), transparent)" }}
+          style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--gma-bg) 92%, transparent), transparent)" }}
         />
 
         {/* Card */}
@@ -246,20 +246,20 @@ export default function ConfigurarPerfilCreadorPage() {
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 w-full max-w-[560px] min-w-0 rounded-[20px] p-5 sm:p-8 md:p-10"
           style={{
-            background: "rgba(10,18,32,0.74)",
+            background: "color-mix(in srgb, var(--gma-panel) 74%, transparent)",
             border: "1px solid rgba(255,255,255,0.09)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             boxShadow: "0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(34,177,107,0.05)",
           }}
         >
-          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5A6A7E]">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[#686868]">
             Ya tienes una cuenta en GMA Filmo
           </p>
           <h1 className="mt-3 text-center text-[26px] font-extrabold leading-[1.15] tracking-[-0.02em] text-white md:text-[30px]">
             ¿Añadir acceso de creador?
           </h1>
-          <p className="mx-auto mt-2 max-w-[400px] text-center text-[13.5px] leading-[1.6] text-[#8A9AB0]">
+          <p className="mx-auto mt-2 max-w-[400px] text-center text-[13.5px] leading-[1.6] text-[#999999]">
             Tu cuenta seguirá siendo la misma: solo sumas las herramientas de creador.
           </p>
 
@@ -273,7 +273,7 @@ export default function ConfigurarPerfilCreadorPage() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-white">{existingDisplayName || "usuario"}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#5A6A7E]">Cuenta de espectador</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#686868]">Cuenta de espectador</p>
             </div>
             <span className="ml-auto shrink-0 rounded-full border border-[#22B16B]/25 bg-[#22B16B]/10 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-[#22B16B]">
               Activa
@@ -285,14 +285,14 @@ export default function ConfigurarPerfilCreadorPage() {
             <div className="rounded-[14px] border border-white/[0.07] bg-white/[0.03] p-4">
               <ShieldCheck size={18} className="text-[#22B16B]" />
               <p className="mt-2.5 text-[13px] font-bold text-white">Todo se conserva</p>
-              <p className="mt-1 text-[12px] leading-[1.55] text-[#8A9AB0]">
+              <p className="mt-1 text-[12px] leading-[1.55] text-[#999999]">
                 Tus valoraciones, listas e historial quedan intactos.
               </p>
             </div>
             <div className="rounded-[14px] border border-white/[0.07] bg-white/[0.03] p-4">
               <Clapperboard size={18} className="text-[#22B16B]" />
               <p className="mt-2.5 text-[13px] font-bold text-white">Desbloqueas Mi Estudio</p>
-              <p className="mt-1 text-[12px] leading-[1.55] text-[#8A9AB0]">
+              <p className="mt-1 text-[12px] leading-[1.55] text-[#999999]">
                 Sube tus cortos y gestiona tu contenido desde tu cuenta.
               </p>
             </div>
@@ -307,7 +307,7 @@ export default function ConfigurarPerfilCreadorPage() {
                 await getSupabaseBrowserClient().auth.signOut();
                 router.push("/");
               }}
-              className="rounded-full border border-white/10 py-3 text-[13.5px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.05] sm:w-[38%]"
+              className="rounded-full border border-white/10 py-3 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:bg-white/[0.05] sm:w-[38%]"
             >
               No, cancelar
             </button>
@@ -371,7 +371,7 @@ export default function ConfigurarPerfilCreadorPage() {
       <button
         type="button"
         onClick={() => (step > 0 ? setStep((s) => s - 1) : router.push("/"))}
-        className="absolute left-[max(1rem,env(safe-area-inset-left))] top-[calc(1.5rem+env(safe-area-inset-top))] z-20 sm:left-[max(1.5rem,env(safe-area-inset-left))] flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[13px] font-semibold text-[#B8C5D4] transition-colors hover:bg-white/[0.07] hover:text-white"
+        className="absolute left-[max(1rem,env(safe-area-inset-left))] top-[calc(1.5rem+env(safe-area-inset-top))] z-20 sm:left-[max(1.5rem,env(safe-area-inset-left))] flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[13px] font-semibold text-[#C4C4C4] transition-colors hover:bg-white/[0.07] hover:text-white"
       >
         <ArrowLeft size={15} />
         {step > 0 ? "Volver" : "Volver al inicio"}

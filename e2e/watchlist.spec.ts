@@ -128,4 +128,78 @@ test.describe("con sesión simulada", () => {
     await expect(page.getByRole("button", { name: "Guardar" }).first()).toHaveAttribute("aria-pressed", "false");
     expect(calls).toEqual(["POST"]);
   });
+
+  test("si se supera el límite de peticiones, el aviso lo explica y el icono se deshace", async ({ page }) => {
+    await asFakeUser(page);
+    await page.route("**/api/watchlist", (route) =>
+      route.request().method() === "GET" ? route.continue() : route.fulfill({ status: 429, headers: { "Retry-After": "30" }, json: { ok: false, error: "Too many requests" } }),
+    );
+    await page.route("**/api/watchlist?**", (route) => route.fulfill({ json: { ids: [] } }));
+    await openFicha(page);
+
+    await page.getByRole("button", { name: "Guardar" }).first().click();
+    const notice = page.getByRole("status").filter({ hasText: "Estás guardando muy rápido" });
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText("30 s");
+    await expect(page.getByRole("button", { name: "Guardar" }).first()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("guardar muchos cortos seguidos funciona: ninguno falla ni se pierde", async ({ page }) => {
+    await asFakeUser(page);
+    const calls = await trackWatchlistPosts(page, 200);
+    const ready = page.waitForRequest((r) => r.url().includes("/api/watchlist") && r.method() === "GET");
+    await page.goto("/cortos", { waitUntil: "load" });
+    await ready; // sesión cargada
+
+    const buttons = page.getByRole("button", { name: "Añadir a Mi Lista" });
+    const total = Math.min(40, await buttons.count());
+    expect(total).toBeGreaterThan(10);
+    for (let i = 0; i < total; i++) {
+      const card = page.locator("[class*='group/card']").nth(i);
+      await card.scrollIntoViewIfNeeded();
+      await card.hover();
+      await card.getByRole("button", { name: /Mi Lista/ }).click();
+    }
+    await expect.poll(() => calls.length, { timeout: 15_000 }).toBe(total);
+    await expect(page.getByRole("status").filter({ hasText: /No se pudo|muy rápido/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Quitar de Mi Lista" })).toHaveCount(total);
+  });
+
+  test("guardar y quitar el mismo corto deprisa se envía en orden y termina como lo dejó el usuario", async ({ page }) => {
+    await asFakeUser(page);
+    const events: string[] = [];
+    await page.route("**/api/watchlist", async (route) => {
+      const method = route.request().method();
+      if (method === "GET") return route.continue();
+      events.push(`start:${method}`);
+      await new Promise((resolve) => setTimeout(resolve, 400)); // el servidor tarda
+      events.push(`end:${method}`);
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.route("**/api/watchlist?**", (route) => route.fulfill({ json: { ids: [] } }));
+    await openFicha(page);
+
+    const save = page.getByRole("button", { name: /^Guardar|^Guardada/ }).first();
+    await save.click(); // guardar
+    await save.click(); // y quitar enseguida, sin esperar a la respuesta
+    await expect.poll(() => events.length, { timeout: 5000 }).toBe(4);
+    expect(events).toEqual(["start:POST", "end:POST", "start:DELETE", "end:DELETE"]); // nunca a la vez
+    await expect(page.getByRole("button", { name: /^Guardar/ }).first()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("abrir varias tarjetas flotantes no vuelve a pedir la lista cada vez", async ({ page }) => {
+    await asFakeUser(page);
+    let gets = 0;
+    await page.route("**/api/watchlist?**", (route) => { gets++; return route.fulfill({ json: { ids: [] } }); });
+    await page.goto("/inicio", { waitUntil: "load" });
+    const cards = page.locator("[class*='group/card']");
+    await expect(cards.first()).toBeVisible();
+    for (let i = 0; i < 4; i++) {
+      await cards.nth(i).scrollIntoViewIfNeeded();
+      await cards.nth(i).hover();
+      await page.waitForTimeout(700); // el panel flotante se abre tras una pequeña espera
+      await page.mouse.move(2, 2);
+    }
+    expect(gets).toBe(1);
+  });
 });

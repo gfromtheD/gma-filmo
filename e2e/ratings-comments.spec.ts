@@ -113,7 +113,7 @@ test.describe("comentarios (invitado)", () => {
   test("muestra 10 comentarios y 'Ver más' añade el resto; el invitado no ve eliminar", async ({ page }) => {
     await page.route("**/api/comments?**", (route) => route.fulfill({ json: Array.from({ length: 12 }, (_, i) => comment(i + 1)) }));
     await openFicha(page, "comentarios");
-    await expect(page.getByRole("heading", { name: /Comentarios/ })).toContainText("(12)");
+    await expect(page.getByRole("heading", { name: /comentarios/i })).toContainText("12");
     await expect(page.getByText("Opinión 1", { exact: true })).toBeVisible();
     await expect(page.getByText("Opinión 10", { exact: true })).toBeVisible();
     await expect(page.getByText("Opinión 11", { exact: true })).toHaveCount(0);

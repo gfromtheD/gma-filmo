@@ -120,7 +120,7 @@ export function ProfileTransitionOverlay() {
                 <span style={{
                   color: nameColor,
                   fontSize: 120,
-                  fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
+                  fontFamily: "var(--font-sans)",
                   fontStyle: "italic",
                   lineHeight: 1.0,
                   fontWeight: 400,

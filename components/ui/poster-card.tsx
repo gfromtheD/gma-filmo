@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { SaveIcon } from "@/components/ui/save-icon";
+import { watchlistErrorMessage } from "@/hooks/use-watchlist";
 import { HoverPreviewCard } from "@/components/ui/hover-preview-card";
 import { CardInfoOverlay } from "@/components/ui/card-info-overlay";
 import { useHoverPreview } from "@/hooks/use-hover-preview";
@@ -75,8 +77,9 @@ export function PosterCard({
       onPointerEnter={preview.keepOpen}
       onPointerLeave={preview.scheduleClose}
       onClose={preview.close}
+      isClosing={preview.isClosing}
       onLoginRequired={notice.showLoginRequired}
-      onSaveError={() => notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.")}
+      onSaveError={() => notice.showError(watchlistErrorMessage())}
     />
   ) : null;
 
@@ -84,6 +87,16 @@ export function PosterCard({
   const wrapClass = `group/card relative min-w-0 snap-start text-left ${styles.wrap}${fluid ? " w-full" : " shrink-0"}`;
 
   /* ── inner card content ── */
+  // Con pie de texto la barra va dentro del recuadro de la imagen; si no, se superpondría al año y la categoría.
+  const progressBar = showProgress && item.progress != null ? (
+    <div
+      className="pointer-events-none absolute bottom-2 left-2 right-2 z-10 h-[3px] overflow-hidden rounded-full"
+      style={{ background: "rgba(255,255,255,0.18)" }}
+    >
+      <div className="h-full rounded-full bg-[#22B16B]" style={{ width: `${item.progress * 100}%` }} />
+    </div>
+  ) : null;
+
   const cardContent = (
     <>
       {caption ? (
@@ -91,29 +104,23 @@ export function PosterCard({
           <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none">
             <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
           </div>
+          {progressBar}
         </div>
       ) : (
-        <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} />
+        <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} blurTitleOnHover={hoverOverlay} />
       )}
       {hoverOverlay && <CardInfoOverlay item={item} />}
-      {showProgress && item.progress != null && (
-        <div
-          className="pointer-events-none absolute bottom-2 left-2 right-2 z-10 h-[3px] overflow-hidden rounded-full"
-          style={{ background: "rgba(255,255,255,0.18)" }}
-        >
-          <div className="h-full rounded-full bg-[#22B16B]" style={{ width: `${item.progress * 100}%` }} />
-        </div>
-      )}
+      {!caption && progressBar}
     </>
   );
 
   const category = item.categories.find((c) => c !== "Cortometraje");
   const captionNode = caption ? (
     <div className="mt-2.5 px-0.5">
-      <h3 className="line-clamp-1 text-[13px] font-medium leading-snug text-[#EEF1F6] transition-colors duration-200 group-hover/card:text-[#22B16B] motion-reduce:transition-none">
+      <h3 className="line-clamp-1 text-[15px] font-medium leading-snug text-[#EEF1F6] transition-colors duration-200 group-hover/card:text-[#22B16B] motion-reduce:transition-none">
         {item.title}
       </h3>
-      <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] leading-[11px] text-[#8A94A6]">
+      <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] leading-[14px] text-[#949494]">
         <span className="tabular-nums">{item.year}</span>
         {category && (
           <>
@@ -141,11 +148,7 @@ export function PosterCard({
       }
     >
       {hoverOverlay ? (
-        <GmaIcon
-          name={inList ? "check" : "bookmark"}
-          size={22}
-          style={inList ? { color: "#22B16B" } : undefined}
-        />
+        <SaveIcon saved={inList ?? false} size={22} />
       ) : inList ? (
         <GmaIcon
           name="bookmark"

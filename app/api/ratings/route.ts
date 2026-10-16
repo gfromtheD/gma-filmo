@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
     console.error("[api/ratings POST]", error.code, error.message);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
+  revalidateTag("ratings"); // la nota media del catálogo se recalcula al momento, sin esperar a la caché
   return NextResponse.json({ ok: true });
 }
 
@@ -96,5 +98,6 @@ export async function DELETE(request: Request) {
     console.error("[api/ratings DELETE]", error.code, error.message);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
+  revalidateTag("ratings"); // la nota media del catálogo se recalcula al momento, sin esperar a la caché
   return NextResponse.json({ ok: true });
 }
