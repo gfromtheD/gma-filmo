@@ -105,3 +105,27 @@ export async function publishLegacyTitle(userId:string,body:unknown) {
   if(!created)return NextResponse.json({error:'UPLOAD_DATABASE_UNAVAILABLE'},{status:503});
   return NextResponse.json({ title: created }, { status: 201 });
 }
+
+type LegacyDeleteClient = {
+  from(table: 'peliculas'): {
+    select(columns: string): { eq(column: string, value: string): { maybeSingle(): PromiseLike<{ data: unknown; error: unknown }> } };
+    delete(): { eq(column: string, value: string): PromiseLike<{ error: { message: string } | null }> };
+  };
+};
+
+/**
+ * Borrado histórico de un título (comportamiento de Windows previo al motor, `057dbd4`): comprueba propiedad
+ * con `creator_user_id` y borra la fila. Solo se usa con el motor v2 apagado; con el motor encendido el borrado
+ * pasa por `TitleService.lifecycle('delete')` (asíncrono, con limpieza de medios y cuota).
+ */
+export async function deleteLegacyTitle(userId: string, slug: string,
+  client: LegacyDeleteClient = getSupabaseAdminClient() as unknown as LegacyDeleteClient): Promise<{ status: number; body: Record<string, unknown> }> {
+  const { data: row, error: findErr } = await client.from('peliculas').select('id, creator_user_id').eq('slug', slug).maybeSingle();
+  if (findErr || !row) return { status: 404, body: { error: 'Título no encontrado' } };
+  if ((row as { creator_user_id: string | null }).creator_user_id !== userId) {
+    return { status: 403, body: { error: 'No tienes permiso para eliminar este título' } };
+  }
+  const { error: delErr } = await client.from('peliculas').delete().eq('slug', slug);
+  if (delErr) return { status: 500, body: { error: delErr.message } };
+  return { status: 200, body: { ok: true } };
+}
