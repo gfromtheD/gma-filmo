@@ -1,0 +1,86 @@
+# GMA overrides; merge with official templates, never deploy this alone.
+trust_proxy: ['loopback']
+static_files:
+  private_files_require_auth: true
+object_storage:
+  enabled: false
+tracker:
+  enabled: false
+  private: true
+defaults:
+  publish:
+    privacy: 3
+  p2p:
+    webapp:
+      enabled: false
+    embed:
+      enabled: false
+signup:
+  enabled: false
+federation:
+  enabled: false
+  prevent_ssrf: true
+import:
+  videos:
+    http:
+      enabled: false
+    torrent:
+      enabled: false
+  video_channel_synchronization:
+    enabled: false
+  users:
+    enabled: false
+search:
+  remote_uri:
+    users: false
+    anonymous: false
+followers:
+  instance:
+    enabled: false
+  channels:
+    enabled: false
+remote_redundancy:
+  videos:
+    accept_from: 'nobody'
+redundancy:
+  videos:
+    strategies: null
+live:
+  enabled: false
+transcoding:
+  enabled: true
+  original_file:
+    keep: true
+  allow_audio_files: false
+  remote_runners:
+    enabled: false
+  threads: 1
+  concurrency: 1
+  profile: 'default'
+  resolutions:
+    0p: false
+    144p: false
+    240p: false
+    360p: true
+    480p: false
+    720p: true
+    1080p: true
+    1440p: false
+    2160p: false
+  always_transcode_original_resolution: false
+  always_transcode_podcast_optimized_audio: false
+  web_videos:
+    enabled: false
+  hls:
+    enabled: true
+    split_audio_and_video: false
+storyboards:
+  remote_runners:
+    enabled: false
+video_transcription:
+  enabled: false
+  remote_runners:
+    enabled: false
+log:
+  rotation:
+    enabled: true

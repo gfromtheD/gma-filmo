@@ -1,0 +1,12 @@
+{
+  "cliVersion": "2.120.0",
+  "images": [
+    "public.ecr.aws/supabase/gotrue:v2.197.0",
+    "public.ecr.aws/supabase/kong:2.8.1",
+    "public.ecr.aws/supabase/mailpit:v1.31.3",
+    "public.ecr.aws/supabase/postgres-meta:v0.100.0",
+    "public.ecr.aws/supabase/postgres:17.11.0.004",
+    "public.ecr.aws/supabase/postgrest:v16.4",
+    "public.ecr.aws/supabase/studio:2026.10.05-sha-94b8b06"
+  ]
+}
