@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { toStudioTitleStatus } from '@/components/features/studio/studio-status';
+import { toStudioTitleStatus } from '@/lib/studio-media/title-status';
 
 test('owner Studio status mapper preserves legacy and lifecycle states with deletion precedence', () => {
   assert.equal(toStudioTitleStatus(null, 'none'), 'publicado');
