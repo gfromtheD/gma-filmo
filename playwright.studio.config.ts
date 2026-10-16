@@ -1,0 +1,36 @@
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/media/browser',
+  testMatch: 'studio*.spec.ts',
+  workers: 1,
+  timeout: 90_000,
+  outputDir: './test-results/media-studio',
+  globalTeardown: './tests/responsive/cleanup.cjs',
+  use: { baseURL: 'http://127.0.0.1:3219', channel: 'chrome' },
+  webServer: {
+    command: `"${process.execPath}" tests/responsive/start-server.cjs`,
+    url: 'http://127.0.0.1:3219/creadores/responsive-fixture',
+    reuseExistingServer: false,
+    timeout: 120_000,
+    env: {
+      NEXT_TELEMETRY_DISABLED: '1',
+      NEXT_DIST_DIR: '.next-responsive',
+      UPLOAD_ENVIRONMENT: 'local',
+      UPLOAD_ISOLATION_ACK: 'true',
+      MEDIA_LOCAL_PROJECT_ID: 'gma-filmo-media-local',
+      MEDIA_LOCAL_ISOLATED: 'true',
+      UPLOAD_ENGINE_V2: 'true',
+      NEXT_PUBLIC_UPLOAD_ENGINE_V2: 'true',
+      MEDIA_VIDEO_PROVIDER: 'mock',
+      MEDIA_AUXILIARY_PROVIDER: 'mock',
+      MEDIA_MOCK_ENABLED: 'true',
+      PEERTUBE_PROVIDER_ENABLED: 'false',
+      STREAM_PROVIDER_ENABLED: 'false',
+      SUPABASE_URL: 'http://127.0.0.1:54341',
+      NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54341',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'local-test-public-key',
+      MEDIA_GATEWAY_URL: 'http://127.0.0.1:4319',
+    },
+  },
+});

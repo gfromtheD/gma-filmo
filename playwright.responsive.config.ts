@@ -12,6 +12,6 @@ export default defineConfig({
     url: "http://127.0.0.1:3219/creadores/responsive-fixture",
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://gma-filmo-test.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "local-test-public-key" },
+    env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-responsive", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54341", NEXT_PUBLIC_SUPABASE_ANON_KEY: "local-test-public-key" },
   },
 });

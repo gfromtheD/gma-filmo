@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -67,3 +69,13 @@ app/fonts/satoshi/*.woff2
 # playwright
 /test-results/
 /playwright-report/
+# Local media signing keys (never commit)
+/work/media-local/keys/
+# Isolated local media runtime (credentials, generated migrations, spool and logs)
+/work/media-local/
+!.env.media.example
+# Private isolated rollback copies and dedicated visual-test build cache
+/work/media-rollback/
+/.next-responsive/
+.next-player/
+.next-support/
