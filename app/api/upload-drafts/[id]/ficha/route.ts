@@ -15,3 +15,7 @@ async function fichaBody(request: Request): Promise<unknown> {
 export async function PUT(req: Request, { params }: Context) {
   return respond(async () => { engineGate(); return new FichaRepository().save(await owner(req), uuid.parse(params.id), await fichaBody(req)); });
 }
+/** Ficha guardada (o `null`): la pasarela la usa para saber la revisión antes del primer guardado y para restaurar. */
+export async function GET(req: Request, { params }: Context) {
+  return respond(async () => { engineGate(); return new FichaRepository().get(await owner(req), uuid.parse(params.id)); });
+}

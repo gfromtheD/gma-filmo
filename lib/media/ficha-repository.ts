@@ -8,8 +8,21 @@ const savedSchema = z.object({ draft_id: z.string().uuid(), revision: z.number()
 const copiedSchema = z.object({ pelicula_id: z.number().int().positive(), copied: z.boolean() }).strict();
 
 /** Ficha completa del borrador y del título (migración 20261021000100). Solo service_role; el propietario lo fija la ruta. */
+type FichaReadClient = { from(table: 'gma_draft_ficha'): { select(columns: string): { eq(c: string, v: string): { eq(c: string, v: string): { maybeSingle(): PromiseLike<{ data: unknown; error: { message?: string; code?: string } | null }> } } } } };
+const storedSchema = z.object({ revision: z.number().int().nonnegative(), schema_version: z.number().int(), ficha: z.record(z.string(), z.unknown()), updated_at: z.string() }).strict();
+
 export class FichaRepository {
-  constructor(private readonly db: Pick<MediaRepositoryClient, 'rpc'> = getSupabaseAdminClient() as unknown as MediaRepositoryClient) {}
+  constructor(private readonly db: Pick<MediaRepositoryClient, 'rpc'> & Partial<FichaReadClient> = getSupabaseAdminClient() as unknown as MediaRepositoryClient & FichaReadClient) {}
+
+  /** Ficha guardada del borrador propio, o `null` si aún no existe (revisión esperada para el primer guardado: 0). */
+  async get(owner: string, draftId: string) {
+    if (!this.db.from) throw new UploadError('UPLOAD_DATABASE_UNAVAILABLE', 503);
+    const { data, error } = await this.db.from('gma_draft_ficha').select('revision,schema_version,ficha,updated_at').eq('draft_id', draftId).eq('owner_id', owner).maybeSingle();
+    if (error) translateDatabaseError(error);
+    if (!data) return { ficha: null };
+    const row = storedSchema.parse(data);
+    return { ficha: { revision: row.revision, schemaVersion: row.schema_version, data: row.ficha, updatedAt: row.updated_at } };
+  }
 
   private async call(name: string, args: Record<string, unknown>): Promise<unknown> {
     const { data, error } = await this.db.rpc(name, args);
