@@ -38,7 +38,7 @@
   .profilePreview { position: static !important; }
   .orbital { flex-direction: column !important; }
   .orbitalLeft, .orbitalRight { width: 100% !important; min-width: 0 !important; flex-basis: auto !important; }
-  .orbitalLeft { border-right: 0 !important; border-bottom: 1px solid #1a1a1a; }
+  .orbitalLeft { border-right: 0 !important; border-bottom: 1px solid var(--gma-surface); }
   .orbitalPreview { min-height: 280px !important; }
   .orbitalRight { max-height: none; }
   .listHeader { display: none !important; }
@@ -48,7 +48,7 @@
   .listRow > :nth-child(3) { grid-column: 2; grid-row: 2; }
   .listRow > :nth-child(4) { grid-column: 2 / -1; grid-row: 3; }
   .listRow > :nth-child(5) { grid-column: 2 / -1; grid-row: 4; justify-self: start; }
-  .listRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #5a6a7e; font-weight: 600; }
+  .listRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #686868; font-weight: 600; }
   .listRow > :last-child { grid-column: 3; grid-row: 1; }
 }
 @media (max-width: 639px) {
@@ -58,7 +58,7 @@
     grid-template-areas: "progress" "stack" "featured" "catalog" "gauge" "table" "checklist" !important; }
   .dashboardStack { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; }
   .dashboardStack > div { grid-row: auto !important; }
-  .dashboardTableRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #5a6a7e; font-weight: 600; }
+  .dashboardTableRow > [data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10px; color: #686868; font-weight: 600; }
   .dashboardStats { gap: 18px !important; }
   .dashboardStats > div { flex: 1; min-width: 70px; }
   .dashboardStats > div > div > span { font-size: 30px !important; }

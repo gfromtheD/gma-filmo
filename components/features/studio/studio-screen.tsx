@@ -6,7 +6,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
 import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
-import { UploadView }    from "./studio-upload-view";
+import { UploadWizard }  from "./upload/upload-wizard";
+import { StudioSidebar } from "./studio-sidebar";
 import { StatsView }     from "./studio-stats-view";
 import { ProfileView }   from "./studio-profile-view";
 import { EditModal }     from "./studio-edit-modal";
@@ -130,7 +131,7 @@ export function StudioScreen() {
   }
 
   function nav(id: StudioTabId, payload?: StudioTitle) {
-    if (id === "estadisticas" && payload) setFocusTitle(payload);
+    setFocusTitle(id === "inicio" && payload ? payload : null);
     setActiveTab(id);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -154,24 +155,26 @@ export function StudioScreen() {
 
   return (
     <div style={{ animation: "fadeIn 0.55s ease both" }}>
-      {/* View content */}
-      <div className={styles.content} style={{ maxWidth: 1280, margin: "0 auto", padding: "72px 28px 80px" }}>
+      <div className={`${styles.content} grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[220px_minmax(0,1fr)]`} style={{ maxWidth: 1360, margin: "0 auto", padding: "72px 28px 80px" }}>
+        <StudioSidebar active={active} onSelect={nav} />
+        <div className="min-w-0">
         {active === "inicio" && (
-          <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} />
+          <>
+            <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} />
+            <div style={{ marginTop: 40 }}><StatsView data={data} onToast={showToast} focusTitle={focusTitle} /></div>
+          </>
         )}
         {active === "titulos" && (
           <TitlesView data={data} onNav={nav} onEditTitle={setEditTitle}
             onToast={showToast} onDelete={handleDelete} openTitle={openTitle} setOpenTitle={setOpenTitle} />
         )}
         {active === "subir" && (
-          <UploadView data={data} onToast={showToast} onNav={nav} onPublished={handlePublished} />
-        )}
-        {active === "estadisticas" && (
-          <StatsView data={data} onToast={showToast} focusTitle={focusTitle} />
+          <UploadWizard onGoToTitles={() => { handlePublished(); nav("titulos"); }} />
         )}
         {active === "perfil" && (
           <ProfileView data={data} onToast={showToast} />
         )}
+        </div>
       </div>
 
       {/* Edit modal */}
@@ -182,7 +185,7 @@ export function StudioScreen() {
         <div className={styles.toast} style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", zIndex: 200, pointerEvents: "none" }}>
           <div key={toast.key} style={{
             display: "flex", alignItems: "center", gap: 11, animation: "dropIn 0.16s ease both",
-            background: "#101820", border: `1px solid ${C.border2}`, borderRadius: 12,
+            background: "var(--gma-panel)", border: `1px solid ${C.border2}`, borderRadius: 12,
             padding: "13px 18px", boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)", maxWidth: "min(440px, calc(100vw - 32px))",
           }}>
             <span style={{ display: "grid", placeItems: "center", width: 26, height: 26, flexShrink: 0, borderRadius: 999,

@@ -30,7 +30,7 @@ export const STATUS_CONFIG: Record<TitleStatus, {
     icon: <Clock size={12} strokeWidth={2} />,
   },
   borrador: {
-    label: "Borrador", bg: "rgba(109,125,148,0.10)", border: "rgba(109,125,148,0.30)", fg: "#9aa9bb",
+    label: "Borrador", bg: "rgba(124, 124, 124, 0.10)", border: "rgba(124, 124, 124, 0.30)", fg: "#A8A8A8",
     icon: <Pencil size={12} strokeWidth={2} />,
   },
   rechazado: {
@@ -47,11 +47,11 @@ export const C = {
   accent15:  "rgba(34,177,107,0.15)",
   accent30:  "rgba(34,177,107,0.30)",
   onAccent:  "#031A0E",
-  surface:   "#0D0D0D",
-  border1:   "#1A1A1A",
-  border2:   "#262626",
-  textSec:   "#B8C5D4",
-  textMuted: "#5A6A7E",
+  surface:   "var(--gma-surface-2)",
+  border1:   "var(--gma-surface)",
+  border2:   "var(--gma-border)",
+  textSec:   "#C4C4C4",
+  textMuted: "#686868",
   textFaint: "#3A4A5E",
   w4:        "rgba(255,255,255,0.04)",
   w6:        "rgba(255,255,255,0.06)",
@@ -98,7 +98,7 @@ export function Stars({ value = 0, size = 14, showNum = false, count }: {
           return (
             <span key={i} style={{ position: "relative", width: size, height: size, display: "inline-block" }}>
               <span style={{ position: "absolute", inset: 0, display: "flex" }}>
-                <Star size={size} fill="#2a3340" strokeWidth={0} color="#2a3340" />
+                <Star size={size} fill="#2C4334" strokeWidth={0} color="var(--gma-line-strong)" />
               </span>
               <span style={{ position: "absolute", inset: 0, width: `${pct}%`, overflow: "hidden", display: "flex" }}>
                 <Star size={size} fill={C.gold} strokeWidth={0} color={C.gold} />
@@ -135,11 +135,11 @@ export function Poster({
         {hover && (
           <div className="st-poster-play" style={{
             position: "absolute", inset: 0, display: "grid", placeItems: "center",
-            background: "rgba(3,8,14,0.45)", opacity: 0, transition: "opacity 0.22s ease",
+            background: "color-mix(in srgb, var(--gma-bg) 45%, transparent)", opacity: 0, transition: "opacity 0.22s ease",
           }}>
             <div style={{ width: 48, height: 48, borderRadius: 999, background: "rgba(255,255,255,0.92)",
               display: "grid", placeItems: "center", paddingLeft: 3 }}>
-              <Play size={22} fill="#0A0F17" strokeWidth={0} />
+              <Play size={22} fill="#0D1812" strokeWidth={0} />
             </div>
           </div>
         )}
@@ -147,7 +147,7 @@ export function Poster({
     );
   }
 
-  const p = data ?? { from: "#1c2a38", to: "#0a1119", accent: "#3fae7e" };
+  const p = data ?? { from: "var(--gma-border)", to: "var(--gma-surface-2)", accent: "#3fae7e" };
   const initials = title.split(" ").filter(Boolean).slice(0, 3).map(w => w[0]).join("").toUpperCase();
   return (
     <div className={hover ? "st-poster-wrap" : undefined} style={{
@@ -160,14 +160,14 @@ export function Poster({
         background: `radial-gradient(120% 90% at 18% 8%, ${p.accent}33 0%, transparent 42%), radial-gradient(140% 120% at 90% 100%, ${p.accent}22 0%, transparent 50%)` }} />
       <div style={{ position: "absolute", inset: 0,
         backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px)" }} />
-      <div style={{ position: "absolute", top: -8, right: 6, fontFamily: "var(--font-serif)",
+      <div style={{ position: "absolute", top: -8, right: 6, fontFamily: "var(--font-sans)",
         fontStyle: "italic", fontSize: 88, fontWeight: 700, color: "rgba(255,255,255,0.06)", lineHeight: 1, userSelect: "none" }}>
         {initials || "M"}
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "14px 13px 13px",
         background: "linear-gradient(0deg, rgba(0,0,0,0.62) 0%, transparent 100%)" }}>
         <div style={{ width: 26, height: 3, borderRadius: 2, background: p.accent, marginBottom: 9 }} />
-        <div style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 700,
+        <div style={{ fontFamily: "var(--font-sans)", fontStyle: "italic", fontWeight: 700,
           fontSize: 17, lineHeight: 1.12, color: "#fff", textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
           {title}
         </div>
@@ -181,11 +181,11 @@ export function Poster({
       {hover && (
         <div className="st-poster-play" style={{
           position: "absolute", inset: 0, display: "grid", placeItems: "center",
-          background: "rgba(3,8,14,0.45)", opacity: 0, transition: "opacity 0.22s ease",
+          background: "color-mix(in srgb, var(--gma-bg) 45%, transparent)", opacity: 0, transition: "opacity 0.22s ease",
         }}>
           <div style={{ width: 48, height: 48, borderRadius: 999, background: "rgba(255,255,255,0.92)",
             display: "grid", placeItems: "center", paddingLeft: 3 }}>
-            <Play size={22} fill="#0A0F17" strokeWidth={0} />
+            <Play size={22} fill="#0D1812" strokeWidth={0} />
           </div>
         </div>
       )}
@@ -362,7 +362,7 @@ export function Menu({ trigger, items, align = "right", width = 196 }: {
       {open && createPortal(
         <div ref={panelRef} style={{
           ...position,
-          background: "#101820", border: `1px solid ${C.border2}`, borderRadius: 12,
+          background: "var(--gma-panel)", border: `1px solid ${C.border2}`, borderRadius: 12,
           padding: 6, boxShadow: "0 18px 44px -12px rgba(0,0,0,0.7)",
           animation: "dropIn 0.14s ease both",
           transformOrigin: align === "right" ? "top right" : "top left",
@@ -425,7 +425,7 @@ export function StudioSelect({ value, onChange, options }: {
         aria-expanded={open}
         style={{
           width: "100%", minWidth: 0, minHeight: 44, background: C.w4,
-          border: `1px solid ${open ? C.accent : "#1E2D42"}`,
+          border: `1px solid ${open ? C.accent : "var(--gma-line-strong)"}`,
           borderRadius: 10, padding: "10px 14px",
           color: "#fff", fontSize: 14, fontWeight: 500,
           fontFamily: "inherit", cursor: "pointer",
@@ -444,7 +444,7 @@ export function StudioSelect({ value, onChange, options }: {
       {open && createPortal(
         <div ref={panelRef} style={{
           ...position,
-          background: "#0F1923", border: `1px solid ${C.border2}`,
+          background: "var(--gma-panel)", border: `1px solid ${C.border2}`,
           borderRadius: 10,
           boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
           animation: "dropIn 0.13s ease both",

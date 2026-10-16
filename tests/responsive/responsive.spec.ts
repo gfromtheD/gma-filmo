@@ -84,49 +84,38 @@ for (const [width, height] of [[320, 568], [360, 640], [390, 844], [430, 932], [
   });
 }
 
-test("filtros: desplazamiento, teclado, foco y cierre en móvil", async ({ page }) => {
+test("filtros en píldoras: caben, teclado, foco y cierre en móvil", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await open(page, "catalog");
-  const trigger = page.getByRole("button", { name: /Filtros/ }).first();
+  const group = page.getByRole("group", { name: "Filtros del catálogo" });
+  await group.scrollIntoViewIfNeeded();
+  await expectFits(page, "Píldoras de filtros");
+  const trigger = page.getByRole("button", { name: /^Año/ }).first();
+  const box = await trigger.boundingBox();
+  expect(box!.height).toBeGreaterThanOrEqual(44);
   await trigger.click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-  await expectFits(page, "Filtros abiertos");
-  const firstYear = dialog.getByRole("spinbutton", { name: "Año inicial", exact: true });
-  await firstYear.fill("2020");
-  await firstYear.press("Tab");
-  await expect(firstYear).toHaveValue("2020");
-  const firstYearSlider = dialog.getByRole("slider", { name: "Año inicial", exact: true });
-  const lastYearSlider = dialog.getByRole("slider", { name: "Año final", exact: true });
-  const firstBounds = await firstYearSlider.boundingBox();
-  const lastBounds = await lastYearSlider.boundingBox();
-  expect(firstBounds!.height).toBeGreaterThanOrEqual(44);
-  expect(lastBounds!.y).toBeGreaterThanOrEqual(firstBounds!.y + firstBounds!.height);
-  await firstYearSlider.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(firstYear).toHaveValue("2021");
-  const slider = page.getByRole("slider", { name: "Duración máxima" });
-  await slider.focus();
-  const before = await slider.getAttribute("aria-valuenow");
-  await page.keyboard.press("ArrowLeft");
-  expect(await slider.getAttribute("aria-valuenow")).not.toBe(before);
-  await dialog.getByRole("button", { name: /Ver \d+ resultado/ }).scrollIntoViewIfNeeded();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expectFits(page, "Menú de filtro abierto");
   await page.screenshot({ path: test.info().outputPath("filtros-320.png") });
-  await page.keyboard.press("Escape");
-  await expect(dialog).not.toBeVisible();
-  await expect(trigger).toBeFocused();
-  await trigger.click();
-  await dialog.getByRole("spinbutton", { name: "Año inicial", exact: true }).fill("2020");
+  // Con el teclado se baja por la lista hasta llegar a un año (el foco inicial del menú puede variar) y se elige.
+  for (let step = 0; step < 6; step++) {
+    await page.keyboard.press("ArrowDown");
+    const focused = await page.evaluate(() => (document.activeElement?.textContent ?? "").trim());
+    if (/^(19|20)\d\d$/.test(focused)) break;
+  }
+  await page.keyboard.press("Enter");
+  await expect(menu).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Limpiar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(19|20)\d\d$/ })).toBeVisible(); // la píldora muestra el año elegido
   await page.setViewportSize({ width: 320, height: 360 });
-  await expectFits(page, "Filtros con teclado simulado");
-  const apply = dialog.getByRole("button", { name: /Ver \d+ resultado/ });
-  await apply.click();
-  await expect(dialog).not.toBeVisible();
-  await trigger.click();
-  await expect(dialog.getByRole("spinbutton", { name: "Año inicial", exact: true })).toHaveValue("2020");
-  await dialog.getByRole("button", { name: "Limpiar todo", exact: true }).click();
+  await group.scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: /^(19|20)\d\d$/ }).click();
+  await expectFits(page, "Menú de filtro con poca altura");
   await page.keyboard.press("Escape");
-  await expect(trigger).toBeFocused();
+  await expect(page.getByRole("button", { name: /^(19|20)\d\d$/ })).toBeFocused();
+  await page.getByRole("button", { name: "Limpiar" }).click();
+  await expect(page.getByRole("button", { name: "Limpiar" })).toHaveCount(0);
 });
 
 test("ajustes y diario: controles accesibles con datos largos", async ({ page }) => {
@@ -153,7 +142,7 @@ test("navegación: cuenta y pestañas del estudio al girar", async ({ page }) =>
   await page.evaluate(() => history.pushState(null, "", "/mi-estudio?view=studio-home"));
   const nav = page.getByRole("group", { name: "Secciones de Mi Estudio" });
   await expect(nav.getByRole("button", { name: "Panel", exact: true })).toBeVisible();
-  for (const label of ["Panel", "Mis títulos", "Subir", "Estadísticas", "Perfil"]) {
+  for (const label of ["Panel", "Mis títulos", "Subir", "Perfil"]) {
     const tab = nav.getByRole("button", { name: label, exact: true });
     await tab.click();
     const box = await tab.boundingBox();

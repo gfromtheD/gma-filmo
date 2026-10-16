@@ -58,7 +58,7 @@ export function DashboardView({ data, onNav, onOpenTitle }: Props) {
             <button className="st-btn st-btn-ghost" style={{ color: C.textMuted }}>
               <Calendar size={13} /> {today}
             </button>
-            <button className="st-btn st-btn-accent" onClick={() => onNav("estadisticas")}>
+            <button className="st-btn st-btn-accent" onClick={() => onNav("inicio")}>
               <BarChart2 size={13} /> Ver informe
             </button>
           </div>

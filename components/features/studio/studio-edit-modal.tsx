@@ -31,9 +31,9 @@ export function EditModal({ title: t, onClose, onToast, data }: Props) {
 
   return (
     <div className={styles.modalOverlay} onClick={onClose} style={{ position: "fixed", inset: 0, ...viewportBounds, zIndex: 150, display: "grid", placeItems: "center",
-      padding: 20, background: "rgba(3,6,11,0.66)", backdropFilter: "blur(4px)", animation: "fadeIn 0.16s ease" }}>
+      padding: 20, background: "color-mix(in srgb, var(--gma-bg) 66%, transparent)", backdropFilter: "blur(4px)", animation: "fadeIn 0.16s ease" }}>
       <div ref={dialogRef} tabIndex={-1} className={styles.modal} role="dialog" aria-modal="true" aria-label="Editar metadatos" onClick={e => e.stopPropagation()} style={{ width: "min(620px, 96vw)", maxHeight: "90vh", overflowY: "auto",
-        background: "#0b0f15", border: `1px solid ${C.border2}`, borderRadius: 18,
+        background: "var(--gma-surface-2)", border: `1px solid ${C.border2}`, borderRadius: 18,
         boxShadow: "0 30px 80px -20px rgba(0,0,0,0.8)", animation: "dropIn 0.18s ease both" }}>
         {/* Header */}
         <div className={styles.modalHeader} style={{ ...row(), justifyContent: "space-between", padding: "20px 24px",
