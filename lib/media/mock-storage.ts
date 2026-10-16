@@ -168,7 +168,8 @@ export class MockMediaStorage {
       })());
       try {await pipeline(concatenated, hashAndCount, createWriteStream(tempPath, { flags: 'wx', mode: 0o600 }));}
       catch(error){await unlink(tempPath).catch(()=>undefined);throw error;}
-      const handle = await open(tempPath, 'r'); try { await handle.sync(); } finally { await handle.close(); }
+      // 'r+': en Windows fsync exige un descriptor con escritura (FlushFileBuffers); en POSIX es equivalente.
+      const handle = await open(tempPath, 'r+'); try { await handle.sync(); } finally { await handle.close(); }
       const actualSha256 = digest.digest('hex');
       if (size !== expectedBytes || actualSha256 !== expectedSha256) {
         await unlink(tempPath).catch(() => undefined); throw new MediaError('UPLOAD_SOURCE_MISMATCH');
@@ -255,7 +256,7 @@ export class MockMediaStorage {
       await mkdir(path.dirname(target), { recursive: true, mode: 0o700 });
       const temporary = `${target}.fixture-${randomUUID()}`;
       await copyFile(source, temporary);
-      const handle = await open(temporary, 'r'); try { await handle.sync(); } finally { await handle.close(); }
+      const handle = await open(temporary, 'r+'); try { await handle.sync(); } finally { await handle.close(); }
       try { await link(temporary, target); }
       catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
@@ -274,6 +275,12 @@ async function hashFile(filePath: string): Promise<{ size: number; sha256: strin
   return { size, sha256: digest.digest('hex') };
 }
 
+/**
+ * Persiste la entrada de directorio tras un rename/creación (fsync del directorio, idiom POSIX).
+ * Windows no permite fsync sobre un directorio (EPERM/EISDIR): allí NTFS registra los metadatos en su journal y la
+ * durabilidad del contenido ya la da el fsync del archivo, así que se omite solo en win32. En POSIX el error se propaga.
+ */
 async function syncDirectory(directory:string):Promise<void>{
+  if(process.platform==='win32')return;
   const handle=await open(directory,'r');try{await handle.sync();}finally{await handle.close();}
 }
