@@ -42,6 +42,15 @@ export class PlaybackService {
   await this.repo.registerGatewayGrant(owner,context.asset.id,context.processingGeneration,titleSlug?null:context.session.draft_id,titleSlug,
    createHash('sha256').update(token).digest('hex'),new Date(expiresAt).toISOString());
  }
+ /**
+  * Motor apagado (o base sin migrar): resuelve solo la reproducción histórica (MP4 de R2 / YouTube) leyendo `peliculas`,
+  * sin tocar tablas `gma_*`. Misma regla de visibilidad que `resolveTitle`.
+  */
+ async resolveLegacyOnly(slug:string,owner:string|null) {
+  const title=await this.title(slug,owner);
+  if(title.playback_kind && title.playback_kind!=='legacy')throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
+  return resolveLegacyPlayback(title);
+ }
  async resolveTitle(slug:string,owner:string|null) {
   const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(z.number().int().positive().parse(title.id));
   const mains=junction.filter(m=>m.role==='main' && m.slot==='main');
