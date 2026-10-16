@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { PosterArt } from "@/components/ui/poster-art";
 import { SectionHeader } from "@/components/ui/section-header";
 import { getDirectorName } from "@/lib/credits";
 import { useScrollRow } from "@/hooks/use-scroll-row";
+import { topTenScale } from "@/lib/home/carousel-geometry";
 import type { MovieMedia } from "@/types/catalog";
 
 interface TopTenRowProps {
@@ -20,21 +21,40 @@ interface TopTenRowProps {
 const EXPAND_DELAY_MS = 90;
 
 const ARROW_CLASS =
-  "absolute top-[150px] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/90 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/row:opacity-100 disabled:pointer-events-none disabled:!opacity-0 lg:flex motion-reduce:transition-none";
+  "absolute top-[calc(150px*var(--s))] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/90 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/row:opacity-100 disabled:pointer-events-none disabled:!opacity-0 lg:flex motion-reduce:transition-none";
 
 /** Velo en degradado desde la izquierda (medido en la referencia) para leer el texto sobre la imagen. */
 const WIDE_WASH =
-  "linear-gradient(90deg, rgba(5,7,10,0.94) 0%, rgba(5,7,10,0.78) 48%, rgba(5,7,10,0.42) 78%, rgba(5,7,10,0.08) 100%), linear-gradient(transparent 55%, rgba(0,0,0,0.5) 100%)";
+  "linear-gradient(90deg, color-mix(in srgb, var(--gma-bg) 94%, transparent) 0%, color-mix(in srgb, var(--gma-bg) 78%, transparent) 48%, color-mix(in srgb, var(--gma-bg) 42%, transparent) 78%, color-mix(in srgb, var(--gma-bg) 8%, transparent) 100%), linear-gradient(transparent 55%, rgba(0,0,0,0.5) 100%)";
 
 /**
  * Top 10: una tarjeta ancha (la activa, con descripción y botón de ver) y el resto en formato vertical
  * tipo carátula. Al pasar el cursor por una vertical se expande y la que estaba abierta se recoge.
  * En móvil son solo carátulas verticales.
+ *
+ * Tamaño: en escritorio mide 200×300 (recogida) y 616×300 (activa) multiplicado por `topTenScale`, el mismo
+ * factor que han crecido las portadas de las demás filas, para conservar su diferencia de tamaño.
  */
 export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { ref, atStart, atEnd, scrollByPage } = useScrollRow();
+  const [scale, setScale] = useState(1);
+
+  // Se mide el ancho visible de la fila (igual que en las demás filas) para escalar el Top 10 con ellas.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setScale(topTenScale(el.clientWidth, window.innerWidth));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [ref, items.length]);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
@@ -53,7 +73,7 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
     <section className="group/row pt-12 lg:pt-16" aria-label={title}>
       <SectionHeader title={title} subtitle={subtitle} />
 
-      <div className="relative">
+      <div className="relative" style={{ "--s": scale } as CSSProperties}>
         <button
           type="button"
           aria-label="Anterior"
@@ -77,13 +97,13 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
               <article
                 key={item.id}
                 className={`group/slot shrink-0 snap-start transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${
-                  isActive ? "w-[140px] lg:w-[616px]" : "w-[140px] lg:w-[200px]"
+                  isActive ? "w-[140px] lg:w-[calc(616px*var(--s))]" : "w-[140px] lg:w-[calc(200px*var(--s))]"
                 }`}
                 onPointerEnter={(event) => { if (event.pointerType === "mouse") activate(index); }}
                 onPointerLeave={cancelPending}
                 onFocusCapture={() => setActiveIndex(index)}
               >
-                <div className="relative h-[210px] overflow-hidden rounded-[8px] lg:h-[300px]">
+                <div className="relative h-[210px] overflow-hidden rounded-[8px] lg:h-[calc(300px*var(--s))]">
                   <div className="absolute inset-0">
                     <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
                   </div>
@@ -97,21 +117,25 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
 
                   <Link href={href} aria-label={item.title} className="absolute inset-0 z-[1] rounded-[8px] outline-offset-[-3px] focus-visible:outline-2 focus-visible:outline-[#22B16B]" />
 
-                  <span className="pointer-events-none absolute left-0 top-0 z-[2] flex h-9 w-[30px] flex-col items-center justify-center rounded-br-[8px] bg-[#22B16B] font-extrabold leading-none text-[#031A0E]">
-                    <span className="text-[8px] uppercase tracking-wide">Top</span>
-                    <span className="text-[13px]">{index + 1}</span>
+                  {/* Marca del puesto: crece con la tarjeta (mismo factor `--s`); en móvil vale 1 y no cambia. */}
+                  <span
+                    data-top-rank
+                    className="pointer-events-none absolute left-0 top-0 z-[2] flex h-[calc(36px*var(--s))] w-[calc(30px*var(--s))] flex-col items-center justify-center rounded-br-[calc(8px*var(--s))] bg-[#22B16B] font-extrabold leading-none text-[#031A0E]"
+                  >
+                    <span className="text-[calc(8px*var(--s))] uppercase tracking-wide">Top</span>
+                    <span className="text-[calc(13px*var(--s))]">{index + 1}</span>
                   </span>
 
                   {isActive && (
                     <div className="pointer-events-none absolute inset-0 z-[2] hidden flex-col justify-center gap-2 p-4 pl-5 lg:flex" style={{ animation: "fadeIn 400ms ease 150ms both" }}>
-                      <h3 className="line-clamp-2 max-w-[474px] text-[34px] font-extrabold uppercase leading-[1] text-white">{item.title}</h3>
-                      {director && <p className="text-[12px] text-[#8A94A6]">{director}</p>}
+                      <h3 className="line-clamp-2 max-w-[calc(474px*var(--s))] text-[34px] font-extrabold uppercase leading-[1] text-white">{item.title}</h3>
+                      {director && <p className="text-[14px] text-[#949494]">{director}</p>}
                       {item.synopsis && (
-                        <p className="line-clamp-4 max-w-[474px] text-[12.5px] leading-[1.55] text-[#EEF1F6]/75">{item.synopsis}</p>
+                        <p className="line-clamp-4 max-w-[calc(474px*var(--s))] text-[15px] leading-[1.5] text-[#EEF1F6]/75">{item.synopsis}</p>
                       )}
                       <Link
                         href={`/ver/${item.id}`}
-                        className="pointer-events-auto mt-2 inline-flex h-8 w-fit items-center gap-2 rounded-[4px] bg-[#22B16B] px-3 text-[12.5px] font-semibold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="pointer-events-auto mt-2 inline-flex h-8 w-fit items-center gap-2 rounded-[4px] bg-[#22B16B] px-3 text-[14px] font-semibold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <GmaIcon name="play" size={12} />
                         Ver ahora
@@ -121,10 +145,10 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
                 </div>
 
                 <Link href={href} tabIndex={-1} aria-hidden="true" className="mt-2.5 block px-0.5">
-                  <span className="line-clamp-1 block text-[13px] font-medium leading-snug text-[#EEF1F6] transition-colors duration-200 group-hover/slot:text-[#22B16B] motion-reduce:transition-none">
+                  <span className="line-clamp-1 block text-[15px] font-medium leading-snug text-[#EEF1F6] transition-colors duration-200 group-hover/slot:text-[#22B16B] motion-reduce:transition-none">
                     {item.title}
                   </span>
-                  <span className="mt-1 flex items-center gap-x-1.5 text-[11px] leading-[11px] text-[#8A94A6]">
+                  <span className="mt-1 flex items-center gap-x-1.5 text-[13px] leading-[14px] text-[#949494]">
                     <span className="tabular-nums">{item.year}</span>
                     {category && (
                       <>

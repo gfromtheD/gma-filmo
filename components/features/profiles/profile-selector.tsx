@@ -8,11 +8,14 @@ import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
-import { COLOR_VALUES, renderAvatar, type AvatarColor } from "@/lib/data/profile-avatars";
+import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
+import { avatarContentFromId } from "@/lib/profiles/avatar";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const serifItalic: React.CSSProperties = {
-  fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
+const displayItalic: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontWeight: 500,
   fontStyle: "italic",
 };
 
@@ -178,9 +181,6 @@ function ScreenA({
   onAddProfile:     () => void;
 }) {
   const router = useRouter();
-  const supabaseColorKey = (Object.keys(COLOR_VALUES) as AvatarColor[]).find(
-    (k) => COLOR_VALUES[k] === supabaseColor,
-  ) ?? "green";
 
   const startExpand = useTransitionStore((s) => s.startExpand);
   // Entrar a Mi Estudio se diferencia con la variante invertida (negro/verde)
@@ -205,7 +205,7 @@ function ScreenA({
   }
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] flex-col" style={{ background: "#080A0F" }}>
+    <div className="flex min-h-screen min-h-[100dvh] flex-col" style={{ background: "var(--gma-bg)" }}>
 
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pl-[max(2rem,env(safe-area-inset-left))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pt-[calc(1.75rem+env(safe-area-inset-top))]">
@@ -213,7 +213,7 @@ function ScreenA({
         <button
           type="button"
           onClick={() => void handleSignOut()}
-          className="min-h-11 px-2 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
+          className="min-h-11 px-2 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:text-white"
         >
           Cerrar sesión
         </button>
@@ -221,10 +221,10 @@ function ScreenA({
 
       {/* Center content */}
       <div className="flex flex-1 flex-col items-center justify-center pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-10 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pb-[calc(4rem+env(safe-area-inset-bottom))]">
-        <h1 className="mb-3 max-w-full break-words text-center text-[clamp(2.25rem,7vw,4rem)] leading-[1.05] text-white" style={serifItalic}>
+        <h1 className="mb-3 max-w-full break-words text-center text-[clamp(2.25rem,7vw,4rem)] leading-[1.05] text-white" style={displayItalic}>
           ¿Quién está viendo?
         </h1>
-        <p className="mb-9 text-center text-[16px] text-[#6D7D94] sm:mb-16 sm:text-[18px]">Elige un perfil para continuar</p>
+        <p className="mb-9 text-center text-[16px] text-[#7C7C7C] sm:mb-16 sm:text-[18px]">Elige un perfil para continuar</p>
 
         <div className="grid w-full max-w-[1000px] grid-cols-2 justify-items-center gap-x-4 gap-y-8 sm:flex sm:flex-wrap sm:items-start sm:justify-center sm:gap-10">
 
@@ -236,26 +236,14 @@ function ScreenA({
               glowColor={supabaseColor}
               label={supabaseName}
             >
-              {supabaseImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={supabaseImageUrl} alt="" className="h-full w-full object-cover" />
-              ) : supabaseIconId ? (
-                renderAvatar(supabaseIconId, supabaseColorKey) as React.ReactNode
-              ) : (
-                <div
-                  className="flex h-full w-full items-center justify-center text-[54px] font-extrabold"
-                  style={{ background: supabaseColor, color: "#03200F" }}
-                >
-                  {supabaseName[0]?.toUpperCase() ?? "?"}
-                </div>
-              )}
+              <ProfileAvatar name={supabaseName} color={supabaseColor} url={supabaseImageUrl || null} iconId={supabaseIconId || null} size="fill" />
             </ProfileCard>
           )}
 
           {/* ── Sub-profiles ── */}
           {profiles.map((profile) => {
             const colorHex = COLOR_VALUES[profile.color as AvatarColor] ?? "#22B16B";
-            const isImage  = profile.avatarId.startsWith("/") || profile.avatarId.startsWith("data:");
+            const content = avatarContentFromId(profile.avatarId) ?? { kind: "initial" as const };
             return (
               <ProfileCard
                 key={profile.id}
@@ -269,12 +257,7 @@ function ScreenA({
                 label={profile.name}
                 badge={profile.isKids ? "niños" : undefined}
               >
-                {isImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.avatarId} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  renderAvatar(profile.avatarId, profile.color) as React.ReactNode
-                )}
+                <ProfileAvatar name={profile.name} color={profile.color} url={content.kind === "image" ? content.src : null} iconId={content.kind === "icon" ? content.iconId : null} size="fill" />
               </ProfileCard>
             );
           })}
@@ -285,10 +268,10 @@ function ScreenA({
             onClick={onAddProfile}
             className="group flex w-full min-w-0 max-w-[140px] flex-col items-center gap-3 sm:gap-4"
           >
-            <div className="flex h-[104px] w-[104px] sm:h-[140px] sm:w-[140px] items-center justify-center rounded-full border-2 border-dashed border-[#2A2A2A] transition-[border-color,background] duration-200 group-hover:border-[#22B16B]/50 group-hover:bg-[#22B16B]/5">
-              <GmaIcon name="plus" size={30} className="text-[#3A3A3A] transition-colors group-hover:text-[#22B16B]/70" />
+            <div className="flex h-[104px] w-[104px] sm:h-[140px] sm:w-[140px] items-center justify-center rounded-full border-2 border-dashed border-gma-line-strong transition-[border-color,background] duration-200 group-hover:border-[#22B16B]/50 group-hover:bg-[#22B16B]/5">
+              <GmaIcon name="plus" size={30} className="text-gma-line-strong transition-colors group-hover:text-[#22B16B]/70" />
             </div>
-            <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#6D7D94] sm:text-[17px] transition-colors group-hover:text-[#6D7D94]">
+            <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#7C7C7C] sm:text-[17px] transition-colors group-hover:text-[#7C7C7C]">
               Añadir perfil
             </div>
           </button>
@@ -325,13 +308,13 @@ function ProfileCard({
         {children}
       </button>
       <div className="flex w-full min-w-0 flex-col items-center gap-2">
-        <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#B8C5D4] sm:text-[17px] transition-colors group-hover:text-white">
+        <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#C4C4C4] sm:text-[17px] transition-colors group-hover:text-white">
           {label}
         </div>
         {badge && (
           <div
-            className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#4A5568]"
-            style={{ fontFamily: "ui-monospace, monospace" }}
+            className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#545454]"
+            style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}
           >
             {badge}
           </div>
@@ -340,7 +323,7 @@ function ProfileCard({
           type="button"
           onClick={onEdit}
           aria-label={`Editar ${label}`}
-          className="flex min-h-11 items-center gap-1.5 rounded-full border border-[#2A2A2A] bg-[#111318] px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] opacity-100 transition-[opacity,border-color,color] md:[@media(hover:hover)]:opacity-0 duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100 group-focus-within:opacity-100"
+          className="flex min-h-11 items-center gap-1.5 rounded-full border border-gma-line-strong bg-gma-panel px-4 py-1.5 text-[12px] font-semibold text-[#7C7C7C] opacity-100 transition-[opacity,border-color,color] md:[@media(hover:hover)]:opacity-0 duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100 group-focus-within:opacity-100"
         >
           <PencilIcon size={11} />
           Editar
@@ -394,15 +377,15 @@ function PinGate({
     <div
       className="fixed inset-0 z-[700] overflow-y-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
       role="dialog" aria-modal="true" aria-label={`PIN de ${name}`}
-      style={{ ...viewportBounds, background: "#080A0F" }}
+      style={{ ...viewportBounds, background: "var(--gma-bg)" }}
     >
       <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center justify-center">
       <GmaLogo />
       <div className="mt-8 flex w-full min-w-0 flex-col items-center gap-5 text-center sm:mt-16 sm:gap-6">
-        <h2 className="max-w-full break-words text-[26px] font-extrabold text-white sm:text-[32px]" style={serifItalic}>
+        <h2 className="max-w-full break-words text-[26px] font-extrabold text-white sm:text-[32px]" style={displayItalic}>
           ¿Quién es {name}?
         </h2>
-        <p className="text-[15px] text-[#6D7D94]">Introduce el PIN para acceder</p>
+        <p className="text-[15px] text-[#7C7C7C]">Introduce el PIN para acceder</p>
 
         <div className="mt-2 flex gap-2 sm:gap-4">
           {refs.map((ref, i) => (
@@ -418,8 +401,8 @@ function PinGate({
               onKeyDown={(e) => handleKeyDown(i, e)}
               className="h-12 w-12 rounded-[14px] sm:h-16 sm:w-16 border text-center text-[28px] font-bold text-white outline-none transition-colors"
               style={{
-                background:  "#0E1016",
-                borderColor: error ? "#ff5252" : digits[i] ? "#22B16B" : "#1E1E1E",
+                background:  "var(--gma-surface-2)",
+                borderColor: error ? "#ff5252" : digits[i] ? "#22B16B" : "var(--gma-surface)",
               }}
             />
           ))}
@@ -432,7 +415,7 @@ function PinGate({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-4 min-h-11 px-4 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:text-[#6D7D94]"
+          className="mt-4 min-h-11 px-4 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:text-[#7C7C7C]"
         >
           Volver a perfiles
         </button>

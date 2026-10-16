@@ -54,7 +54,7 @@ export function useNoticeToast(): NoticeToast {
           <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-[calc(86px+env(safe-area-inset-bottom))] left-1/2 lg:bottom-6 z-[400] flex w-[min(92vw,460px)] -translate-x-1/2 items-center gap-4 rounded-[8px] bg-[#242432] px-5 py-4 text-[14px] font-medium text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10"
+            className="fixed bottom-[calc(86px+env(safe-area-inset-bottom))] left-1/2 lg:bottom-6 z-[400] flex w-[min(92vw,460px)] -translate-x-1/2 items-center gap-4 rounded-[8px] bg-gma-border px-5 py-4 text-[14px] font-medium text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10"
           >
             <p className="flex-1 leading-snug">{notice.message}</p>
             {notice.showLogin && (
@@ -70,7 +70,7 @@ export function useNoticeToast(): NoticeToast {
               type="button"
               onClick={dismiss}
               aria-label="Cerrar aviso"
-              className="shrink-0 text-[18px] leading-none text-[#B8B8CC] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="shrink-0 text-[18px] leading-none text-[#BBBBBB] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               ×
             </button>

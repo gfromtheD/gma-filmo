@@ -42,15 +42,15 @@ interface Msg {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const C = {
-  bg:      "#0A0D12",
-  card:    "#0F1318",
-  border:  "#1E2530",
-  border2: "#262E3A",
+  bg:      "var(--gma-surface-2)",
+  card:    "var(--gma-surface-2)",
+  border:  "var(--gma-border)",
+  border2: "var(--gma-line-strong)",
   green:   "#22B16B",
   greenBg: "#0B2E1A",
   text:    "#FFFFFF",
-  sec:     "#8A9BB0",
-  muted:   "#4A5568",
+  sec:     "#999999",
+  muted:   "#545454",
   red:     "#FF5252",
 } as const;
 
@@ -215,13 +215,13 @@ function EmojiPicker({ anchorRect, onPick, onClose }: {
         lazyLoadEmojis
         previewConfig={{ showPreview: false }}
         style={{
-          ["--epr-bg-color" as string]:                  "#0F1318",
-          ["--epr-category-label-bg-color" as string]:   "#0A0D12",
-          ["--epr-hover-bg-color" as string]:            "#1E2530",
-          ["--epr-search-input-bg-color" as string]:     "#1E2530",
-          ["--epr-search-border-color" as string]:       "#262E3A",
+          ["--epr-bg-color" as string]:                  "var(--gma-surface-2)",
+          ["--epr-category-label-bg-color" as string]:   "var(--gma-surface-2)",
+          ["--epr-hover-bg-color" as string]:            "var(--gma-border)",
+          ["--epr-search-input-bg-color" as string]:     "var(--gma-border)",
+          ["--epr-search-border-color" as string]:       "var(--gma-line-strong)",
           ["--epr-text-color" as string]:                "#FFFFFF",
-          ["--epr-search-input-placeholder-color" as string]: "#8A9BB0",
+          ["--epr-search-input-placeholder-color" as string]: "#999999",
           ["--epr-emoji-highlighted-color" as string]:   "#22B16B",
           ["--epr-category-icon-active-color" as string]:"#22B16B",
         }}

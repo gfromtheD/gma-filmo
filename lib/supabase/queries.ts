@@ -6,6 +6,7 @@ import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
 import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorShorts, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
+import { FILM_LONG_SYNOPSES } from "@/lib/data/film-long-synopses";
 
 // ── Deterministic visual style from slug ─────────────────────────────────────
 const TONES: readonly (readonly [string, string])[] = [
@@ -58,6 +59,7 @@ type PeliculaRow = {
   source_page: string | null;
   created_at: string;
   genre: string | null;
+  language?: string | null;
 };
 
 type PeliculaWithRelations = PeliculaRow & {
@@ -183,6 +185,7 @@ function toMovieMedia(
     rating: "TODOS",
     categories,
     synopsis: p.synopsis || content?.synopsis || "",
+    fullSynopsis: FILM_LONG_SYNOPSES[p.slug],
     tagline: content?.tagline,
     runtime: p.duration ?? "Corto",
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
@@ -190,6 +193,7 @@ function toMovieMedia(
     r2VideoUrl,
     videoUrl: p.youtube_url ?? undefined,
     subtitleUrl,
+    language: p.language?.trim() || undefined,
     style: deriveStyle(p.slug),
     author: p.author ?? undefined,
     artistas: artistas.length > 0 ? artistas : undefined,
@@ -343,13 +347,12 @@ export async function getRelatedPeliculas(
     .sort((a, b) => tieBreak(a.id, excludeSlug + ":discover") - tieBreak(b.id, excludeSlug + ":discover"));
   if (discovery[0]) pick(discovery[0]);
 
-  // Fill any remaining slots (e.g. limit < 4 or tiny catalog)
+  // Fill the remaining slots (limit > 4 or tiny catalog) in relevance order, so a long grid keeps its best matches first
   if (picked.length < limit) {
-    candidates
-      .filter((m) => !usedIds.has(m.id))
-      .sort((a, b) => tieBreak(a.id, excludeSlug) - tieBreak(b.id, excludeSlug))
+    scored
+      .filter(({ m }) => !usedIds.has(m.id))
       .slice(0, limit - picked.length)
-      .forEach((m) => pick(m));
+      .forEach(({ m }) => pick(m));
   }
 
   return picked.slice(0, limit);

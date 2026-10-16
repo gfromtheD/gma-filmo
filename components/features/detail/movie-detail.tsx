@@ -2,37 +2,46 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { DetailsTab } from "@/components/features/detail/details-tab";
 import { DetailHeader } from "@/components/features/detail/detail-header";
+import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
 import { DetailTabs, detailPanelId, type DetailTabItem } from "@/components/features/detail/detail-tabs";
 import { PosterCard } from "@/components/ui/poster-card";
 import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
-import { useWatchlist } from "@/hooks/use-watchlist";
+import { ExtrasPanel } from "@/components/features/detail/extras-panel";
+import { useExtras } from "@/hooks/use-extras";
+import { parseRuntimeSeconds, type WorkType } from "@/lib/comments/timestamp";
+import { parseCommentHash } from "@/lib/comments/presentation";
+import { useWatchlist, watchlistErrorMessage } from "@/hooks/use-watchlist";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useNoticeToast } from "@/components/ui/notice-toast";
 import { useCommunityRatings } from "@/hooks/use-community-ratings";
-import type { MovieMedia } from "@/types/catalog";
+import type { MovieExtra, MovieMedia } from "@/types/catalog";
 import { externalUrl } from "@/lib/social-links";
+import { CATALOG_PAGE_PADDING_CLASS, RELATED_GRID_CLASS } from "@/lib/catalog/grid";
 import type { CreatorProfile } from "@/types/creator";
 
 interface MovieDetailProps {
   readonly movie: MovieMedia;
   readonly related: readonly MovieMedia[];
   readonly creator?: CreatorProfile | null;
+  readonly extras?: readonly MovieExtra[];
+  /** Sección de la ficha: «cortometraje» (por defecto) o «película». */
+  readonly workType?: WorkType;
   readonly autoOpenRating?: boolean;
 }
 
-type DetailTabId = "detalles" | "similares" | "valoraciones" | "comentarios";
+type DetailTabId = "detalles" | "similares" | "valoraciones" | "comentarios" | "extras";
 
-const TAB_IDS: readonly DetailTabId[] = ["detalles", "similares", "valoraciones", "comentarios"];
+const TAB_IDS: readonly DetailTabId[] = ["detalles", "similares", "valoraciones", "comentarios", "extras"];
 const TAB_PREFIX = "movie";
 
 function isDetailTabId(value: string): value is DetailTabId {
   return (TAB_IDS as readonly string[]).includes(value);
 }
 
-export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDetailProps) {
+export function MovieDetail({ movie, related, creator, extras: initialExtras = [], workType = "cortometraje", autoOpenRating }: MovieDetailProps) {
   const router = useRouter();
   const isGuest = useIsGuest();
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
@@ -43,19 +52,23 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
   const [activeTab, setActiveTab] = useState<DetailTabId>(autoOpenRating ? "valoraciones" : "detalles");
   const [rateIntent, setRateIntent] = useState(Boolean(autoOpenRating));
   const tabsRef = useRef<HTMLDivElement>(null);
+  const extras = useExtras(movie.numericId, initialExtras);
 
   const tabs: DetailTabItem<DetailTabId>[] = [
     { id: "detalles", label: "Detalles" },
     ...(related.length > 0 ? [{ id: "similares" as const, label: "Similares" }] : []),
     { id: "valoraciones", label: "Valoraciones" },
     { id: "comentarios", label: "Comentarios" },
+    ...(extras.length > 0 ? [{ id: "extras" as const, label: "Extras" }] : []),
   ];
 
   // Estado de pestañas enlazable: /cortos/slug#valoraciones
   useEffect(() => {
     const fromHash = window.location.hash.replace("#", "");
-    if (isDetailTabId(fromHash) && (fromHash !== "similares" || related.length > 0)) setActiveTab(fromHash);
-  }, [related.length]);
+    const available = (fromHash !== "similares" || related.length > 0) && (fromHash !== "extras" || extras.length > 0);
+    if (parseCommentHash(fromHash) !== null) setActiveTab("comentarios"); // enlace permanente a un comentario
+    else if (isDetailTabId(fromHash) && available) setActiveTab(fromHash);
+  }, [related.length, extras.length]);
 
   function selectTab(id: DetailTabId) {
     setActiveTab(id);
@@ -68,7 +81,7 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
       return;
     }
     const saved = inList ? await removeMedia(movie.numericId) : await addMedia(movie.numericId);
-    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
+    if (!saved) notice.showError(watchlistErrorMessage());
   }
 
   function handleRate() {
@@ -90,9 +103,16 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
     }
   }
 
+  // Las pestañas de cuadrícula ocupan todo el ancho con los márgenes del catálogo; las de texto conservan su ancho de lectura.
+  const isGridTab = activeTab === "similares" || activeTab === "extras";
+
   return (
     <div>
+      {/* Cada título tiene su fondo: el brillo de color de su portada, como en Inicio con el hero. */}
+      <AmbientBackdrop imageUrl={movie.imageUrl} style={movie.style} />
       {notice.toast}
+      {/* El contenido va por encima del brillo (que es fijo y de pantalla completa). */}
+      <div className="relative z-[2]">
       <DetailHeader
         movie={movie}
         avgScore={avgScore}
@@ -112,21 +132,11 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
         role="tabpanel"
         id={detailPanelId(TAB_PREFIX, activeTab)}
         aria-labelledby={`${TAB_PREFIX}-tab-${activeTab}`}
-        className="mx-auto max-w-[1240px] px-4 pb-20 pt-10 lg:px-6 lg:pt-12"
+        className={`pb-20 pt-10 lg:pt-12 ${isGridTab ? CATALOG_PAGE_PADDING_CLASS : "mx-auto max-w-[1240px] px-4 lg:px-6"}`}
       >
-        {activeTab === "detalles" && (
-          <div className="grid gap-12 lg:grid-cols-[1fr_419px]">
-            <div className="flex flex-col gap-10">
-              <SynopsisSection movie={movie} />
-              <DonationRow creator={creator ?? null} />
-            </div>
-            <aside className="flex flex-col gap-10">
-              <CreditsSection movie={movie} />
-              <InfoSection movie={movie} />
-              {(movie.tags ?? []).length > 0 && <FormatSection tags={movie.tags!} />}
-            </aside>
-          </div>
-        )}
+        {activeTab === "detalles" && <DetailsTab movie={movie} donation={<DonationRow creator={creator ?? null} />} />}
+
+        {activeTab === "extras" && extras.length > 0 && <ExtrasPanel extras={extras} />}
 
         {activeTab === "similares" && (
           <RelatedGrid related={related} onNavigate={(id) => router.push(`/cortos/${id}`)} />
@@ -142,141 +152,11 @@ export function MovieDetail({ movie, related, creator, autoOpenRating }: MovieDe
           />
         )}
 
-        {activeTab === "comentarios" && <CommentsBlock peliculaId={movie.numericId} movieSlug={movie.id} />}
+        {activeTab === "comentarios" && <CommentsBlock peliculaId={movie.numericId} movieSlug={movie.id} workType={workType} durationSeconds={parseRuntimeSeconds(movie.runtime)} />}
+      </div>
       </div>
     </div>
   );
-}
-
-// ─── Synopsis ─────────────────────────────────────────────────────────────────
-
-function SynopsisSection({ movie }: { movie: MovieMedia }) {
-  const [open,    setOpen]    = useState(false);
-  const [text,    setText]    = useState("");
-  const [sent,    setSent]    = useState(false);
-  const [sending, setSending] = useState(false);
-  const [error,   setError]   = useState("");
-
-  async function submit() {
-    if (!text.trim()) return;
-    setSending(true);
-    setError("");
-    try {
-      const { data: { session } } = await (await import("@/lib/supabase/browser")).getSupabaseBrowserClient().auth.getSession();
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
-
-      const res = await fetch("/api/synopsis-proposals", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ peliculaId: movie.numericId, proposedText: text.trim() }),
-      });
-      if (!res.ok) { setError("No se pudo enviar. Inicia sesión e inténtalo de nuevo."); return; }
-      setSent(true);
-      setOpen(false);
-      setText("");
-    } catch {
-      setError("Error de red. Inténtalo de nuevo.");
-    } finally {
-      setSending(false);
-    }
-  }
-
-  return (
-    <section>
-      <h2 className="mb-3 text-[22px] font-bold text-white">Sinopsis</h2>
-      <p className="break-words text-[15px] leading-[1.7] text-[#D9E2EC]">{movie.synopsis}</p>
-
-      {/* AI disclosure + propose CTA */}
-      <div className="mt-5 rounded-[10px] border border-[#1E1E1E] bg-[#0A0A0A] px-4 py-3">
-        {sent ? (
-          <p className="text-[12px] font-semibold text-[#22B16B]">
-            Gracias por tu aportación — la revisaremos pronto.
-          </p>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6D7D94]">
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
-                  <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M6 5.5v3M6 3.5h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-                Descripción generada con IA
-              </span>
-              <span className="text-[#262626]">·</span>
-              <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="min-h-11 break-words text-[11px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
-              >
-                {open ? "Cancelar" : <>¿No es acorde al contenido? <span className="underline underline-offset-2">Propón una mejor</span></>}
-              </button>
-            </div>
-
-            {open && (
-              <div className="mt-3 flex flex-col gap-2">
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Escribe aquí la sinopsis correcta para este corto…"
-                  rows={4}
-                  className="w-full resize-none rounded-[8px] border border-[#262626] bg-[#111] px-3 py-2.5 text-base leading-[1.6] sm:text-[13px] text-[#D9E2EC] placeholder-[#3A4A5A] outline-none transition-colors focus:border-[#22B16B]/50"
-                />
-                {error && <p className="text-[11px] text-[#ff5252]">{error}</p>}
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void submit()}
-                    disabled={!text.trim() || sending}
-                    className="min-h-11 rounded-full bg-[#22B16B] px-4 py-1.5 text-[12px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {sending ? "Enviando…" : "Enviar propuesta"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="min-h-11 rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#6D7D94] transition-colors hover:text-white"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
-
-// ─── Credits parser ───────────────────────────────────────────────────────────
-
-function parseAuthorField(
-  raw: string | null | undefined,
-  artistas?: MovieMedia["artistas"],
-): { director: string | null; illustrator: string | null; directorSlug: string | null; illustratorSlug: string | null } {
-  if (artistas && artistas.length > 0) {
-    const directorArtist    = artistas.find((a) => /creador|director/i.test(a.role)) ?? artistas[0];
-    const illustratorArtist = artistas.find((a) => /ilustrador|illustrator/i.test(a.role));
-    return {
-      director:        directorArtist?.name    ?? null,
-      illustrator:     illustratorArtist?.name ?? null,
-      directorSlug:    directorArtist?.slug    ?? null,
-      illustratorSlug: illustratorArtist?.slug ?? null,
-    };
-  }
-  if (!raw) return { director: null, illustrator: null, directorSlug: null, illustratorSlug: null };
-  const creado = raw.match(/Creado por:\s*([^;]+)/i);
-  const ilustr  = raw.match(/Ilustraci[oó]n por:\s*([^;]+)/i);
-  if (creado || ilustr) {
-    return {
-      director:        creado?.[1]?.trim() ?? null,
-      illustrator:     ilustr?.[1]?.trim()  ?? null,
-      directorSlug:    null,
-      illustratorSlug: null,
-    };
-  }
-  return { director: raw.trim(), illustrator: null, directorSlug: null, illustratorSlug: null };
 }
 
 // ─── Donation row ─────────────────────────────────────────────────────────────
@@ -342,7 +222,7 @@ function DonationRow({ creator }: { creator: CreatorProfile | null }) {
             href={getHref(creator)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-3 rounded-[14px] border border-[#262626] bg-[#0D0D0D] px-3 py-6 text-center transition-all duration-200"
+            className="flex flex-col items-center gap-3 rounded-[14px] border border-gma-border bg-gma-surface-2 px-3 py-6 text-center transition-all duration-200"
             onMouseEnter={(e) => {
               const el = e.currentTarget;
               el.style.background  = hoverBg;
@@ -365,135 +245,6 @@ function DonationRow({ creator }: { creator: CreatorProfile | null }) {
   );
 }
 
-// ─── Format section ───────────────────────────────────────────────────────────
-
-const FORMAT_DESC: Record<string, string> = {
-  UHD:   "Resolución 4K Ultra HD",
-  HDR:   "Alto rango dinámico",
-  Atmos: "Audio Dolby Atmos",
-};
-
-function FormatSection({ tags }: { tags: readonly string[] }) {
-  return (
-    <section>
-      <h2 className="mb-3 text-[22px] font-bold text-white">Calidad disponible</h2>
-      <div className="flex flex-col divide-y divide-[#262626] rounded-[12px] border border-[#262626] bg-[#0D0D0D] overflow-hidden">
-        {tags.map((t) => (
-          <div key={t} className="flex items-center gap-4 px-5 py-3.5">
-            <span className="w-[52px] shrink-0 rounded border border-[#22B16B]/50 py-0.5 text-center text-[11px] font-extrabold text-[#22B16B]">
-              {t}
-            </span>
-            <span className="text-[13px] text-[#B8C5D4]">
-              {FORMAT_DESC[t] ?? t}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Meta card ────────────────────────────────────────────────────────────────
-
-function CreditsSection({ movie }: { movie: MovieMedia }) {
-  const people =
-    movie.artistas && movie.artistas.length > 0
-      ? movie.artistas.map((a) => ({ name: a.name, role: a.role, slug: a.slug ?? null }))
-      : (() => {
-          const { director, illustrator } = parseAuthorField(movie.author, movie.artistas);
-          return [
-            ...(director ? [{ name: director, role: "Director", slug: null }] : []),
-            ...(illustrator ? [{ name: illustrator, role: "Ilustrador", slug: null }] : []),
-          ];
-        })();
-  if (people.length === 0) return null;
-
-  return (
-    <section>
-      <h2 className="mb-3 text-[22px] font-bold text-white">Dirección y reparto</h2>
-      <ul className="flex flex-col gap-2">
-        {people.map((p) => (
-          <li key={`${p.role}-${p.name}`} className="flex flex-col">
-            {p.slug ? (
-              <Link href={`/creadores/${p.slug}`} className="text-[16px] font-medium text-white hover:text-[#22B16B] hover:underline">
-                {p.name}
-              </Link>
-            ) : (
-              <span className="text-[16px] font-medium text-white">{p.name}</span>
-            )}
-            <span className="text-[13px] text-[#6D7D94]">{p.role}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function InfoSection({ movie }: { movie: MovieMedia }) {
-  return (
-    <section>
-      <h2 className="mb-3 text-[22px] font-bold text-white">Más información</h2>
-
-      <dl className="flex flex-col gap-3">
-        {(() => {
-          const { director, illustrator, directorSlug, illustratorSlug } = parseAuthorField(movie.author, movie.artistas);
-          return (
-            <>
-              <MetaRow label="Año"      value={String(movie.year)} />
-              <MetaRow label="Duración" value={movie.runtime} />
-              {director    && <MetaRow label="Director"   value={director}   linkHref={directorSlug    ? `/creadores/${encodeURIComponent(directorSlug)}`    : undefined} />}
-              {illustrator && <MetaRow label="Ilustrador" value={illustrator} linkHref={illustratorSlug ? `/creadores/${encodeURIComponent(illustratorSlug)}` : undefined} />}
-              {movie.tag   && <MetaRow label="Producción" value={movie.tag} accent />}
-            </>
-          );
-        })()}
-
-        {/* Colección */}
-        {movie.categories.filter((c) => c !== "Cortometraje").length > 0 && (
-          <MetaRow label="Género" value={movie.categories.filter((c) => c !== "Cortometraje").join(", ")} />
-        )}
-
-        {/* Format tags */}
-        {(movie.tags ?? []).length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <dt className="text-[12px] text-[#6D7D94]">Formato</dt>
-            <dd className="flex flex-wrap gap-1.5">
-              {movie.tags!.map((t) => (
-                <span
-                  key={t}
-                  className="rounded border border-[#22B16B]/40 px-2 py-0.5 text-[11px] font-bold text-[#22B16B]"
-                >
-                  {t}
-                </span>
-              ))}
-            </dd>
-          </div>
-        )}
-      </dl>
-    </section>
-  );
-}
-
-function MetaRow({ label, value, accent, linkHref }: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  linkHref?: string;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <dt className="shrink-0 text-[12px] text-[#6D7D94]">{label}</dt>
-      <dd className={`min-w-0 break-words text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
-        {linkHref ? (
-          <Link href={linkHref} className="transition-colors hover:text-[#22B16B] hover:underline">
-            {value}
-          </Link>
-        ) : value}
-      </dd>
-    </div>
-  );
-}
-
 // ─── Related panel ────────────────────────────────────────────────────────────
 
 function RelatedGrid({
@@ -506,7 +257,7 @@ function RelatedGrid({
   return (
     <section>
       <h2 className="mb-4 text-[22px] font-bold text-white">También te puede gustar</h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div data-related-grid className={RELATED_GRID_CLASS}>
         {related.map((m) => (
           <PosterCard key={m.id} item={m} ratio="landscape" fluid hoverOverlay onClick={() => onNavigate(m.id)} />
         ))}

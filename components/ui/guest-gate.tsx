@@ -22,10 +22,10 @@ export function GuestGate({
       <div aria-hidden="true" className="pointer-events-none select-none opacity-20 blur-[3px]">
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#060A10]/80 px-8 backdrop-blur-sm">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-gma-bg/80 px-8 backdrop-blur-sm">
         <div className="text-center">
           <p className="mb-1.5 text-[18px] font-extrabold text-white">Necesitas una cuenta</p>
-          <p className="text-[14px] text-[#B8C5D4]">{message}</p>
+          <p className="text-[14px] text-[#C4C4C4]">{message}</p>
         </div>
         <button
           type="button"

@@ -16,20 +16,20 @@ export default function PrivacidadPage() {
         <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05, margin: 0 }}>
           Política de privacidad
         </h1>
-        <p style={{ marginTop: 16, fontSize: 13, color: "#4A5A6E" }}>
+        <p style={{ marginTop: 16, fontSize: 13, color: "#585858" }}>
           Última actualización: junio de 2026
         </p>
       </div>
 
       {/* Intro */}
-      <p style={{ fontSize: 15, lineHeight: 1.75, color: "#B0BDCC", marginBottom: 48, marginTop: 0 }}>
+      <p style={{ fontSize: 15, lineHeight: 1.75, color: "#BBBBBB", marginBottom: 48, marginTop: 0 }}>
         En GMA Filmo gestionamos los datos personales de forma responsable y transparente. Esta política
         explica qué información recogemos, para qué la usamos y cuáles son tus derechos. No vendemos
         datos, no tenemos publicidad y no compartimos tu información con terceros salvo obligación legal.
       </p>
 
       {/* Sections */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 40, fontSize: 15, lineHeight: 1.75, color: "#B0BDCC" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 40, fontSize: 15, lineHeight: 1.75, color: "#BBBBBB" }}>
 
         <Section title="1. Quién es responsable de tus datos">
           Generación Maldita, a través de GMA Filmo, es la responsable del tratamiento de los datos
@@ -124,8 +124,8 @@ export default function PrivacidadPage() {
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: 72, paddingTop: 32, borderTop: "1px solid #1A2536", textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "#4A5A6E" }}>
+      <div style={{ marginTop: 72, paddingTop: 32, borderTop: "1px solid var(--gma-border)", textAlign: "center" }}>
+        <p style={{ fontSize: 13, color: "#585858" }}>
           También puedes consultar nuestras{" "}
           <Link href="/terminos" style={{ color: "#22B16B", textDecoration: "none", fontWeight: 600 }}>
             Condiciones de uso →

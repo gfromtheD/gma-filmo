@@ -8,7 +8,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useSettingsPrefs } from "@/hooks/use-settings-prefs";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { renderAvatar } from "@/lib/data/profile-avatars";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import type { GmaIconName } from "@/components/ui/gma-icon";
 
 // ─── Tab registry ─────────────────────────────────────────────────────────────
@@ -36,8 +36,9 @@ const TABS: readonly Tab[] = [
   { id: "dispositivos",   label: "Dispositivos",                 icon: "download"  },
 ];
 
-const serifItalic: React.CSSProperties = {
-  fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
+const displayItalic: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontWeight: 500,
   fontStyle: "italic",
 };
 
@@ -55,11 +56,11 @@ export function SettingsScreen() {
   if (activeProfile?.isKids) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#1A1A1A] text-[#5A6A7E]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gma-surface text-[#686868]">
           <GmaIcon name="shield" size={28} />
         </div>
         <p className="text-[18px] font-bold text-white">Acceso restringido</p>
-        <p className="max-w-[320px] text-[14px] leading-[1.6] text-[#5A6A7E]">
+        <p className="max-w-[320px] text-[14px] leading-[1.6] text-[#686868]">
           Los perfiles para niños no pueden acceder a la configuración de la cuenta.
         </p>
       </div>
@@ -69,15 +70,15 @@ export function SettingsScreen() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 pb-24 pt-10">
       <div className="mb-7">
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6D7D94]">
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7C7C7C]">
           Configuración
         </p>
-        <h1 className="text-3xl sm:text-[40px] leading-tight text-white" style={serifItalic}>
+        <h1 className="text-3xl sm:text-[40px] leading-tight text-white" style={displayItalic}>
           Ajustes y preferencias
         </h1>
       </div>
 
-      <div className="mb-8 border-b border-[#262626]">
+      <div className="mb-8 border-b border-gma-border">
         <div className="flex overflow-x-auto">
           {TABS.map((tab) => {
             const isActive = active === tab.id;
@@ -89,7 +90,7 @@ export function SettingsScreen() {
                 className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3.5 text-[13.5px] font-semibold whitespace-nowrap transition-colors duration-150 ${
                   isActive
                     ? "border-[#22B16B] text-[#22B16B]"
-                    : "border-transparent text-[#6D7D94] hover:text-white"
+                    : "border-transparent text-[#7C7C7C] hover:text-white"
                 }`}
               >
                 <GmaIcon name={tab.icon} size={15} />
@@ -128,10 +129,10 @@ function SettingsCard({
   span?: "full";
 }) {
   return (
-    <div className={`rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-4 sm:p-6 ${span === "full" ? "md:col-span-2" : ""}`}>
+    <div className={`rounded-xl border border-gma-surface bg-gma-surface-2 p-4 sm:p-6 ${span === "full" ? "md:col-span-2" : ""}`}>
       <p className="text-[15.5px] font-bold text-white">{title}</p>
       {description && (
-        <p className="mt-1 text-[12.5px] leading-[1.5] text-[#6D7D94]">{description}</p>
+        <p className="mt-1 text-[12.5px] leading-[1.5] text-[#7C7C7C]">{description}</p>
       )}
       {children && <div className="mt-4">{children}</div>}
     </div>
@@ -152,7 +153,7 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
     >
       <span
         aria-hidden="true"
-        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${value ? "bg-[#22B16B]" : "bg-[#2A2A2A]"}`}
+        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${value ? "bg-[#22B16B]" : "bg-gma-line-strong"}`}
       >
         <span
           className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
@@ -191,7 +192,7 @@ function GmaSelect({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] py-2.5 pl-4 pr-9 text-[13px] font-medium text-white outline-none focus:border-[#22B16B] ${
+        className={`appearance-none rounded-[8px] border border-gma-line-strong bg-gma-surface py-2.5 pl-4 pr-9 text-[13px] font-medium text-white outline-none focus:border-[#22B16B] ${
           fullWidth ? "w-full" : ""
         }`}
       >
@@ -202,7 +203,7 @@ function GmaSelect({
       <GmaIcon
         name="chevronDown"
         size={13}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6D7D94]"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#7C7C7C]"
       />
     </div>
   );
@@ -222,7 +223,7 @@ function ActionButton({ label, danger, onClick, disabled }: {
       className={`min-h-11 rounded-full px-4 py-1.5 text-[13px] font-bold transition-colors duration-150 disabled:opacity-40 ${
         danger
           ? "bg-[#ff5252]/10 text-[#ff5252] hover:bg-[#ff5252]/20"
-          : "bg-[#1A1A1A] text-[#B8C5D4] hover:bg-[#262626] hover:text-white"
+          : "bg-gma-surface text-[#C4C4C4] hover:bg-gma-border hover:text-white"
       }`}
     >
       {label}
@@ -253,7 +254,6 @@ function CuentaSection() {
   const [deleteFeedback,   setDeleteFeedback]   = useState<{ text: string; danger?: boolean } | null>(null);
   const [signingOut,       setSigningOut]       = useState(false);
 
-  const initial = (displayName?.[0] ?? "?").toUpperCase();
 
   async function handlePasswordReset() {
     if (!profile.email) return;
@@ -313,26 +313,14 @@ function CuentaSection() {
   return (
     <div className="flex flex-col gap-4">
       {/* Profile header */}
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-[#1C1C1C] bg-[#0D0D0D] p-4 sm:p-6">
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gma-surface bg-gma-surface-2 p-4 sm:p-6">
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px]">
-          {avatarImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" />
-          ) : avatarIconId ? (
-            renderAvatar(avatarIconId, avatarColor, 64) as React.ReactNode
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center text-[28px] font-extrabold text-[#03200F]"
-              style={{ background: avatarColor ?? "#22B16B" }}
-            >
-              {initial}
-            </div>
-          )}
+          <ProfileAvatar name={displayName} color={avatarColor} url={avatarImageUrl || null} iconId={avatarIconId || null} size="fill" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="break-words text-[20px] font-extrabold text-white">{displayName}</div>
           {profile.memberSince && (
-            <div className="mt-0.5 text-[13px] text-[#6D7D94]">
+            <div className="mt-0.5 text-[13px] text-[#7C7C7C]">
               Miembro desde {formatMemberSince(profile.memberSince)}
             </div>
           )}
@@ -344,7 +332,7 @@ function CuentaSection() {
         {/* Email */}
         <SettingsCard title="Correo electrónico">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="break-all text-[13px] text-[#6D7D94]">{profile.email ?? "—"}</span>
+            <span className="break-all text-[13px] text-[#7C7C7C]">{profile.email ?? "—"}</span>
             <ActionButton
               label={showEmailForm ? "Cancelar" : "Cambiar"}
               onClick={() => { setShowEmailForm((v) => !v); setEmailFeedback(null); }}
@@ -357,7 +345,7 @@ function CuentaSection() {
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="nuevo@correo.com"
-                className="min-w-0 flex-1 rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#6D7D94] outline-none focus:border-[#22B16B]"
+                className="min-w-0 flex-1 rounded-[8px] border border-gma-line-strong bg-gma-surface px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#7C7C7C] outline-none focus:border-[#22B16B]"
               />
               <ActionButton label="Confirmar" onClick={() => void handleEmailChange()} />
             </div>
@@ -414,7 +402,7 @@ function CuentaSection() {
                 value={deleteInput}
                 onChange={(e) => setDeleteInput(e.target.value)}
                 placeholder="eliminar cuenta"
-                className="w-full rounded-[8px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#3A4A5E] outline-none focus:border-[#ff5252]"
+                className="w-full rounded-[8px] border border-gma-line-strong bg-gma-surface px-3 py-2 text-base sm:text-[13px] text-white placeholder-[#3A4A5E] outline-none focus:border-[#ff5252]"
               />
               <div className="flex justify-end gap-2">
                 <ActionButton
@@ -495,12 +483,12 @@ function IdiomaSection() {
           fullWidth
         />
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <div className="flex flex-1 items-center justify-between rounded-[6px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6D7D94]">Tamaño</span>
+          <div className="flex flex-1 items-center justify-between rounded-[6px] border border-gma-line-strong bg-gma-surface px-3 py-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#7C7C7C]">Tamaño</span>
             <span className="text-[12px] font-semibold text-white">Mediano</span>
           </div>
-          <div className="flex flex-1 items-center justify-between rounded-[6px] border border-[#2A2A2A] bg-[#1A1A1A] px-3 py-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6D7D94]">Fondo</span>
+          <div className="flex flex-1 items-center justify-between rounded-[6px] border border-gma-line-strong bg-gma-surface px-3 py-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#7C7C7C]">Fondo</span>
             <span className="text-[12px] font-semibold text-white">Sombra</span>
           </div>
         </div>
@@ -519,7 +507,7 @@ function IdiomaSection() {
       </SettingsCard>
 
       <SettingsCard title="Vista previa de subtítulos">
-        <div className="flex min-h-[56px] items-center justify-center rounded-lg bg-[#1A1A1A] px-6 py-4">
+        <div className="flex min-h-[56px] items-center justify-center rounded-lg bg-gma-surface px-6 py-4">
           <span className="text-[15px] font-semibold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]">
             —¿Adónde van todos esos pájaros?
           </span>
@@ -650,11 +638,11 @@ function DispositivosSection() {
           />
         </div>
         {showDevices && (
-          <div className="mt-3 rounded-lg border border-[#2A2A2A] bg-[#1A1A1A] px-4 py-3">
+          <div className="mt-3 rounded-lg border border-gma-line-strong bg-gma-surface px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[13px] font-semibold text-white">Este dispositivo</p>
-                <p className="text-[11.5px] text-[#6D7D94]">Navegador web · Activo ahora</p>
+                <p className="text-[11.5px] text-[#7C7C7C]">Navegador web · Activo ahora</p>
               </div>
               <span className="rounded-full bg-[#22B16B]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#22B16B]">
                 Activo

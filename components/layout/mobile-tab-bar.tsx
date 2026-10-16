@@ -51,7 +51,7 @@ export function MobileTabBar() {
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] lg:hidden"
     >
       <ul
-        className="pointer-events-auto mx-auto flex max-w-[380px] items-center justify-between gap-1 rounded-full bg-[#0B0B1C]/90 p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.6)] ring-1 ring-white/10 backdrop-blur-xl"
+        className="pointer-events-auto mx-auto flex max-w-[380px] items-center justify-between gap-1 rounded-full bg-gma-surface-2/90 p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.6)] ring-1 ring-white/10 backdrop-blur-xl"
         style={{ height: TAB_BAR_PILL_HEIGHT_PX }}
       >
         {tabs.map(({ id, label, href, match, Icon }) => {
@@ -62,7 +62,7 @@ export function MobileTabBar() {
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex h-full flex-col items-center justify-center gap-0.5 rounded-full px-1 text-[11px] font-medium leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-white motion-reduce:transition-none ${
-                  isActive ? "bg-white/[0.09] text-[#22B16B]" : "text-[#9AA3B5] active:text-white"
+                  isActive ? "bg-white/[0.09] text-[#22B16B]" : "text-[#A4A4A4] active:text-white"
                 }`}
               >
                 <Icon size={22} strokeWidth={isActive ? 2 : 1.6} />

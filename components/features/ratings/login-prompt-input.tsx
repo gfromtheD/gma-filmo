@@ -1,19 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { GmaIcon } from "@/components/ui/gma-icon";
+import Link from "next/link";
 
+/**
+ * Aviso para visitantes en Valoraciones y Comentarios: una invitación clara (mensaje, una línea de explicación y un
+ * botón verde, sin icono), en el mismo cristal oscuro que el resto de tarjetas de la ficha.
+ */
 export function LoginPromptInput() {
-  const router = useRouter();
-
   return (
-    <button
-      type="button"
-      onClick={() => router.push("/")}
-      className="flex min-h-11 w-full min-w-0 items-center gap-3 rounded-[12px] border border-[#262626] bg-[#0D0D0D] px-3 py-3 sm:px-5 sm:py-4 text-left text-[14px] text-[#6D7D94] transition-colors hover:border-[#3A3A3A]"
-    >
-      <GmaIcon name="star" size={16} strokeWidth={2} className="shrink-0 text-[#4A5568]" />
-      <span className="min-w-0 break-words">Inicia sesión para comentar</span>
-    </button>
+    <div className="flex flex-col gap-4 rounded-[12px] border border-white/10 bg-black/40 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="min-w-0">
+        <p className="break-words text-[16px] font-bold leading-snug text-white">Inicia sesión para comentar</p>
+        <p className="mt-0.5 break-words text-[14px] leading-snug text-[#BBBBBB]">Valora y comenta con tu perfil.</p>
+      </div>
+      <Link
+        href="/?login=1"
+        className="inline-flex h-11 shrink-0 items-center justify-center rounded-[4px] bg-[#22B16B] px-5 text-[14px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        Iniciar sesión
+      </Link>
+    </div>
   );
 }

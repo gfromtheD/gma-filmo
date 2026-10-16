@@ -76,7 +76,7 @@ export default function ConfigurarPerfilPage() {
 
   if (init) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: "#0A0F17" }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--gma-surface-2)" }}>
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#22B16B] border-t-transparent" />
       </div>
     );
@@ -87,14 +87,14 @@ export default function ConfigurarPerfilPage() {
   return (
     <div
       className="flex min-h-screen min-h-[100dvh] items-center justify-center pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pt-[calc(3rem+env(safe-area-inset-top))] sm:pb-[calc(3rem+env(safe-area-inset-bottom))]"
-      style={{ background: "#0A0F17" }}
+      style={{ background: "var(--gma-surface-2)" }}
     >
       <div
         className="w-full min-w-0 p-6 sm:p-9"
         style={{
           maxWidth: 420,
-          background: "#111827",
-          border: "1px solid #1E2D42",
+          background: "var(--gma-panel)",
+          border: "1px solid var(--gma-line-strong)",
           borderRadius: 16,
         }}
       >
@@ -107,7 +107,7 @@ export default function ConfigurarPerfilPage() {
         <h1 className="mb-1 text-[24px] font-extrabold tracking-[-0.02em] text-white">
           Configura tu perfil
         </h1>
-        <p className="mb-8 text-[13px] text-[#5A6A7E]">
+        <p className="mb-8 text-[13px] text-[#686868]">
           Elige cómo quieres que te veamos en GMA·filmo.
         </p>
 
@@ -124,7 +124,7 @@ export default function ConfigurarPerfilPage() {
         <form onSubmit={handleSave} className="flex flex-col gap-5">
           {/* Name */}
           <div>
-            <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
+            <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#585858]">
               Nombre
             </label>
             <input
@@ -134,14 +134,14 @@ export default function ConfigurarPerfilPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="¿Cómo te llamas?"
               maxLength={40}
-              className="min-w-0 w-full rounded-md border border-[#1E2D42] bg-[#0D1520] px-4 py-3 text-[16px] text-white placeholder-[#4A5A6E] outline-none transition-colors focus:border-[#22B16B]/60"
+              className="min-w-0 w-full rounded-md border border-gma-line-strong bg-gma-panel px-4 py-3 text-[16px] text-white placeholder-[#585858] outline-none transition-colors focus:border-[#22B16B]/60"
               required
             />
           </div>
 
           {/* Color */}
           <div>
-            <p className="mb-3 text-[12px] font-semibold uppercase tracking-widest text-[#4A5A6E]">
+            <p className="mb-3 text-[12px] font-semibold uppercase tracking-widest text-[#585858]">
               Color de perfil
             </p>
             <div className="flex flex-wrap gap-3">
@@ -157,7 +157,7 @@ export default function ConfigurarPerfilPage() {
                     background: c.hex,
                     boxShadow:
                       color === c.hex
-                        ? `0 0 0 2.5px #111827, 0 0 0 4.5px ${c.hex}`
+                        ? `0 0 0 2.5px var(--gma-panel), 0 0 0 4.5px ${c.hex}`
                         : "none",
                   }}
                 />

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
 import { rateLimit } from "@/lib/api/rate-limit";
+import { loadAuthors } from "@/lib/profiles/author-lookup";
+import { authorKey } from "@/lib/profiles/author-avatar";
 import { paginateReviews, parseReviewQuery, sortReviews } from "@/lib/ratings/review-query";
 
 export async function GET(request: Request) {
@@ -56,35 +58,28 @@ export async function GET(request: Request) {
     }
   }
 
-  // Resolve display names and avatars
-  const userIds = [...new Set(ratings.map((r) => r.user_id))];
-  const { data: profiles } = await admin
-    .from("profiles")
-    .select("id, display_name, avatar_url, avatar_color")
-    .in("id", userIds);
-
-  const nameMap   = new Map<string, string>();
-  const avatarMap = new Map<string, { url: string | null; color: string | null }>();
-  for (const p of profiles ?? []) {
-    nameMap.set(p.id, p.display_name);
-    avatarMap.set(p.id, { url: p.avatar_url, color: p.avatar_color });
-  }
+  // Nombre, foto o icono y color actuales del perfil con el que valoró cada autor.
+  const authors = await loadAuthors(ratings);
 
   // Build reviews: only those with a comment (orden y paginación según la consulta)
   const withComment = ratings
     .filter((r) => r.comment?.trim())
-    .map((r) => ({
-      userId:      r.user_id,
-      profileId:   r.profile_id ?? "",
-      displayName: nameMap.get(r.user_id) ?? "Usuario",
-      avatarUrl:   avatarMap.get(r.user_id)?.url   ?? null,
-      avatarColor: avatarMap.get(r.user_id)?.color ?? null,
-      score:       Math.round(r.score * 2),
-      comment:     r.comment,
-      ratedAt:     r.rated_at,
-      likeCount:   likeCountMap.get(r.user_id) ?? 0,
-      likedByMe:   myLikedSet.has(r.user_id),
-    }));
+    .map((r) => {
+      const author = authors[authorKey(r.user_id, r.profile_id)];
+      return {
+        userId:       r.user_id,
+        profileId:    r.profile_id ?? "",
+        displayName:  author?.displayName ?? "Usuario",
+        avatarUrl:    author?.avatarUrl ?? null,
+        avatarIconId: author?.avatarIconId ?? null,
+        avatarColor:  author?.avatarColor ?? null,
+        score:        Math.round(r.score * 2),
+        comment:      r.comment,
+        ratedAt:      r.rated_at,
+        likeCount:    likeCountMap.get(r.user_id) ?? 0,
+        likedByMe:    myLikedSet.has(r.user_id),
+      };
+    });
   const { page: reviews, total, hasMore } = paginateReviews(sortReviews(withComment, query.sort), query);
 
   const avgRaw   = ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length;

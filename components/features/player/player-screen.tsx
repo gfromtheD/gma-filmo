@@ -49,13 +49,14 @@ function parseSpriteVtt(text: string): { cues: SpriteCue[]; sheetW: number; shee
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const serifItalic: React.CSSProperties = {
-  fontFamily: "var(--font-serif), 'Instrument Serif', Georgia, serif",
+const displayItalic: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontWeight: 500,
   fontStyle: "italic",
 };
 
 const MONO: React.CSSProperties = {
-  fontFamily: "ui-monospace, 'Cascadia Code', monospace",
+  fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums",
 };
 
 const MOCK_CHAPTERS = [
@@ -140,7 +141,7 @@ function Skip10({ direction }: { direction: "back" | "forward" }) {
       <Icon size={22} strokeWidth={1.7} />
       <span
         className="absolute text-[6.5px] font-bold leading-none"
-        style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
+        style={{ fontFamily: "var(--font-sans)" }}
       >
         10
       </span>
@@ -765,7 +766,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           onClick={(e) => e.stopPropagation()}
         >
           <svg width={48} height={48} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke="#6D7D94" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke="#7C7C7C" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="max-w-xs text-center text-[15px] font-semibold leading-relaxed text-white/80">
             Sin conexión. Comprueba tu internet e inténtalo de nuevo.
@@ -823,7 +824,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           <h2
             className={`${styles.pausedTitle} break-words text-[62px] font-normal leading-[1.05] text-white`}
             style={{
-              ...serifItalic,
+              ...displayItalic,
               textShadow: "0 2px 40px rgba(0,0,0,0.9), 0 1px 8px rgba(0,0,0,1)",
             }}
           >
@@ -1277,7 +1278,7 @@ function AutoplayCountdown({
         <button
           type="button"
           onClick={onPlayNow}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white py-2.75 text-[13px] font-bold text-[#0a0a0a] transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white py-2.75 text-[13px] font-bold text-gma-surface-2 transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
         >
           <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M6 4l14 8-14 8V4z" />
@@ -1552,7 +1553,7 @@ function Scrubber({
             <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
             <span
               className="absolute bottom-1.5 right-2 text-[10px] font-bold tabular-nums text-white/90 drop-shadow"
-              style={{ fontFamily: "ui-monospace, 'Cascadia Code', monospace" }}
+              style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}
             >
               {formatTime(hoverState.time)}
             </span>
@@ -2000,7 +2001,7 @@ function SettingsPanel({
   return (
     <div
       className={`${styles.settingsPanel} absolute right-5 top-18 w-72 rounded-2xl border border-white/10 backdrop-blur-xl`}
-      style={{ background: "rgba(8,8,8,0.92)", zIndex: 20, boxShadow: "0 8px 48px rgba(0,0,0,0.6)" }}
+      style={{ background: "color-mix(in srgb, var(--gma-bg) 92%, transparent)", zIndex: 20, boxShadow: "0 8px 48px rgba(0,0,0,0.6)" }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}

@@ -289,6 +289,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_color: string | null
+          avatar_id: string | null
           avatar_url: string | null
           created_at: string
           display_name: string
@@ -297,6 +298,7 @@ export type Database = {
         }
         Insert: {
           avatar_color?: string | null
+          avatar_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string
@@ -305,6 +307,7 @@ export type Database = {
         }
         Update: {
           avatar_color?: string | null
+          avatar_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string
@@ -552,6 +555,10 @@ export type Database = {
       }
       comments: {
         Row: {
+          creator_hearted: boolean
+          edited_at: string | null
+          pinned_at: string | null
+          profile_id: string
           avatar_color: string | null
           content: string
           created_at: string
@@ -561,10 +568,15 @@ export type Database = {
           like_count: number
           parent_id: number | null
           pelicula_id: number
+          reply_to_id: number | null
           timestamp_ref: number | null
           user_id: string
         }
         Insert: {
+          creator_hearted?: boolean
+          edited_at?: string | null
+          pinned_at?: string | null
+          profile_id?: string
           avatar_color?: string | null
           content: string
           created_at?: string
@@ -574,10 +586,15 @@ export type Database = {
           like_count?: number
           parent_id?: number | null
           pelicula_id: number
+          reply_to_id?: number | null
           timestamp_ref?: number | null
           user_id: string
         }
         Update: {
+          creator_hearted?: boolean
+          edited_at?: string | null
+          pinned_at?: string | null
+          profile_id?: string
           avatar_color?: string | null
           content?: string
           created_at?: string
@@ -596,6 +613,71 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pelicula_extras: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          id: number
+          kind: string
+          media_ref: string | null
+          pelicula_id: number
+          poster_url: string | null
+          provider: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: never
+          kind?: string
+          media_ref?: string | null
+          pelicula_id: number
+          poster_url?: string | null
+          provider?: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: never
+          kind?: string
+          media_ref?: string | null
+          pelicula_id?: number
+          poster_url?: string | null
+          provider?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pelicula_extras_pelicula_id_fkey"
+            columns: ["pelicula_id"]
+            isOneToOne: false
+            referencedRelation: "peliculas"
             referencedColumns: ["id"]
           },
         ]
@@ -639,16 +721,19 @@ export type Database = {
         Row: {
           comment_id: number
           created_at: string
+          profile_id: string
           user_id: string
         }
         Insert: {
           comment_id: number
           created_at?: string
+          profile_id?: string
           user_id: string
         }
         Update: {
           comment_id?: number
           created_at?: string
+          profile_id?: string
           user_id?: string
         }
         Relationships: [

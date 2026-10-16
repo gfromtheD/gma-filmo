@@ -6,11 +6,17 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 const OPEN_DELAY_MS = 300;
 /** Margen para poder cruzar del póster al panel sin que se cierre. */
 const CLOSE_DELAY_MS = 120;
+/** Lo que dura el desvanecimiento de salida antes de desmontar el panel. */
+const EXIT_MS = 130;
+/** Lo que puede moverse la portada con un scroll antes de cerrar la tarjeta. */
+const MOVE_TOLERANCE_PX = 1;
 
 interface UseHoverPreview<T extends HTMLElement> {
   readonly anchorRef: React.RefObject<T>;
   /** Caja de la portada cuando la vista previa está abierta; `null` si no. */
   readonly anchorBox: DOMRect | null;
+  /** El cursor ya salió y el panel se está desvaneciendo. */
+  readonly isClosing: boolean;
   readonly onPointerEnter: (event: PointerEvent) => void;
   readonly onPointerLeave: (event: PointerEvent) => void;
   readonly keepOpen: () => void;
@@ -25,6 +31,8 @@ interface UseHoverPreview<T extends HTMLElement> {
 export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseHoverPreview<T> {
   const anchorRef = useRef<T>(null);
   const [anchorBox, setAnchorBox] = useState<DOMRect | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Tras Escape no se reabre hasta que el ratón salga de la portada. */
@@ -33,25 +41,41 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
   const clearTimers = useCallback(() => {
     if (openTimer.current) clearTimeout(openTimer.current);
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (exitTimer.current) clearTimeout(exitTimer.current);
     openTimer.current = null;
     closeTimer.current = null;
+    exitTimer.current = null;
   }, []);
 
+  /** Cierre inmediato (Escape, scroll, clic en un enlace): sin animación de salida. */
   const close = useCallback(() => {
     clearTimers();
+    setIsClosing(false);
     setAnchorBox(null);
   }, [clearTimers]);
 
   const keepOpen = useCallback(() => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     closeTimer.current = null;
+    // Si el cursor vuelve mientras se desvanecía, la tarjeta se queda abierta.
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+    exitTimer.current = null;
+    setIsClosing(false);
   }, []);
 
   const scheduleClose = useCallback(() => {
     if (openTimer.current) clearTimeout(openTimer.current);
     openTimer.current = null;
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setAnchorBox(null), CLOSE_DELAY_MS);
+    closeTimer.current = setTimeout(() => {
+      closeTimer.current = null;
+      setIsClosing(true);
+      exitTimer.current = setTimeout(() => {
+        exitTimer.current = null;
+        setIsClosing(false);
+        setAnchorBox(null);
+      }, EXIT_MS);
+    }, CLOSE_DELAY_MS);
   }, []);
 
   const onPointerEnter = useCallback(
@@ -81,20 +105,27 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
 
   useEffect(() => {
     if (!anchorBox) return;
+    // Cualquier scroll de la página llega aquí (también el de carruseles ajenos que se recolocan solos): solo se
+    // cierra si la portada de esta tarjeta se ha movido de verdad.
+    const closeIfAnchorMoved = () => {
+      const now = anchorRef.current?.getBoundingClientRect();
+      if (!now) return close();
+      if (Math.abs(now.left - anchorBox.left) > MOVE_TOLERANCE_PX || Math.abs(now.top - anchorBox.top) > MOVE_TOLERANCE_PX) close();
+    };
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       isDismissed.current = true;
       close();
     };
     window.addEventListener("keydown", handleKey);
-    window.addEventListener("scroll", close, { passive: true, capture: true });
+    window.addEventListener("scroll", closeIfAnchorMoved, { passive: true, capture: true });
     window.addEventListener("resize", close);
     return () => {
       window.removeEventListener("keydown", handleKey);
-      window.removeEventListener("scroll", close, { capture: true });
+      window.removeEventListener("scroll", closeIfAnchorMoved, { capture: true });
       window.removeEventListener("resize", close);
     };
   }, [anchorBox, close]);
 
-  return { anchorRef, anchorBox, onPointerEnter, onPointerLeave, keepOpen, scheduleClose, close };
+  return { anchorRef, anchorBox, isClosing, onPointerEnter, onPointerLeave, keepOpen, scheduleClose, close };
 }

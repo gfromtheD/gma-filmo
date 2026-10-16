@@ -10,6 +10,8 @@ export interface CommunityReview {
   profileId?:  string;
   displayName: string;
   avatarUrl:   string | null;
+  /** Icono del catálogo cuando el perfil elige uno en vez de una foto. */
+  avatarIconId?: string | null;
   avatarColor: string | null;
   score:       number;
   comment:     string;

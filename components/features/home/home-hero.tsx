@@ -21,6 +21,8 @@ interface HomeHeroProps {
   readonly onTrailerEnded?: () => void;
   /** Copia saliente durante el fundido: sin tráiler, sin interacción, superpuesta a la nueva. */
   readonly isOverlay?: boolean;
+  /** Llega tras un cambio de portada: el texto espera a que el anterior se haya ido y entra suave. */
+  readonly isTransition?: boolean;
 }
 
 const ROUND_BUTTON =
@@ -40,6 +42,7 @@ export function HomeHero({
   onTrailerActiveChange,
   onTrailerEnded,
   isOverlay = false,
+  isTransition = false,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
   const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl);
@@ -98,7 +101,7 @@ export function HomeHero({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(6,6,19,0.6) 0%, rgba(6,6,19,0) 22%), linear-gradient(90deg, rgba(6,6,19,0.6) 0%, rgba(6,6,19,0) 55%), linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%)",
+              "linear-gradient(180deg, color-mix(in srgb, var(--gma-bg) 60%, transparent) 0%, color-mix(in srgb, var(--gma-bg) 0%, transparent) 22%), linear-gradient(90deg, color-mix(in srgb, var(--gma-bg) 60%, transparent) 0%, color-mix(in srgb, var(--gma-bg) 0%, transparent) 55%), linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%)",
           }}
         />
       </div>
@@ -106,7 +109,9 @@ export function HomeHero({
       <div
         role="group"
         aria-roledescription="slide"
-        className="relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-20 text-center lg:items-start lg:px-16 lg:pb-24 lg:text-left"
+        className={`relative z-[2] flex h-full flex-col items-center justify-end px-4 pb-20 text-center lg:items-start lg:px-16 lg:pb-24 lg:text-left ${
+          isOverlay ? "hero-text-out" : isTransition ? "hero-text-in" : ""
+        }`}
       >
         <span className="inline-flex h-6 items-center rounded-[3px] bg-[#22B16B] px-2 text-[12px] font-extrabold uppercase text-[#031A0E]">
           {item.tag ?? "Destacado"}

@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { avatarContentFromId } from "@/lib/profiles/avatar";
+import { resizeToAvatarDataUrl } from "@/lib/profiles/image-resize";
 import {
   ICON_IDS, ICON_LABELS, COLOR_IDS, COLOR_VALUES,
   renderAvatar, type AvatarColor,
@@ -112,7 +114,7 @@ function ToggleRow({
             </button>
           )}
           {expanded && learnMore && (
-            <p className="mt-2 text-[12px] leading-[1.55] text-[#6D7D94]">{learnMore}</p>
+            <p className="mt-2 text-[12px] leading-[1.55] text-[#7C7C7C]">{learnMore}</p>
           )}
         </div>
         <button
@@ -123,7 +125,7 @@ function ToggleRow({
         >
           <div
             className="relative h-6 w-11 rounded-full transition-colors duration-200"
-            style={{ background: value ? "#22B16B" : "#1E1E1E" }}
+            style={{ background: value ? "#22B16B" : "var(--gma-surface)" }}
           >
             <span
               className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
@@ -172,7 +174,7 @@ function PinInput({ value, onChange }: { value: string; onChange: (v: string) =>
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           aria-label={`Dígito ${i + 1} del PIN`}
-          className="h-12 min-w-0 flex-1 rounded-[10px] border border-[#2A2A2A] bg-[#0E1016] text-center text-[20px] font-bold text-white outline-none transition-colors focus:border-[#22B16B]/60"
+          className="h-12 min-w-0 flex-1 rounded-[10px] border border-gma-line-strong bg-gma-surface-2 text-center text-[20px] font-bold text-white outline-none transition-colors focus:border-[#22B16B]/60"
         />
       ))}
     </div>
@@ -205,7 +207,7 @@ type Tab = "foto" | "icono" | "ajustes";
 export function ProfileEditModal({ onClose, title, initialValues, onSave, onDelete }: ProfileEditModalProps) {
   const viewportBounds = useVisibleViewport();
   const {
-    displayName, avatarColor, avatarIconId, avatarImageUrl,
+    displayName, avatarColor, chosenAvatarId,
     isKids, requirePin, pin, autoplay,
     updateDisplayName, updateAvatarColor, updateSettings,
   } = useUserProfile();
@@ -213,8 +215,12 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
   // Local state — seeded from initialValues (sub-profile) or context (Supabase profile)
   const [name,     setName]     = useState(initialValues?.name     ?? displayName);
   const [color,    setColor]    = useState(initialValues?.color    ?? avatarColor);
-  const [iconId,   setIconId]   = useState(initialValues?.iconId   ?? avatarIconId);
-  const [imageUrl, setImageUrl] = useState(initialValues?.imageUrl ?? avatarImageUrl);
+  // En el perfil principal se parte del avatar ELEGIDO (no de la foto de creador ni de la de Google, que son de respaldo).
+  const chosen = avatarContentFromId(chosenAvatarId);
+  const [iconId,   setIconId]   = useState(initialValues?.iconId   ?? (chosen?.kind === "icon" ? chosen.iconId : ""));
+  const [imageUrl, setImageUrl] = useState(initialValues?.imageUrl ?? (chosen?.kind === "image" ? chosen.src : ""));
+  const [uploading,   setUploading]   = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [kids,   setKids]   = useState(initialValues?.isKids     ?? isKids);
   const [pinReq, setPinReq] = useState(initialValues?.requirePin ?? requirePin);
   const [pinVal, setPinVal] = useState(initialValues?.pin        ?? pin);
@@ -247,16 +253,26 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
     setImageUrl("");
   }
 
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const input = e.target;
+    const file = input.files?.[0];
+    input.value = ""; // permite volver a elegir el mismo archivo
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const data = ev.target?.result as string;
-      setImageUrl(data);
+    setUploadError(null);
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Elige un archivo de imagen.");
+      return;
+    }
+    setUploading(true);
+    try {
+      // Se reduce a tamaño de avatar (256 px): así se guarda ligero y se ve igual para todos.
+      setImageUrl(await resizeToAvatarDataUrl(file));
       setIconId("");
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      setUploadError("No se pudo usar esa imagen. Prueba con otra.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSave() {
@@ -319,19 +335,19 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
   return (
     <div
       className="fixed inset-0 z-[600] flex items-center justify-center overflow-y-auto pl-[max(.75rem,env(safe-area-inset-left))] pr-[max(.75rem,env(safe-area-inset-right))] pt-[max(.75rem,env(safe-area-inset-top))] pb-[max(.75rem,env(safe-area-inset-bottom))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.25rem,env(safe-area-inset-top))] sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-      style={{ ...viewportBounds, background: "rgba(5,8,16,0.82)", backdropFilter: "blur(6px)" }}
+      style={{ ...viewportBounds, background: "color-mix(in srgb, var(--gma-bg) 82%, transparent)", backdropFilter: "blur(6px)" }}
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-[780px] flex-col overflow-y-auto md:flex-row md:overflow-hidden rounded-[18px] border border-[#1E1E1E] shadow-2xl"
+        className="relative flex w-full max-w-[780px] flex-col overflow-y-auto md:flex-row md:overflow-hidden rounded-[18px] border border-gma-surface shadow-2xl"
         role="dialog" aria-modal="true" aria-label={title ?? "Editar perfil"}
-        style={{ background: "#0A0A0A", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)))" }}
+        style={{ background: "var(--gma-surface-2)", maxHeight: "calc(var(--visible-viewport-height, 100dvh) - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)))" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Left: live preview ─────────────────────────────────────── */}
         <div
-          className="flex w-full shrink-0 flex-col items-center justify-center gap-3 border-b border-[#141414] px-5 py-5 md:w-[260px] md:gap-5 md:border-b-0 md:border-r md:px-8 md:py-10"
-          style={{ background: "linear-gradient(160deg, #0D0D0D 0%, #080F0D 100%)" }}
+          className="flex w-full shrink-0 flex-col items-center justify-center gap-3 border-b border-gma-panel px-5 py-5 md:w-[260px] md:gap-5 md:border-b-0 md:border-r md:px-8 md:py-10"
+          style={{ background: "linear-gradient(160deg, var(--gma-surface-2) 0%, #080F0D 100%)" }}
         >
           <div
             style={{
@@ -346,7 +362,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
               {name || displayName}
             </p>
             <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[#3A4A5A]"
-               style={{ fontFamily: "ui-monospace, monospace" }}>
+               style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
               ● previsualización
             </p>
           </div>
@@ -354,7 +370,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           {/* Color row */}
           <div>
             <p className="mb-2.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] text-[#3A4A5A]"
-               style={{ fontFamily: "ui-monospace, monospace" }}>
+               style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
               Color de acento
             </p>
             <div className="flex flex-wrap justify-center gap-2">
@@ -367,7 +383,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                   style={{
                     background: COLOR_VALUES[c as AvatarColor],
                     boxShadow: color === COLOR_VALUES[c as AvatarColor]
-                      ? `0 0 0 2px #0A0A0A, 0 0 0 4px ${COLOR_VALUES[c as AvatarColor]}`
+                      ? `0 0 0 2px var(--gma-surface-2), 0 0 0 4px ${COLOR_VALUES[c as AvatarColor]}`
                       : "none",
                   }}
                   aria-label={c}
@@ -380,13 +396,13 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
         {/* ── Right: form ────────────────────────────────────────────── */}
         <div className="flex min-h-0 min-w-0 shrink-0 flex-col md:flex-1">
           {/* Header */}
-          <div className="flex items-center justify-between gap-3 border-b border-[#141414] px-6 py-4">
+          <div className="flex items-center justify-between gap-3 border-b border-gma-panel px-6 py-4">
             <span className="min-w-0 break-words text-[16px] font-extrabold text-white">{title ?? "Editar perfil"}</span>
             <button
               type="button"
               onClick={onClose}
               aria-label="Cerrar edición de perfil"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#5A6A7E] transition-colors hover:bg-[#1A1A1A] hover:text-white"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#686868] transition-colors hover:bg-gma-surface hover:text-white"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
@@ -395,24 +411,24 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           {/* Scrollable body */}
           <div className="min-w-0 flex-1 md:overflow-y-auto">
             {/* Name */}
-            <div className="border-b border-[#0E0E0E] px-6 py-5">
+            <div className="border-b border-gma-surface-2 px-6 py-5">
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#3A4A5A]"
-                     style={{ fontFamily: "ui-monospace, monospace" }}>
+                     style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
                 Nombre del perfil
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={30}
-                className="w-full rounded-[10px] border border-[#1A1A1A] bg-[#0E1016] px-4 py-2.5 text-[15px] font-semibold text-white outline-none transition-colors focus:border-[#22B16B]/50"
+                className="w-full rounded-[10px] border border-gma-surface bg-gma-surface-2 px-4 py-2.5 text-[15px] font-semibold text-white outline-none transition-colors focus:border-[#22B16B]/50"
                 placeholder="¿Cómo te llamamos?"
               />
             </div>
 
             {/* Tab nav — pill style */}
-            <div className="flex justify-center border-b border-[#0E0E0E] px-6 py-4">
+            <div className="flex justify-center border-b border-gma-surface-2 px-6 py-4">
               <nav
-                className="relative flex gap-1 rounded-full border border-[#262626] p-1"
+                className="relative flex gap-1 rounded-full border border-gma-border p-1"
                 style={{ background: "rgba(255,255,255,0.04)" }}
               >
                 {pillReady && (
@@ -429,7 +445,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                     type="button"
                     onClick={() => setTab(t.id)}
                     className="relative z-10 flex h-9 items-center rounded-full px-4 sm:px-6 text-[13.5px] font-semibold transition-colors duration-[260ms]"
-                    style={{ color: tab === t.id ? "white" : "#4A5568" }}
+                    style={{ color: tab === t.id ? "white" : "#545454" }}
                   >
                     {t.label}
                   </button>
@@ -454,7 +470,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                         aspectRatio: "1",
                         boxShadow: imageUrl === img.url
                           ? "0 0 0 2.5px #22B16B"
-                          : "0 0 0 1px #1A1A1A",
+                          : "0 0 0 1px var(--gma-surface)",
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -476,7 +492,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                     <button
                       type="button"
                       onClick={clearVisual}
-                      className="text-[12px] text-[#5A6A7E] transition-colors hover:text-[#ff5252]"
+                      className="text-[12px] text-[#686868] transition-colors hover:text-[#ff5252]"
                     >
                       Quitar
                     </button>
@@ -484,12 +500,14 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex items-center gap-2 rounded-full border border-[#2A2A2A] bg-[#111] px-4 py-2 text-[12.5px] font-semibold text-[#B8C5D4] transition-colors hover:border-[#22B16B]/50 hover:text-white"
+                    disabled={uploading}
+                    className="flex items-center gap-2 rounded-full border border-gma-line-strong bg-[#111] px-4 py-2 text-[12.5px] font-semibold text-[#C4C4C4] transition-colors hover:border-[#22B16B]/50 hover:text-white"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Subir foto
+                    {uploading ? "Procesando…" : "Subir foto"}
                   </button>
                 </div>
+                {uploadError && <p role="alert" className="text-right text-[12px] text-[#ff7b7b]">{uploadError}</p>}
               </div>
             )}
 
@@ -512,7 +530,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                           background: "#111",
                           boxShadow: selected
                             ? `0 0 0 2.5px ${color}`
-                            : "0 0 0 1.5px #1A1A1A",
+                            : "0 0 0 1.5px var(--gma-surface)",
                           opacity:   selected ? 1 : 0.65,
                           transform: selected ? "scale(1.07)" : "scale(1)",
                         }}
@@ -528,7 +546,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
             {/* ── Tab: Ajustes ────────────────────────────────────────── */}
             {tab === "ajustes" && (
               <div className="mx-6 my-5 space-y-4">
-                <div className="overflow-hidden rounded-[12px] border border-[#141414]">
+                <div className="overflow-hidden rounded-[12px] border border-gma-panel">
                   <ToggleRow
                     label="Perfil para niños"
                     description="Solo contenido apto para +0/+7"
@@ -536,7 +554,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                     value={kids}
                     onChange={setKids}
                   />
-                  <div className="border-t border-[#141414]">
+                  <div className="border-t border-gma-panel">
                     <ToggleRow
                       label="Pedir PIN al entrar"
                       description="Protege el acceso con un PIN de 4 dígitos"
@@ -544,8 +562,8 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
                       onChange={setPinReq}
                     />
                     {pinReq && (
-                      <div className="border-t border-[#141414] bg-[#0A0A0A] px-5 pb-4">
-                        <p className="pt-3 text-[12px] text-[#5A6A7E]">PIN de acceso</p>
+                      <div className="border-t border-gma-panel bg-gma-surface-2 px-5 pb-4">
+                        <p className="pt-3 text-[12px] text-[#686868]">PIN de acceso</p>
                         <PinInput value={pinVal} onChange={setPinVal} />
                         {pinVal.length < 4 && (
                           <p className="mt-2 text-[11px] text-[#F97316]">Introduce los 4 dígitos para guardar el PIN</p>
@@ -578,11 +596,11 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           </div>
 
           {/* Footer */}
-          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-[#141414] px-4 py-4 sm:px-6">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-gma-panel px-4 py-4 sm:px-6">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-[#1E1E1E] px-4 py-2.5 text-[13px] font-semibold text-[#6D7D94] transition-colors hover:border-[#2A2A2A] hover:text-white"
+              className="rounded-full border border-gma-surface px-4 py-2.5 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:border-gma-line-strong hover:text-white"
             >
               Cancelar
             </button>

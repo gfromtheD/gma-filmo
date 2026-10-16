@@ -57,14 +57,14 @@ export function ScoreScale({ value, onChange, isDisabled = false }: ScoreScalePr
                 className={`flex aspect-square w-full items-center justify-center rounded-[3px] border-2 text-[clamp(28px,4vw,56px)] font-semibold leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${
                   isSelected
                     ? "border-[#22B16B] bg-[#22B16B]/10 text-[#22B16B]"
-                    : "border-[#3A3A52] text-[#8C8CA5] hover:border-white/70 hover:text-white"
+                    : "border-[#3A3A52] text-[#909090] hover:border-white/70 hover:text-white"
                 }`}
               >
                 {score}
               </button>
               <span
                 aria-hidden="true"
-                className={`hidden text-center text-[14px] leading-tight sm:block ${isSelected ? "font-bold text-white" : "text-[#8C8CA5]"}`}
+                className={`hidden text-center text-[14px] leading-tight sm:block ${isSelected ? "font-bold text-white" : "text-[#909090]"}`}
               >
                 {scoreLabel(score)}
               </span>

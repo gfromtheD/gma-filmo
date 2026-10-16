@@ -8,7 +8,7 @@ import { UserAvatar } from "@/components/layout/navbar-parts/avatars";
 const ITEM_BASE =
   "flex h-12 w-full cursor-pointer items-center gap-4 rounded-[6px] px-3 text-[16px] font-medium outline-none transition-colors data-[disabled]:opacity-50 data-[highlighted]:bg-white/10";
 const ITEM_CLASS = `${ITEM_BASE} text-white`;
-const SIGN_OUT_CLASS = `${ITEM_BASE} text-[#B8B8CC] data-[highlighted]:text-[#FF6B6B]`;
+const SIGN_OUT_CLASS = `${ITEM_BASE} text-[#BBBBBB] data-[highlighted]:text-[#FF6B6B]`;
 const ICON_PROPS = { width: 20, height: 20, strokeWidth: 1.8, "aria-hidden": true } as const;
 const DIVIDER = "my-2 h-px bg-white/10";
 
@@ -51,20 +51,20 @@ export function AccountMenuContent({
         align="end"
         sideOffset={8}
         collisionPadding={12}
-        className="z-[200] w-[304px] max-w-[calc(100vw-24px)] rounded-[8px] bg-[#242432] p-2 shadow-[0_18px_48px_rgba(0,0,0,0.7)] outline-none ring-1 ring-white/10"
+        className="z-[200] w-[304px] max-w-[calc(100vw-24px)] rounded-[8px] bg-gma-border p-2 shadow-[0_18px_48px_rgba(0,0,0,0.7)] outline-none ring-1 ring-white/10"
       >
         {isGuest ? (
           <div className="px-3 pb-2 pt-3">
             <div className="mb-3 flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2E2E42] text-[#B8B8CC]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gma-line-strong text-[#BBBBBB]">
                 <User {...ICON_PROPS} />
               </div>
               <div className="min-w-0">
                 <div className="text-[16px] font-extrabold leading-tight text-white">Explorando como invitado</div>
-                <div className="text-[13px] text-[#B8B8CC]">Acceso limitado</div>
+                <div className="text-[13px] text-[#BBBBBB]">Acceso limitado</div>
               </div>
             </div>
-            <p className="mb-4 text-[13px] leading-[1.5] text-[#B8B8CC]">
+            <p className="mb-4 text-[13px] leading-[1.5] text-[#BBBBBB]">
               Crea una cuenta gratis para guardar favoritos, llevar tu historial y valorar cortos.
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -95,10 +95,10 @@ export function AccountMenuContent({
               <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[16px] font-extrabold leading-tight text-white">{displayName}</div>
-                {email && <div className="truncate text-[13px] text-[#B8B8CC]">{email}</div>}
+                {email && <div className="truncate text-[13px] text-[#BBBBBB]">{email}</div>}
                 <div className="mt-0.5 text-[12px] font-bold text-[#22B16B]">Cambiar de perfil</div>
               </div>
-              <NavArrowRight {...ICON_PROPS} className="shrink-0 text-[#B8B8CC]" />
+              <NavArrowRight {...ICON_PROPS} className="shrink-0 text-[#BBBBBB]" />
             </Link>
           </DropdownMenu.Item>
         )}

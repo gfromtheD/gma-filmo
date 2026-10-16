@@ -34,10 +34,10 @@ function MailIcon() {
 }
 
 const inputClass =
-  "w-full rounded-[10px] border border-[#1E2D42] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors duration-150 focus:border-[#22B16B]";
+  "w-full rounded-[10px] border border-gma-line-strong bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-[#3A4A5E] outline-none transition-colors duration-150 focus:border-[#22B16B]";
 
 const pillClass =
-  "flex w-full items-center justify-center gap-3 rounded-full border border-[#1E2D42] bg-white/[0.04] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-50";
+  "flex w-full items-center justify-center gap-3 rounded-full border border-gma-line-strong bg-white/[0.04] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-50";
 
 function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
   const router       = useRouter();
@@ -112,7 +112,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
 
       <div className="text-center">
         <h1 className="text-2xl font-extrabold text-white md:text-3xl">Bienvenido de nuevo</h1>
-        <p className="mt-1.5 text-sm text-[#B8C5D4]">Ingresa para continuar.</p>
+        <p className="mt-1.5 text-sm text-[#C4C4C4]">Ingresa para continuar.</p>
       </div>
 
       {error && (
@@ -176,7 +176,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
                 <button
                   type="button"
                   onClick={() => void handleForgotPassword()}
-                  className="text-[12.5px] text-[#5A6A7E] transition-colors hover:text-white"
+                  className="text-[12.5px] text-[#686868] transition-colors hover:text-white"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -195,7 +195,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
 
       <GuestAccessButton className={pillClass} />
 
-      <p className="text-center text-[13px] text-[#6D7D94]">
+      <p className="text-center text-[13px] text-[#7C7C7C]">
         ¿Aún no tienes cuenta?{" "}
         <button type="button" onClick={onRegister} className="font-semibold text-[#22B16B] transition-colors hover:underline">
           Regístrate

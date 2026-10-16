@@ -42,15 +42,15 @@ export function LandingHero() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <section className="relative isolate flex min-h-svh w-full flex-col overflow-hidden bg-[#080D13] text-white">
+      <section className="relative isolate flex min-h-svh w-full flex-col overflow-hidden bg-gma-surface-2 text-white">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20">
           <ThreeDMarquee className="h-full w-full" columns={6} largePostersOnDesktop />
         </div>
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[#080D13]/35" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gma-surface-2/35" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10"
           style={{ background: view === "hero"
-            ? "linear-gradient(90deg, rgba(8,13,19,.94) 0%, rgba(8,13,19,.84) 28%, rgba(8,13,19,.48) 58%, rgba(8,13,19,.08) 100%)"
-            : "rgba(8,13,19,.55)" }} />
+            ? "linear-gradient(90deg, color-mix(in srgb, var(--gma-surface-2) 94%, transparent) 0%, color-mix(in srgb, var(--gma-surface-2) 84%, transparent) 28%, color-mix(in srgb, var(--gma-surface-2) 48%, transparent) 58%, color-mix(in srgb, var(--gma-surface-2) 8%, transparent) 100%)"
+            : "color-mix(in srgb, var(--gma-surface-2) 55%, transparent)" }} />
 
         <header className="relative flex min-h-[68px] items-center gap-4 px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
           <Image src="/images/logo-gma.png" alt="GMA Filmo" width={200} height={64} priority className="h-10 w-auto sm:h-12" />
@@ -76,35 +76,35 @@ export function LandingHero() {
                   </span>
                   <span className="block">cine.</span>
                 </h1>
-                <p className="mt-7 max-w-lg text-base leading-relaxed text-[#DAE2EC] sm:text-lg">
+                <p className="mt-7 max-w-lg text-base leading-relaxed text-[#DEE3E0] sm:text-lg">
                   Descubre cortos, animación y nuevas voces del cine independiente. Un espacio de Generación Maldita para ver, compartir y apoyar a sus creadores.
                 </p>
                 <button ref={enterRef} type="button" onClick={() => changeView("access")}
-                  className="mt-9 inline-flex min-h-14 items-center justify-center gap-5 rounded-full bg-white px-7 text-base font-semibold text-[#080D13] transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B]">
+                  className="mt-9 inline-flex min-h-14 items-center justify-center gap-5 rounded-full bg-white px-7 text-base font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B]">
                   Entrar a GMA Filmo <ArrowRight size={20} aria-hidden="true" />
                 </button>
-                <p className="mt-4 text-sm text-[#B8C5D4]">Acceso gratuito. Tú eliges cómo entrar.</p>
+                <p className="mt-4 text-sm text-[#C4C4C4]">Acceso gratuito. Tú eliges cómo entrar.</p>
               </div>}
 
-              {view === "access" && <div className="rounded-3xl border border-white/15 bg-[#0A0F17]/95 p-6 shadow-2xl sm:p-9">
-                <button type="button" onClick={() => changeView("hero")} className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm text-[#B8C5D4] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">
+              {view === "access" && <div className="rounded-3xl border border-white/15 bg-gma-surface-2/95 p-6 shadow-2xl sm:p-9">
+                <button type="button" onClick={() => changeView("hero")} className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm text-[#C4C4C4] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">
                   <ArrowLeft size={16} aria-hidden="true" /> Volver a la bienvenida
                 </button>
                 <h2 tabIndex={-1} className="text-3xl font-bold tracking-tight outline-none">Elige cómo entrar</h2>
-                <p className="mt-3 text-sm leading-6 text-[#B8C5D4]">Inicia sesión, crea tu cuenta o explora el catálogo sin registrarte.</p>
+                <p className="mt-3 text-sm leading-6 text-[#C4C4C4]">Inicia sesión, crea tu cuenta o explora el catálogo sin registrarte.</p>
                 <div className="mt-7 flex flex-col gap-3">
-                  <button type="button" onClick={() => changeView("login")} className={`${accessButtonClass} border-transparent bg-white text-[#080D13] hover:bg-white/90`}>Iniciar sesión</button>
+                  <button type="button" onClick={() => changeView("login")} className={`${accessButtonClass} border-transparent bg-white text-gma-surface-2 hover:bg-white/90`}>Iniciar sesión</button>
                   <button type="button" onClick={() => changeView("register")} className={`${accessButtonClass} border-transparent bg-[#22B16B] text-[#031A0E] hover:bg-[#2AC57A]`}>Registrarse</button>
-                  <GuestAccessButton className={`${accessButtonClass} border-[#6D7D94] bg-transparent text-white hover:bg-white/10 disabled:opacity-50`} />
+                  <GuestAccessButton className={`${accessButtonClass} border-[#7C7C7C] bg-transparent text-white hover:bg-white/10 disabled:opacity-50`} />
                 </div>
                 <div className="mt-7 border-t border-white/10 pt-5 text-center">
-                  <p className="text-xs text-[#B8C5D4]">¿Quieres compartir tus películas?</p>
+                  <p className="text-xs text-[#C4C4C4]">¿Quieres compartir tus películas?</p>
                   <button type="button" onClick={() => changeView("creator-register")} className="min-h-11 text-sm font-semibold text-[#58D99B] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">Regístrate como creador →</button>
                 </div>
               </div>}
 
-              {(["login", "register", "creator-register"] as WelcomeView[]).includes(view) && <div className="rounded-3xl border border-white/15 bg-[#0A0F17]/95 p-6 shadow-2xl sm:p-9">
-                <button type="button" onClick={() => changeView("access")} className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm text-[#B8C5D4] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">
+              {(["login", "register", "creator-register"] as WelcomeView[]).includes(view) && <div className="rounded-3xl border border-white/15 bg-gma-surface-2/95 p-6 shadow-2xl sm:p-9">
+                <button type="button" onClick={() => changeView("access")} className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm text-[#C4C4C4] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">
                   <ArrowLeft size={16} aria-hidden="true" /> Volver a las opciones
                 </button>
                 {view === "login" && <LoginCard onBack={() => changeView("access")} onRegister={() => changeView("register")} onCreatorRegister={() => changeView("creator-register")} />}
@@ -116,7 +116,7 @@ export function LandingHero() {
           </AnimatePresence>
         </div>
 
-        {view === "hero" && <footer className="relative px-6 pb-6 text-xs text-[#B8C5D4] sm:px-10 sm:pb-8 lg:px-16">Una plataforma del colectivo Generación Maldita.</footer>}
+        {view === "hero" && <footer className="relative px-6 pb-6 text-xs text-[#C4C4C4] sm:px-10 sm:pb-8 lg:px-16">Una plataforma del colectivo Generación Maldita.</footer>}
       </section>
     </MotionConfig>
   );

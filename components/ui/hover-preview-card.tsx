@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { SaveIcon } from "@/components/ui/save-icon";
 import { useCommunityScore } from "@/hooks/use-community-score";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { formatCommunityScore } from "@/lib/ratings/summary";
 import { computePreviewLayout, previewWidth, type PreviewLayout } from "@/lib/hover-preview-layout";
 import type { MediaItem } from "@/types/catalog";
 
@@ -17,12 +19,24 @@ interface HoverPreviewCardProps {
   readonly onPointerEnter: () => void;
   readonly onPointerLeave: () => void;
   readonly onClose: () => void;
+  /** El cursor salió: la tarjeta se desvanece antes de desmontarse. */
+  readonly isClosing?: boolean;
   /** Invitado: no puede guardar; el aviso lo pinta PosterCard (el panel se cierra al salir el ratón). */
   readonly onLoginRequired: () => void;
   readonly onSaveError: () => void;
 }
 
-const ENTER_MS = 250;
+/** Apertura: la tarjeta sube desde la portada y se despliega hacia abajo (medido en Filmin: 250 ms). */
+const ENTER_MS = 280;
+const REVEAL_MS = 300;
+const FADE_IN_MS = 140;
+/** El texto espera un instante a que la tarjeta empiece a abrirse y entonces aparece y sube un poco. */
+const BODY_DELAY_MS = 100;
+const BODY_MS = 240;
+/** Cierre: se desvanece (el hook la desmonta justo después). */
+const EXIT_MS = 130;
+/** Margen del recorte para no cortar la sombra de la tarjeta una vez abierta. */
+const SHADOW_ROOM = 60;
 /** Espera con el panel abierto antes de sustituir la portada por el tráiler. */
 const TRAILER_DELAY_MS = 1500;
 
@@ -67,11 +81,13 @@ export function HoverPreviewCard({
   onPointerEnter,
   onPointerLeave,
   onClose,
+  isClosing = false,
   onLoginRequired,
   onSaveError,
 }: HoverPreviewCardProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<PreviewLayout | null>(null);
+  const [panelHeight, setPanelHeight] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
@@ -82,6 +98,7 @@ export function HoverPreviewCard({
   useLayoutEffect(() => {
     const panel = panelRef.current;
     if (!panel) return;
+    setPanelHeight(panel.offsetHeight);
     const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
     setLayout(
       computePreviewLayout(
@@ -119,9 +136,17 @@ export function HoverPreviewCard({
 
   const width = layout?.width ?? previewWidth(anchorBox.width);
   const from = layout?.from;
-  const transform = !layout || hasEntered || !from
-    ? "none"
-    : `translate(${from.dx}px, ${from.dy}px) scale(${from.scale})`;
+  const transform = isClosing
+    ? "translateY(-4px) scale(0.985)"
+    : !layout || hasEntered || !from
+      ? "none"
+      : `translate(${from.dx}px, ${from.dy}px) scale(${from.scale})`;
+
+  // Al empezar solo se ve la imagen (justo sobre la portada); el recorte se abre hacia abajo y descubre el resto.
+  const imageHeight = Math.round((width * 9) / 16);
+  const hiddenBelow = Math.max(0, panelHeight - imageHeight);
+  const openClip = `inset(-${SHADOW_ROOM}px -${SHADOW_ROOM}px -${SHADOW_ROOM}px -${SHADOW_ROOM}px)`;
+  const closedClip = `inset(-${SHADOW_ROOM}px -${SHADOW_ROOM}px ${hiddenBelow}px -${SHADOW_ROOM}px)`;
 
   const meta =
     item.kind === "movie"
@@ -137,40 +162,64 @@ export function HoverPreviewCard({
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="fixed z-[45] cursor-pointer select-none overflow-hidden rounded-[6px] bg-[#181829] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-[6px] bg-gma-surface text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,
         width,
+        "--preview-image-h": `${imageHeight}px`,
         visibility: layout ? "visible" : "hidden",
-        opacity: layout && !hasEntered ? 0 : 1,
+        opacity: isClosing || (layout && !hasEntered) ? 0 : 1,
         transform,
-        transformOrigin: "center center",
-        transition: hasEntered
-          ? `transform ${ENTER_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 160ms ease-out`
-          : "none",
-      }}
+        transformOrigin: "50% 0",
+        clipPath: hasEntered && !isClosing ? openClip : closedClip,
+        transition: isClosing
+          ? `opacity ${EXIT_MS}ms ease-in, transform ${EXIT_MS}ms ease-in`
+          : hasEntered
+            ? `transform ${ENTER_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${FADE_IN_MS}ms ease-out, clip-path ${REVEAL_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+            : "none",
+      } as CSSProperties}
     >
-      <div className="relative aspect-video w-full overflow-hidden">
+      <div data-preview-image className="relative aspect-video w-full overflow-hidden">
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         {showTrailer && item.trailerUrl && <PanelTrailer src={item.trailerUrl} />}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(180deg, rgba(24,24,41,0) 55%, #181829 100%)" }}
+          style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--gma-surface) 0%, transparent) 55%, var(--gma-surface) 100%)" }}
         />
       </div>
 
-      <div className="flex flex-col gap-3 px-4 pb-4">
+      {/* Zona clicable: de donde acaba la imagen hacia abajo. La imagen (y el tráiler que se reproducirá en ella,
+          con su botón de sonido) no es clicable. Los botones y el título van por encima (z-10). */}
+      <Link
+        href={detailHref}
+        onClick={onClose}
+        tabIndex={-1}
+        aria-hidden="true"
+        data-preview-hit-area
+        className="absolute inset-x-0 bottom-0 top-[var(--preview-image-h)]"
+      />
+
+      <div
+        data-preview-body
+        className="flex flex-col gap-3 px-4 pb-4 motion-reduce:!transition-none"
+        style={{
+          opacity: hasEntered ? 1 : 0,
+          transform: hasEntered ? "none" : "translateY(8px)",
+          transition: hasEntered
+            ? `opacity ${BODY_MS}ms ease-out ${BODY_DELAY_MS}ms, transform ${BODY_MS + 40}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${BODY_DELAY_MS}ms`
+            : "none",
+        }}
+      >
         {(isLoading || avgScore !== null) && (
-          <div className="flex min-h-10 items-center gap-3">
+          // Mismo formato que en el catálogo: «★ 7.5 · 2 valoraciones». Mientras carga se reserva la línea.
+          <div className="flex min-h-5 items-center">
             {avgScore !== null && (
-              <>
-                <span className="inline-flex h-10 min-w-10 items-center justify-center border border-white px-1.5 text-[18px] font-extrabold leading-none">
-                  {String(avgScore).replace(".", ",")}
-                </span>
-                <span className="text-[14px] font-medium leading-tight">{voteCount} votos</span>
-              </>
+              <p data-preview-score className="text-[13px] font-semibold leading-5 text-white">
+                <span className="text-[#22B16B]">★</span> {formatCommunityScore(avgScore)}
+                <span className="font-medium text-[#969696]"> · {voteCount} {voteCount === 1 ? "valoración" : "valoraciones"}</span>
+              </p>
             )}
           </div>
         )}
@@ -191,16 +240,16 @@ export function HoverPreviewCard({
             aria-label={inList ? "Quitar de mi lista" : "Guardar en mi lista"}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <GmaIcon name={inList ? "check" : "bookmark"} size={20} />
+            <SaveIcon saved={inList} size={20} />
           </button>
         </div>
 
         <Link
           href={detailHref}
           onClick={onClose}
-          // Enlace extendido: el ::after cubre todo el panel, así cualquier zona (imagen, texto,
-          // metadatos) lleva a la ficha. Los botones llevan z-10 y quedan por encima.
-          className="text-[15px] font-bold leading-tight after:absolute after:inset-0 after:content-[''] hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          // Solo el propio texto del título se ilumina en verde al pasar el cursor; el resto de la zona clicable
+          // (el enlace de arriba) solo cambia el cursor.
+          className="relative z-10 self-start text-[15px] font-bold leading-tight hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           {item.title}
         </Link>
@@ -224,7 +273,7 @@ export function HoverPreviewCard({
           </ul>
         )}
 
-        {item.synopsis && <p className="line-clamp-5 text-[14px] leading-[1.5] text-[#D9E2EC]">{item.synopsis}</p>}
+        {item.synopsis && <p className="line-clamp-5 text-[14px] leading-[1.5] text-[#DDE3DF]">{item.synopsis}</p>}
       </div>
     </div>,
     document.body,

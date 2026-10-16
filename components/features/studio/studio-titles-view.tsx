@@ -155,9 +155,9 @@ function Drawer({ t, onClose, onEdit, onStats }: {
   if (!t) return null;
   return (
     <div style={{ position: "fixed", inset: 0, ...viewportBounds, zIndex: 120, display: "flex", justifyContent: "flex-end",
-      background: "rgba(3,6,11,0.62)", backdropFilter: "blur(3px)" }} onClick={onClose}>
+      background: "color-mix(in srgb, var(--gma-bg) 62%, transparent)", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div ref={dialogRef} tabIndex={-1} className={`${styles.studio} ${styles.drawer}`} role="dialog" aria-modal="true" aria-label={`Detalles de ${t.title}`} onClick={e => e.stopPropagation()} style={{ width: "min(460px, 94vw)", height: "100%", overflowY: "auto",
-        background: "#0b0f15", borderLeft: `1px solid ${C.border2}`, animation: "drawerIn 0.32s ease" }}>
+        background: "var(--gma-surface-2)", borderLeft: `1px solid ${C.border2}`, animation: "drawerIn 0.32s ease" }}>
         <div style={{ padding: 22 }}>
           <div style={{ ...row(), justifyContent: "space-between", marginBottom: 18 }}>
             <StatusBadge status={t.status} />
@@ -243,7 +243,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
   const handlers: Handlers = {
     onOpen: (t: StudioTitle) => setOpenTitle(t),
     onEdit: onEditTitle,
-    onStats: (t: StudioTitle) => onNav("estadisticas", t),
+    onStats: (t: StudioTitle) => onNav("inicio", t),
     onToast,
     onDelete,
   };
@@ -327,7 +327,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
       )}
 
       <Drawer t={openTitle} onClose={() => setOpenTitle(null)} onEdit={onEditTitle}
-        onStats={(t) => onNav("estadisticas", t)} />
+        onStats={(t) => onNav("inicio", t)} />
     </div>
   );
 }

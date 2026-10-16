@@ -22,6 +22,12 @@ export const REC = {
   W_POPULAR:  0.05,   // tie-breaker; swap for real view counts when available
   W_JITTER:   0.15,   // session rotation — home feels fresh every visit
 
+  // Filas de la portada: más exploración y memoria de lo ya mostrado, para que no sea siempre lo mismo
+  W_ROW_EXPLORE:      0.25,  // azar extra (semilla por carga de página)
+  SHOWN_PENALTY:      0.6,   // castigo máximo a un título mostrado hace poco
+  SHOWN_PENALTY_HOURS: 24,   // el castigo se reduce a la mitad aprox. cada ~17 h (decae como exp(-h/24))
+  NEW_ARRIVALS_WINDOW: 30,   // «Recién llegados» elige entre los N más nuevos
+
   // Events older than this decay toward zero influence
   AFFINITY_DECAY_DAYS: 30,
 
@@ -86,6 +92,11 @@ interface UserAffinity {
   lastWatchedItem:  MediaItem | null;
   /** Anchor for mood row — the user's most-weighted category */
   dominantCategory: string | null;
+  /** Mayor peso de categoría / artista: sirve para normalizar las puntuaciones a 0–1 */
+  maxCategoryWeight: number;
+  maxArtistWeight:   number;
+  /** Eventos que son gusto real (los títulos solo mostrados en la portada no cuentan) */
+  signalEventCount:  number;
 }
 
 export interface ScoredItem {
@@ -137,6 +148,14 @@ export function getOrCreateSessionSeed(userId = "anon"): number {
   return seed;
 }
 
+// Semilla de esta carga de página: cambia al recargar o abrir otra pestaña, y se mantiene al navegar dentro
+// de la app (el módulo no se reinicia), así la portada no salta al volver desde una ficha.
+let pageLoadSeed: number | null = null;
+export function getPageLoadSeed(): number {
+  if (pageLoadSeed === null) pageLoadSeed = Math.random();
+  return pageLoadSeed;
+}
+
 // Title seed is scoped to the browser session (sessionStorage).
 // Cleared automatically when the user closes the tab/browser, so each new
 // visit to the app gets a fresh title. Stable while navigating within the app.
@@ -163,6 +182,11 @@ function primaryCategory(item: MediaItem): string {
 
 function itemArtistNames(item: MediaItem): string[] {
   return item.artistas?.map((a) => a.name) ?? [];
+}
+
+/** Un título que solo se mostró en la portada: sirve para rotar, no dice nada del gusto del espectador. */
+function isShownOnly(event: UserEvent): boolean {
+  return event.eventType === "clicked" && event.watchTimeFraction === 0 && event.shownOnHomeAt !== undefined && event.rating == null;
 }
 
 // How much an event type contributes to affinity
@@ -201,9 +225,16 @@ export function buildUserAffinity(
   const sortedEvents = [...events].sort((a, b) => b.lastSeenAt - a.lastSeenAt);
   let lastWatchedItem: MediaItem | null = null;
 
+  let signalEventCount = 0;
   for (const event of sortedEvents) {
     const item = itemById.get(event.itemId);
     if (!item) continue;
+
+    if (isShownOnly(event)) {
+      shownOnHomeAt[item.id] = Math.max(shownOnHomeAt[item.id] ?? 0, event.shownOnHomeAt ?? 0);
+      continue;
+    }
+    signalEventCount++;
 
     const typeWeight  = EVENT_TYPE_WEIGHT[event.eventType] ?? 0.1;
     const watchBoost  = event.watchTimeFraction * 0.5;
@@ -245,6 +276,9 @@ export function buildUserAffinity(
     shownOnHomeAt,
     lastWatchedItem,
     dominantCategory,
+    maxCategoryWeight: Math.max(0, ...Object.values(categoryWeights)),
+    maxArtistWeight:   Math.max(0, ...Object.values(artistWeights)),
+    signalEventCount,
   };
 }
 
@@ -294,16 +328,17 @@ export function scoreCandidate(
   index:           number,
   popularityProxy: number,
 ): number {
-  // Average category weight across all of this item's categories
-  const catScore =
-    item.categories.reduce((s, c) => s + (affinity.categoryWeights[c] ?? 0), 0) /
-    Math.max(item.categories.length, 1);
+  // Average category weight across all of this item's categories, normalised to 0–1
+  const catScore = affinity.maxCategoryWeight > 0
+    ? Math.max(0, item.categories.reduce((s, c) => s + (affinity.categoryWeights[c] ?? 0), 0) /
+        Math.max(item.categories.length, 1) / affinity.maxCategoryWeight)
+    : 0;
 
   // Average artist weight
   const artists = itemArtistNames(item);
   const artScore =
-    artists.length > 0
-      ? artists.reduce((s, a) => s + (affinity.artistWeights[a] ?? 0), 0) / artists.length
+    artists.length > 0 && affinity.maxArtistWeight > 0
+      ? Math.max(0, artists.reduce((s, a) => s + (affinity.artistWeights[a] ?? 0), 0) / artists.length / affinity.maxArtistWeight)
       : 0;
 
   // Items from recent years score higher; decays over ~5 years
@@ -320,6 +355,49 @@ export function scoreCandidate(
     popularityProxy  * REC.W_POPULAR  +
     jitter
   );
+}
+
+/** Castigo (0–SHOWN_PENALTY) a un título mostrado hace poco en la portada; decae con las horas. */
+export function shownPenalty(itemId: string, shownOnHomeAt: Readonly<Record<string, number>>, now: number): number {
+  const shownAt = shownOnHomeAt[itemId];
+  if (!shownAt) return 0;
+  const hoursAgo = Math.max(0, (now - shownAt) / 3_600_000);
+  return REC.SHOWN_PENALTY * Math.exp(-hoursAgo / REC.SHOWN_PENALTY_HOURS);
+}
+
+/** Puntuación para las filas de la portada: relevancia + más exploración − lo mostrado hace poco. */
+function rowScore(
+  item: MediaItem,
+  affinity: UserAffinity,
+  seed: number,
+  index: number,
+  popularityProxy: number,
+  now: number,
+): number {
+  return (
+    scoreCandidate(item, affinity, seed, index, popularityProxy) +
+    seededRandom(seed + 0.5, index) * REC.W_ROW_EXPLORE -
+    shownPenalty(item.id, affinity.shownOnHomeAt, now)
+  );
+}
+
+/**
+ * «Recién llegados»: entre los títulos más nuevos del catálogo (llega ordenado de más nuevo a más antiguo)
+ * elige `count` con azar de la semilla, bajando los que se mostraron hace poco. Así no son siempre los mismos.
+ */
+export function pickNewArrivals(
+  items: readonly MediaItem[],
+  seed: number,
+  shownOnHomeAt: Readonly<Record<string, number>>,
+  count: number,
+  now: number = Date.now(),
+): MediaItem[] {
+  return items
+    .slice(0, Math.max(count, REC.NEW_ARRIVALS_WINDOW))
+    .map((item, i) => ({ item, score: seededRandom(seed, i) - shownPenalty(item.id, shownOnHomeAt, now) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(({ item }) => item);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -385,7 +463,7 @@ export function recommendItems(
 ): MediaItem[] {
   const seed       = options.sessionSeed ?? getOrCreateSessionSeed(profile.userId);
   const affinity   = buildUserAffinity(profile.events, allItems);
-  const hasHistory = profile.events.length >= REC.MIN_EVENTS_TO_PERSONALISE;
+  const hasHistory = affinity.signalEventCount >= REC.MIN_EVENTS_TO_PERSONALISE;
   const excludeSeen = options.includeWatched !== true && REC.EXCLUDE_SEEN;
 
   let candidates = filterSeenAndRecent(allItems, affinity, {
@@ -432,10 +510,14 @@ export function buildHomeRows(
   allItems:    readonly MediaItem[],
   profile:     UserProfile,
   sessionSeed?: number,
+  now: number = Date.now(),
 ): HomeRow[] {
-  const seed       = sessionSeed ?? getOrCreateSessionSeed(profile.userId);
+  const seed       = sessionSeed ?? getPageLoadSeed();
   const affinity   = buildUserAffinity(profile.events, allItems);
-  const hasHistory = profile.events.length >= REC.MIN_EVENTS_TO_PERSONALISE;
+  const hasHistory = affinity.signalEventCount >= REC.MIN_EVENTS_TO_PERSONALISE;
+  const indexById  = new Map(allItems.map((item, i) => [item.id, i]));
+  const positionOf  = (item: MediaItem) => indexById.get(item.id) ?? 0;
+  const popularityOf = (item: MediaItem) => 1 - positionOf(item) / Math.max(allItems.length - 1, 1);
   const unseen     = allItems.filter((item) => !affinity.viewedIds.has(item.id));
   const rows: HomeRow[] = [];
 
@@ -457,14 +539,15 @@ export function buildHomeRows(
 
     const related = allocate(
       unseen
-        .map((item, i) => {
+        .map((item) => {
           const catOverlap    = item.categories.filter((c) => anchorCats.has(c)).length;
           const artistOverlap = itemArtistNames(item).filter((a) => anchorArtists.includes(a)).length;
-          const jitter        = seededRandom(seed, i) * 0.1;
-          return { item, score: catOverlap * 0.7 + artistOverlap * 0.3 + jitter };
+          const relevance     = Math.min(catOverlap / Math.max(anchorCats.size, 1), 1) * 0.7 + Math.min(artistOverlap, 1) * 0.3;
+          const explore       = seededRandom(seed, positionOf(item)) * REC.W_ROW_EXPLORE;
+          return { item, hasOverlap: catOverlap + artistOverlap > 0, score: relevance + explore - shownPenalty(item.id, affinity.shownOnHomeAt, now) };
         })
         // Only include items with at least one category or artist overlap
-        .filter(({ score }) => score > 0.1)
+        .filter(({ hasOverlap }) => hasOverlap)
         .sort((a, b) => b.score - a.score)
         .slice(0, REC.COUNT_BECAUSE_YOU_WATCHED)
         .map(({ item }) => item),
@@ -484,10 +567,13 @@ export function buildHomeRows(
     "Justo lo que buscas",
   ];
 
+  // Entre los títulos recientes sin ver: afinidad + azar de la carga − lo mostrado hace poco (ya no es siempre el mismo grupo)
   const recentUnseen = unseen
     .filter((item) => REC.CURRENT_YEAR - item.year <= 2)
-    .sort((a, b) => b.year - a.year)
-    .slice(0, REC.COUNT_NEW_FOR_YOU);
+    .map((item) => ({ item, score: rowScore(item, affinity, seed, positionOf(item), popularityOf(item), now) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, REC.COUNT_NEW_FOR_YOU)
+    .map(({ item }) => item);
 
   // Fall back to personalised picks when there aren't enough recent items
   const newForYouItems = allocate(
@@ -512,7 +598,7 @@ export function buildHomeRows(
     const moodItems = allocate(
       unseen
         .filter((item) => item.categories.includes(mood))
-        .map((item, i) => ({ item, score: scoreCandidate(item, affinity, seed, i, 0.5) }))
+        .map((item) => ({ item, score: rowScore(item, affinity, seed, positionOf(item), 0.5, now) }))
         .sort((a, b) => b.score - a.score)
         .slice(0, REC.COUNT_SAME_MOOD)
         .map(({ item }) => item),
@@ -528,7 +614,7 @@ export function buildHomeRows(
     rows.push({
       title: "Lo más destacado",
       subtitle: "Lo mejor del catálogo ahora mismo",
-      items: coldStartFallback(allItems, seed, REC.COUNT_DEFAULT),
+      items: coldStartFallback(allItems, seed, REC.COUNT_DEFAULT, affinity.shownOnHomeAt, now),
     });
   }
 
@@ -543,11 +629,13 @@ function coldStartFallback(
   items: readonly MediaItem[],
   seed:  number,
   count: number,
+  shownOnHomeAt: Readonly<Record<string, number>> = {},
+  now: number = Date.now(),
 ): MediaItem[] {
   // Seeded shuffle → every session sees a different order, still varied by category
   const shuffled: ScoredItem[] = items.map((item, i) => ({
     item,
-    score: seededRandom(seed, i),
+    score: seededRandom(seed, i) - shownPenalty(item.id, shownOnHomeAt, now),
   }));
   shuffled.sort((a, b) => b.score - a.score);
   return diversifyResults(shuffled, count);

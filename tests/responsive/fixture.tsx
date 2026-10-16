@@ -23,7 +23,7 @@ import { DashboardView } from "@/components/features/studio/studio-dashboard-vie
 import { TitlesView } from "@/components/features/studio/studio-titles-view";
 import { ProfileView } from "@/components/features/studio/studio-profile-view";
 import { StatsView } from "@/components/features/studio/studio-stats-view";
-import { UploadView } from "@/components/features/studio/studio-upload-view";
+import { UploadWizard } from "@/components/features/studio/upload/upload-wizard";
 import { EditModal } from "@/components/features/studio/studio-edit-modal";
 import { STUDIO_DATA } from "@/components/features/studio/studio-data";
 import type { StudioData, StudioTitle } from "@/components/features/studio/studio-types";
@@ -72,7 +72,7 @@ export default function Fixture() {
     case "studio-titles": content = <TitlesView data={data} onNav={noop} onEditTitle={noop} onToast={noop} onDelete={noop} openTitle={openTitle} setOpenTitle={setOpenTitle} />; break;
     case "studio-profile": content = <ProfileView data={data} onToast={noop} />; break;
     case "studio-stats": content = <StatsView data={data} onToast={noop} />; break;
-    case "studio-upload": content = <UploadView data={data} onToast={noop} onNav={noop} />; break;
+    case "studio-upload": content = <UploadWizard />; break;
     case "studio-edit": content = <EditModal data={data} title={title} onClose={noop} onToast={noop} />; break;
     case "viewer-setup": content = <ViewerSetup />; break;
     case "creator-setup": content = <CreatorSetup />; break;

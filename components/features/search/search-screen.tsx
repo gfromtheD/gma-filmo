@@ -4,7 +4,6 @@ import { useDeferredValue, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
-import { SearchAurora } from "@/components/features/search/search-aurora";
 import { useCatalogFilters } from "@/hooks/use-catalog-filters";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { searchCreators, searchItems, suggestCorrection, tokenize } from "@/lib/search/search-engine";
@@ -72,8 +71,6 @@ export function SearchScreen({ items }: SearchScreenProps) {
 
   return (
     <div className="relative min-h-[calc(100dvh-56px)] lg:min-h-[calc(100dvh-64px)]">
-      <SearchAurora />
-
       <div className="relative z-[1] px-4 pb-24 pt-8 lg:px-12 lg:pt-14">
         <header className="mx-auto flex max-w-[640px] flex-col items-center text-center">
           <h1 className="text-[28px] font-bold leading-tight text-white lg:text-[36px]">

@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
-import { rateLimit } from "@/lib/api/rate-limit";
+import { rateLimitCheck } from "@/lib/api/rate-limit";
+
+/**
+ * Límites por usuario y minuto. Guardar títulos deprisa es un uso normal (explorar el catálogo y marcar varios),
+ * así que se dejan holgados: protegen de abusos, no de usuarios entusiastas.
+ */
+const WRITE_LIMIT_PER_MINUTE = 120;
+const READ_LIMIT_PER_MINUTE = 120;
+
+function tooManyRequests(retryAfterSeconds: number, body: Record<string, unknown>) {
+  return NextResponse.json(body, { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } });
+}
 
 const MutateSchema = z.object({
   peliculaId: z.number().int().positive(),
@@ -12,9 +23,8 @@ const MutateSchema = z.object({
 export async function GET(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!rateLimit(`${userId}/watchlist/read`, 60)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  const read = rateLimitCheck(`${userId}/watchlist/read`, READ_LIMIT_PER_MINUTE);
+  if (!read.allowed) return tooManyRequests(read.retryAfterSeconds, { error: "Too many requests" });
 
   const profileId = new URL(request.url).searchParams.get("profileId") ?? "";
 
@@ -34,9 +44,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  if (!rateLimit(`${userId}/watchlist/write`, 30)) {
-    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
-  }
+  const write = rateLimitCheck(`${userId}/watchlist/write`, WRITE_LIMIT_PER_MINUTE);
+  if (!write.allowed) return tooManyRequests(write.retryAfterSeconds, { ok: false, error: "Too many requests" });
 
   const parsed = MutateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -61,9 +70,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  if (!rateLimit(`${userId}/watchlist/write`, 30)) {
-    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
-  }
+  const write = rateLimitCheck(`${userId}/watchlist/write`, WRITE_LIMIT_PER_MINUTE);
+  if (!write.allowed) return tooManyRequests(write.retryAfterSeconds, { ok: false, error: "Too many requests" });
 
   const parsed = MutateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

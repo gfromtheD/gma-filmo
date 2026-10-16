@@ -16,13 +16,13 @@ export default function TerminosPage() {
         <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05, margin: 0 }}>
           Condiciones de uso
         </h1>
-        <p style={{ marginTop: 16, fontSize: 13, color: "#4A5A6E" }}>
+        <p style={{ marginTop: 16, fontSize: 13, color: "#585858" }}>
           Última actualización: junio de 2026
         </p>
       </div>
 
       {/* Intro */}
-      <p style={{ fontSize: 15, lineHeight: 1.75, color: "#B0BDCC", marginBottom: 48, marginTop: 0 }}>
+      <p style={{ fontSize: 15, lineHeight: 1.75, color: "#BBBBBB", marginBottom: 48, marginTop: 0 }}>
         GMA Filmo es una plataforma gratuita y sin publicidad creada por Generación Maldita para que
         directores, guionistas y creadores audiovisuales independientes puedan distribuir su obra y
         llegar a nuevos públicos. Estas condiciones explican cómo funciona, qué se espera de quienes
@@ -30,7 +30,7 @@ export default function TerminosPage() {
       </p>
 
       {/* Sections */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 40, fontSize: 15, lineHeight: 1.75, color: "#B0BDCC" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 40, fontSize: 15, lineHeight: 1.75, color: "#BBBBBB" }}>
 
         <Section title="1. Qué es GMA Filmo">
           GMA Filmo es un servicio de distribución y descubrimiento de cine independiente. No producimos
@@ -109,8 +109,8 @@ export default function TerminosPage() {
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: 72, paddingTop: 32, borderTop: "1px solid #1A2536", textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "#4A5A6E" }}>
+      <div style={{ marginTop: 72, paddingTop: 32, borderTop: "1px solid var(--gma-border)", textAlign: "center" }}>
+        <p style={{ fontSize: 13, color: "#585858" }}>
           También puedes consultar nuestra{" "}
           <Link href="/privacidad" style={{ color: "#22B16B", textDecoration: "none", fontWeight: 600 }}>
             Política de privacidad →

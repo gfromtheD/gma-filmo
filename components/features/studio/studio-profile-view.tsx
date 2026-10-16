@@ -334,7 +334,7 @@ export function ProfileView({ data, onToast }: Props) {
                   <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} imageUrl={avatarUrl ?? undefined} />
                   <button className="st-btn st-btn-secondary st-btn-icon"
                     style={{ position: "absolute", bottom: -6, right: -6, width: 30, height: 30,
-                      borderRadius: 999, background: "#101820", opacity: avatarBusy ? 0.5 : 1 }}
+                      borderRadius: 999, background: "var(--gma-panel)", opacity: avatarBusy ? 0.5 : 1 }}
                     disabled={avatarBusy}
                     onClick={() => avatarInputRef.current?.click()}>
                     <ImageIcon size={14} />

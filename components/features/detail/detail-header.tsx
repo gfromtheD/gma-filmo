@@ -3,6 +3,8 @@
 import { ShareAndroid as Share2 } from "@/components/ui/icons";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { SaveIcon } from "@/components/ui/save-icon";
+import { shortSynopsis } from "@/lib/detail/short-synopsis";
 import { getDirectorName } from "@/lib/credits";
 import type { MovieMedia } from "@/types/catalog";
 
@@ -40,14 +42,32 @@ export function DetailHeader({
   const meta = [String(movie.year), movie.runtime].filter(Boolean).join(" · ");
 
   return (
-    <section className="relative isolate lg:min-h-[max(560px,calc(100svh-var(--gma-header-h)-60px))] lg:overflow-hidden">
-      {/* Móvil: banda 16:9 a ancho completo (medida en Filmin); escritorio: fondo a sección completa. */}
-      <div className="relative aspect-video w-full overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto">
+    <section className="relative isolate -mt-14 pt-14 lg:-mt-16 lg:pt-16 lg:min-h-[max(calc(560px+var(--gma-header-h)),calc(100svh-60px))] lg:overflow-hidden">
+      {/* Móvil: banda 16:9 a ancho completo (medida en Filmin) que sube por detrás de la cabecera; escritorio: fondo a
+          sección completa. En móvil un espaciador 16:9 en el flujo mantiene el contenido donde estaba. */}
+      <div
+        className="absolute inset-x-0 top-0 h-[calc(56.25vw+var(--gma-header-h))] overflow-hidden lg:inset-0 lg:h-auto"
+        style={{
+          maskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
+        }}
+      >
         <PosterArt fill style={movie.style} title={movie.title} kind={movie.kind} ratio="landscape" imageUrl={movie.imageUrl} />
       </div>
+      <div aria-hidden="true" className="aspect-video w-full lg:hidden" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-[1] aspect-video bg-[linear-gradient(180deg,rgba(6,6,19,0)_55%,#060613_100%)] lg:inset-0 lg:aspect-auto lg:bg-[linear-gradient(90deg,#060613_0%,rgba(6,6,19,0.86)_26%,rgba(6,6,19,0)_72%),linear-gradient(180deg,rgba(6,6,19,0)_52%,#060613_100%)]"
+        style={{ maskImage: "linear-gradient(to bottom, black 55%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)" }}
+        className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[calc(56.25vw+var(--gma-header-h))] bg-[linear-gradient(180deg,transparent_55%,color-mix(in_srgb,var(--gma-bg)_40%,transparent)_100%)] lg:inset-0 lg:h-auto lg:bg-[linear-gradient(90deg,var(--gma-bg)_0%,color-mix(in_srgb,var(--gma-bg)_86%,transparent)_26%,transparent_72%),linear-gradient(180deg,transparent_52%,color-mix(in_srgb,var(--gma-bg)_45%,transparent)_100%)]"
+      />
+
+      {/* Igual que el hero de Inicio: la cabecera es transparente y este degradado oscuro hace legibles los menús sobre
+          cualquier imagen (también las muy claras). */}
+      <div
+        aria-hidden="true"
+        data-header-scrim=""
+        className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-32"
+        style={{ backgroundImage: "linear-gradient(180deg, color-mix(in srgb, var(--gma-bg) 60%, transparent) 0%, transparent 100%)" }}
       />
 
       <div className="relative z-[2] flex flex-col px-4 pb-8 pt-16 lg:min-h-[inherit] lg:justify-end lg:px-16 lg:pt-40">
@@ -70,7 +90,7 @@ export function DetailHeader({
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[16px] leading-6 text-white lg:mt-3 lg:font-medium lg:leading-normal">
               <span>{meta}</span>
               {(movie.tags ?? []).map((t) => (
-                <span key={t} className="rounded-[3px] bg-[#242432] px-2 py-0.5 text-[12px] uppercase lg:bg-white/10 lg:font-bold">
+                <span key={t} className="rounded-[3px] bg-gma-border px-2 py-0.5 text-[12px] uppercase lg:bg-white/10 lg:font-bold">
                   {t}
                 </span>
               ))}
@@ -78,8 +98,8 @@ export function DetailHeader({
           </div>
         </div>
 
-        {movie.synopsis && (
-          <p className="mt-5 hidden line-clamp-3 max-w-[760px] lg:block text-[16px] leading-[1.5] text-[#B8C5D4]">{movie.synopsis}</p>
+        {shortSynopsis(movie.synopsis) && (
+          <p className="mt-5 hidden line-clamp-3 max-w-[760px] lg:block text-[16px] leading-[1.5] text-[#C4C4C4]">{shortSynopsis(movie.synopsis)}</p>
         )}
 
         <div className="mt-6 flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
@@ -94,7 +114,7 @@ export function DetailHeader({
 
           <div className="grid grid-cols-3 gap-1 lg:ml-auto lg:flex lg:gap-3">
             <button type="button" onClick={onToggleList} aria-pressed={inList} className={`${TERTIARY} h-16`}>
-              <GmaIcon name={inList ? "check" : "bookmark"} size={22} />
+              <SaveIcon saved={inList} size={22} />
               {inList ? "Guardada" : "Guardar"}
             </button>
             <button type="button" onClick={onRate} className={`${TERTIARY} h-16`}>

@@ -1,6 +1,6 @@
 export type TitleStatus = "publicado" | "revision" | "borrador" | "rechazado";
 
-export type StudioTabId = "inicio" | "titulos" | "subir" | "estadisticas" | "perfil";
+export type StudioTabId = "inicio" | "titulos" | "subir" | "perfil";
 
 export interface PosterData {
   from: string;

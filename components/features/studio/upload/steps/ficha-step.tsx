@@ -1,0 +1,61 @@
+"use client";
+
+import { CARD_CLASS, StepHeading, TextAreaField, TextField } from "../fields";
+import { ExtrasSection } from "../extras-section";
+import { ImageDrop } from "../image-drop";
+import { errorIf, type StepProps } from "../step-props";
+import { IMAGE_SLOTS, LIMITS, type ImageSlotId } from "@/lib/studio/catalogs";
+
+/**
+ * «Crea tu ficha»: una plantilla de la página del título, todavía vacía. El banner, el cartel, el título y la sinopsis se
+ * rellenan justo donde se verán; debajo, los detalles (sinopsis larga), el tráiler y los extras.
+ */
+export function FichaStep(props: StepProps) {
+  const { draft, update, files, showErrors } = props;
+  const drop = (id: ImageSlotId, className: string, placeholder?: React.ReactNode) => {
+    const spec = IMAGE_SLOTS.find((s) => s.id === id)!;
+    return (
+      <ImageDrop
+        label={spec.label} required={spec.required} asset={draft.images[id]} className={className} placeholder={placeholder}
+        hint={`${spec.width} × ${spec.height} px`} advice={files.advice[id]}
+        onFile={(f) => files.upload(id, "image", f, { width: spec.width, height: spec.height })}
+        onRemove={() => files.remove(id)}
+      />
+    );
+  };
+
+  return (
+    <section aria-labelledby="step-ficha" className="flex flex-col gap-6">
+      <div id="step-ficha">
+        <StepHeading title="Crea tu ficha" intro="Esta es la página de tu título, todavía vacía. Pulsa cada zona para rellenarla: JPG, PNG o GIF de hasta 10 MB cada imagen." />
+      </div>
+
+      <div className="overflow-hidden rounded-[14px] border border-white/10 bg-black/40 backdrop-blur-md">
+        {drop("banner", "aspect-video w-full rounded-none border-0", <span aria-hidden="true" className="mb-1 text-[28px] text-white/30">▭</span>)}
+
+        <div className="relative z-[3] -mt-14 grid gap-5 px-4 pb-6 sm:-mt-24 sm:grid-cols-[170px_minmax(0,1fr)] sm:px-8">
+          <div className="w-[120px] self-start shadow-[0_12px_32px_rgba(0,0,0,0.6)] sm:w-[170px]">
+            {drop("poster", "aspect-[595/842] w-full", <span aria-hidden="true" className="mb-1 text-[28px] text-white/30">▯</span>)}
+          </div>
+          <div className="flex min-w-0 flex-col gap-4 sm:pt-28">
+            <TextField label="Título" required value={draft.title} onChange={(v) => update({ title: v })}
+              error={errorIf(showErrors, !draft.title.trim(), "Escribe el título.")} />
+            <TextField label="Título original" value={draft.originalTitle} onChange={(v) => update({ originalTitle: v })}
+              hint="Solo si es distinto del título." />
+            <TextAreaField label="Sinopsis corta" required rows={3} maxLength={LIMITS.shortSynopsisChars} value={draft.synopsisShort}
+              onChange={(v) => update({ synopsisShort: v })} hint="Una o dos frases que enganchen: se ve sobre el banner."
+              error={errorIf(showErrors, !draft.synopsisShort.trim(), "Escribe la sinopsis corta.")} />
+          </div>
+        </div>
+      </div>
+
+      <div className={CARD_CLASS}>
+        <TextAreaField label="Sinopsis larga" required rows={7} value={draft.synopsisLong} onChange={(v) => update({ synopsisLong: v })}
+          hint="Cuenta la historia con más detalle: aparece en «Detalles» de la ficha."
+          error={errorIf(showErrors, !draft.synopsisLong.trim(), "Escribe la sinopsis larga.")} />
+      </div>
+
+      <ExtrasSection {...props} />
+    </section>
+  );
+}

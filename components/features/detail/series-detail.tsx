@@ -6,7 +6,7 @@ import { Hero } from "@/components/features/media/hero";
 import { PosterArt } from "@/components/ui/poster-art";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
-import { useWatchlist } from "@/hooks/use-watchlist";
+import { useWatchlist, watchlistErrorMessage } from "@/hooks/use-watchlist";
 import { useNoticeToast } from "@/components/ui/notice-toast";
 import type { Episode, SeriesMedia } from "@/types/catalog";
 
@@ -28,7 +28,7 @@ export function SeriesDetail({ series, episodes, related }: SeriesDetailProps) {
       return;
     }
     const saved = inList ? await removeMedia(series.numericId) : await addMedia(series.numericId);
-    if (!saved) notice.showError("No se pudo actualizar tu lista. Inténtalo de nuevo.");
+    if (!saved) notice.showError(watchlistErrorMessage());
   }
 
   return (
@@ -80,7 +80,7 @@ function EpisodesPanel({ series, episodes }: { series: SeriesMedia; episodes: re
         {/* Season selector — only rendered when there's more than 1 season */}
         {series.seasons > 1 && (
           <div
-            className="flex max-w-full flex-wrap gap-1 rounded-2xl border border-[#262626] bg-[#0D0D0D] p-1"
+            className="flex max-w-full flex-wrap gap-1 rounded-2xl border border-gma-border bg-gma-surface-2 p-1"
           >
             {seasonNumbers.map((n) => (
               <button
@@ -90,7 +90,7 @@ function EpisodesPanel({ series, episodes }: { series: SeriesMedia; episodes: re
                 className={`min-h-11 min-w-11 rounded-full px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${
                   activeSeason === n
                     ? "bg-[#22B16B] text-[#03200F]"
-                    : "text-[#B8C5D4] hover:text-white"
+                    : "text-[#C4C4C4] hover:text-white"
                 }`}
               >
                 T{n}
@@ -101,20 +101,20 @@ function EpisodesPanel({ series, episodes }: { series: SeriesMedia; episodes: re
       </div>
 
       {displayEpisodes.length > 0 ? (
-        <ol className="flex flex-col divide-y divide-[#262626]">
+        <ol className="flex flex-col divide-y divide-gma-border">
           {displayEpisodes.map((ep) => (
             <EpisodeRow key={ep.n} ep={ep} seriesStyle={series.style} />
           ))}
         </ol>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-[12px] border border-[#262626] bg-[#0D0D0D] py-16 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#1A1A1A] text-[#6D7D94]">
+        <div className="flex flex-col items-center justify-center rounded-[12px] border border-gma-border bg-gma-surface-2 py-16 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gma-surface text-[#7C7C7C]">
             <GmaIcon name="series" size={22} />
           </div>
-          <p className="text-[14px] font-semibold text-[#B8C5D4]">
+          <p className="text-[14px] font-semibold text-[#C4C4C4]">
             Temporada {activeSeason} — próximamente
           </p>
-          <p className="mt-1 text-[12px] text-[#6D7D94]">
+          <p className="mt-1 text-[12px] text-[#7C7C7C]">
             Los episodios estarán disponibles en breve.
           </p>
         </div>
@@ -153,9 +153,9 @@ function EpisodeRow({
         <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-[12px] font-bold text-[#22B16B]">E{ep.n}</span>
           <span className="min-w-0 break-words text-[14px] font-bold text-white">{ep.title}</span>
-          <span className="ml-auto shrink-0 text-[12px] text-[#6D7D94]">{ep.runtime}</span>
+          <span className="ml-auto shrink-0 text-[12px] text-[#7C7C7C]">{ep.runtime}</span>
         </div>
-        <p className="line-clamp-2 text-[13px] leading-[1.5] text-[#6D7D94]">
+        <p className="line-clamp-2 text-[13px] leading-[1.5] text-[#7C7C7C]">
           {ep.synopsis}
         </p>
       </div>
@@ -167,8 +167,8 @@ function EpisodeRow({
 
 function MetaCard({ series }: { series: SeriesMedia }) {
   return (
-    <div className="rounded-[12px] border border-[#262626] bg-[#0D0D0D] p-5">
-      <h3 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#6D7D94]">
+    <div className="rounded-[12px] border border-gma-border bg-gma-surface-2 p-5">
+      <h3 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#7C7C7C]">
         Información
       </h3>
 
@@ -181,12 +181,12 @@ function MetaCard({ series }: { series: SeriesMedia }) {
 
         {/* Genres */}
         <div className="flex flex-col gap-1.5">
-          <dt className="text-[12px] text-[#6D7D94]">Géneros</dt>
+          <dt className="text-[12px] text-[#7C7C7C]">Géneros</dt>
           <dd className="flex flex-wrap gap-1.5">
             {series.categories.map((c) => (
               <span
                 key={c}
-                className="rounded-full border border-[#262626] px-3 py-1 text-[11px] font-semibold text-[#B8C5D4]"
+                className="rounded-full border border-gma-border px-3 py-1 text-[11px] font-semibold text-[#C4C4C4]"
               >
                 {c}
               </span>
@@ -197,7 +197,7 @@ function MetaCard({ series }: { series: SeriesMedia }) {
         {/* Format tags */}
         {series.tags && series.tags.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <dt className="text-[12px] text-[#6D7D94]">Formato</dt>
+            <dt className="text-[12px] text-[#7C7C7C]">Formato</dt>
             <dd className="flex flex-wrap gap-1.5">
               {series.tags.map((t) => (
                 <span
@@ -218,7 +218,7 @@ function MetaCard({ series }: { series: SeriesMedia }) {
 function MetaRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <dt className="shrink-0 text-[12px] text-[#6D7D94]">{label}</dt>
+      <dt className="shrink-0 text-[12px] text-[#7C7C7C]">{label}</dt>
       <dd className={`min-w-0 break-words text-right text-[13px] font-semibold ${accent ? "text-[#22B16B]" : "text-white"}`}>
         {value}
       </dd>
