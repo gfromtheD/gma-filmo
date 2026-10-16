@@ -35,7 +35,7 @@ export class VideoProcessingWorker {
  async tick() {
   if(process.env.VIDEO_PROCESSING_ENABLED!=='true')return 0;
   await this.cleanupTemps();
-  const worker=randomUUID(),job=await this.repo.claimSession(null,'process',worker);if(!job)return 0;
+  const worker=randomUUID(),job=await this.repo.claimR2Process(worker);if(!job)return 0;
   await this.run(job,worker);return 1;
  }
  async run(job:UploadJob,worker:string) {

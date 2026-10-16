@@ -1,33 +1,14 @@
 import { createHash } from "node:crypto";
-import sharp from "sharp";
 import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { UploadSession } from "./types";
 import { ProviderError } from "./stream";
 import { requiredEnv } from "./config";
+import { AuxiliaryValidationError, normalizeImage, normalizeSubtitles as normalizeSubtitlesPure } from '@/lib/media/auxiliary-validation';
 
 export function normalizeSubtitles(input: Uint8Array): Buffer {
-  let decoded:string;try{decoded=new TextDecoder("utf-8",{fatal:true}).decode(input);}catch{throw new ProviderError("SUBTITLE_INVALID");}
-  const text = decoded.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n").trim();
-  if (!text || text.includes("\0") || /<(?:script|iframe|style)\b/i.test(text)) throw new ProviderError("SUBTITLE_INVALID");
-  const body=text.replace(/^WEBVTT[^\n]*(?:\n[^\n]+)*?\n\n/,'').replace(/^WEBVTT\s*$/,'').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');
-  const timestamp=(value:string)=>{
-    const parts=value.split(':');const seconds=Number(parts.pop()),minutes=Number(parts.pop()),hours=Number(parts.pop()??0);
-    if(!Number.isFinite(seconds)||minutes>59||seconds>=60)throw new ProviderError('SUBTITLE_INVALID');
-    return hours*3600+minutes*60+seconds;
-  };
-  const cues:string[]=[];
-  for(const block of body.split(/\n\s*\n/)) {
-    if(/^NOTE(?:\s|$)/.test(block))continue;
-    const lines=block.trim().split('\n');const index=lines[0]?.includes('-->')?0:1;
-    const timing=lines[index]?.match(/^((?:\d{2,}:)?\d{2}:\d{2}\.\d{3})\s+-->\s+((?:\d{2,}:)?\d{2}:\d{2}\.\d{3})(?:\s+[^\n]*)?$/);
-    if(!timing||lines.length<=index+1||timestamp(timing[1]!)>=timestamp(timing[2]!))throw new ProviderError('SUBTITLE_INVALID');
-    const content=lines.slice(index+1).join('\n');
-    if(content.includes('-->')||content.length>20000)throw new ProviderError('SUBTITLE_INVALID');
-    cues.push(timing[1]+' --> '+timing[2]+'\n'+content);
-  }
-  if(!cues.length||cues.length>50000)throw new ProviderError('SUBTITLE_INVALID');
-  return Buffer.from('WEBVTT\n\n'+cues.join('\n\n')+'\n');
+  try { return normalizeSubtitlesPure(input); }
+  catch (error) { throw new ProviderError(error instanceof AuxiliaryValidationError ? error.code : 'SUBTITLE_INVALID'); }
 }
 export class AuxiliaryProvider {
   private client: S3Client;
@@ -47,6 +28,11 @@ export class AuxiliaryProvider {
     try {return await this.client.send(new HeadObjectCommand({Bucket:this.bucket,Key:key}),{abortSignal:AbortSignal.timeout(20000)});}
     catch(e){if((e as {$metadata?:{httpStatusCode?:number}}).$metadata?.httpStatusCode===404)return null;throw new ProviderError("R2_HEAD_FAILED");}
   }
+  async inspectReceipt(session:UploadSession) {
+    const head=await this.head(this.ingestKey(session));
+    if (!head || head.ContentLength!==session.expected_input_bytes || !head.ETag) throw new ProviderError('UPLOAD_NOT_COMPLETE');
+    return { size:head.ContentLength,etag:head.ETag,key:this.ingestKey(session) };
+  }
   async verify(session:UploadSession) {
     const head=await this.head(this.ingestKey(session));
     if (!head || head.ContentLength!==session.expected_input_bytes) throw new ProviderError("R2_RECEIPT_INVALID");
@@ -64,14 +50,11 @@ export class AuxiliaryProvider {
     if(session.role==="subtitles"){output=normalizeSubtitles(input);mime="text/vtt";}
     else {
       try {
-      const image=sharp(input,{limitInputPixels:25000000,animated:false});
-      const metadata=await image.metadata();
-      if(!["jpeg","png","webp","avif"].includes(metadata.format??"") || !metadata.width || !metadata.height)
-        throw new ProviderError("IMAGE_INVALID");
-      const normalized=await image.rotate().resize({width:session.role==="avatar"?512:2400,height:2400,fit:"inside",withoutEnlargement:true})
-        .webp({quality:85}).timeout({seconds:20}).toBuffer({resolveWithObject:true});
-      output=normalized.data;mime="image/webp";width=normalized.info.width;height=normalized.info.height;
-      }catch{throw new ProviderError("IMAGE_INVALID");}
+        const normalized=await normalizeImage(input,session.role);
+        output=normalized.data;mime=normalized.mimeType;width=normalized.width;height=normalized.height;
+      } catch(error) {
+        throw new ProviderError(error instanceof AuxiliaryValidationError ? error.code : 'IMAGE_INVALID');
+      }
     }
     if(output.length>4*1024**2)throw new ProviderError("NORMALIZED_ASSET_TOO_LARGE");
     // Only the server can write this key. Never copy a mutable ingest key after validation.

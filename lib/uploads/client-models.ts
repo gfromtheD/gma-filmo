@@ -1,6 +1,17 @@
+import type { MediaAssetDTO, UploadSessionDTO } from '@/types/media-engine';
 export type UploadRole = "main" | "trailer" | "intro" | "extras" | "poster" | "poster_h" | "poster_v" | "subtitles" | "avatar";
 export type ClientUploadState = "pending" | "hashing" | "uploading" | "paused" | "processing" | "done" | "error" | "cancelling";
 
+export type ManagedClientUploadState = 'pending' | 'uploading' | 'paused' | 'processing' | 'done' | 'error' | 'cancelling';
+export function managedClientState(session: UploadSessionDTO, asset: MediaAssetDTO, hasLocalFile = true): ManagedClientUploadState {
+  if (session.state === 'cancelling' || asset.status === 'deleting') return 'cancelling';
+  if (asset.status === 'ready') return 'done';
+  if (asset.status === 'failed' || asset.status === 'rejected' || ['failed', 'expired', 'cancelled'].includes(session.state)) return 'error';
+  if (session.state === 'paused') return 'paused';
+  if (session.state === 'uploading') return hasLocalFile ? 'uploading' : 'paused';
+  if (asset.status === 'processing' || asset.status === 'validating' || asset.status === 'received' || session.state === 'uploaded') return 'processing';
+  return 'pending';
+}
 export interface ClientUploadSession {
   id: string;
   draft_id: string | null;

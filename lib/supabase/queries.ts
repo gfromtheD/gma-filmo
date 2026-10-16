@@ -1,3 +1,4 @@
+import { toPlaybackReference } from "@/lib/media/catalog-playback";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getSupabasePublicClient } from "@/lib/supabase/public";
@@ -193,7 +194,8 @@ function toMovieMedia(
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
     r2VideoUrl,
-    playbackKind: p.playback_kind==='r2_hls'?'r2_hls':p.playback_kind==='stream'?'stream':'legacy',
+    playbackRef: toPlaybackReference(p.slug, p.playback_kind),
+    playbackKind: p.playback_kind==='media'?'media':p.playback_kind==='r2_hls'?'r2_hls':p.playback_kind==='stream'?'stream':'legacy',
     videoUrl: p.youtube_url ?? undefined,
     subtitleUrl,
     language: p.language?.trim() || undefined,

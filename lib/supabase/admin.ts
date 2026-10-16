@@ -11,6 +11,8 @@ export function getSupabaseAdminClient() {
   if (!adminClient) {
     adminClient = createClient<Database>(url, key, {
       auth: { persistSession: false },
+      // Privileged state/ownership reads must observe the latest committed row.
+      global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
     });
   }
   return adminClient;

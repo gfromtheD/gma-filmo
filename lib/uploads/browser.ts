@@ -14,7 +14,7 @@ export async function uploadApi<T>(path:string,method='GET',body?:unknown):Promi
  if(!session)throw new Error('Inicia sesión para subir contenido');
  let response=await execute(session.access_token);
  if(response.status===401){session=(await auth.refreshSession()).data.session;if(!session)throw new Error('Inicia sesión para continuar');response=await execute(session.access_token);}
- const data=await response.json();if(!response.ok)throw new Error(data.error??'No se pudo completar la operación');return data as T;
+ const data=await response.json();if(!response.ok)throw new Error(typeof data.error==='string'?data.error:data.error?.message??'No se pudo completar la operación');return data as T;
 }
 let draftTask:Promise<UploadDraft>|undefined;
 let draftOwner='';
@@ -132,6 +132,15 @@ export async function uploadAsset(input:{file:File;role:AssetRole;key:string;sig
  throw new Error('El procesamiento continúa. Puedes recuperar el borrador más tarde.');
 }
 export async function uploadAvatar(file:File) {
+ if(process.env.NEXT_PUBLIC_UPLOAD_ENGINE_V2==='true'){
+   const {managedDraftSchema,uploadManagedAsset}=await import('./managed-browser');
+   const {data:{session}}=await getSupabaseBrowserClient().auth.getSession();if(!session)throw new Error('Inicia sesión');
+   const created=await uploadApi<{draft:unknown}>('/api/upload-drafts','POST',{purpose:'avatar'});
+   const draft=managedDraftSchema.parse(created.draft);
+   const ready=await uploadManagedAsset({file,role:'avatar',draft,idempotencyKey:crypto.randomUUID(),signal:new AbortController().signal});
+   await uploadApi('/api/upload-drafts/'+draft.id+'/avatar','POST');
+   return `/api/media/${ready.asset.mediaId}`;
+ }
  const {draft}=await uploadApi<{draft:UploadDraft}>('/api/upload-drafts','POST',{purpose:'avatar'});
  const result=await uploadAsset({file,role:'avatar',key:crypto.randomUUID(),draftId:draft.id,signal:new AbortController().signal});
  await uploadApi('/api/upload-drafts/'+draft.id+'/avatar','POST');

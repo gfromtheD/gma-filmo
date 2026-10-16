@@ -1,7 +1,8 @@
-export type AssetRole = "main" | "trailer" | "extras" | "intro" | "poster" | "poster_h" | "poster_v" | "subtitles" | "avatar";
+import type { AssetRole, LegacyMediaAssetStatus, TransferState as MediaTransferState } from "@/types/media-engine";
+export type { AssetRole } from "@/types/media-engine";
 export type UploadProvider = "stream" | "r2";
-export type TransferState = "provisioning" | "uploading" | "paused" | "uploaded" | "cancelling" | "cancelled" | "expired" | "failed";
-export type MediaState = "received" | "validating" | "processing" | "ready" | "rejected" | "deleting" | "deleted";
+export type TransferState = MediaTransferState;
+export type MediaState = LegacyMediaAssetStatus;
 export interface UploadSession {
   id: string;
   owner_id: string;
