@@ -1,3 +1,4 @@
+import { legacyMediaWritesGate } from '@/lib/media/legacy-writes';
 import { uploadEngineEnabled } from '@/lib/uploads/config';
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -13,6 +14,7 @@ function fmtBytes(b: number) {
 }
 
 export async function POST(req: NextRequest) {
+  try {legacyMediaWritesGate();}catch{return NextResponse.json({error:'LEGACY_UPLOAD_DISABLED'},{status:410});}
   if(process.env.UPLOADS_PAUSED==='true')return NextResponse.json({error:'UPLOAD_ADMISSION_PAUSED'},{status:503});
   if(uploadEngineEnabled())return NextResponse.json({error:'UPLOAD_USE_PERSISTENT_SESSION'},{status:410});
   const userId = await getUserId(req);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const R2_BASE = "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev";
+import { legacyMediaUrl } from "@/lib/media/legacy-playback";
 
 export async function GET(
   _req: NextRequest,
@@ -10,9 +9,13 @@ export async function GET(
   if (!slug || !/^[\w-]+$/.test(slug)) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
   }
+  const base = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "https://pub-580903d2b97f4b4e8810af8c9432d80a.r2.dev";
+  let target: string | null = null;
+  try { target = legacyMediaUrl(new URL(`/sprites/${encodeURIComponent(slug)}.vtt`, base).href); } catch { target = null; }
+  if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
-    const res = await fetch(`${R2_BASE}/sprites/${slug}.vtt`, {
+    const res = await fetch(target, {
       next: { revalidate: 86400 },
     });
     if (!res.ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
