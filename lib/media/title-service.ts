@@ -4,6 +4,7 @@ import {MediaRepository} from './repository';
 import {canonicalRequestHash} from './idempotency';
 import {metadataSchema,revisionSchema,uuid} from '@/lib/uploads/contracts';
 import {UploadError} from '@/lib/uploads/repository';
+import type {FichaRepository} from './ficha-repository';
 export const publishTitleSchema=z.object({draft_id:uuid,revision:revisionSchema,main_media_id:uuid}).strict();
 export const titleLifecycleSchema=z.object({revision:revisionSchema,idempotency_key:uuid}).strict();
 export const editTitleSchema=z.object({revision:revisionSchema,metadata:metadataSchema}).strict();
@@ -12,11 +13,15 @@ export function mapTitleDTO(raw:unknown) {
  const row=titleRowSchema.parse(raw);return {id:row.id,slug:row.slug,status:row.status??'published',mediaRevision:row.media_revision,deletionState:row.media_delete_state};
 }
 export class TitleService {
- constructor(readonly repo=new MediaRepository()){}
+ constructor(readonly repo=new MediaRepository(),readonly fichas?:Pick<FichaRepository,'publish'>){}
  async publish(owner:string,body:unknown) {
    const input=publishTitleSchema.parse(body);const draft=await this.repo.draft(owner,input.draft_id);
    const raw=await this.repo.uploadCommand(owner,'publish',{...input,request_hash:canonicalRequestHash({draft_id:draft.id,main_media_id:input.main_media_id,metadata:draft.metadata})});
-   return {title:mapTitleDTO(raw)};
+   const title=mapTitleDTO(raw);
+   if(!this.fichas)return {title};
+   // La ficha completa (Windows) se copia después de publicar: si falla, el título ya existe y la copia es reintentable e idempotente.
+   try{const copied=await this.fichas.publish(owner,draft.id);return {title,ficha:{copied:copied.copied}};}
+   catch{return {title,ficha:{copied:false,retryable:true}};}
  }
  async detail(owner:string,slug:string) {
    const row=await this.repo.title(slug,owner);

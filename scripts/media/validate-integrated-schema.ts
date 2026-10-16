@@ -48,6 +48,7 @@ export const ENGINE = [
   '202610080001_media_provider_neutral.sql', '202610080002_media_commands.sql', '202610080003_media_publish_lifecycle.sql',
   '2026100800031_media_title_lifecycle.sql', '202610080004_media_delivery_security.sql', '202610080005_media_coordination.sql',
   '202610080006_media_gateway.sql', '202610080007_media_gateway_grants.sql', '202610080008_title_writes_server_only.sql',
+  '20261021000100_gma_draft_ficha.sql',
 ];
 
 export const WINDOWS = [
