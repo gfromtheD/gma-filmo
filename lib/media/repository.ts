@@ -93,6 +93,11 @@ export class MediaRepository {
   async registerGatewayGrant(owner:string|null,assetId:string,generation:number,draftId:string|null,titleSlug:string|null,tokenHash:string,expiresAt:string):Promise<void>{
     await this.call('gma_media_gateway_grant',{p_owner:owner,p_asset_id:assetId,p_generation:generation,p_draft_id:draftId,p_title_slug:titleSlug,p_token_hash:tokenHash,p_expires_at:expiresAt});
   }
+  /** Autoriza la entrega HLS de un activo de PeerTube por la pasarela (migración 20261021000200). */
+  async peerTubeAccess(assetId:string,generation:number,tokenHash:string){
+    return z.object({provider:z.literal('peertube'),provider_ref:z.string().uuid(),expected_input_bytes:z.number().int().positive()})
+      .parse(await this.call('gma_media_gateway_peertube_access',{p_asset_id:assetId,p_generation:generation,p_token_hash:tokenHash}));
+  }
   async gatewayOutput(assetId:string,generation:number,relative:string,tokenHash:string){
     return z.object({key:z.string(),mimeType:z.string(),sizeBytes:z.number().int().positive(),provider:z.enum(['mock','peertube','r2','stream'])})
       .parse(await this.call('gma_media_gateway_output',{p_asset_id:assetId,p_generation:generation,p_relative:relative,p_token_hash:tokenHash}));
