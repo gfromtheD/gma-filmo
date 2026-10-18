@@ -2,6 +2,7 @@ import { toPlaybackReference } from "@/lib/media/catalog-playback";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getSupabasePublicClient } from "@/lib/supabase/public";
+import { cachedFilmRowBySlug } from "@/lib/supabase/film-by-slug";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
@@ -266,14 +267,14 @@ const getPeliculasCached = unstable_cache(
 export const getPeliculas = cache(getPeliculasCached);
 
 export async function getPeliculaBySlug(slug: string): Promise<MovieMedia | null> {
-  const supabase = getSupabasePublicClient();
-  const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
-    supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").eq("slug", slug).single(),
+  // La fila va en caché con la etiqueta «peliculas»: al despublicar o borrar, la ficha deja de servirse al momento.
+  const [data, artistaMap, scoreMap] = await Promise.all([
+    cachedFilmRowBySlug<PeliculaWithRelations>(slug, SELECT_WITH_COLS),
     fetchArtistaMap(),
     fetchScoreMap(),
   ]);
 
-  if (error || !data) return null;
+  if (!data) return null;
   const film = { ...toMovieMedia(data as PeliculaWithRelations, artistaMap), approvalScore: scoreMap.get(slug) };
   return keepCreatorLinks([film], await getPeliculas())[0] ?? null;
 }
