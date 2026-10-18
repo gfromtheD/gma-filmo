@@ -11,7 +11,8 @@ interface UploadxFixture {
   start: { method: string; path: string; status: number; location: string; body: null };
   firstChunk: { method: string; contentRange: string; body: string; status: number; range: string };
   queryOffset: { method: string; contentRange: string; contentLength: number; body: string; status: number; range: string };
-  finalChunk: { method: string; contentRange: string; body: string; status: number; bodyJson: { uuid: string } };
+  finalChunk: { method: string; contentRange: string; body: string; status: number; bodyJson: { video: { id: number; shortUUID: string; uuid: string } } };
+  freshOffset: { method: string; contentRange: string; contentLength: number; body: string; status: number; range: string };
   cancelUpload: { method: string; status: number; body: string };
 }
 
@@ -124,7 +125,7 @@ test('PeerTube v8.3.1 contract shapes retain channel discovery, uploadx states a
           respond(response, 308, '', { Range: `bytes=0-${uploadOffset - 1}` });
         } else if (range === upload.finalChunk.contentRange && body === upload.finalChunk.body) {
           uploadOffset = 12;
-          respond(response, 200, JSON.stringify({ uuid: videoUuid }), { 'Content-Type': 'application/json' });
+          respond(response, 200, JSON.stringify({ video: { id: 1, shortUUID: 'dfhVxfm7eLqTNCRWz1gwj4', uuid: videoUuid } }), { 'Content-Type': 'application/json' });
         } else {
           respond(response, 409);
         }
@@ -184,7 +185,7 @@ test('PeerTube v8.3.1 contract shapes retain channel discovery, uploadx states a
     'Content-Length': String(upload.finalChunk.body.length),
   }, upload.finalChunk.body);
   assert.equal(finalChunk.status, 200);
-  assert.equal(JSON.parse(finalChunk.body).uuid, videoUuid);
+  assert.equal(JSON.parse(finalChunk.body).video.uuid, videoUuid);
 
   const details = await send(`${origin}/api/v1/videos/${videoUuid}`, 'GET');
   assert.equal(details.status, 200);
