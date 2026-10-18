@@ -44,6 +44,7 @@ export async function uploadx(options: UploadxOptions): Promise<void> {
     throw new Error('UPLOADX_FILE_IDENTITY_MISMATCH');
   }
   let offset = transfer.offset;
+  let finalConfirmed = false;
   options.onProgress?.(offset, total);
   for (let attempt = 0; offset < total;) {
     if (signal.aborted) throw new DOMException('Interrumpido', 'AbortError');
@@ -58,6 +59,7 @@ export async function uploadx(options: UploadxOptions): Promise<void> {
       const confirmed = parseOffset(response, offset, total);
       if (confirmed === offset && response.status !== 200) throw new Error('UPLOADX_OFFSET_NOT_ADVANCED');
       offset = confirmed;
+      finalConfirmed = response.status === 200;
       attempt = 0;
       options.onProgress?.(offset, total);
     } catch (error) {
@@ -72,4 +74,17 @@ export async function uploadx(options: UploadxOptions): Promise<void> {
       attempt++;
     }
   }
+  if (!finalConfirmed) await confirmFinal(fetcher, transfer, total, signal, options.refresh);
+}
+
+/**
+ * Every byte is already on the server but no 200 was seen (a resumed or recovered transfer). An empty status probe lets
+ * the gateway finish or replay its receipt; anything but 200 means the transfer is not complete.
+ */
+async function confirmFinal(fetcher: UploadxFetch, current: UploadxTransferDescriptor, total: number, signal: AbortSignal,
+  refresh: () => Promise<UploadxTransferDescriptor>): Promise<void> {
+  if (signal.aborted) throw new DOMException('Interrumpido', 'AbortError');
+  const transfer = Date.parse(current.expiresAt) <= Date.now() ? await refresh() : current;
+  const response = await fetcher(transfer.url, { method: 'PUT', signal, headers: { ...transfer.headers, 'Content-Range': `bytes */${total}` } });
+  if (response.status !== 200) throw new Error(`UPLOADX_HTTP_${response.status}`);
 }

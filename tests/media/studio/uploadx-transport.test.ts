@@ -53,3 +53,26 @@ test('uploadx rejects mismatched files, malformed offsets and aborts', async () 
   const controller = new AbortController(); controller.abort();
   await assert.rejects(uploadx({ file, transfer: descriptor(0), refresh: async () => descriptor(0), signal: controller.signal }), { name: 'AbortError' });
 });
+
+test('uploadx confirms a transfer that starts complete with one empty status probe', async () => {
+  const sent: Array<{ range: string | null; body: unknown }> = [];
+  await uploadx({ file, transfer: descriptor(8), refresh: async () => descriptor(8), signal: new AbortController().signal,
+    fetcher: async (_url, init) => { sent.push({ range: new Headers(init?.headers).get('content-range'), body: init?.body }); return new Response(null, { status: 200 }); } });
+  assert.deepEqual(sent, [{ range: 'bytes */8', body: undefined }]);
+});
+
+test('uploadx fails when the final status probe is not confirmed by the server', async () => {
+  await assert.rejects(uploadx({ file, transfer: descriptor(8), refresh: async () => descriptor(8), signal: new AbortController().signal,
+    fetcher: async () => new Response(null, { status: 404 }) }), /UPLOADX_HTTP_404/);
+});
+
+test('uploadx probes once after the last chunk response is lost and the refreshed offset is complete', async () => {
+  const ranges: string[] = []; let sends = 0;
+  await uploadx({ file, transfer: descriptor(6), refresh: async () => descriptor(8), signal: new AbortController().signal,
+    fetcher: async (_url, init) => {
+      sends++; ranges.push(new Headers(init?.headers).get('content-range')!);
+      if (sends === 1) throw new Error('response to the last chunk was lost');
+      return new Response(null, { status: 200 });
+    }, wait: async () => undefined });
+  assert.deepEqual(ranges, ['bytes 6-7/8', 'bytes */8']);
+});
