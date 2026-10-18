@@ -50,12 +50,15 @@ export class PlaybackEngine {
     };
     this.video.addEventListener('loadedmetadata', restore, { once: true });
     this.removeRestore = () => this.video.removeEventListener('loadedmetadata', restore);
-    if (source.kind === 'mp4' || this.video.canPlayType('application/vnd.apple.mpegurl')) {
-      this.video.src = source.url; this.video.load(); return;
-    }
+    if (source.kind === 'mp4') { this.video.src = source.url; this.video.load(); return; }
+    // hls.js whenever MSE exists: Chrome 155 answers canPlayType('application/vnd.apple.mpegurl') with "maybe" but its
+    // native HLS rejects PeerTube's byte-range fMP4 (MEDIA_ERR_SRC_NOT_SUPPORTED). Native HLS only without MSE (older iOS).
     const { default: HlsClass } = await import('hls.js');
     if (generation !== this.generation) return;
-    if (!HlsClass.isSupported()) { this.failure({ category: 'unsupported' }); return; }
+    if (!HlsClass.isSupported()) {
+      if (this.video.canPlayType('application/vnd.apple.mpegurl')) { this.video.src = source.url; this.video.load(); return; }
+      this.failure({ category: 'unsupported' }); return;
+    }
     const noRetry = { maxNumRetry: 0, retryDelayMs: 0, maxRetryDelayMs: 0 };
     const policy = { default: { maxTimeToFirstByteMs: 10000, maxLoadTimeMs: 20000, timeoutRetry: noRetry, errorRetry: noRetry } };
     const hls = new HlsClass({ maxBufferLength: 30, maxMaxBufferLength: 60, backBufferLength: 30,
