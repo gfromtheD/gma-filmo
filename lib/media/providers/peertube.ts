@@ -62,8 +62,13 @@ export class PeerTubeMediaProvider implements MediaProvider {
       offset = upstream.status === 200 ? context.session.expected_input_bytes : received;
     } catch (error) {
       if (!(error instanceof MediaError) || error.code !== 'UPLOAD_NOT_FOUND') throw error;
-      const receipt = await this.finalReceipt(context);
-      if (!receipt.providerMediaId || !(await this.client.getVideo(receipt.providerMediaId))) throw new MediaError('UPLOAD_NOT_COMPLETE');
+      const receipt = await this.finalReceipt(context).catch((missing: unknown) => {
+        // PeerTube closed the lease but the gateway lost its answer before storing the receipt. Only the gateway can prove
+        // the full SHA from its spool and recover the video by correlation, so it gets a status-probe grant at offset = total.
+        if (missing instanceof MediaError && missing.code === 'UPLOAD_NOT_COMPLETE' && context.privateState.finalization_pending === true) return null;
+        throw missing;
+      });
+      if (receipt && (!receipt.providerMediaId || !(await this.client.getVideo(receipt.providerMediaId)))) throw new MediaError('UPLOAD_NOT_COMPLETE');
       offset = context.session.expected_input_bytes;
     }
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > context.session.expected_input_bytes) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');

@@ -138,7 +138,12 @@ test('5.2 lost final PeerTube response recovers retired Location by exact privat
     assert.equal((await h.put(8, h.source.subarray(8))).status, 503);
     assert.equal((await h.repo.privateState(h.id)).finalization_pending, true);
     assert.equal((await h.repo.privateState(h.id)).provisional_receipt, undefined);
-    const decoys = Array.from({ length: 100 }, (_, index) => ({ uuid: randomUUID(), name: h.correlation,
+    const pending = new PeerTubeMediaProvider(h.client, 'http://127.0.0.1:4319', h.issuer, { get: async () => null });
+    const pendingContext = await h.service.context(h.id);
+    assert.equal((await pending.getTransfer(pendingContext)).offset, 12, 'a lease retired by PeerTube with a pending finalization gets a status-probe grant');
+    await assert.rejects(pending.getTransfer({ ...pendingContext, privateState: { ...pendingContext.privateState, finalization_pending: false } }),
+      (error: unknown) => error instanceof Error && 'code' in error && error.code === 'UPLOAD_NOT_COMPLETE');
+    const decoys =Array.from({ length: 100 }, (_, index) => ({ uuid: randomUUID(), name: h.correlation,
       channel: { id: index % 2 ? 74 : 73 }, privacy: { id: index % 2 ? 3 : 1 } }));
     h.setListings([...decoys, { uuid: videoUUID, name: h.correlation, channel: { id: 73 }, privacy: { id: 3 } }]);
     await h.restart(); assert.equal((await h.query()).status, 200);
