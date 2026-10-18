@@ -1,0 +1,13 @@
+{
+  "response": {
+    "serverVersion": "8.3.1",
+    "tracker": { "enabled": false },
+    "transcoding": {
+      "hls": { "enabled": true },
+      "webVideos": { "enabled": false },
+      "remoteRunners": { "enabled": false },
+      "profile": "default",
+      "availableProfiles": ["default"]
+    }
+  }
+}

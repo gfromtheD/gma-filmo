@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test.beforeEach(async ({ context, page }) => {
   await context.addCookies([{ name: "gma_guest", value: "1", domain: "127.0.0.1", path: "/" }]);
-  await page.route("https://gma-filmo-test.supabase.co/**", route => route.abort());
+  await page.route("http://127.0.0.1:54341/**", route => route.abort());
+  await page.route('**/*', route => { const url = new URL(route.request().url()); return url.hostname === '127.0.0.1' || ['data:', 'blob:'].includes(url.protocol) ? route.continue() : route.abort(); });
   await page.route("**/__support-video.mp4", route => route.fulfill({ status: 204 }));
 });
 for (const width of [1440, 390]) {

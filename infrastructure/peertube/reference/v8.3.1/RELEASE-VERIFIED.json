@@ -1,0 +1,48 @@
+{
+  "reviewDate": "2026-10-11",
+  "version": "v8.3.1",
+  "publishedAt": "2026-09-28T11:42:42Z",
+  "releaseUrl": "https://github.com/Chocobozzz/PeerTube/releases/tag/v8.3.1",
+  "metadataUrl": "https://api.github.com/repos/Chocobozzz/PeerTube/releases/tags/v8.3.1",
+  "tagObject": "1d0f5bc35db31047e0268f9009a63dc719fb41d4",
+  "commit": "3324876a0b0f846f8b6632470b3d9d53ef74b8b7",
+  "tagSignatureGithubVerified": true,
+  "commitSignatureGithubVerified": true,
+  "artifact": {
+    "name": "peertube-v8.3.1.tar.xz",
+    "url": "https://github.com/Chocobozzz/PeerTube/releases/download/v8.3.1/peertube-v8.3.1.tar.xz",
+    "bytes": 34511084,
+    "sha256": "b2026b99ee6a2e07098230bb68fafbad634b44ce5a67a3e48e0b163ba9b5304a",
+    "digestMatchesOfficialApi": true,
+    "downloadedLocally": true,
+    "installed": false,
+    "detachedGpgLocallyVerified": false
+  },
+  "configChecks": [
+    {
+      "file": "config-schema.json",
+      "upstreamSha": "50684216fc2b2238c3828341e74f0231731c2713c57420d65dae42959cc8c82a",
+      "cachedSha": "41ec45f29adaab1ee15cdd64b81b261cbb7d0888dfafa6f15f261b3dc365ef87",
+      "byteIdentical": false,
+      "jsonSemanticallyEqual": true
+    },
+    {
+      "file": "default.yaml",
+      "upstreamSha": "394504225496efcbe9161bb71bcec461fec7cd9abd573731813f47a97d35519b",
+      "cachedSha": "394504225496efcbe9161bb71bcec461fec7cd9abd573731813f47a97d35519b",
+      "byteIdentical": true
+    },
+    {
+      "file": "production.yaml.example",
+      "upstreamSha": "a7420d0f7937db4f56d45311fed290f853270ca0fb25eeb13d7fd2413eddca40",
+      "cachedSha": "a7420d0f7937db4f56d45311fed290f853270ca0fb25eeb13d7fd2413eddca40",
+      "byteIdentical": true
+    }
+  ],
+  "packageEngines": {
+    "node": ">=22.x",
+    "pnpm": ">=10.9"
+  },
+  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
+  "vpsRuntimeContractVerified": false
+}

@@ -6,6 +6,12 @@ const PUBLIC_PATHS = ["/", "/auth/callback", "/terminos", "/privacidad", "/cread
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Media API routes validate bearer/worker credentials and ownership themselves.
+  // Page-session redirects must not consume API requests or public playback reads.
+  if (/^\/api\/(?:upload-drafts|uploads|titles|media|subtitle-proxy|sprites)(?:\/|$)/.test(pathname)) {
+    return NextResponse.next({ request });
+  }
+
   // Skip static assets
   if (
     pathname.startsWith("/_next/") ||

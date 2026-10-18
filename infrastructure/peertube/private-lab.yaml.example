@@ -1,0 +1,21 @@
+# PROPOSAL ONLY: disposable private lab; merge after official config and GMA policy.
+# No installation, secrets, public domain or provider activation is authorized by this file.
+listen:
+  hostname: '127.0.0.1'
+  port: 9000
+webserver:
+  https: false
+  hostname: '127.0.0.1'
+  port: 9000
+trust_proxy:
+  - 'loopback'
+database:
+  hostname: '127.0.0.1'
+  port: 5432
+  suffix: '_gma_lab'
+  username: 'peertube_lab'
+  password: 'REPLACE_OUTSIDE_GIT_BEFORE_START'
+redis:
+  hostname: '127.0.0.1'
+  port: 6379
+  auth: 'REPLACE_OUTSIDE_GIT_BEFORE_START'

@@ -1,0 +1,8 @@
+{
+  "Rules": [{
+    "ID": "abort-unfinished-new-ingest-after-seven-days",
+    "Status": "Enabled",
+    "Filter": {"Prefix": "ingest/"},
+    "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 7}
+  }]
+}

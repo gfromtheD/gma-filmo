@@ -1,0 +1,16 @@
+{
+  "video": {
+    "uuid": "66666666-6666-4666-8666-666666666666",
+    "privacy": { "id": 3 },
+    "duration": 12,
+    "state": { "id": 1 },
+    "streamingPlaylists": [
+      {
+        "playlistUrl": "/static/streaming-playlists/hls/fixture/master.m3u8",
+        "files": []
+      }
+    ]
+  },
+  "stateIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  "unknownStateId": 999
+}

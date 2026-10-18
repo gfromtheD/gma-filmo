@@ -1,0 +1,5 @@
+{
+  "deleteUploadLocation": { "status": 204, "body": "" },
+  "deleteFinalizedVideo": { "status": 204, "body": "" },
+  "videoAlreadyAbsent": { "status": 404, "body": { "error": "fixture-video-not-found" } }
+}

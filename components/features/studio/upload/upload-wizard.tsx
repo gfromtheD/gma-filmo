@@ -34,8 +34,11 @@ interface UploadWizardProps {
  * de `UploadEngine` (ver `lib/studio/engine.ts`).
  */
 export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
-  const engine = useMemo(() => getUploadEngine(), []);
+  // El motor multimedia necesita leer el borrador actual (tipo de cada extra, idioma de cada SRT) sin recrearse.
+  const draftRef = useRef<UploadDraft | null>(null);
+  const engine = useMemo(() => getUploadEngine(() => draftRef.current ?? emptyDraft()), []);
   const [draft, setDraft] = useState<UploadDraft>(emptyDraft);
+  draftRef.current = draft;
   const [isReady, setIsReady] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [isReviewing, setIsReviewing] = useState(false);

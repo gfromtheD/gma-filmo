@@ -15,19 +15,22 @@ export function useProgress() {
   const userId    = useSupabaseUserId();
   const profileId = useActiveProfileId();
   const [entries, setEntries] = useState<Record<number, ProgressEntry>>({});
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    let active = true;
     setEntries({});
+    setReady(!userId);
+    if (!userId) return () => { active = false; };
     void getSupabaseBrowserClient()
       .from("view_history")
       .select("pelicula_id, last_position, completed, last_watched_at")
       .eq("user_id",    userId)
       .eq("profile_id", profileId)
       .then(({ data }) => {
-        if (!data) return;
+        if (!active) return;
         const map: Record<number, ProgressEntry> = {};
-        for (const r of data) {
+        for (const r of data ?? []) {
           map[r.pelicula_id] = {
             currentTime: r.last_position,
             completed:   r.completed,
@@ -35,7 +38,9 @@ export function useProgress() {
           };
         }
         setEntries(map);
+        setReady(true);
       });
+    return () => { active = false; };
   }, [userId, profileId]);
 
   const saveProgress = useCallback(
@@ -65,5 +70,5 @@ export function useProgress() {
     [entries],
   );
 
-  return { entries, saveProgress, getProgress };
+  return { entries, saveProgress, getProgress, ready };
 }

@@ -1,0 +1,32 @@
+{
+  "start": {
+    "method": "POST",
+    "path": "/api/v1/videos/upload-resumable",
+    "status": 201,
+    "location": "/api/v1/videos/upload-resumable?upload_id=fixture-upload-lease",
+    "body": null
+  },
+  "firstChunk": {
+    "method": "PUT",
+    "contentRange": "bytes 0-7/12",
+    "body": "12345678",
+    "status": 308,
+    "range": "bytes=0-7"
+  },
+  "queryOffset": {
+    "method": "PUT",
+    "contentRange": "bytes */12",
+    "contentLength": 0,
+    "body": "",
+    "status": 308,
+    "range": "bytes=0-7"
+  },
+  "finalChunk": {
+    "method": "PUT",
+    "contentRange": "bytes 8-11/12",
+    "body": "abcd",
+    "status": 200,
+    "bodyJson": { "uuid": "66666666-6666-4666-8666-666666666666" }
+  },
+  "cancelUpload": { "method": "DELETE", "status": 204, "body": "" }
+}

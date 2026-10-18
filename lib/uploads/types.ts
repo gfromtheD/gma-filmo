@@ -1,0 +1,76 @@
+import type { AssetRole, LegacyMediaAssetStatus, TransferState as MediaTransferState } from "@/types/media-engine";
+export type { AssetRole } from "@/types/media-engine";
+export type UploadProvider = "stream" | "r2";
+export type TransferState = MediaTransferState;
+export type MediaState = LegacyMediaAssetStatus;
+export interface UploadSession {
+  id: string;
+  owner_id: string;
+  draft_id: string | null;
+  asset_id: string;
+  role: AssetRole;
+  slot: string;
+  language: string | null;
+  provider: UploadProvider;
+  provider_ref: string | null;
+  provider_data: Record<string, unknown>;
+  object_key?: string | null;
+  multipart_upload_id?: string | null;
+  part_size?: number;
+  transfer_generation?: number;
+  expected_input_bytes: number;
+  source_sha256: string;
+  content_type: string;
+  file_name: string;
+  max_duration_seconds: number;
+  expires_at: string;
+  revision: number;
+  state: TransferState;
+}
+export interface MediaAsset {
+  id: string;
+  owner_id: string;
+  provider: UploadProvider;
+  provider_ref: string | null;
+  state: MediaState;
+  role: AssetRole;
+  metadata: Record<string, unknown>;
+  delivery_path: string | null;
+  expected_input_bytes: number;
+  received_bytes: number | null;
+  provider_reported_size: number | null;
+  duration_seconds: number | null;
+  original_bytes?: number | null;
+  processed_bytes?: number | null;
+  auxiliary_bytes?: number | null;
+}
+export interface ProvisionedUpload { providerRef: string; uploadUrl: string; expiresAt: string }
+export interface VideoObservation {
+  found: boolean;
+  state: "pending" | "processing" | "ready" | "rejected";
+  readyToStream: boolean;
+  processingProgress: number;
+  durationSeconds: number | null;
+  providerReportedSize: number | null;
+  receivedBytes: number | null;
+}
+export interface VerifiedAuxiliary {
+  providerRef: string;
+  storageKey: string;
+  publicUrl: string;
+  sizeBytes: number;
+  mimeType: string;
+  sha256: string;
+  width: number | null;
+  height: number | null;
+}
+export interface UploadDraft {
+  id: string; owner_id: string; purpose: "title" | "avatar";
+  state: "draft" | "published" | "abandoned"; revision: number;
+  metadata: Record<string, unknown>; title_id: number | null;
+}
+export interface UploadJob {
+  id: string; kind: "provision" | "verify" | "delete" | "reconcile" | "process";
+  session_id: string | null; payload: Record<string, unknown>;
+  attempts: number; lease_owner: string | null; lease_until: string | null;
+}

@@ -76,6 +76,7 @@ export default function Fixture() {
     case "studio-edit": content = <EditModal data={data} title={title} onClose={noop} onToast={noop} />; break;
     case "viewer-setup": content = <ViewerSetup />; break;
     case "creator-setup": content = <CreatorSetup />; break;
+    case "player-hls": return <div data-ready="player-hls"><PlayerScreen item={{...item,playbackKind:"r2_hls"}} creator={creator} /></div>;
     case "player": return <div data-ready="player"><PlayerScreen item={item} creator={creator} nextItem={items[1]!} nextUrl="/creadores/responsive-fixture?view=movie" /></div>;
     case "dm": content = <p className="p-4">Prueba de mensajes</p>; break;
     default: content = <HomeScreen items={items} />;

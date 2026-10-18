@@ -71,10 +71,14 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
     (slot: string) => {
       controllers.current.get(slot)?.abort();
       controllers.current.delete(slot);
+      // Abortar solo detiene el navegador: con el motor multimedia, quitar un archivo también cancela su sesión en el
+      // servidor para liberar la cuota reservada.
+      const cancel = (engine as { cancelAsset?: (slot: string) => Promise<void> }).cancelAsset;
+      if (cancel) void cancel.call(engine, slot).catch(() => undefined);
       setAdvice((a) => ({ ...a, [slot]: null }));
       setAsset(slot, null);
     },
-    [setAsset],
+    [engine, setAsset],
   );
 
   return { upload, remove, advice };

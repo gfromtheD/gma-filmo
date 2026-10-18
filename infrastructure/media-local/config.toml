@@ -1,0 +1,62 @@
+project_id = "gma-filmo-media-local"
+
+[api]
+enabled = true
+port = 54341
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54342
+shadow_port = 54340
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = []
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 54343
+api_url = "http://127.0.0.1:54341"
+
+[inbucket]
+enabled = true
+port = 54344
+smtp_port = 54345
+pop3_port = 54346
+
+[storage]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:4318"
+additional_redirect_urls = ["http://127.0.0.1:4318/auth/callback"]
+jwt_expiry = 3600
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+[auth.email]
+# Keep the email provider active for password sign-in. Global auth.enable_signup
+# remains false, so only the local admin seed can create fixture users.
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

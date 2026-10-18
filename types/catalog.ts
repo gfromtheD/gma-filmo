@@ -1,3 +1,5 @@
+import type { PlaybackReference } from "./playback";
+
 export interface ArtistCredit {
   readonly name: string;
   readonly role: string;
@@ -34,6 +36,8 @@ interface MediaBase {
   readonly r2VideoUrl?: string;
   /** Tráiler opcional (mp4). Si existe, el hero de portada lo reproduce tras unos segundos. */
   readonly trailerUrl?: string;
+  readonly playbackKind?: 'legacy' | 'stream' | 'r2_hls' | 'media';
+  readonly playbackRef?: PlaybackReference;
   readonly subtitleUrl?: string;
   readonly tags?: readonly string[];
   readonly tag?: string;

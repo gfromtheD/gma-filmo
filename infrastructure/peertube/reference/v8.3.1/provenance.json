@@ -1,0 +1,21 @@
+{
+  "tag": "v8.3.1",
+  "retrieval": "Previously cached during master-plan audit; no network request in Fase 8",
+  "files": [
+    {
+      "file": "config-schema.json",
+      "sha256": "41ec45f29adaab1ee15cdd64b81b261cbb7d0888dfafa6f15f261b3dc365ef87",
+      "source": "https://github.com/Chocobozzz/PeerTube/blob/v8.3.1/config/config-schema.json"
+    },
+    {
+      "file": "default.yaml",
+      "sha256": "394504225496efcbe9161bb71bcec461fec7cd9abd573731813f47a97d35519b",
+      "source": "https://github.com/Chocobozzz/PeerTube/blob/v8.3.1/config/default.yaml"
+    },
+    {
+      "file": "production.yaml.example",
+      "sha256": "a7420d0f7937db4f56d45311fed290f853270ca0fb25eeb13d7fd2413eddca40",
+      "source": "https://github.com/Chocobozzz/PeerTube/blob/v8.3.1/config/production.yaml.example"
+    }
+  ]
+}
