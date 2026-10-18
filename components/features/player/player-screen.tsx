@@ -9,6 +9,8 @@ import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProgress } from "@/hooks/use-progress";
 import { useCastSupport } from "@/hooks/use-cast-support";
+import { useMediaPlayback } from "@/hooks/use-media-playback";
+import { playbackEndpointFor } from "@/lib/media/player-adapter";
 import { DonationPanel } from "@/components/features/player/donation-panel";
 import { supportMethods } from "@/lib/creator-support";
 import { YouTubeVideo } from "@/components/features/player/youtube-video";
@@ -268,7 +270,16 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef     = useRef<HTMLVideoElement>(null);
+  const videoRef     = useRef<HTMLVideoElement | null>(null);
+  // Títulos del motor multimedia: el resolvedor autorizado entrega HLS firmado y lo renueva antes de caducar.
+  // Los históricos (MP4 de R2 o YouTube) no lo usan: el hook queda desactivado y el Player sigue como siempre.
+  const managedEndpoint = playbackEndpointFor(item);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const attachVideo = useCallback((element: HTMLVideoElement | null) => {
+    videoRef.current = element;
+    setVideoElement(element);
+  }, []);
+  const managed = useMediaPlayback(videoElement, managedEndpoint, managedEndpoint !== null && videoElement !== null);
   const hideTimer         = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulseTimer        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bufferTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -433,7 +444,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const mp4Url     = item.r2VideoUrl ?? null;
   const youtubeUrl = !mp4Url && item.videoUrl && isYouTubeUrl(item.videoUrl)
     ? toYouTubeEmbed(item.videoUrl) : null;
-  const hasVideo = Boolean(mp4Url || youtubeUrl);
+  const hasVideo = Boolean(mp4Url || youtubeUrl || managedEndpoint);
   const isYT     = Boolean(youtubeUrl);
 
   // Sprite VTT served through same-origin proxy to avoid CORS
@@ -720,9 +731,9 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       <div className="absolute inset-0">
         {showSplash ? (
           <PosterArt style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
-        ) : mp4Url ? (
+        ) : mp4Url || managedEndpoint ? (
           <video
-            ref={videoRef} src={mp4Url}
+            ref={attachVideo} src={mp4Url ?? undefined}
             className="h-full w-full object-contain"
             style={{ filter: `brightness(${brightness})` }}
             playsInline autoPlay
@@ -759,7 +770,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       {buffering && !videoError && !isYT && <GmaBufferingSpinner />}
 
       {/* Offline / error overlay */}
-      {videoError && !isYT && (
+      {(videoError || managed.error) && !isYT && (
         <div
           className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-5 overflow-y-auto bg-black/85 px-4 py-4"
           style={{ zIndex: 20 }}
@@ -769,22 +780,23 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke="#7C7C7C" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="max-w-xs text-center text-[15px] font-semibold leading-relaxed text-white/80">
-            Sin conexión. Comprueba tu internet e inténtalo de nuevo.
+            {managed.error ?? "Sin conexión. Comprueba tu internet e inténtalo de nuevo."}
           </p>
-          <button
+          {!managed.revoked && <button
             type="button"
             onClick={() => {
               if (bufferDebounceRef.current) { clearTimeout(bufferDebounceRef.current); bufferDebounceRef.current = null; }
               if (bufferTimeoutRef.current)  { clearTimeout(bufferTimeoutRef.current);  bufferTimeoutRef.current  = null; }
               setVideoError(false);
               setBuffering(false);
+              if (managedEndpoint) { managed.retry(); setPlaying(true); return; }
               const vid = videoRef.current;
               if (vid) { vid.load(); void vid.play().catch(() => undefined); setPlaying(true); }
             }}
             className="rounded-full bg-[#22B16B] px-7 py-2.5 text-[14px] font-bold text-gma-accent-fg transition-colors duration-150 hover:bg-[#2AC57A] active:scale-[0.97]"
           >
             Reintentar
-          </button>
+          </button>}
         </div>
       )}
 
