@@ -3,7 +3,7 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Mi Espacio → Mis Listas: al pasar el cursor por un título solo aparece una papelera pequeña (sin «Valorar»),
+ * Mi lista → Guardados: al pasar el cursor por un título aparecen dos iconos pequeños (listas y papelera, sin «Valorar»),
  * con una animación breve de borrado en la línea del botón de guardar.
  */
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -41,20 +41,21 @@ async function openSpace(page: Page) {
     return route.fulfill({ json: { ok: true } });
   });
   await page.route("**/api/watchlist?**", (route) => route.fulfill({ json: { ids: [1, 2, 3] } }));
+  await page.route("**/api/lists?**", (route) => route.fulfill({ json: { lists: [] } }));
   await page.goto("/mi-espacio", { waitUntil: "load" });
-  await expect(page.getByText("Ver más tarde")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Guardados" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("button", { name: "Quitar de Mi Lista" }).first()).toBeAttached({ timeout: 20_000 });
   return deletes;
 }
 
-const cardOf = (page: Page) => page.locator("div.group.relative").filter({ has: page.getByRole("button", { name: "Quitar de Mi Lista" }) });
+const cardOf = (page: Page) => page.locator("li.group.relative").filter({ has: page.getByRole("button", { name: "Quitar de Mi Lista" }) });
 
-test("en Mis Listas ya no existe el botón «Valorar»", async ({ page }) => {
+test("en Guardados no existe el botón «Valorar»", async ({ page }) => {
   await openSpace(page);
   const card = cardOf(page).first();
   await card.hover();
   await expect(card.getByRole("button", { name: /Valorar|Editar valoración/ })).toHaveCount(0);
-  await expect(card.getByRole("button")).toHaveCount(2); // el cartel (ir a la ficha) y la papelera
+  await expect(card.getByRole("button")).toHaveCount(2); // añadir a una lista y la papelera (el cartel es un enlace)
 });
 
 test("al pasar el cursor aparece una papelera pequeña en la esquina, no una X grande", async ({ page }) => {

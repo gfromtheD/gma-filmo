@@ -75,7 +75,6 @@ export function FileSlot({ label, required, rules, hint, accept, asset, advice, 
               </div>
             )}
             {status === "error" && <p role="alert" className="mt-1 text-[13px] text-[#ff7b7b]">{asset.error ?? "No se pudo subir."}</p>}
-            {status === "done" && asset.localOnly && <p className="mt-1 text-[12px] text-[#A8A8A8]">Comprobado. Se enviará cuando se conecte el motor de subida.</p>}
             {advice && <p className="mt-1 text-[12.5px] text-[#E8B84B]">{advice}</p>}
           </div>
           <button type="button" onClick={onRemove} aria-label={`${removeVerb} ${label}`} className={`${BUTTON_SECONDARY} !h-9 shrink-0 !px-3 !text-[13px]`}>

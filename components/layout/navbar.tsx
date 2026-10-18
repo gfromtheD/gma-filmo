@@ -13,13 +13,12 @@ import { GmaIcon } from "@/components/ui/gma-icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
-import { useProfileStore } from "@/store/use-profile-store";
 import { useIsGuest } from "@/hooks/use-is-guest";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
 import { STUDIO_TABS } from "@/components/features/studio/studio-sub-nav";
-import { useDMStore } from "@/store/use-dm-store";
+import { useNotifications } from "@/hooks/use-notifications";
 import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
 import { getNavItems, type NavItem } from "@/lib/layout/nav-items";
 
@@ -34,11 +33,10 @@ export function Navbar() {
   const router   = useRouter();
   const { email } = useUserProfile();
   const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
-  const activeProfile = useProfileStore((s) => s.activeProfile);
 
   const isGuest      = useIsGuest();
   const { isCreator } = useIsCreator();
-  const openDM = useDMStore((s) => s.open);
+  const notifications = useNotifications(isCreator && !isGuest);
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
   const phase        = useTransitionStore((s) => s.phase);
   const chipBtnRef   = useRef<HTMLButtonElement>(null);
@@ -187,7 +185,7 @@ export function Navbar() {
             <button
               ref={chipBtnRef}
               type="button"
-              aria-label="Cuenta"
+              aria-label={notifications.unread > 0 ? `Cuenta, ${notifications.unread} notificaciones sin leer` : "Cuenta"}
               className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none! lg:h-12 lg:w-12"
               style={{
                 opacity: phase === "contracting" ? 0 : 1,
@@ -222,6 +220,9 @@ export function Navbar() {
                 <motion.span className="inline-flex shrink-0" animate={avatarCtrl}>
                   {isGuest ? <GuestAvatarIcon /> : <UserAvatar name={displayName} color={avatarColor} imageUrl={avatarImageUrl} iconId={avatarIconId} />}
                 </motion.span>
+                {notifications.unread > 0 && (
+                  <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 z-[2] size-3 rounded-full bg-[#22B16B] ring-2 ring-black" />
+                )}
               </span>
               
             </button>
@@ -235,9 +236,8 @@ export function Navbar() {
               avatarImageUrl={avatarImageUrl}
               avatarIconId={avatarIconId}
               isCreator={isCreator}
-              canOpenSettings={!activeProfile?.isKids}
               isSigningOut={signingOut}
-              onOpenMessages={openDM}
+              notifications={{ items: notifications.items, unread: notifications.unread, isLoaded: notifications.isLoaded, onMarkAllRead: () => void notifications.markAllRead() }}
               onSignOut={() => void handleSignOut()}
             />
           </div>

@@ -70,7 +70,7 @@ async function expectFits(page: Page, label: string) {
   }), { message: label, timeout: 3000 }).toEqual([]);
 }
 
-const views = ["home", "catalog", "search", "settings", "space", "movie", "series", "profile", "creator", "support", "profiles", "profile-edit", "studio-home", "studio-titles", "studio-profile", "studio-stats", "studio-upload", "studio-edit", "viewer-setup", "creator-setup", "dm"];
+const views = ["home", "catalog", "search", "settings", "space", "movie", "series", "profile", "creator", "support", "profiles", "profile-edit", "studio-home", "studio-titles", "studio-profile", "studio-stats", "studio-upload", "studio-edit", "viewer-setup", "creator-setup"];
 for (const [width, height] of [[320, 568], [360, 640], [390, 844], [430, 932], [667, 375], [844, 390], [768, 1024], [820, 1180], [1024, 768], [1280, 800], [1440, 900]]) {
   test.describe(`${width}×${height}`, () => {
   test.use({ hasTouch: width! < 1280, isMobile: width! < 1280 });
@@ -121,10 +121,9 @@ test("filtros en píldoras: caben, teclado, foco y cierre en móvil", async ({ p
 test("ajustes y diario: controles accesibles con datos largos", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await open(page, "settings");
-  for (const tab of ["Idioma y subtítulos", "Preferencias de reproducción", "Control parental", "Notificaciones", "Dispositivos"]) {
-    await page.getByRole("button", { name: tab, exact: true }).click();
-    await expectFits(page, `Ajustes ${tab}`);
-  }
+  await expectFits(page, "Configuración");
+  await page.getByRole("button", { name: "Cambiar", exact: true }).click();
+  await expectFits(page, "Configuración cambiando el correo");
   await open(page, "space");
   await page.getByRole("button", { name: /Editar valoración/ }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -158,38 +157,26 @@ test("navegación: cuenta y pestañas del estudio al girar", async ({ page }) =>
   await page.screenshot({ path: test.info().outputPath("navegacion-estudio-horizontal.png") });
 });
 
-test("mensajes: teclado simulado y selector de emojis", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await open(page, "dm");
-  await expect(page.getByRole("dialog", { name: "Mensajes directos" })).toBeVisible();
-  await page.setViewportSize({ width: 390, height: 360 });
-  await expect.poll(async () => {
-    const rect = await page.locator("textarea").boundingBox();
-    return rect ? rect.y + rect.height : Infinity;
-  }).toBeLessThanOrEqual(360);
-  await expectFits(page, "Mensajes con altura reducida");
-  await expect(page.locator("textarea")).toBeVisible();
-  const box = await page.locator("textarea").boundingBox();
-  expect(box!.y + box!.height).toBeLessThanOrEqual(360);
-  await page.getByRole("button", { name: "Elegir emoji" }).click();
-  const popup = page.locator("[data-dm-popup]");
-  await expect(popup).toBeVisible();
-  await expectFits(page, "Emoji en pantalla reducida");
-  await page.screenshot({ path: test.info().outputPath("mensajes-teclado.png") });
-  await page.keyboard.press("Escape");
-  await expect(popup).not.toBeVisible();
-});
-
-test("perfil con PIN, editor y estudio en horizontal", async ({ page }) => {
+test("selector de perfiles, editor y estudio en horizontal", async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 360 });
   await open(page, "profiles");
-  await page.getByRole("button", { name: "Entrar como Perfil de prueba con PIN", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expectFits(page, "PIN horizontal");
-  await page.getByRole("button", { name: "Volver a perfiles", exact: true }).click();
+  await expectFits(page, "Selector de perfiles horizontal");
   await open(page, "profile-edit");
-  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
-  await expectFits(page, "Editor perfil ajustes");
+  await expect(page.getByRole("dialog", { name: /perfil/i })).toBeVisible();
+  await expectFits(page, "Editor de perfil");
+  for (const control of ["Cambiar foto o icono", "Cambiar color de acento"]) {
+    await page.getByRole("button", { name: control }).first().click();
+    await expect(page.getByRole("dialog").last()).toBeVisible();
+    await expectFits(page, `Editor de perfil: hoja ${String(control)}`);
+    await page.keyboard.press("Escape"); // cierra la hoja, no el editor
+    await expect(page.getByRole("dialog", { name: /perfil/i })).toBeVisible();
+  }
+  // El nombre se edita ahí mismo, sin abrir ninguna hoja.
+  await page.getByRole("button", { name: /Cambiar nombre/ }).click();
+  await expect(page.getByRole("textbox", { name: "Nombre del perfil" })).toBeFocused();
+  await expectFits(page, "Editor de perfil: nombre en edición");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: /perfil/i })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("perfil-horizontal.png") });
   await open(page, "studio-titles");
   await page.getByRole("button", { name: /Opciones de/ }).first().click();
@@ -346,21 +333,19 @@ test("listas, búsqueda y próximamente en móvil, tablet y escritorio", async (
 
 test.describe("teclado de escritorio", () => {
   test.use({ hasTouch: false, isMobile: false });
-  test("foco visible del avatar y nombres de controles", async ({ page }) => {
+  test("foco visible del menú de cuenta y nombres de controles de Configuración", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await open(page, "space");
-    const edit = page.getByRole("button", { name: "Editar perfil", exact: true });
-    await edit.focus();
-    await expect(edit).toHaveCSS("opacity", "1");
     await page.getByRole("button", { name: "Cuenta", exact: true }).click();
     await page.getByRole("menuitem", { name: "Configuración", exact: true }).focus();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Cuenta", exact: true })).toBeFocused();
     await open(page, "settings");
-    await page.getByRole("button", { name: "Idioma y subtítulos", exact: true }).click();
-    await expect(page.getByRole("combobox", { name: "Idioma de la aplicación", exact: true })).toBeVisible();
-    await expect(page.getByRole("switch", { name: "Subtítulos forzados", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Preferencias de reproducción", exact: true }).click();
-    await expect(page.getByRole("switch", { name: "Reproducir siguiente episodio", exact: true })).toBeVisible();
+    const edit = page.getByRole("button", { name: "Editar perfil", exact: true });
+    await edit.focus();
+    await expect(edit).toBeFocused();
+    await expect(page.getByRole("switch", { name: "Reproducir vistas previas", exact: true })).toBeVisible();
+    await expect(page.getByRole("switch", { name: "Poner los subtítulos al empezar", exact: true })).toBeVisible();
+    await expect(page.getByRole("switch", { name: "Pausar el historial", exact: true })).toBeVisible();
   });
 });

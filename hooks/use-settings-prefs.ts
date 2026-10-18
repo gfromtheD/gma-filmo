@@ -2,53 +2,49 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+export type SubtitleSize = "s" | "m" | "l";
+export type SubtitleBackground = "shadow" | "box" | "none";
+
+/**
+ * Preferencias que la app aplica de verdad, guardadas en este navegador. Si quedan en localStorage claves de
+ * versiones anteriores (idioma, calidad, avisos…), se ignoran.
+ */
 export interface SettingsPrefs {
-  appLang:         string;
-  audioLang:       string;
-  subsLang:        string;
-  audioDesc:       boolean;
-  forcedSubs:      boolean;
-  calidad:         string;
-  autoNext:        boolean;
-  autoPreviews:    boolean;
-  skipIntro:       boolean;
-  dataWarning:     boolean;
-  pinEnabled:      boolean;
-  maxRating:       string;
-  newEpisodes:     boolean;
-  reminders:       boolean;
-  recommendations: boolean;
-  newsletter:      boolean;
-  pushNotifs:      boolean;
+  /** Reproducir el tráiler de la portada. */
+  autoPreviews: boolean;
+  /** Empezar las obras con los subtítulos puestos (si la obra los tiene). */
+  subtitlesOn: boolean;
+  subtitleSize: SubtitleSize;
+  subtitleBackground: SubtitleBackground;
+  /** No guardar lo que se ve en el historial (ni en «Seguir viendo»). */
+  pauseHistory: boolean;
 }
 
 const DEFAULTS: SettingsPrefs = {
-  appLang:         "Español (España)",
-  audioLang:       "Español castellano · Original",
-  subsLang:        "Español",
-  audioDesc:       false,
-  forcedSubs:      true,
-  calidad:         "Auto",
-  autoNext:        true,
-  autoPreviews:    true,
-  skipIntro:       true,
-  dataWarning:     false,
-  pinEnabled:      false,
-  maxRating:       "Todo el catálogo",
-  newEpisodes:     true,
-  reminders:       false,
-  recommendations: true,
-  newsletter:      false,
-  pushNotifs:      true,
+  autoPreviews: true,
+  subtitlesOn: false,
+  subtitleSize: "m",
+  subtitleBackground: "shadow",
+  pauseHistory: false,
 };
 
 const KEY = "gma_settings";
 
-function load(): SettingsPrefs {
+const pick = <T,>(value: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(value as T) ? (value as T) : fallback);
+
+/** Lee las preferencias guardadas (con valores por defecto para lo que falte o esté mal). Solo en el navegador. */
+export function readSettingsPrefs(): SettingsPrefs {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<SettingsPrefs>) };
+    const s = JSON.parse(raw) as Record<string, unknown>;
+    return {
+      autoPreviews: pick(s.autoPreviews, [true, false], DEFAULTS.autoPreviews),
+      subtitlesOn: pick(s.subtitlesOn, [true, false], DEFAULTS.subtitlesOn),
+      subtitleSize: pick(s.subtitleSize, ["s", "m", "l"] as const, DEFAULTS.subtitleSize),
+      subtitleBackground: pick(s.subtitleBackground, ["shadow", "box", "none"] as const, DEFAULTS.subtitleBackground),
+      pauseHistory: pick(s.pauseHistory, [true, false], DEFAULTS.pauseHistory),
+    };
   } catch {
     return DEFAULTS;
   }
@@ -56,18 +52,20 @@ function load(): SettingsPrefs {
 
 export function useSettingsPrefs() {
   const [prefs, setPrefs] = useState<SettingsPrefs>(DEFAULTS);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setPrefs(load());
+    setPrefs(readSettingsPrefs());
+    setIsLoaded(true);
   }, []);
 
   const set = useCallback(<K extends keyof SettingsPrefs>(key: K, value: SettingsPrefs[K]) => {
     setPrefs((prev) => {
       const next = { ...prev, [key]: value };
-      localStorage.setItem(KEY, JSON.stringify(next));
+      try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* navegador sin almacenamiento: dura esta visita */ }
       return next;
     });
   }, []);
 
-  return { prefs, set };
+  return { prefs, set, isLoaded };
 }

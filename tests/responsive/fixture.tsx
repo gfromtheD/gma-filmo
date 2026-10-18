@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { useDMStore } from "@/store/use-dm-store";
 import { HomeScreen } from "@/components/features/home/home-screen";
 import { CatalogScreen } from "@/components/features/catalog/catalog-screen";
 import { ComingSoonScreen } from "@/components/features/catalog/coming-soon-screen";
 import { SearchScreen } from "@/components/features/search/search-screen";
 import { SettingsScreen } from "@/components/features/settings/settings-screen";
-import { MySpaceScreen } from "@/components/features/space/my-space-screen";
+import { MyListScreen } from "@/components/features/space/my-list-screen";
 import { ProfileScreen } from "@/components/features/profile/profile-screen";
 import { ProfileSelector } from "@/components/features/profiles/profile-selector";
 import { ProfileEditModal } from "@/components/features/profiles/profile-edit-modal";
@@ -50,9 +49,7 @@ export default function Fixture() {
     const encode = (value: unknown) => btoa(JSON.stringify(value)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
     const token = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ exp: Math.floor(Date.now() / 1000) + 3600, sub: "11111111-1111-4111-8111-111111111111", aud: "authenticated", role: "authenticated" })}.test`;
     void getSupabaseBrowserClient().auth.setSession({ access_token: token, refresh_token: "local-fake-token" }).then(() => setReady(true));
-    return () => useDMStore.getState().close();
   }, []);
-  useEffect(() => { if (ready && view === "dm") useDMStore.getState().open("__demo__"); }, [ready, view]);
   if (!ready) return <p>Preparando prueba local…</p>;
   let content;
   switch (view) {
@@ -60,10 +57,10 @@ export default function Fixture() {
     case "coming-soon": content = <ComingSoonScreen title="Nuevas colecciones de películas y cortometrajes" />; break;
     case "search": content = <SearchScreen items={items} />; break;
     case "settings": content = <SettingsScreen />; break;
-    case "space": content = <MySpaceScreen items={items} />; break;
+    case "space": content = <MyListScreen items={items} />; break;
     case "profile": content = <ProfileScreen />; break;
     case "profiles": content = <ProfileSelector />; break;
-    case "profile-edit": content = <ProfileEditModal onClose={noop} initialValues={{ name, color: "#22B16B", iconId: "", imageUrl: "", requirePin: true, pin: "1234" }} onSave={noop} />; break;
+    case "profile-edit": content = <ProfileEditModal onClose={noop} initialValues={{ name, color: "#22B16B", iconId: "", imageUrl: "" }} onSave={noop} />; break;
     case "movie": content = <MovieDetail movie={item} related={items} creator={creator} />; break;
     case "series": content = <SeriesDetail series={series} related={items.map(movie => ({ ...movie, kind: "series" as const, seasons: 6 }))} episodes={Array.from({ length: 4 }, (_, i) => ({ n: i + 1, title: item.title, synopsis: bio, runtime: "20 min" }))} />; break;
     case "creator": content = <CreatorProfilePage creator={creator} films={items} />; break;
@@ -78,7 +75,6 @@ export default function Fixture() {
     case "creator-setup": content = <CreatorSetup />; break;
     case "player-hls": return <div data-ready="player-hls"><PlayerScreen item={{...item,playbackKind:"r2_hls"}} creator={creator} /></div>;
     case "player": return <div data-ready="player"><PlayerScreen item={item} creator={creator} nextItem={items[1]!} nextUrl="/creadores/responsive-fixture?view=movie" /></div>;
-    case "dm": content = <p className="p-4">Prueba de mensajes</p>; break;
     default: content = <HomeScreen items={items} />;
   }
   return <div data-ready={view}><AppShell>{view.startsWith("studio-") ? <div style={{ padding: "24px 16px", minWidth: 0 }}>{content}</div> : content}</AppShell></div>;

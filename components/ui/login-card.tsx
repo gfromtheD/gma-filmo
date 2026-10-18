@@ -51,7 +51,8 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
   const [resetMsg,      setResetMsg]      = useState("");
 
   useEffect(() => {
-    if (searchParams.get("error")) setError("Error de autenticación. Inténtalo de nuevo.");
+    if (searchParams.get("error") === "recuperar") setError("El enlace para cambiar la contraseña ha caducado o ya se usó. Pide uno nuevo desde «¿Olvidaste tu contraseña?».");
+    else if (searchParams.get("error")) setError("Error de autenticación. Inténtalo de nuevo.");
   }, [searchParams]);
 
   async function handleGoogle() {
@@ -95,7 +96,7 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
     setError("");
     setResetMsg("");
     const { error: err } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: `${window.location.origin}/auth/callback/recuperar`,
     });
     if (err) {
       setError(err.message);

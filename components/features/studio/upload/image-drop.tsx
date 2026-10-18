@@ -15,6 +15,10 @@ interface ImageDropProps {
   readonly required?: boolean;
   /** Consejo no bloqueante (por ejemplo, la proporción de la imagen). */
   readonly advice?: string | null;
+  /** Clases para colocar el consejo (en el banner va a la derecha para no quedar detrás del cartel). */
+  readonly adviceClassName?: string;
+  /** Cómo se confirma que la imagen ya está subida: un tick en un círculo (por defecto) o la etiqueta «Subido». */
+  readonly doneBadge?: "tick" | "chip";
   /** Contenido de relleno cuando aún no hay imagen (una ilustración o un texto). */
   readonly placeholder?: ReactNode;
 }
@@ -25,10 +29,12 @@ const ACCEPT = "image/jpeg,image/png,image/gif";
  * Zona de imagen de la ficha: se pulsa o se arrastra un archivo encima y la imagen aparece justo donde se verá. Sirve
  * para banner, cartel, retrato y fotogramas; la forma la pone quien la usa.
  */
-export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint, required, advice, placeholder }: ImageDropProps) {
+export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint, required, advice, adviceClassName = "", doneBadge = "tick", placeholder }: ImageDropProps) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [isOver, setIsOver] = useState(false);
+  // El aviso se puede cerrar; vuelve a salir si cambia (otra imagen con otro problema).
+  const [dismissedAdvice, setDismissedAdvice] = useState<string | null>(null);
   const status = asset?.status;
   const removeVerb = status === "uploading" ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
   const showImage = status === "done" && asset?.url;
@@ -84,7 +90,15 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
             <div className="h-full bg-[#22B16B] transition-[width]" style={{ width: `${asset?.progress ?? 0}%` }} />
           </div>
         )}
-        {status === "done" && <span className="pointer-events-none absolute left-2 top-2 z-[2] rounded-full bg-[#22B16B] px-2.5 py-0.5 text-[12px] font-bold text-[#031A0E]">Subido</span>}
+        {status === "done" && (doneBadge === "chip" ? (
+          <span className="pointer-events-none absolute left-2 top-2 z-[2] rounded-full bg-[#22B16B] px-2.5 py-0.5 text-[12px] font-bold text-[#031A0E]">Subido</span>
+        ) : (
+          // Confirmación: un tick en un círculo verde pequeño (el texto «Subido» queda para lectores de pantalla).
+          <span className="pointer-events-none absolute left-2 top-2 z-[2] grid size-5 place-items-center rounded-full bg-[#22B16B] text-[#031A0E] shadow-[0_2px_6px_rgba(0,0,0,0.45)]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3"><path d="M5 12.5 10 17.5 19 7" /></svg>
+            <span className="sr-only">Subido</span>
+          </span>
+        ))}
         {asset && (
           <button
             type="button" onClick={onRemove} aria-label={`${removeVerb} ${label}`}
@@ -95,7 +109,17 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
         )}
       </div>
       {status === "error" && <p role="alert" className="text-[13px] text-[#ff7b7b]">{asset?.error ?? "No se pudo subir."}</p>}
-      {advice && <p className="text-[12.5px] text-[#E8B84B]">{advice}</p>}
+      {advice && advice !== dismissedAdvice && (
+        <p className={`flex items-start gap-1.5 text-[12.5px] text-[#E8B84B] ${adviceClassName}`}>
+          <button
+            type="button" onClick={() => setDismissedAdvice(advice)} aria-label="Ocultar este aviso"
+            className="mt-[3px] grid size-3.5 shrink-0 place-items-center rounded-full text-[#E8B84B]/70 transition-colors hover:text-[#E8B84B] focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true" className="size-2.5"><path d="M3 3l6 6M9 3 3 9" /></svg>
+          </button>
+          <span>{advice}</span>
+        </p>
+      )}
     </div>
   );
 }

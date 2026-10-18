@@ -286,3 +286,11 @@
   .credits { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
   .credits > p, .credits > :nth-child(2) { display: none; }
 }
+
+/* Subtítulos: tamaño y fondo elegidos en Configuración. */
+.subsSmall::cue  { font-size: 80%; }
+.subsMedium::cue { font-size: 100%; }
+.subsLarge::cue  { font-size: 135%; }
+.subsShadow::cue { background: transparent; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8); }
+.subsBox::cue    { background: rgba(0, 0, 0, 0.78); text-shadow: none; }
+.subsNone::cue   { background: transparent; text-shadow: none; }

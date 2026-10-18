@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { DropdownMenu } from "radix-ui";
-import { Bookmark, ChatBubble, Dashboard, LogOut, NavArrowRight, OpenNewWindow, Settings, User } from "iconoir-react";
+import { Bookmark, Dashboard, LogOut, NavArrowRight, OpenNewWindow, Settings, User } from "iconoir-react";
 import { UserAvatar } from "@/components/layout/navbar-parts/avatars";
+import { NotificationsSubmenu } from "@/components/layout/navbar-parts/notifications-submenu";
+import type { AppNotification } from "@/hooks/use-notifications";
 
 const ITEM_BASE =
   "flex h-12 w-full cursor-pointer items-center gap-4 rounded-[6px] px-3 text-[16px] font-medium outline-none transition-colors data-[disabled]:opacity-50 data-[highlighted]:bg-white/10";
@@ -22,9 +24,9 @@ interface AccountMenuContentProps {
   readonly avatarImageUrl?: string;
   readonly avatarIconId?: string;
   readonly isCreator: boolean;
-  readonly canOpenSettings: boolean;
   readonly isSigningOut: boolean;
-  readonly onOpenMessages: () => void;
+  /** Solo para creadores: avisos de valoraciones de sus obras. */
+  readonly notifications: { readonly items: readonly AppNotification[]; readonly unread: number; readonly isLoaded: boolean; readonly onMarkAllRead: () => void };
   readonly onSignOut: () => void;
 }
 
@@ -40,9 +42,8 @@ export function AccountMenuContent({
   avatarImageUrl,
   avatarIconId,
   isCreator,
-  canOpenSettings,
   isSigningOut,
-  onOpenMessages,
+  notifications,
   onSignOut,
 }: AccountMenuContentProps) {
   return (
@@ -108,7 +109,7 @@ export function AccountMenuContent({
           <DropdownMenu.Item asChild>
             <Link href="/mi-espacio" className={ITEM_CLASS}>
               <Bookmark {...ICON_PROPS} />
-              <span>Mi Espacio</span>
+              <span>Mi lista</span>
             </Link>
           </DropdownMenu.Item>
           {isCreator && (
@@ -121,19 +122,18 @@ export function AccountMenuContent({
             </DropdownMenu.Item>
           )}
           {isCreator && (
-            <DropdownMenu.Item className={ITEM_CLASS} onSelect={onOpenMessages}>
-              <ChatBubble {...ICON_PROPS} />
-              <span>Mensajes directos</span>
-            </DropdownMenu.Item>
+            <NotificationsSubmenu
+              items={notifications.items} unread={notifications.unread} isLoaded={notifications.isLoaded}
+              itemClassName={ITEM_CLASS} onMarkAllRead={notifications.onMarkAllRead}
+            />
           )}
-          {canOpenSettings && (
-            <DropdownMenu.Item asChild>
-              <Link href="/configuracion" className={ITEM_CLASS}>
-                <Settings {...ICON_PROPS} />
-                <span>Configuración</span>
-              </Link>
-            </DropdownMenu.Item>
-          )}
+          <DropdownMenu.Item asChild>
+            <Link href="/configuracion" className={ITEM_CLASS}>
+              <Settings {...ICON_PROPS} />
+              <span>Configuración</span>
+            </Link>
+          </DropdownMenu.Item>
+        
         </div>
 
         <DropdownMenu.Separator className={DIVIDER} />
