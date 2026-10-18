@@ -17,7 +17,7 @@ test('PeerTube client uses server OAuth singleflight and exact resumable wire co
     else if (request.method === 'GET' && url.pathname === '/api/v1/users/me') reply(response, 200, JSON.stringify({ id: 1, videoChannels: [{ id: 73, name: 'GMA' }] }));
     else if (request.method === 'POST' && url.pathname === '/api/v1/videos/upload-resumable') {
       initCalls++; assert.equal(request.headers.authorization, 'Bearer server-token'); assert.equal(request.headers['x-upload-content-length'], '12');
-      assert.equal(request.headers['x-upload-content-type'], 'video/mp4'); assert.equal(JSON.parse(body).privacy, 3); assert.equal(JSON.parse(body).waitTranscoding, true);
+      assert.equal(request.headers['x-upload-content-type'], 'video/mp4'); assert.equal(JSON.parse(body).privacy, 3); assert.equal(JSON.parse(body).waitTranscoding, true); assert.equal(JSON.parse(body).filename, 'gma-test.mp4');
       if (mode === 'lost') { request.socket.destroy(); return; }
       reply(response, 201, '', { Location: `${origin}/api/v1/videos/upload-resumable?upload_id=lease-1` });
     } else if (request.method === 'PUT' && url.searchParams.has('upload_id')) {
@@ -30,12 +30,12 @@ test('PeerTube client uses server OAuth singleflight and exact resumable wire co
   t.after(() => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
   const address = server.address(); assert.ok(address && typeof address !== 'string'); origin = `http://127.0.0.1:${address.port}`;
   const client = new PeerTubeClient({ baseUrl: origin, username: 'technical', password: 'secret', channelId: 73, timeoutMs: 500 });
-  const [instance, upload] = await Promise.all([client.validateInstance(), client.createResumableUpload({ name: 'gma-media-a1', description: 'correlation:gma-media-a1', channelId: 73, totalBytes: 12, contentType: 'video/mp4' })]);
+  const [instance, upload] = await Promise.all([client.validateInstance(), client.createResumableUpload({ name: 'gma-media-a1', description: 'correlation:gma-media-a1', channelId: 73, totalBytes: 12, contentType: 'video/mp4', filename: 'gma-test.mp4' })]);
   assert.equal(instance.version, '8.3.1'); assert.equal(upload.uploadId, 'lease-1'); assert.equal(tokenCalls, 1);
   assert.deepEqual(await client.queryUploadOffset(upload.location, 12), { status: 308, range: 'bytes=0-7' });
   assert.deepEqual(await client.putUploadChunk(upload.location, 8, 11, 12, new TextEncoder().encode('abcd')), { status: 200, range: null, uuid: '66666666-6666-4666-8666-666666666666' });
   mode = 'lost';
-  await assert.rejects(client.createResumableUpload({ name: 'gma-media-a2', description: 'correlation:gma-media-a2', channelId: 73, totalBytes: 12, contentType: 'video/mp4' }),
+  await assert.rejects(client.createResumableUpload({ name: 'gma-media-a2', description: 'correlation:gma-media-a2', channelId: 73, totalBytes: 12, contentType: 'video/mp4', filename: 'gma-test.mp4' }),
     (error: unknown) => error instanceof Error && 'code' in error && error.code === 'UPLOAD_PROVISION_RECOVERY_REQUIRED');
   assert.equal(initCalls, 2, 'the client must not retry a POST whose response was lost');
 });
@@ -47,7 +47,7 @@ test('PeerTube client rejects foreign Location before any upload forwarding', as
     if (url.pathname === '/api/v1/users/token') return new Response(JSON.stringify({ access_token: 'only-server', expires_in: 3600 }), { status: 200 });
     return new Response('', { status: 201, headers: { Location: 'https://attacker.example/api/v1/videos/upload-resumable?upload_id=x' } });
   } });
-  await assert.rejects(client.createResumableUpload({ name: 'gma-x-a1', description: 'x', channelId: 1, totalBytes: 1, contentType: 'video/mp4' }));
+  await assert.rejects(client.createResumableUpload({ name: 'gma-x-a1', description: 'x', channelId: 1, totalBytes: 1, contentType: 'video/mp4', filename: 'gma-test.mp4' }));
 });
 
 test('PeerTube maps 404/429/503 safely and coalesces simultaneous OAuth refreshes', async () => {

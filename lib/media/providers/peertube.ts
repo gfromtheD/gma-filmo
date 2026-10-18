@@ -13,6 +13,14 @@ export interface PeerTubeGatewayReceiptLookup {
 const proofSchema = z.object({ kind: z.literal('peertube-gateway'), uploadId: z.string().min(1), videoUUID: z.string().uuid(), totalBytes: z.number().int().positive(),
   upstreamReceivedBytes: z.number().int().nonnegative(), gmaSha256: z.string().regex(/^[a-f0-9]{64}$/), correlationName: z.string().min(1), finalizingAt: z.string().datetime() }).strict();
 
+const VIDEO_EXTENSIONS: Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
+
+/** PeerTube validates the extension of `filename`; the user's own file name is never forwarded. */
+export function videoExtension(contentType: string): string {
+  const [mime = ''] = contentType.split(';');
+  return VIDEO_EXTENSIONS[mime.trim().toLowerCase()] ?? '.mp4';
+}
+
 /** PeerTube is an upstream engine only; playback is always addressed through the GMA gateway. */
 export class PeerTubeMediaProvider implements MediaProvider {
   readonly key = 'peertube' as const;
@@ -28,7 +36,8 @@ export class PeerTubeMediaProvider implements MediaProvider {
   async provisionUpload(context: ProviderUploadContext) {
     const correlationName = `gma-${context.asset.id}-a${context.transferGeneration}`;
     const binding = await this.client.createResumableUpload({ name: correlationName, description: `GMA correlation ${correlationName}`,
-      channelId: this.client.channelId, totalBytes: context.session.expected_input_bytes, contentType: context.session.content_type });
+      channelId: this.client.channelId, totalBytes: context.session.expected_input_bytes, contentType: context.session.content_type,
+      filename: `${correlationName}${videoExtension(context.session.content_type)}` });
     const privateState: JsonObject = { uploadId: binding.uploadId, uploadLocation: binding.location, correlationName, state: 'receiving' };
     return { uploadId: binding.uploadId, providerMediaId: null, privateState };
   }
