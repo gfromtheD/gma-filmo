@@ -93,7 +93,7 @@ async function peerTubeHarness() {
     sha256: createHash('sha256').update(source).digest('hex'), content_type: 'video/mp4', file_name: 'fixture.mp4',
     idempotency_key: randomUUID(), request_hash: 'a'.repeat(64), video_provider: 'peertube', auxiliary_provider: 'mock' });
   const id = reserved.session.id; correlation = `gma-${reserved.session.asset_id}-a1`;
-  const binding = await client.createResumableUpload({ name: correlation, description: correlation, channelId: 73, totalBytes: source.length, contentType: 'video/mp4' });
+  const binding = await client.createResumableUpload({ name: correlation, description: correlation, channelId: 73, totalBytes: source.length, contentType: 'video/mp4', filename: 'gma-test.mp4' });
   await repo.command(OWNER, 'bind_upload', { session_id: id, transfer_generation: 1, upload_id: binding.uploadId,
     private_state: { uploadId: binding.uploadId, uploadLocation: binding.location, correlationName: correlation } });
   await db.query("UPDATE gma_upload_jobs SET state='done' WHERE session_id=$1 AND kind='provision'", [id]);

@@ -12,7 +12,7 @@ const fileTokenSchema = z.object({ files: z.object({ token: z.string().min(1), e
 export interface PeerTubeClientConfig { baseUrl: string; username: string; password: string; channelId: number; timeoutMs?: number; fetch?: typeof fetch; }
 export interface PeerTubeResponse { status: number; headers: Headers; body: unknown; }
 export interface PeerTubeVideoDetails { uuid: string; duration: number; stateId: number; streamingPlaylists: Array<{ playlistUrl: string }> }
-export interface PeerTubeUploadMetadata { name: string; description: string; channelId: number; totalBytes: number; contentType: string; }
+export interface PeerTubeUploadMetadata { name: string; description: string; channelId: number; totalBytes: number; contentType: string; filename: string; }
 
 /** Server-only PeerTube REST v8.3.1 client. Never import from a Client Component. */
 export class PeerTubeClient {
@@ -131,7 +131,7 @@ export class PeerTubeClient {
 
   async createResumableUpload(metadata: PeerTubeUploadMetadata): Promise<{ location: string; uploadId: string }> {
     if (!Number.isSafeInteger(metadata.totalBytes) || metadata.totalBytes < 1 || metadata.channelId !== this.channelId) throw new MediaError('UPLOAD_INVALID_INPUT');
-    const body = { name: metadata.name, description: metadata.description, channelId: metadata.channelId, privacy: 3, waitTranscoding: true };
+    const body = { name: metadata.name, filename: metadata.filename, description: metadata.description, channelId: metadata.channelId, privacy: 3, waitTranscoding: true };
     let response: PeerTubeResponse;
     try {
       response = await this.authorized(this.endpoint('/api/v1/videos/upload-resumable'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Upload-Content-Length': String(metadata.totalBytes), 'X-Upload-Content-Type': metadata.contentType }, body: JSON.stringify(body) });
