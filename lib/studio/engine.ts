@@ -1,5 +1,6 @@
 import { buildLegacyTitlePayload } from "@/lib/studio/legacy-payload";
 import { validateFile, type FileRuleKind } from "@/lib/studio/file-rules";
+import { createLazyMediaEngine } from "@/lib/studio-media/lazy-media-engine";
 import type { UploadDraft, UploadedAsset } from "@/lib/studio/upload-draft";
 
 /**
@@ -26,7 +27,7 @@ export type SubmitResult =
   | { readonly status: "error"; readonly message: string };
 
 export interface UploadEngine {
-  readonly id: "local" | "legacy";
+  readonly id: "local" | "legacy" | "media";
   /** `false` mientras el motor real no está enchufado: la interfaz lo avisa al usuario. */
   readonly connected: boolean;
   /**
@@ -143,7 +144,12 @@ export const legacyEngine: UploadEngine = {
   },
 };
 
-/** Motor activo. Cambiar a `legacy` con `NEXT_PUBLIC_STUDIO_ENGINE=legacy` para publicar de verdad con el servidor actual. */
-export function getUploadEngine(): UploadEngine {
+/**
+ * Motor activo. Con `NEXT_PUBLIC_UPLOAD_ENGINE_V2=true` y un borrador disponible, el motor multimedia (subidas reales,
+ * PeerTube). Con `NEXT_PUBLIC_STUDIO_ENGINE=legacy`, el servidor histórico (R2). Si no, el simulado. Combinación no
+ * permitida: motor v2 + `legacy` (el servidor responde 410 a la URL prefirmada): con el motor encendido manda el motor.
+ */
+export function getUploadEngine(getDraft?: () => UploadDraft): UploadEngine {
+  if (process.env.NEXT_PUBLIC_UPLOAD_ENGINE_V2 === "true" && getDraft) return createLazyMediaEngine(getDraft);
   return process.env.NEXT_PUBLIC_STUDIO_ENGINE === "legacy" ? legacyEngine : localEngine;
 }
