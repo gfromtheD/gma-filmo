@@ -18,6 +18,17 @@ const localMediaEnabled = process.env.UPLOAD_ENVIRONMENT === "local"
   && process.env.SUPABASE_URL === "http://127.0.0.1:54341"
   && process.env.NEXT_PUBLIC_SUPABASE_URL === "http://127.0.0.1:54341"
   && process.env.MEDIA_GATEWAY_URL === "http://127.0.0.1:4319";
+// Gateway público del motor (PeerTube): el navegador le envía los bytes y le pide el HLS. Solo se abre su origen,
+// y solo si es https sin credenciales; con cualquier otro valor la CSP queda como estaba.
+function httpsOrigin(value) {
+  try {
+    const url = new URL(value ?? "");
+    return url.protocol === "https:" && !url.username && !url.password ? url.origin : "";
+  } catch {
+    return "";
+  }
+}
+const gatewayOrigin = httpsOrigin(process.env.MEDIA_GATEWAY_URL);
 const localMediaOrigins = localMediaEnabled
   ? "http://127.0.0.1:4319 http://127.0.0.1:54341 ws://127.0.0.1:54341"
   : "";
@@ -36,13 +47,13 @@ const ContentSecurityPolicy = [
   // + fotos de perfil de Google (inicio de sesión con Google; `profiles.avatar_url`)
   `img-src 'self' data: blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net imagedelivery.net generacionmaldita.com images.unsplash.com lh3.googleusercontent.com ${localMediaEnabled ? "http://127.0.0.1:4319" : ""}`,
   // Video: R2 MP4s + Cloudflare Stream HLS
-  `media-src 'self' blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net *.videodelivery.net ${localMediaEnabled ? "http://127.0.0.1:4319" : ""}`,
+  `media-src 'self' blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net *.videodelivery.net ${gatewayOrigin} ${localMediaEnabled ? "http://127.0.0.1:4319" : ""}`,
   // YouTube embeds in the player
   "frame-src www.youtube.com www.youtube-nocookie.com",
   // Prevents embedding this app in any external iframe (modern browsers)
   "frame-ancestors 'none'",
   // API + Supabase Realtime WebSocket + subida directa a R2 (URL prefirmada, PUT desde el navegador)
-  `connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com https://*.cloudflarestream.com https://videodelivery.net https://*.videodelivery.net ${localMediaOrigins}`,
+  `connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com https://*.cloudflarestream.com https://videodelivery.net https://*.videodelivery.net ${gatewayOrigin} ${localMediaOrigins}`,
   "font-src 'self'",
   // Service worker and blob workers
   "worker-src 'self' blob:",
