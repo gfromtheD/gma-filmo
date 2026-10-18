@@ -14,6 +14,7 @@ import { playbackEndpointFor } from "@/lib/media/player-adapter";
 import { DonationPanel } from "@/components/features/player/donation-panel";
 import { supportMethods } from "@/lib/creator-support";
 import { YouTubeVideo } from "@/components/features/player/youtube-video";
+import { autoplayWindowFor, shouldTickCountdown } from "@/lib/player/autoplay-countdown";
 import type { MediaItem } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
 import styles from "./player-screen.module.css";
@@ -365,13 +366,14 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     // exactly 10 s before the real end, regardless of what parseDuration returns.
     if (!hasSupport && nextItem && !countdownDismissRef.current && isFinite(vid.duration) && vid.duration > 0) {
       const rem = vid.duration - t;
-      if (rem <= autoplayOffset && rem > 0 && !countdownStartedRef.current) {
+      const offset = autoplayWindowFor(vid.duration);
+      if (rem <= offset && rem > 0 && !countdownStartedRef.current) {
         countdownStartedRef.current = true;
         const initial = Math.ceil(rem);
         setCountdownInitial(initial);
         setCountdownSecs(initial);
         if (hasSupport && !donationShown.current) { donationShown.current = true; setShowDonation(true); }
-      } else if (rem > autoplayOffset + 2 && countdownStartedRef.current) {
+      } else if (rem > offset + 2 && countdownStartedRef.current) {
         // User scrubbed back past the window — allow it to fire again
         countdownStartedRef.current = false;
         setCountdownSecs(null);
@@ -506,35 +508,34 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
   // ── Autoplay countdown ───────────────────────────────────────────────────────
 
-  // How many seconds before the end to show the countdown.
-  // Scales down for very short films so it never covers more than ~15% of runtime.
-  const autoplayOffset = 10;
-
   // Countdown for YouTube iframes and virtual-timer playback.
-  // MP4 videos are handled inside handleTimeUpdate (reads vid.duration live).
+  // Cualquier vídeo con elemento <video> (MP4 histórico o título del motor) lo gestiona handleTimeUpdate, que lee
+  // vid.duration en directo; aquí `duration` sale del texto de duración de la ficha y puede no coincidir con el vídeo.
+  const usesVideoElement = Boolean(mp4Url || managedEndpoint);
   useEffect(() => {
-    if (hasSupport || isYT || mp4Url || !nextItem || duration <= 0 || countdownDismissRef.current) return;
+    if (hasSupport || isYT || usesVideoElement || !nextItem || duration <= 0 || countdownDismissRef.current) return;
     const remaining = duration - currentTime;
-    if (remaining <= autoplayOffset && remaining > 0 && !countdownStartedRef.current) {
+    const offset = autoplayWindowFor(duration);
+    if (remaining <= offset && remaining > 0 && !countdownStartedRef.current) {
       countdownStartedRef.current = true;
       const initial = Math.ceil(remaining);
       setCountdownInitial(initial);
       setCountdownSecs(initial);
       if (hasSupport && !donationShown.current) { donationShown.current = true; setShowDonation(true); }
     }
-    if (remaining > autoplayOffset + 2 && countdownStartedRef.current) {
+    if (remaining > offset + 2 && countdownStartedRef.current) {
       countdownStartedRef.current = false;
       setCountdownSecs(null);
     }
-  }, [currentTime, duration, nextItem, autoplayOffset, mp4Url, hasSupport, isYT]);
+  }, [currentTime, duration, nextItem, usesVideoElement, hasSupport, isYT]);
 
 
-  // Tick down every second
+  // Tick down every second, only while playing: pausing makes the countdown wait instead of leaving the title.
   useEffect(() => {
-    if (countdownSecs === null || countdownSecs <= 0) return;
+    if (!shouldTickCountdown(countdownSecs, playing)) return;
     const id = setTimeout(() => setCountdownSecs((s) => (s !== null ? s - 1 : null)), 1000);
     return () => clearTimeout(id);
-  }, [countdownSecs]);
+  }, [countdownSecs, playing]);
 
   // When countdown hits 0: navigate if autoplay is on, otherwise just hide
   useEffect(() => {
