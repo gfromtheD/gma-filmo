@@ -14,6 +14,16 @@ export interface PeerTubeResponse { status: number; headers: Headers; body: unkn
 export interface PeerTubeVideoDetails { uuid: string; duration: number; stateId: number; streamingPlaylists: Array<{ playlistUrl: string }> }
 export interface PeerTubeUploadMetadata { name: string; description: string; channelId: number; totalBytes: number; contentType: string; filename: string; }
 
+/**
+ * Bytes confirmed upstream from an uploadx `Range` header: absent, or `bytes=0--1` (what PeerTube answers for a lease
+ * with nothing received yet), is 0; `bytes=0-N` is N + 1. Anything else is malformed and returns null.
+ */
+export function receivedBytesFromRange(range: string | null): number | null {
+  if (range === null || range === 'bytes=0--1') return 0;
+  const match = /^bytes=0-(\d+)$/.exec(range);
+  return match ? Number(match[1]) + 1 : null;
+}
+
 /** Server-only PeerTube REST v8.3.1 client. Never import from a Client Component. */
 export class PeerTubeClient {
   private readonly base: URL;

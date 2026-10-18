@@ -3,7 +3,7 @@ import type { ProviderSnapshot, UploadReceipt, JsonObject } from '@/types/media-
 import type { PlaybackSource } from '@/types/playback';
 import type { MediaCapabilityIssuer, MediaProvider, ProviderAssetContext, ProviderPlaybackContext, ProviderUploadContext, DeletionObservation } from '../provider';
 import { MediaError } from '../errors';
-import { PeerTubeClient } from './peertube-client';
+import { PeerTubeClient, receivedBytesFromRange } from './peertube-client';
 import { mapPeerTubeState } from './peertube-mapping';
 import { rewritePeerTubeManifest } from '../gateway/hls';
 
@@ -57,9 +57,9 @@ export class PeerTubeMediaProvider implements MediaProvider {
     let offset: number;
     try {
       const upstream = await this.client.queryUploadOffset(location, context.session.expected_input_bytes);
-      const range = upstream.range ? /^bytes=0-(\d+)$/.exec(upstream.range) : null;
-      if (upstream.range && !range) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
-      offset = upstream.status === 200 ? context.session.expected_input_bytes : range ? Number(range[1]) + 1 : 0;
+      const received = receivedBytesFromRange(upstream.range);
+      if (received === null) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
+      offset = upstream.status === 200 ? context.session.expected_input_bytes : received;
     } catch (error) {
       if (!(error instanceof MediaError) || error.code !== 'UPLOAD_NOT_FOUND') throw error;
       const receipt = await this.finalReceipt(context);
@@ -90,9 +90,9 @@ export class PeerTubeMediaProvider implements MediaProvider {
     if (typeof location !== 'string') throw new MediaError('UPLOAD_PROVISION_RECOVERY_REQUIRED');
     try {
       const upstream = await this.client.queryUploadOffset(location, context.session.expected_input_bytes);
-      const match = upstream.range ? /^bytes=0-(\d+)$/.exec(upstream.range) : null;
-      if (upstream.range && !match) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
-      const received = upstream.status === 200 ? context.session.expected_input_bytes : match ? Number(match[1]) + 1 : 0;
+      const confirmed = receivedBytesFromRange(upstream.range);
+      if (confirmed === null) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
+      const received = upstream.status === 200 ? context.session.expected_input_bytes : confirmed;
       if (received !== context.session.expected_input_bytes) throw new MediaError('UPLOAD_NOT_COMPLETE');
     } catch (error) {
       if (!(error instanceof MediaError) || error.code !== 'UPLOAD_NOT_FOUND') throw error;

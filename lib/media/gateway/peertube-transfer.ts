@@ -5,7 +5,7 @@ import type { UploadReceipt } from '@/types/media-engine';
 import { MediaError } from '../errors';
 import { MockMediaStorage } from '../mock-storage';
 import { MediaRepository } from '../repository';
-import { PeerTubeClient } from '../providers/peertube-client';
+import { PeerTubeClient, receivedBytesFromRange } from '../providers/peertube-client';
 
 const bindingSchema = z.object({ uploadId:z.string().min(1),uploadLocation:z.string().min(1),correlationName:z.string().min(1) }).passthrough();
 const receiptSchema = z.object({complete:z.literal(true),receivedBytes:z.number().int().positive(),sourceSha256:z.string(),identity:z.literal('sha256'),providerMediaId:z.string().uuid(),proof:z.object({
@@ -15,10 +15,8 @@ const receiptSchema = z.object({complete:z.literal(true),receivedBytes:z.number(
 
 function upstreamOffset(response:{status:number;range:string|null},total:number):number {
   if(response.status===200)return total;
-  if(response.range===null)return 0;
-  const match=/^bytes=0-(\d+)$/.exec(response.range);
-  const offset=match?Number(match[1])+1:NaN;
-  if(!Number.isSafeInteger(offset)||offset<1||offset>total)throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
+  const offset=receivedBytesFromRange(response.range);
+  if(offset===null||!Number.isSafeInteger(offset)||offset>total)throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
   return offset;
 }
 
