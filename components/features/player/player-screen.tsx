@@ -8,6 +8,7 @@ import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProgress } from "@/hooks/use-progress";
+import { useSettingsPrefs, type SubtitleBackground, type SubtitleSize } from "@/hooks/use-settings-prefs";
 import { useCastSupport } from "@/hooks/use-cast-support";
 import { DonationPanel } from "@/components/features/player/donation-panel";
 import { supportMethods } from "@/lib/creator-support";
@@ -71,6 +72,10 @@ const AUDIO_TRACKS = [
 ] as const;
 
 // CC tracks are built dynamically from item.subtitleUrl in the component
+
+/** Estilo de los subtítulos elegido en Configuración (se aplica con ::cue sobre la pista nativa). */
+const SUBTITLE_SIZE_CLASS: Record<SubtitleSize, string> = { s: styles.subsSmall ?? "", m: styles.subsMedium ?? "", l: styles.subsLarge ?? "" };
+const SUBTITLE_BACKGROUND_CLASS: Record<SubtitleBackground, string> = { shadow: styles.subsShadow ?? "", box: styles.subsBox ?? "", none: styles.subsNone ?? "" };
 
 function getChapter(t: number, duration: number): { num: string; name: string } {
   const idx = Math.min(
@@ -249,6 +254,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const [buffering, setBuffering]           = useState(false);
   const [videoError, setVideoError]         = useState(false);
   const [ccTrack, setCcTrack]               = useState<string | null>(null);
+  const { prefs: subtitlePrefs, isLoaded: subtitlePrefsLoaded } = useSettingsPrefs();
   const [audioTrack, setAudioTrack]         = useState<string>("es-orig");
   const [showSettings, setShowSettings]     = useState(false);
   const [showDonation,  setShowDonation]    = useState(false);
@@ -469,6 +475,12 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       vid.textTracks[i]!.mode = ccTrack ? "showing" : "hidden";
     }
   }, [ccTrack, subtitleProxyUrl]);
+
+  // Configuración → «Subtítulos al empezar»: se encienden solos si la obra los tiene (luego se pueden quitar aquí).
+  useEffect(() => {
+    if (subtitlePrefsLoaded && subtitlePrefs.subtitlesOn && subtitleProxyUrl) setCcTrack((current) => current ?? "sub");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtitlePrefsLoaded, subtitleProxyUrl]);
 
   // Timer-based time tracking: runs for (1) no video at all, (2) YouTube iframe (can't get real time)
   // Frozen while the intro splash is up so the clock doesn't advance behind it.
@@ -723,7 +735,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
         ) : mp4Url ? (
           <video
             ref={videoRef} src={mp4Url}
-            className="h-full w-full object-contain"
+            className={`h-full w-full object-contain ${SUBTITLE_SIZE_CLASS[subtitlePrefs.subtitleSize]} ${SUBTITLE_BACKGROUND_CLASS[subtitlePrefs.subtitleBackground]}`}
             style={{ filter: `brightness(${brightness})` }}
             playsInline autoPlay
             onTimeUpdate={handleTimeUpdate}

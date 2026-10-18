@@ -26,6 +26,12 @@ for (const path of SECTIONS) {
   });
 }
 
+test("«Legal» ya no es una columna: los enlaces legales van en la franja inferior", async ({ page }) => {
+  const footer = await visit(page, "/inicio");
+  await expect(footer.getByRole("heading", { name: "Legal" })).toHaveCount(0);
+  await expect(footer.getByRole("navigation", { name: "Legal" }).getByRole("link")).toHaveCount(2);
+});
+
 test("hay un único pie de página y es lo último de la página", async ({ page }) => {
   await visit(page, "/inicio");
   await expect(page.getByRole("contentinfo")).toHaveCount(1);

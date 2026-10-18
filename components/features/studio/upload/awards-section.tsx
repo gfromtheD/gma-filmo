@@ -1,38 +1,32 @@
 "use client";
 
-import { BUTTON_SECONDARY, TextField } from "./fields";
+import { TextField } from "./fields";
+import { AddRowButton, ColumnHeads, RemoveRowButton } from "./sheet-row";
 import { errorIf, type StepProps } from "./step-props";
 
-/** Premios y selecciones: un dato extra, plegado por defecto, para quien quiera mencionar dónde ha estado la obra. */
+const ROW = "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px]";
+
+/** Premios y selecciones: festivales por los que ha pasado la obra o premios que ha ganado. Opcional. */
 export function AwardsSection({ draft, update, showErrors }: StepProps) {
   const { awards } = draft;
   const patchAward = (index: number, next: Partial<(typeof awards)[number]>) =>
     update({ awards: awards.map((a, i) => (i === index ? { ...a, ...next } : a)) });
 
   return (
-    <details className="rounded-[10px] border border-white/10 bg-white/[0.03] p-4">
-      <summary className="cursor-pointer text-[14px] font-bold text-white">
-        Premios y selecciones <span className="font-medium text-[#7C7C7C]">{awards.length > 0 ? `(${awards.length})` : "Opcional"}</span>
-      </summary>
-      <div className="mt-4 flex flex-col gap-4">
-        <p className="text-[13.5px] text-[#A8A8A8]">Si la obra ha pasado por festivales o ha ganado algún premio, cuéntalo aquí.</p>
-        <ul className="flex flex-col gap-4">
-          {awards.map((a, i) => (
-            <li key={i} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-start">
-              <TextField label="Festival o certamen" required value={a.festival} onChange={(v) => patchAward(i, { festival: v })}
-                error={errorIf(showErrors, !a.festival.trim(), "Escribe el festival.")} />
-              <TextField label="Premio o selección" value={a.award} onChange={(v) => patchAward(i, { award: v })} hint="Por ejemplo, «Mejor cortometraje» o «Selección oficial»." />
-              <button type="button" onClick={() => update({ awards: awards.filter((_, j) => j !== i) })}
-                className="self-start text-[13px] font-semibold text-[#ff7b7b] underline-offset-2 hover:underline sm:mt-8">
-                Quitar
-              </button>
-            </li>
-          ))}
-        </ul>
-        <button type="button" onClick={() => update({ awards: [...awards, { festival: "", award: "" }] })} className={`${BUTTON_SECONDARY} self-start`}>
-          Añadir premio o selección
-        </button>
-      </div>
-    </details>
+    <div className="flex flex-col">
+      {awards.length > 0 && <ColumnHeads columns={["Festival o certamen", "Premio o selección", ""]} template={ROW} />}
+      <ul className="flex flex-col gap-3">
+        {awards.map((a, i) => (
+          <li key={i} className={`grid items-start gap-2 sm:gap-4 ${ROW}`}>
+            <TextField label="Festival o certamen" required labelHidden value={a.festival} placeholder="Por ejemplo, Festival de Sitges"
+              onChange={(v) => patchAward(i, { festival: v })} error={errorIf(showErrors, !a.festival.trim(), "Escribe el festival.")} />
+            <TextField label="Premio o selección" labelHidden value={a.award} placeholder="Mejor cortometraje, Selección oficial…"
+              onChange={(v) => patchAward(i, { award: v })} />
+            <RemoveRowButton label={`Quitar ${a.festival.trim() || "este premio"}`} onClick={() => update({ awards: awards.filter((_, j) => j !== i) })} />
+          </li>
+        ))}
+      </ul>
+      <AddRowButton onClick={() => update({ awards: [...awards, { festival: "", award: "" }] })}>Añadir premio o selección</AddRowButton>
+    </div>
   );
 }

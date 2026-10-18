@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { COLOR_VALUES, renderAvatar, type AvatarColor } from "@/lib/data/profile-avatars";
+import { readableOn } from "@/lib/profiles/color-contrast";
 
 const FALLBACK_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
-const INITIAL_TEXT_COLOR = "#03200F";
+// La inicial va oscura sobre colores claros y blanca sobre los oscuros (azul marino, burdeos, violeta…).
+const INITIAL_TEXT_DARK = "#03200F";
+const INITIAL_TEXT_LIGHT = "#FFFFFF";
 
 interface ProfileAvatarProps {
   readonly name: string;
@@ -69,7 +72,7 @@ export function ProfileAvatar({ name, url, iconId, color, size = 45 }: ProfileAv
       style={{
         ...frameStyle,
         background: hex,
-        color: INITIAL_TEXT_COLOR,
+        color: readableOn(hex, INITIAL_TEXT_DARK, INITIAL_TEXT_LIGHT),
         fontSize: fill ? "42cqw" : size * 0.42,
       }}
     >

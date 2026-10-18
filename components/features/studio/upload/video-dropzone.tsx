@@ -117,7 +117,6 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
               <p className="text-[13px] text-[#A8A8A8]">
                 {fmtBytes(file.sizeBytes)}
                 {status === "done" && <span className="ml-2 font-bold text-[#2AC57A]">Subido</span>}
-                {status === "done" && file.localOnly && <span className="ml-2">· Comprobado; se enviará cuando se conecte el motor de subida.</span>}
               </p>
             </div>
             {status === "uploading" && (

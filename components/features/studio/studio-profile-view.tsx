@@ -1,448 +1,229 @@
 "use client";
 
-import styles from "./studio-responsive.module.css";
-
-import { useState, useEffect, useRef } from "react";
-import { Check, Upload, MediaImage as ImageIcon, InfoCircle as Info, CheckCircle as CheckCircle2, EditPencil as Pencil, Xmark as X, MapPin } from "@/components/ui/icons";
-import { fmt, C, card, row, col, StudioLogo } from "./studio-ui";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { socialUrl } from "@/lib/social-links";
-import { SocialLinksPanel, SocialPlatformIcon, getSocialPlatform, socialDisplayText } from "@/components/ui/social-links-panel";
+import { SocialLinksPanel, getSocialPlatform } from "@/components/ui/social-links-panel";
+import { TextAreaField, TextField } from "./upload/fields";
+import { ProfileHero, type ImageKind } from "./studio-profile-hero";
 import type { StudioData } from "./studio-types";
 
-// Debe coincidir con UPLOAD_CAPS.avatar en lib/r2/client.ts — se duplica aquí
-// porque ese módulo instancia el cliente S3 y no es seguro importarlo en cliente.
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+// Deben coincidir con UPLOAD_CAPS en lib/r2/client.ts (ese módulo instancia el cliente S3 y no se importa en cliente).
+const MAX_IMAGE_BYTES: Record<ImageKind, number> = { avatar: 5 * 1024 * 1024, banner: 10 * 1024 * 1024 };
+const BIO_MAX = 280;
+const IMAGE_NAME: Record<ImageKind, string> = { avatar: "La foto", banner: "El banner" };
+
+const GLASS =
+  "rounded-[22px] border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-7";
 
 interface Props {
   data: StudioData;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+type Form = { studioName: string; artistName: string; role: string; bio: string; location: string };
+
+function Panel({ title, description, className = "", children }: { readonly title: string; readonly description: string; readonly className?: string; readonly children: ReactNode }) {
   return (
-    <div>
-      <label style={{ ...row(), justifyContent: "space-between", marginBottom: 8, display: "flex" }}>
-        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: C.textFaint }}>{label}</span>
-        {hint && <span style={{ fontSize: 11, fontWeight: 600, color: C.textFaint }}>{hint}</span>}
-      </label>
-      {children}
-    </div>
+    <section className={`${GLASS} ${className}`}>
+      <h2 className="text-[17px] font-semibold text-white">{title}</h2>
+      <p className="mt-1 text-[13.5px] text-[#8A8A8A]">{description}</p>
+      <div className="mt-5">{children}</div>
+    </section>
   );
 }
 
-export function ProfileView({ data, onToast }: Props) {
-  const c = data.creator;
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio,
-    location: c.location,
-  });
-  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(c.socials);
-  const [dirty, setDirty]   = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [avatarUrl, setAvatarUrl]       = useState<string | null>(c.avatarUrl ?? null);
-  const [avatarAction, setAvatarAction] = useState<"idle" | "uploading" | "removing">("idle");
-  const avatarBusy = avatarAction !== "idle";
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const set = (k: keyof typeof form, v: string) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
-  const setSocial = (k: string, v: string) => { setSocialLinks(s => ({ ...s, [k]: v })); setDirty(true); };
+/** Pide al servidor que la página pública muestre ya el banner nuevo. Si falla, se verá al caducar su caché (1 h). */
+async function refreshPublicPage() {
+  const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+  if (!session) return;
+  await fetch("/api/creator/refresh-public", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => undefined);
+}
 
-  // Sincroniza los datos recargados sin sobrescribir una edición en curso.
+/** Sube la imagen a R2 y devuelve su URL pública, o el mensaje de error. */
+async function uploadImage(kind: ImageKind, file: File, token: string): Promise<{ url?: string; error?: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("assetType", kind);
+  try {
+    const res = await fetch("/api/upload/file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
+    const json = (await res.json().catch(() => ({}))) as { publicUrl?: string; error?: string };
+    return res.ok && json.publicUrl ? { url: json.publicUrl } : { error: json.error ?? "No se pudo subir la imagen." };
+  } catch {
+    return { error: "Error de red al subir la imagen." };
+  }
+}
+
+/**
+ * Ficha de creador (no es el perfil de usuario de la plataforma): arriba la ficha tal como la verán los espectadores (donde se cambian banner y foto) y debajo los
+ * datos, editables directamente. Al tocar algo aparece una barra para guardar o descartar.
+ */
+export function ProfileView({ data, onToast }: Props) {
+  const reduceMotion = useReducedMotion();
+  const c = data.creator;
+  const initialForm: Form = { studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location };
+  const [form, setForm] = useState<Form>(initialForm);
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(c.socials);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [images, setImages] = useState<Record<ImageKind, string | null>>({ avatar: c.avatarUrl ?? null, banner: null });
+  const [busyImage, setBusyImage] = useState<ImageKind | null>(null);
+
+  // Sincroniza los datos recargados sin pisar una edición en curso.
   useEffect(() => {
-    if (editing) return; // no pisar una edición en curso
+    if (isDirty) return;
     setForm({ studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location });
     setSocialLinks(c.socials);
-    setAvatarUrl(c.avatarUrl ?? null);
+    setImages((prev) => ({ ...prev, avatar: c.avatarUrl ?? null }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c]);
 
-  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // permite volver a elegir el mismo archivo más tarde
-    if (!file) return;
+  // El banner se lee aparte: si su columna aún no existe en la base de datos, el resto de la ficha carga igual.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: row } = await supabase.from("creator_profiles").select("banner_url").eq("user_id", user.id).maybeSingle();
+      if (!cancelled && row?.banner_url) setImages((prev) => ({ ...prev, banner: row.banner_url }));
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-    if (!file.type.startsWith("image/")) {
-      onToast("El archivo debe ser una imagen", { error: true });
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      onToast("La imagen supera el límite de 5 MB", { error: true });
-      return;
-    }
+  const set = (key: keyof Form, value: string) => { setForm((f) => ({ ...f, [key]: value })); setIsDirty(true); };
+  const setSocial = (key: string, value: string) => { setSocialLinks((s) => ({ ...s, [key]: value })); setIsDirty(true); };
 
-    setAvatarAction("uploading");
-    const supabase = getSupabaseBrowserClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setAvatarAction("idle");
-      onToast("Sesión caducada. Vuelve a iniciar sesión.", { error: true });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("assetType", "avatar");
-
-    try {
-      const res = await fetch("/api/upload/file", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: formData,
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        onToast((body as { error?: string }).error ?? "No se pudo subir la imagen.", { error: true });
-        return;
-      }
-      const publicUrl = (body as { publicUrl: string }).publicUrl;
-
-      const { error } = await supabase
-        .from("creator_profiles")
-        .update({ avatar_url: publicUrl })
-        .eq("user_id", session.user.id);
-
-      if (error) {
-        onToast("La imagen se subió pero no se pudo guardar en el perfil", { error: true });
-        return;
-      }
-
-      setAvatarUrl(publicUrl);
-      onToast("Foto de perfil actualizada");
-    } catch {
-      onToast("Error de red al subir la imagen.", { error: true });
-    } finally {
-      setAvatarAction("idle");
-    }
-  }
-
-  async function handleAvatarRemove() {
-    if (!avatarUrl) { onToast("No hay foto que eliminar", { error: true }); return; }
-
-    setAvatarAction("removing");
+  async function saveImage(kind: ImageKind, url: string | null): Promise<boolean> {
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setAvatarAction("idle");
-      onToast("No se pudo eliminar: sesión no encontrada", { error: true });
-      return;
-    }
+    if (!user) { onToast("Sesión caducada. Vuelve a iniciar sesión.", { error: true }); return false; }
+    const patch = kind === "avatar" ? { avatar_url: url } : { banner_url: url };
+    const { error } = await supabase.from("creator_profiles").update(patch).eq("user_id", user.id);
+    if (error) { onToast(`${IMAGE_NAME[kind]} no se pudo guardar en la ficha.`, { error: true }); return false; }
+    if (kind === "banner") void refreshPublicPage();
+    return true;
+  }
 
-    const { error } = await supabase
-      .from("creator_profiles")
-      .update({ avatar_url: null })
-      .eq("user_id", user.id);
+  async function handlePickImage(kind: ImageKind, file: File) {
+    if (!file.type.startsWith("image/")) { onToast("El archivo debe ser una imagen.", { error: true }); return; }
+    if (file.size > MAX_IMAGE_BYTES[kind]) { onToast(`La imagen supera el límite de ${MAX_IMAGE_BYTES[kind] / 1024 / 1024} MB.`, { error: true }); return; }
+    setBusyImage(kind);
+    const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+    if (!session) { setBusyImage(null); onToast("Sesión caducada. Vuelve a iniciar sesión.", { error: true }); return; }
+    const { url, error } = await uploadImage(kind, file, session.access_token);
+    if (error || !url) { setBusyImage(null); onToast(error ?? "No se pudo subir la imagen.", { error: true }); return; }
+    const isSaved = await saveImage(kind, url);
+    setBusyImage(null);
+    if (!isSaved) return;
+    setImages((prev) => ({ ...prev, [kind]: url }));
+    onToast(kind === "avatar" ? "Foto actualizada" : "Banner actualizado");
+  }
 
-    setAvatarAction("idle");
-    if (error) {
-      onToast("Error al eliminar la foto", { error: true });
-    } else {
-      setAvatarUrl(null);
-      onToast("Logo eliminado");
-    }
+  async function handleRemoveImage(kind: ImageKind) {
+    setBusyImage(kind);
+    const isSaved = await saveImage(kind, null);
+    setBusyImage(null);
+    if (!isSaved) return;
+    setImages((prev) => ({ ...prev, [kind]: null }));
+    onToast(kind === "avatar" ? "Foto quitada" : "Banner quitado");
+  }
+
+  function handleDiscard() {
+    setForm(initialForm);
+    setSocialLinks(c.socials);
+    setIsDirty(false);
   }
 
   async function handleSave() {
-    setSaving(true);
+    if (!form.studioName.trim()) { onToast("El nombre del estudio no puede quedar vacío.", { error: true }); return; }
+    if (form.bio.length > BIO_MAX) { onToast(`La biografía tiene más de ${BIO_MAX} caracteres.`, { error: true }); return; }
+    const cleanSocialLinks: Record<string, string> = Object.fromEntries(Object.entries(socialLinks).map(([k, v]) => [k, v.trim()]).filter(([, v]) => !!v));
+    const invalidSocial = Object.entries(cleanSocialLinks).find(([key, value]) => !socialUrl(key, value));
+    if (invalidSocial) { onToast(`Revisa el enlace de ${getSocialPlatform(invalidSocial[0])?.label ?? invalidSocial[0]}.`, { error: true }); return; }
+
+    setIsSaving(true);
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); onToast("No se pudo guardar: sesión no encontrada", { error: true }); return; }
-
-    const cleanSocialLinks: Record<string, string> = Object.fromEntries(
-      Object.entries(socialLinks).map(([k, v]) => [k, v.trim()]).filter(([, v]) => !!v)
-    );
-
-    const invalidSocial = Object.entries(cleanSocialLinks).find(([key, value]) => !socialUrl(key, value));
-    if (invalidSocial) {
-      setSaving(false);
-      onToast(`Revisa el enlace de ${getSocialPlatform(invalidSocial[0])?.label ?? invalidSocial[0]}`, { error: true });
-      return;
-    }
-
-    const { error } = await supabase
-      .from("creator_profiles")
-      .update({
-        studio_name:  form.studioName.trim(),
-        creator_name: form.artistName.trim(),
-        role:         form.role.trim() || null,
-        bio:          form.bio.trim().slice(0, 300),
-        location:     form.location.trim() || null,
-        social_links: cleanSocialLinks,
-      })
-      .eq("user_id", user.id);
-
-    setSaving(false);
-    if (error) {
-      onToast("Error al guardar el perfil", { error: true });
-    } else {
-      setDirty(false);
-      setEditing(false);
-      onToast("Perfil actualizado");
-    }
+    if (!user) { setIsSaving(false); onToast("No se pudo guardar: sesión no encontrada.", { error: true }); return; }
+    const { error } = await supabase.from("creator_profiles").update({
+      studio_name: form.studioName.trim(),
+      creator_name: form.artistName.trim(),
+      role: form.role.trim() || null,
+      bio: form.bio.trim(),
+      location: form.location.trim() || null,
+      social_links: cleanSocialLinks,
+    }).eq("user_id", user.id);
+    setIsSaving(false);
+    if (error) { onToast("Error al guardar la ficha.", { error: true }); return; }
+    setIsDirty(false);
+    onToast("Ficha actualizada");
   }
 
+  const rise: Variants = reduceMotion
+    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
+    : { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } } };
+  const publishedCount = data.titles.filter((t) => t.status === "publicado").length;
+
   return (
-    <div className={styles.studio} style={{ maxWidth: 1040, margin: "0 auto" }}>
+    <motion.div initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: reduceMotion ? 0 : 0.07 } } }}
+      className="mx-auto flex max-w-[1080px] flex-col gap-5 pb-28">
+      <motion.header variants={rise}>
+        <h1 className="text-[28px] font-semibold leading-tight text-white sm:text-[32px]">Tu ficha de creador</h1>
+        <p className="mt-1.5 text-[15px] text-[#A8A8A8]">Así te verán los espectadores. Cambia el banner y la foto pasando el ratón por encima.</p>
+      </motion.header>
 
-      {/* ── Header ── */}
-      <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-end",
-        marginBottom: 32, flexWrap: "wrap", gap: 16, display: "flex" }}>
-        <div>
-          <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
-            letterSpacing: "0.08em", color: C.textFaint, marginBottom: 10 }}>Mi Estudio</div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em" }}>
-            Perfil de creador
-          </h1>
-          <p style={{ margin: "10px 0 0", fontSize: 14, color: C.textSec }}>
-            Así te ven los espectadores en GMA Filmo.
-          </p>
-        </div>
+      <motion.div variants={rise}>
+        <ProfileHero
+          studioName={form.studioName} artistName={form.artistName} role={form.role} location={form.location} bio={form.bio}
+          socials={socialLinks} verified={c.verified} logoColors={c.logoColors} avatarUrl={images.avatar} bannerUrl={images.banner}
+          publishedCount={publishedCount} avgRating={c.stats.avgRating} busy={busyImage}
+          onPickImage={(kind, file) => void handlePickImage(kind, file)} onRemoveImage={(kind) => void handleRemoveImage(kind)}
+        />
+      </motion.div>
 
-        {/* Button slot — shared */}
-        <div className={styles.actions} style={row(10)}>
-          {editing && (
-            <button className="st-btn st-btn-ghost" onClick={() => setEditing(false)}>
-              <X size={15} /> Cancelar
-            </button>
-          )}
-          {editing ? (
-            <button className="st-btn st-btn-accent" disabled={!dirty || saving}
-              onClick={() => void handleSave()}>
-              <Check size={15} strokeWidth={2.2} /> {saving ? "Guardando…" : "Guardar cambios"}
-            </button>
-          ) : (
-            <button className="st-btn st-btn-accent" onClick={() => setEditing(true)}>
-              <Pencil size={14} /> Editar perfil
-            </button>
-          )}
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <motion.div variants={rise}>
+          <Panel title="Identidad" description="Cómo te presentas en tu ficha y en los créditos.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label="Nombre del estudio" value={form.studioName} onChange={(v) => set("studioName", v)} required />
+              <TextField label="Nombre artístico" value={form.artistName} onChange={(v) => set("artistName", v)} />
+              <TextField label="Rol o disciplina" value={form.role} onChange={(v) => set("role", v)} placeholder="Directora, animador…" />
+              <TextField label="Ubicación" value={form.location} onChange={(v) => set("location", v)} placeholder="Ciudad, país" />
+            </div>
+          </Panel>
+        </motion.div>
+        <motion.div variants={rise}>
+          <Panel title="Sobre ti" description="Unas líneas sobre tu trabajo: qué haces y qué te mueve.">
+            <TextAreaField label="Biografía" value={form.bio} onChange={(v) => set("bio", v)} maxLength={BIO_MAX} rows={6} />
+          </Panel>
+        </motion.div>
+        <motion.div variants={rise} className="lg:col-span-2">
+          <Panel title="Redes sociales" description="Opcional. Aparecen bajo tu biografía para que el público te encuentre.">
+            <SocialLinksPanel values={socialLinks} onChange={setSocial} accentColor="#2AC57A" />
+          </Panel>
+        </motion.div>
       </div>
 
-      {/* ── View: etiqueta en grande ── */}
-      {!editing && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
-
-          {/* Profile card — protagonista */}
-          <div style={{ width: "100%", maxWidth: 540, borderRadius: 20, overflow: "hidden",
-            border: `1px solid ${C.border2}`, background: C.w6 }}>
-
-            {/* Banner */}
-            <div style={{ height: 140, position: "relative",
-              background: `linear-gradient(120deg, ${c.logoColors.from}, ${c.logoColors.to})` }}>
-              <div style={{ position: "absolute", inset: 0,
-                background: "radial-gradient(80% 120% at 80% 0%, rgba(255,255,255,0.18), transparent 60%)" }} />
-              <div style={{ position: "absolute", inset: 0,
-                backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)" }} />
-            </div>
-
-            {/* Content */}
-            <div className={styles.profileCardBody} style={{ padding: "0 28px 28px", marginTop: -46 }}>
-              <StudioLogo colors={c.logoColors} size={90} name={form.studioName} rounded={20} imageUrl={avatarUrl ?? undefined} />
-
-              <div style={{ ...row(10), marginTop: 16, alignItems: "center", minWidth: 0 }}>
-                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em", minWidth: 0 }}>
-                  {form.studioName}
-                </h2>
-                {c.verified && <CheckCircle2 size={20} color={C.accentH} strokeWidth={2.2} />}
-              </div>
-
-              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 5, color: C.textMuted }}>
-                {form.artistName}
-                {form.role && <span style={{ color: C.textFaint }}> · {form.role}</span>}
-              </div>
-
-              {form.location && (
-                <div style={{ ...row(5), marginTop: 8, fontSize: 13, color: C.textFaint, fontWeight: 600 }}>
-                  <MapPin size={13} /> {form.location}
-                </div>
-              )}
-
-              {/* Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 1, marginTop: 22, background: C.border1, borderRadius: 12, overflow: "hidden" }}>
-                {([
-                  ["Títulos",    c.stats.published],
-                  ["Seguidores", c.stats.followers == null ? "—" : fmt(c.stats.followers)],
-                  ["Valoración", c.stats.avgRating?.toFixed(1) ?? "—"],
-                ] as [string, string | number][]).map(([l, v]) => (
-                  <div key={l} style={{ background: C.w6, padding: "16px 0", textAlign: "center" }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.02em" }}>{v}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase",
-                      letterSpacing: "0.09em", color: C.textFaint, marginTop: 4 }}>{l}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bio */}
-              {form.bio && (
-                <p style={{ margin: "20px 0 0", fontSize: 14, lineHeight: 1.65, color: C.textSec }}>
-                  {form.bio}
-                </p>
-              )}
-
-              {/* Socials */}
-              {Object.values(socialLinks).some((v) => v.trim()) && (
-                <div style={{ ...row(14), marginTop: 18, flexWrap: "wrap" }}>
-                  {Object.entries(socialLinks).filter(([, v]) => v.trim()).map(([key, value]) => {
-                    const platform = getSocialPlatform(key);
-                    const href = socialUrl(key, value);
-                    if (!platform || !href) return null;
-                    return (
-                      <a key={key} href={href} target="_blank" rel="noopener noreferrer" style={{ ...row(5), color: C.textSec, fontSize: 13, fontWeight: 600 }}>
-                        <SocialPlatformIcon platform={platform} size={14} /> {socialDisplayText(key, value.trim())}
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-
-              <button className="st-btn st-btn-secondary"
-                style={{ width: "100%", marginTop: 22, borderRadius: 10, justifyContent: "center" }}>
-                Seguir al estudio
+      <AnimatePresence>
+        {isDirty && (
+          <motion.div role="region" aria-label="Cambios sin guardar"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-x-4 bottom-6 z-40 mx-auto flex max-w-[560px] flex-wrap items-center justify-between gap-3 rounded-full border border-white/10 bg-[#0C1611]/90 py-2 pl-5 pr-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            <span className="text-[13.5px] font-semibold text-white">Tienes cambios sin guardar</span>
+            <span className="flex gap-2">
+              <button type="button" onClick={handleDiscard} disabled={isSaving}
+                className="min-h-10 rounded-full px-4 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:text-white disabled:opacity-50">Descartar</button>
+              <button type="button" onClick={() => void handleSave()} disabled={isSaving}
+                className="min-h-10 rounded-full bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] shadow-[0_8px_24px_-8px_rgba(34,177,107,0.7)] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
+                {isSaving ? "Guardando…" : "Guardar cambios"}
               </button>
-            </div>
-          </div>
-
-          {/* Hint */}
-          <div style={{ ...row(9), fontSize: 12.5, color: C.textFaint }}>
-            <Info size={14} />
-            Esta es tu etiqueta pública tal como la ven los espectadores. Pulsa «Editar perfil» para modificarla.
-          </div>
-        </div>
-      )}
-
-      {/* ── View: formulario de edición ── */}
-      {editing && (
-        <div className={styles.profileEdit} style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
-
-          {/* Left: form */}
-          <div style={col(22)}>
-            {/* Identity */}
-            <div style={card({ padding: 24 })}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
-                letterSpacing: "0.08em", color: C.textFaint, marginBottom: 18 }}>Identidad del estudio</div>
-              <div style={{ ...row(18), marginBottom: 22, flexWrap: "wrap", display: "flex" }}>
-                <div style={{ position: "relative" }}>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    style={{ display: "none" }}
-                    onChange={(e) => void handleAvatarFileChange(e)}
-                  />
-                  <StudioLogo colors={c.logoColors} size={78} name={form.studioName} rounded={18} imageUrl={avatarUrl ?? undefined} />
-                  <button className="st-btn st-btn-secondary st-btn-icon"
-                    style={{ position: "absolute", bottom: -6, right: -6, width: 30, height: 30,
-                      borderRadius: 999, background: "var(--gma-panel)", opacity: avatarBusy ? 0.5 : 1 }}
-                    disabled={avatarBusy}
-                    onClick={() => avatarInputRef.current?.click()}>
-                    <ImageIcon size={14} />
-                  </button>
-                </div>
-                <div className={styles.profileLogoHelp} style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 13, color: C.textSec, marginBottom: 12 }}>
-                    Logo o foto del estudio. PNG, JPG o SVG · mín. 400×400px.
-                  </div>
-                  <div style={row(9)}>
-                    <button className="st-btn st-btn-secondary st-btn-sm"
-                      style={{ opacity: avatarBusy ? 0.5 : 1 }}
-                      disabled={avatarBusy}
-                      onClick={() => avatarInputRef.current?.click()}>
-                      <Upload size={14} /> {avatarAction === "uploading" ? "Subiendo…" : "Subir"}
-                    </button>
-                    <button className="st-btn st-btn-ghost st-btn-sm st-btn-danger"
-                      style={{ opacity: avatarBusy ? 0.5 : 1 }}
-                      disabled={avatarBusy}
-                      onClick={() => void handleAvatarRemove()}>
-                      {avatarAction === "removing" ? "Quitando…" : "Quitar"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.fields2} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <Field label="Nombre del estudio">
-                  <input className="st-input" value={form.studioName} onChange={e => set("studioName", e.target.value)} />
-                </Field>
-                <Field label="Nombre artístico">
-                  <input className="st-input" value={form.artistName} onChange={e => set("artistName", e.target.value)} />
-                </Field>
-                <Field label="Rol / disciplina">
-                  <input className="st-input" value={form.role} onChange={e => set("role", e.target.value)} />
-                </Field>
-                <Field label="Ubicación">
-                  <input className="st-input" value={form.location} onChange={e => set("location", e.target.value)} />
-                </Field>
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div style={card({ padding: 24 })}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
-                letterSpacing: "0.08em", color: C.textFaint, marginBottom: 16 }}>Biografía</div>
-              <Field label="Sobre el estudio" hint={`${form.bio.length}/280`}>
-                <textarea className="st-textarea" style={{ minHeight: 120 }} maxLength={280}
-                  value={form.bio} onChange={e => set("bio", e.target.value)} />
-              </Field>
-            </div>
-
-            {/* Socials */}
-            <div style={card({ padding: 24 })}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
-                letterSpacing: "0.08em", color: C.textFaint, marginBottom: 16 }}>
-                Redes sociales <span style={{ color: C.textFaint, textTransform: "none", letterSpacing: 0 }}>· opcional</span>
-              </div>
-              <SocialLinksPanel values={socialLinks} onChange={setSocial} accentColor={C.accentH} />
-            </div>
-          </div>
-
-          {/* Right: live preview */}
-          <div>
-            <div className={styles.profilePreview} style={{ position: "sticky", top: 100 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
-                letterSpacing: "0.08em", color: C.textFaint, marginBottom: 12 }}>Vista previa</div>
-              <div style={card({ overflow: "hidden" })}>
-                <div style={{ height: 96, position: "relative",
-                  background: `linear-gradient(120deg, ${c.logoColors.from}, ${c.logoColors.to})` }}>
-                  <div style={{ position: "absolute", inset: 0,
-                    background: "radial-gradient(80% 120% at 80% 0%, rgba(255,255,255,0.18), transparent 60%)" }} />
-                  <div style={{ position: "absolute", inset: 0,
-                    backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 4px)" }} />
-                </div>
-                <div style={{ padding: "0 20px 20px", marginTop: -34 }}>
-                  <StudioLogo colors={c.logoColors} size={66} name={form.studioName} rounded={15} imageUrl={avatarUrl ?? undefined} />
-                  <div style={{ ...row(8), marginTop: 12, alignItems: "center" }}>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{form.studioName}</h3>
-                    {c.verified && <CheckCircle2 size={15} color={C.accentH} strokeWidth={2.2} />}
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 600, marginTop: 3, color: C.textMuted }}>
-                    {form.artistName}{form.role && ` · ${form.role}`}
-                  </div>
-                  <div style={{ ...row(14), marginTop: 14 }}>
-                    {([["Títulos", c.stats.published], ["Seguidores", c.stats.followers == null ? "—" : fmt(c.stats.followers)], ["Valoración", c.stats.avgRating?.toFixed(1) ?? "—"]] as [string, string | number][]).map(([l, v]) => (
-                      <div key={l}>
-                        <div style={{ fontSize: 16, fontWeight: 800 }}>{v}</div>
-                        <div style={{ fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ marginTop: 14, fontSize: 12, lineHeight: 1.55, color: C.textSec }}>{form.bio}</p>
-                  <button className="st-btn st-btn-secondary"
-                    style={{ width: "100%", marginTop: 16, borderRadius: 10, justifyContent: "center" }}>
-                    Seguir al estudio
-                  </button>
-                </div>
-              </div>
-              <div style={card({ marginTop: 14, padding: "13px 16px", display: "flex", gap: 10, alignItems: "center" })}>
-                <Info size={15} color={C.textMuted} style={{ flexShrink: 0 }} />
-                <p style={{ margin: 0, fontSize: 12, color: C.textSec }}>
-                  Los cambios se reflejan al instante en tu página pública.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

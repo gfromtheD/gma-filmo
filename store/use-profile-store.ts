@@ -9,16 +9,17 @@ export interface Profile {
   readonly name: string;
   readonly avatarId: string;
   readonly color: string;
-  readonly isKids: boolean;
-  readonly requirePin: boolean;
-  readonly pin: string;
-  readonly autoplay: boolean;
 }
 
 export interface ActiveProfile {
   readonly id: string;
   readonly name: string;
-  readonly isKids: boolean;
+}
+
+interface ProfileData {
+  name: string;
+  avatarId: string;
+  color: string;
 }
 
 interface ProfileStore {
@@ -30,41 +31,21 @@ interface ProfileStore {
   readonly checkOwner: (userId: string | null) => Promise<void>;
   readonly setActiveProfile:   (profile: ActiveProfile) => void;
   readonly clearActiveProfile: () => void;
-  readonly addProfile: (data: {
-    name: string; avatarId: string; color: string;
-    isKids?: boolean; requirePin?: boolean; pin?: string; autoplay?: boolean;
-  }) => Promise<Profile>;
-  readonly updateProfile: (id: string, data: {
-    name: string; avatarId: string; color: string;
-    isKids?: boolean; requirePin?: boolean; pin?: string; autoplay?: boolean;
-  }) => Promise<void>;
+  readonly addProfile: (data: ProfileData) => Promise<Profile>;
+  readonly updateProfile: (id: string, data: ProfileData) => Promise<void>;
   readonly removeProfile: (id: string) => Promise<void>;
 }
 
 // ── DB row → Profile ──────────────────────────────────────────────────────────
+// Las columnas is_kids, require_pin, pin y autoplay de `sub_profiles` ya no se usan: la app no las lee ni las escribe
+// (la base de datos les da su valor por defecto al crear un perfil).
 
-type SubProfileRow = {
-  id: string;
-  name: string;
-  avatar_id: string;
-  color: string;
-  is_kids: boolean;
-  require_pin: boolean;
-  pin: string | null;
-  autoplay: boolean;
-};
+const COLUMNS = "id, name, avatar_id, color";
+
+type SubProfileRow = { id: string; name: string; avatar_id: string; color: string };
 
 function rowToProfile(r: SubProfileRow): Profile {
-  return {
-    id:         r.id,
-    name:       r.name,
-    avatarId:   r.avatar_id,
-    color:      r.color,
-    isKids:     r.is_kids,
-    requirePin: r.require_pin,
-    pin:        r.pin ?? "",
-    autoplay:   r.autoplay,
-  };
+  return { id: r.id, name: r.name, avatarId: r.avatar_id, color: r.color };
 }
 
 export const useProfileStore = create<ProfileStore>()(
@@ -87,7 +68,7 @@ export const useProfileStore = create<ProfileStore>()(
         const supabase = getSupabaseBrowserClient();
         const { data, error } = await supabase
           .from("sub_profiles")
-          .select("id, name, avatar_id, color, is_kids, require_pin, pin, autoplay")
+          .select(COLUMNS)
           .eq("user_id", userId)
           .order("created_at", { ascending: true });
 
@@ -96,7 +77,7 @@ export const useProfileStore = create<ProfileStore>()(
         // Restore active profile only if it still exists
         const prev = get().activeProfile;
         const activeProfile = prev && profiles.some((p) => p.id === prev.id)
-          ? prev
+          ? { id: prev.id, name: prev.name }
           : null;
 
         set({ profiles, activeProfile, _ownerId: userId });
@@ -106,24 +87,15 @@ export const useProfileStore = create<ProfileStore>()(
 
       clearActiveProfile: () => set({ activeProfile: null }),
 
-      addProfile: async ({ name, avatarId, color, isKids = false, requirePin = false, pin = "", autoplay = true }) => {
+      addProfile: async ({ name, avatarId, color }) => {
         const userId = get()._ownerId;
         if (!userId) throw new Error("No active user");
 
         const supabase = getSupabaseBrowserClient();
         const { data, error } = await supabase
           .from("sub_profiles")
-          .insert({
-            user_id:     userId,
-            name,
-            avatar_id:   avatarId,
-            color,
-            is_kids:     isKids,
-            require_pin: requirePin,
-            pin:         requirePin ? pin : null,
-            autoplay,
-          })
-          .select("id, name, avatar_id, color, is_kids, require_pin, pin, autoplay")
+          .insert({ user_id: userId, name, avatar_id: avatarId, color })
+          .select(COLUMNS)
           .single();
 
         if (error || !data) throw new Error(error?.message ?? "Failed to create profile");
@@ -133,37 +105,19 @@ export const useProfileStore = create<ProfileStore>()(
         return profile;
       },
 
-      updateProfile: async (id, { name, avatarId, color, isKids, requirePin, pin, autoplay }) => {
+      updateProfile: async (id, { name, avatarId, color }) => {
         const supabase = getSupabaseBrowserClient();
         const { error } = await supabase
           .from("sub_profiles")
-          .update({
-            name,
-            avatar_id:   avatarId,
-            color,
-            ...(isKids     !== undefined ? { is_kids:     isKids }                              : {}),
-            ...(requirePin !== undefined ? { require_pin: requirePin }                          : {}),
-            ...(requirePin !== undefined ? { pin: requirePin ? (pin ?? null) : null }           : {}),
-            ...(autoplay   !== undefined ? { autoplay }                                         : {}),
-          })
+          .update({ name, avatar_id: avatarId, color })
           .eq("id", id);
 
         if (error) throw new Error(error.message);
 
-        set((s) => {
-          const profiles = s.profiles.map((p) =>
-            p.id === id ? { ...p, name, avatarId: avatarId, color,
-              ...(isKids     !== undefined ? { isKids }                                 : {}),
-              ...(requirePin !== undefined ? { requirePin }                             : {}),
-              ...(requirePin !== undefined ? { pin: requirePin ? (pin ?? "") : "" }     : {}),
-              ...(autoplay   !== undefined ? { autoplay }                               : {}),
-            } : p,
-          );
-          const activeProfile = s.activeProfile?.id === id
-            ? { ...s.activeProfile, name, ...(isKids !== undefined ? { isKids } : {}) }
-            : s.activeProfile;
-          return { profiles, activeProfile };
-        });
+        set((s) => ({
+          profiles: s.profiles.map((p) => (p.id === id ? { ...p, name, avatarId, color } : p)),
+          activeProfile: s.activeProfile?.id === id ? { ...s.activeProfile, name } : s.activeProfile,
+        }));
       },
 
       removeProfile: async (id) => {

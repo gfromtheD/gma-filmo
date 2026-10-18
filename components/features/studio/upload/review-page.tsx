@@ -16,7 +16,6 @@ interface ReviewPageProps {
   readonly onGoToTitles?: () => void;
   readonly isSubmitting: boolean;
   readonly result: SubmitResult | null;
-  readonly engineConnected: boolean;
 }
 
 const doneUrl = (asset: { readonly status: string; readonly url: string | null } | null) => (asset?.status === "done" ? asset.url : null);
@@ -37,7 +36,7 @@ const CHIP = "rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[13p
  * Última pantalla de la subida: no es un paso, es la vista previa de la ficha ya rellenada, con lo que falta (si algo
  * falta) y el botón de enviar a revisión.
  */
-export function ReviewPage({ draft, update, reviews, goToStep, onBack, onSubmit, onGoToTitles, isSubmitting, result, engineConnected }: ReviewPageProps) {
+export function ReviewPage({ draft, update, reviews, goToStep, onBack, onSubmit, onGoToTitles, isSubmitting, result }: ReviewPageProps) {
   const ready = isReadyToSubmit(draft);
   const pending = reviews.filter((r) => r.status === "incomplete");
   const banner = doneUrl(draft.images.banner);
@@ -130,11 +129,6 @@ export function ReviewPage({ draft, update, reviews, goToStep, onBack, onSubmit,
           label={<>Confirmo que soy propietario/a de la obra o tengo permiso para publicarla, y acepto los <Link href="/terminos" target="_blank" className="font-bold text-[#22B16B] underline">términos de uso</Link>.</>}
           checked={draft.acceptedTerms} onChange={(v) => update({ acceptedTerms: v })}
         />
-        {!engineConnected && (
-          <p className="rounded-[8px] border border-[#E8B84B]/30 bg-[#E8B84B]/10 p-3 text-[13.5px] leading-5 text-[#F0D58A]">
-            El motor de subida todavía no está conectado: tu título queda preparado y comprobado, y el envío se completará cuando se conecte.
-          </p>
-        )}
         {!ready && <p className="text-[13px] text-[#A8A8A8]">El botón se activa cuando todo está completo y aceptas los términos.</p>}
         {result && (
           <p role={result.status === "error" ? "alert" : "status"} className={`rounded-[8px] p-3 text-[14px] ${result.status === "error" ? "bg-[#ff5252]/10 text-[#ff9b9b]" : "bg-[#22B16B]/10 text-[#7BE0AC]"}`}>

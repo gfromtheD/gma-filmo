@@ -75,6 +75,8 @@ export interface Creator {
 
 export interface StudioData {
   creator: Creator;
+  /** Bytes que ocupan los títulos del creador (suma de `peliculas.file_size_bytes`). */
+  storageUsedBytes: number;
   titles: StudioTitle[];
   recentComments: CreatorComment[];
   viewsTrend: ViewsTrendPoint[];

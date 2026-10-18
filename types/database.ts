@@ -28,6 +28,8 @@ export type Database = {
           instagram_url: string | null
           vimeo_url: string | null
           avatar_url: string | null
+          banner_url: string | null
+          notify_ratings: boolean
           social_links: Json
         }
         Insert: {
@@ -43,6 +45,8 @@ export type Database = {
           instagram_url?: string | null
           vimeo_url?: string | null
           avatar_url?: string | null
+          banner_url?: string | null
+          notify_ratings?: boolean
           social_links?: Json
         }
         Update: {
@@ -58,6 +62,8 @@ export type Database = {
           instagram_url?: string | null
           vimeo_url?: string | null
           avatar_url?: string | null
+          banner_url?: string | null
+          notify_ratings?: boolean
           social_links?: Json
         }
         Relationships: []
@@ -745,72 +751,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      dm_conversations: {
-        Row: {
-          created_at: string
-          creator_id: string
-          id: string
-          last_message: string | null
-          other_color: string | null
-          other_display_name: string | null
-          updated_at: string
-          viewer_id: string
-        }
-        Insert: {
-          created_at?: string
-          creator_id: string
-          id?: string
-          last_message?: string | null
-          other_color?: string | null
-          other_display_name?: string | null
-          updated_at?: string
-          viewer_id: string
-        }
-        Update: {
-          created_at?: string
-          creator_id?: string
-          id?: string
-          last_message?: string | null
-          other_color?: string | null
-          other_display_name?: string | null
-          updated_at?: string
-          viewer_id?: string
-        }
-        Relationships: []
-      }
-      dm_messages: {
-        Row: {
-          content: string
-          conversation_id: string
-          created_at: string
-          id: string
-          is_deleted: boolean
-          reactions: Json
-          reply_to_id: string | null
-          sender_id: string
-        }
-        Insert: {
-          content: string
-          conversation_id: string
-          created_at?: string
-          id?: string
-          is_deleted?: boolean
-          reactions?: Json
-          reply_to_id?: string | null
-          sender_id: string
-        }
-        Update: {
-          content?: string
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          is_deleted?: boolean
-          reactions?: Json
-          reply_to_id?: string | null
-          sender_id?: string
-        }
-        Relationships: []
       }
     }
     Views: {

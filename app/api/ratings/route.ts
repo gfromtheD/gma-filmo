@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
 import { rateLimit } from "@/lib/api/rate-limit";
+import { notifyRating } from "@/lib/notifications/server";
 
 const PostSchema = z.object({
   peliculaId: z.number().int().positive(),
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
   revalidateTag("ratings"); // la nota media del catálogo se recalcula al momento, sin esperar a la caché
+  await notifyRating({ peliculaId, raterUserId: userId, raterProfileId: profileId, stars: score });
   return NextResponse.json({ ok: true });
 }
 

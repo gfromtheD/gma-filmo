@@ -6,6 +6,8 @@ import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
 import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorShorts, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
+import { getStudioBanner } from "@/lib/supabase/studio-banner";
+import { CREATOR_PROFILES_TAG } from "@/lib/studio-creator-banner";
 import { FILM_LONG_SYNOPSES } from "@/lib/data/film-long-synopses";
 
 // ── Deterministic visual style from slug ─────────────────────────────────────
@@ -443,6 +445,18 @@ type AnyClient = ReturnType<typeof getSupabasePublicClient> & { from: (t: string
 export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
   return unstable_cache(
     async () => {
+      const profile = await resolveCreatorBySlug(slug);
+      if (!profile) return null;
+      // El banner que el creador sube en Mi Estudio manda sobre la portada del catálogo.
+      const banner = await getStudioBanner(profile.nombre, profile.titulos);
+      return banner ? { ...profile, imagen_portada: banner } : profile;
+    },
+    [`creator-with-short-v4-${slug}`],
+    { revalidate: 3600, tags: [CREATOR_PROFILES_TAG] },
+  )();
+}
+
+async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
       const films = await getPeliculas();
       const associated = creatorShorts(slug, films);
       if (!associated.length) return null;
@@ -484,10 +498,6 @@ export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | n
         editorial: true,
         source_url: catalog?.source_url ?? null,
       };
-    },
-    [`creator-with-short-v3-${slug}`],
-    { revalidate: 3600 },
-  )();
 }
 
 export async function getCreatorFilmsByTitulos(titulos: readonly string[]): Promise<MovieMedia[]> {

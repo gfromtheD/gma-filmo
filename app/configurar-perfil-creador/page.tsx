@@ -195,7 +195,7 @@ export default function ConfigurarPerfilCreadorPage() {
       setLoading(false);
     } else {
       document.cookie = "gma_creator_setup=; path=/; max-age=0; SameSite=Lax";
-      setActiveProfile({ id: "__supabase__", name: creatorName.trim(), isKids: false });
+      setActiveProfile({ id: "__supabase__", name: creatorName.trim() });
       void refreshCreatorAvatar(); // que la píldora ya tenga la foto nueva al aterrizar
 
       // Misma animación de bienvenida que el selector de perfiles, pero disparada
