@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { useTransitionStore } from "@/store/use-transition-store";
+import { BRAND_GREEN, useTransitionStore } from "@/store/use-transition-store";
+import { prefersDarkText } from "@/lib/profiles/color-contrast";
+
+/** Texto legible sobre el color del perfil: oscuro sobre fondos claros, blanco sobre oscuros. */
+function textOn(background: string): { greeting: string; name: string } {
+  if (background.toLowerCase() === BRAND_GREEN.toLowerCase()) return { greeting: "rgba(3,26,14,0.5)", name: "#031A0E" };
+  return prefersDarkText(background)
+    ? { greeting: "rgba(0,0,0,0.5)", name: "#0B0F0D" }
+    : { greeting: "rgba(255,255,255,0.62)", name: "#FFFFFF" };
+}
 
 export function ProfileTransitionOverlay() {
   const pathname      = usePathname();
@@ -14,6 +23,7 @@ export function ProfileTransitionOverlay() {
   const profileName   = useTransitionStore((s) => s.profileName);
   const greeting      = useTransitionStore((s) => s.greeting);
   const variant       = useTransitionStore((s) => s.variant);
+  const profileColor  = useTransitionStore((s) => s.color);
   const startPath     = useTransitionStore((s) => s.startPath);
   const startContract = useTransitionStore((s) => s.startContract);
   const reset         = useTransitionStore((s) => s.reset);
@@ -21,11 +31,12 @@ export function ProfileTransitionOverlay() {
   const [textFading, setTextFading] = useState(false);
 
   // Variante "creator": misma animación pero invertida — círculo negro,
-  // texto verde — para diferenciarla del selector de perfiles (verde de siempre).
+  // texto verde — para diferenciarla del selector de perfiles (color del perfil elegido).
   const isCreator      = variant === "creator";
-  const circleColor    = isCreator ? "#04100A" : "#22B16B";
-  const greetingColor  = isCreator ? "rgba(62,217,139,0.55)" : "rgba(3,26,14,0.5)";
-  const nameColor      = isCreator ? "#3ED98B" : "#031A0E";
+  const viewerText     = textOn(profileColor);
+  const circleColor    = isCreator ? "#04100A" : profileColor;
+  const greetingColor  = isCreator ? "rgba(62,217,139,0.55)" : viewerText.greeting;
+  const nameColor      = isCreator ? "#3ED98B" : viewerText.name;
 
   useEffect(() => {
     if (phase !== "expanding" || pathname === startPath) return;

@@ -2,11 +2,13 @@ const SOCIAL_HOSTS: Record<string, string[]> = {
   instagram: ["instagram.com"], tiktok: ["tiktok.com"], youtube: ["youtube.com", "youtu.be"],
   x: ["x.com", "twitter.com"], threads: ["threads.net", "threads.com"],
   facebook: ["facebook.com", "fb.com"], vimeo: ["vimeo.com"],
+  letterboxd: ["letterboxd.com", "boxd.it"],
 };
 const SOCIAL_PREFIXES: Record<string, string> = {
   instagram: "https://instagram.com/", tiktok: "https://tiktok.com/@",
   youtube: "https://youtube.com/@", x: "https://x.com/",
   threads: "https://threads.net/@", facebook: "https://facebook.com/", vimeo: "https://vimeo.com/",
+  letterboxd: "https://letterboxd.com/",
 };
 
 export function externalUrl(value: string | null | undefined): string | null {

@@ -237,7 +237,7 @@ test("el borrador se guarda solo y sigue ahí al recargar", async ({ page }) => 
   await goStep(page, "Crea tu ficha");
   await page.getByLabel(req("Título")).fill("Nieve");
   await page.getByLabel(/^Título original/).fill("Snow");
-  await expect(page.getByText("Borrador guardado en este navegador.")).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Borrador guardado.")).toBeVisible({ timeout: 5000 });
   await page.reload({ waitUntil: "load" });
   await goStep(page, "Crea tu ficha");
   await expect(page.getByLabel(req("Título"))).toHaveValue("Nieve");
@@ -265,8 +265,9 @@ test("recorrido completo: con todo lo obligatorio, la revisión deja enviar", as
   await page.getByRole("button", { name: "Añadir persona" }).click();
   await page.getByLabel(req("Nombre")).first().fill("Ana Pérez");
   await expect(page.getByLabel(/^Papel/)).toContainText("Director/a"); // la primera persona entra como director/a
-  await page.getByLabel(/^Duración/).fill("12");
-  await page.getByLabel(/^Año de estreno/).fill("2025");
+  await page.getByRole("textbox", { name: "Minutos" }).fill("12"); // duración: 0 h 12 min
+  const year = String(new Date().getFullYear() - 1);
+  await pick(page, /^Año de estreno/, year);
   await pick(page, /^País de producción/, "España");
   await page.getByLabel(req("Categoría")).click();
   await page.getByRole("option", { name: "Animación" }).click();
@@ -283,9 +284,7 @@ test("recorrido completo: con todo lo obligatorio, la revisión deja enviar", as
   await page.getByLabel(/acepto los términos de uso/).check();
   await expect(page.getByRole("button", { name: "Enviar a revisión" })).toBeEnabled();
   await page.getByRole("button", { name: "Enviar a revisión" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "motor" })).toBeVisible({ timeout: 10_000 });
-  // El motor no está conectado: lo dice claramente
-  await expect(page.getByText("El motor de subida todavía no está conectado")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /título/ })).toBeVisible({ timeout: 10_000 });
 });
 
 test("en móvil nada se sale por los lados y los pasos se desplazan en horizontal", async ({ page }) => {

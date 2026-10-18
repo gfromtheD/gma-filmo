@@ -12,12 +12,12 @@ import { IMAGE_SLOTS, LIMITS, type ImageSlotId } from "@/lib/studio/catalogs";
  */
 export function FichaStep(props: StepProps) {
   const { draft, update, files, showErrors } = props;
-  const drop = (id: ImageSlotId, className: string, placeholder?: React.ReactNode) => {
+  const drop = (id: ImageSlotId, className: string, placeholder?: React.ReactNode, adviceClassName?: string, doneBadge?: "tick" | "chip") => {
     const spec = IMAGE_SLOTS.find((s) => s.id === id)!;
     return (
       <ImageDrop
         label={spec.label} required={spec.required} asset={draft.images[id]} className={className} placeholder={placeholder}
-        hint={`${spec.width} × ${spec.height} px`} advice={files.advice[id]}
+        hint={`${spec.width} × ${spec.height} px`} advice={files.advice[id]} adviceClassName={adviceClassName} doneBadge={doneBadge}
         onFile={(f) => files.upload(id, "image", f, { width: spec.width, height: spec.height })}
         onRemove={() => files.remove(id)}
       />
@@ -31,7 +31,9 @@ export function FichaStep(props: StepProps) {
       </div>
 
       <div className="overflow-hidden rounded-[14px] border border-white/10 bg-black/40 backdrop-blur-md">
-        {drop("banner", "aspect-video w-full rounded-none border-0", <span aria-hidden="true" className="mb-1 text-[28px] text-white/30">▭</span>)}
+        {drop("banner", "aspect-video w-full rounded-none border-0", <span aria-hidden="true" className="mb-1 text-[28px] text-white/30">▭</span>,
+          // el cartel se monta sobre la esquina izquierda del banner: el aviso va a la derecha, por encima, sin tocarlo
+          "relative z-[4] mr-4 mt-2 max-w-[calc(100%-160px)] self-end justify-end text-right sm:mr-8 sm:max-w-[calc(100%-240px)]", "chip")}
 
         <div className="relative z-[3] -mt-14 grid gap-5 px-4 pb-6 sm:-mt-24 sm:grid-cols-[170px_minmax(0,1fr)] sm:px-8">
           <div className="w-[120px] self-start shadow-[0_12px_32px_rgba(0,0,0,0.6)] sm:w-[170px]">

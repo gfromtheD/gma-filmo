@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { useActiveProfileId } from "@/hooks/use-active-profile-id";
+import { readSettingsPrefs } from "@/hooks/use-settings-prefs";
 
 export interface ProgressEntry {
   currentTime: number;
@@ -47,7 +48,8 @@ export function useProgress() {
     async (numericId: number, currentTime: number, completed: boolean): Promise<void> => {
       const updatedAt = Date.now();
       setEntries((prev) => ({ ...prev, [numericId]: { currentTime, completed, updatedAt } }));
-      if (!userId) return;
+      // Configuración → «Pausar historial»: lo visto no se guarda (solo se recuerda mientras dura la visita).
+      if (!userId || readSettingsPrefs().pauseHistory) return;
       await getSupabaseBrowserClient()
         .from("view_history")
         .upsert(
@@ -70,5 +72,18 @@ export function useProgress() {
     [entries],
   );
 
-  return { entries, saveProgress, getProgress, ready };
+  /** Borra todo el historial de este perfil (y con él «Seguir viendo»). Devuelve `true` si salió bien. */
+  const clearHistory = useCallback(async (): Promise<boolean> => {
+    if (!userId) return false;
+    const { error } = await getSupabaseBrowserClient()
+      .from("view_history")
+      .delete()
+      .eq("user_id", userId)
+      .eq("profile_id", profileId);
+    if (error) return false;
+    setEntries({});
+    return true;
+  }, [userId, profileId]);
+
+  return { entries, saveProgress, getProgress, ready, clearHistory };
 }

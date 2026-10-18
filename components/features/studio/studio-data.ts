@@ -19,6 +19,7 @@ export const STUDIO_DATA: StudioData = {
     stats: { titles: 0, published: 0, totalViews: null, avgRating: null, followers: null },
   },
   titles: [],
+  storageUsedBytes: 0,
   recentComments: [],
   viewsTrend: [],
   ratingBreakdown: [],

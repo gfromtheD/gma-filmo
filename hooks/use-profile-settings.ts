@@ -5,19 +5,11 @@ import { useState, useEffect, useCallback } from "react";
 export interface ProfileSettings {
   avatarIconId:   string;   // IconId key or "" (uses initial circle)
   avatarImageUrl: string;   // "/profiles/..." or "data:..." or ""
-  isKids:         boolean;
-  requirePin:     boolean;
-  pin:            string;   // 4-digit string
-  autoplay:       boolean;
 }
 
 export const DEFAULT_SETTINGS: ProfileSettings = {
   avatarIconId:   "",
   avatarImageUrl: "",
-  isKids:         false,
-  requirePin:     false,
-  pin:            "",
-  autoplay:       true,
 };
 
 function storageKey(userId: string) {
@@ -27,12 +19,18 @@ function storageKey(userId: string) {
 export function useProfileSettings(userId: string | null) {
   const [settings, setSettings] = useState<ProfileSettings>(DEFAULT_SETTINGS);
 
-  // Load from localStorage once userId is known
+  // Load from localStorage once userId is known. Si quedan claves antiguas (niños, PIN…), se ignoran.
   useEffect(() => {
     if (!userId) return;
     try {
       const raw = localStorage.getItem(storageKey(userId));
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) as Partial<ProfileSettings> });
+      if (raw) {
+        const stored = JSON.parse(raw) as Partial<ProfileSettings>;
+        setSettings({
+          avatarIconId: typeof stored.avatarIconId === "string" ? stored.avatarIconId : DEFAULT_SETTINGS.avatarIconId,
+          avatarImageUrl: typeof stored.avatarImageUrl === "string" ? stored.avatarImageUrl : DEFAULT_SETTINGS.avatarImageUrl,
+        });
+      }
     } catch { /* ignore parse errors */ }
   }, [userId]);
 

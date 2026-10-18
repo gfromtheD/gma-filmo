@@ -62,6 +62,17 @@ function actionsFor(t: StudioTitle, handlers: {
   ];
 }
 
+/** Tarjeta translúcida, la misma superficie de cristal que los paneles del Panel de Mi Estudio. */
+function glass(extra?: React.CSSProperties): React.CSSProperties {
+  return {
+    background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015))",
+    border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 24px 60px -30px rgba(0,0,0,0.9)",
+    backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+    ...extra,
+  };
+}
+
 interface Handlers {
   onOpen: (t: StudioTitle) => void;
   onEdit: (t: StudioTitle) => void;
@@ -72,7 +83,7 @@ interface Handlers {
 
 function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
-    <div style={card({ padding: 12, display: "flex", flexDirection: "column" })}>
+    <div style={glass({ padding: 12, display: "flex", flexDirection: "column" })}>
       <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", cursor: "pointer", width: "100%", padding: 0, border: 0, background: "transparent", color: "inherit", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} hover />
         <div style={{ position: "absolute", top: 9, left: 9 }}><StatusBadge status={t.status} size="sm" /></div>
@@ -121,7 +132,7 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
 
 function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
-    <div className={styles.listRow} style={card({ padding: 12, display: "grid",
+    <div className={styles.listRow} style={glass({ padding: 12, display: "grid",
       gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, alignItems: "center" })}>
       <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ width: 52, cursor: "pointer", padding: 0, border: 0, background: "transparent", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} rounded={7} />
@@ -265,17 +276,17 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
 
       {/* Toolbar */}
       <div style={{ ...row(), justifyContent: "space-between", marginBottom: 20, gap: 14, flexWrap: "wrap", display: "flex" }}>
-        <div style={{ ...row(8), flexWrap: "wrap" }}>
+        <div style={{ ...row(14), flexWrap: "wrap" }}>
           {FILTERS.map(f => {
             const active = filter === f.id;
             const count = f.id === "todos" ? data.titles.length : (counts[f.id] ?? 0);
             return (
-              <button key={f.id} onClick={() => setFilter(f.id)} style={{
-                padding: "8px 14px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit",
-                fontSize: 13, fontWeight: 700, border: `1px solid ${active ? C.accent30 : C.border2}`,
-                background: active ? C.accent15 : C.w4,
-                color: active ? C.accentH : C.textSec,
-                transition: "all 0.16s ease",
+              <button key={f.id} type="button" aria-pressed={active} onClick={() => setFilter(f.id)}
+                className={active ? undefined : "hover:!text-white"} style={{
+                padding: "8px 6px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: 13.5, fontWeight: 700, border: 0, background: "transparent",
+                color: active ? C.accentH : C.textMuted,
+                transition: "color 0.16s ease",
               }}>
                 {f.label} <span style={{ opacity: 0.6, marginLeft: 2 }}>{count}</span>
               </button>
@@ -304,7 +315,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
       </div>
 
       {list.length === 0 ? (
-        <div style={card({ padding: "60px 20px", textAlign: "center" })}>
+        <div style={glass({ padding: "60px 20px", textAlign: "center" })}>
           <div style={{ color: C.textFaint, margin: "0 auto 14px", display: "flex", justifyContent: "center" }}>
             <Search size={36} />
           </div>

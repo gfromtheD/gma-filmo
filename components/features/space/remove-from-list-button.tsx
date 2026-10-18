@@ -23,6 +23,8 @@ interface RemoveFromListButtonProps {
   readonly onRemove: () => void;
   /** Clases de posición y visibilidad (aparece al pasar el cursor sobre el cartel). */
   readonly className?: string;
+  /** Nombre accesible; por defecto, quitar de Guardados. */
+  readonly label?: string;
 }
 
 /**
@@ -30,7 +32,7 @@ interface RemoveFromListButtonProps {
  * al pulsarla da un saltito suave y abre la tapa, en la línea del icono de guardar pero con tono de borrado.
  * El título se quita al terminar la animación. Con «reducir movimiento» se quita al instante.
  */
-export function RemoveFromListButton({ onRemove, className = "" }: RemoveFromListButtonProps) {
+export function RemoveFromListButton({ onRemove, className = "", label = "Quitar de Mi Lista" }: RemoveFromListButtonProps) {
   const [removing, setRemoving] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onRemoveRef = useRef(onRemove);
@@ -62,7 +64,7 @@ export function RemoveFromListButton({ onRemove, className = "" }: RemoveFromLis
     <button
       type="button"
       onClick={handleClick}
-      aria-label="Quitar de Mi Lista"
+      aria-label={label}
       className={`flex h-11 w-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-6px] focus-visible:outline-white ${className}`}
     >
       <span

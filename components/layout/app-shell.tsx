@@ -3,7 +3,6 @@ import { SiteAurora } from "@/components/layout/site-aurora";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { TAB_BAR_HEIGHT_PX } from "@/lib/constants/layout";
-import { DMWindow } from "@/components/features/dm/dm-window";
 
 interface AppShellProps {
   readonly children: React.ReactNode;
@@ -22,7 +21,6 @@ export function AppShell({ children }: AppShellProps) {
           del todo. En móvil se reserva el alto de la barra inferior para que no tape el final. */}
       <SiteFooter insetClassName="pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[calc(var(--gma-tabbar-h)+env(safe-area-inset-bottom))] lg:pb-[env(safe-area-inset-bottom)]" />
       <MobileTabBar />
-      <DMWindow />
     </div>
   );
 }

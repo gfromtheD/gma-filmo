@@ -10,12 +10,16 @@ const ROOT = path.resolve(__dirname, "..", "..");
 // `lib/data` es contenido (sinopsis, títulos), no estilos: allí «Georgia» puede ser el estado de EE. UU.
 const DIRS = ["app", "components", "lib", "hooks"];
 const SKIP_DIRS = new Set(["fonts", "data"]);
+// El HTML de «Descargar mis datos» se abre fuera de la web: usa la fuente del sistema a propósito, porque la licencia
+// de Satoshi (ITF FFL) prohíbe entregar la fuente a terceros, y un archivo descargado no puede cargarla.
+const SKIP_FILES = new Set([path.join("lib", "export", "user-data.ts")]);
 const EXTENSIONS = new Set([".ts", ".tsx", ".css"]);
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) return SKIP_DIRS.has(entry.name) ? [] : sourceFiles(full);
+    if (SKIP_FILES.has(path.relative(ROOT, full))) return [];
     return EXTENSIONS.has(path.extname(entry.name)) ? [full] : [];
   });
 }

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const usedBytes = (existing ?? []).reduce((sum: number, r: { file_size_bytes?: number }) => sum + (r.file_size_bytes ?? 0), 0);
   if (usedBytes + fileSize > FREE_QUOTA) {
     return NextResponse.json(
-      { error: "Has alcanzado tu límite de almacenamiento gratuito de 10 GB" },
+      { error: "Has alcanzado tu límite de almacenamiento gratuito de 5 GB" },
       { status: 413 }
     );
   }

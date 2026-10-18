@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Globe } from "@/components/ui/icons";
-import { siInstagram, siTiktok, siYoutube, siX, siFacebook, siThreads, siVimeo } from "simple-icons";
+import { siInstagram, siTiktok, siYoutube, siX, siFacebook, siThreads, siVimeo, siLetterboxd } from "simple-icons";
 
 export interface SocialPlatform {
   key: string;
@@ -13,6 +13,7 @@ export interface SocialPlatform {
   path?: string;
   hex?: string;
   handleStyle?: boolean; // true → se muestra con "@" delante
+  iconScale?: number;    // logos que se leen mal a tamaño pequeño se dibujan más grandes
 }
 
 export const SOCIAL_PLATFORMS: SocialPlatform[] = [
@@ -23,6 +24,7 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   { key: "threads",   label: "Threads",   prefix: "threads.net/@",   placeholder: "usuario", path: siThreads.path,   hex: `#${siThreads.hex}`,   handleStyle: true },
   { key: "facebook",  label: "Facebook",  prefix: "facebook.com/",   placeholder: "página",  path: siFacebook.path,  hex: `#${siFacebook.hex}` },
   { key: "vimeo",     label: "Vimeo",     prefix: "vimeo.com/",      placeholder: "estudio", path: siVimeo.path,     hex: `#${siVimeo.hex}` },
+  { key: "letterboxd", label: "Letterboxd", prefix: "letterboxd.com/", placeholder: "usuario",   path: siLetterboxd.path, hex: `#${siLetterboxd.hex}`, iconScale: 1.35 },
   { key: "website",   label: "Web",       prefix: "https://",        placeholder: "tu-web.com" },
 ];
 
@@ -39,8 +41,9 @@ export function socialDisplayText(key: string, value: string): string {
 
 export function SocialPlatformIcon({ platform, size = 18 }: { platform: SocialPlatform; size?: number }) {
   if (!platform.path) return <Globe size={size} />;
+  const drawn = Math.round(size * (platform.iconScale ?? 1));
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg width={drawn} height={drawn} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d={platform.path} />
     </svg>
   );

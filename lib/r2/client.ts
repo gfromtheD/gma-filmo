@@ -23,7 +23,8 @@ export const UPLOAD_CAPS: Record<string, number> = {
   poster_v:  10  * 1024 * 1024,   // 10 MB
   subtitles: 5   * 1024 * 1024,   // 5 MB
   avatar:    5   * 1024 * 1024,   // 5 MB
+  banner:    10  * 1024 * 1024,   // 10 MB
 };
 
 export const SESSION_CAP = 6  * 1024 ** 3;  // 6 GB per upload session
-export const FREE_QUOTA  = 10 * 1024 ** 3;  // 10 GB total free tier
+export const FREE_QUOTA  = 5 * 1024 ** 3;   // 5 GB gratis por creador (ver lib/studio/storage-plan.ts)
