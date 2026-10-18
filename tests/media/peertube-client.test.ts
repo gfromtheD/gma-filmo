@@ -22,7 +22,7 @@ test('PeerTube client uses server OAuth singleflight and exact resumable wire co
       reply(response, 201, '', { Location: `${origin}/api/v1/videos/upload-resumable?upload_id=lease-1` });
     } else if (request.method === 'PUT' && url.searchParams.has('upload_id')) {
       if (request.headers['content-range'] === 'bytes */12') { assert.equal(body, ''); assert.equal(request.headers['content-length'], '0'); reply(response, 308, '', { Range: 'bytes=0-7' }); }
-      else if (request.headers['content-range'] === 'bytes 8-11/12') reply(response, 200, JSON.stringify({ uuid: '66666666-6666-4666-8666-666666666666' }));
+      else if (request.headers['content-range'] === 'bytes 8-11/12') reply(response, 200, JSON.stringify({ video: { id: 1, shortUUID: 'dfhVxfm7eLqTNCRWz1gwj4', uuid: '66666666-6666-4666-8666-666666666666' } }));
       else reply(response, 308, '', { Range: 'bytes=0-7' });
     } else reply(response, 404);
   })().catch(() => reply(response, 500)); });
@@ -80,4 +80,23 @@ test('PeerTube maps 404/429/503 safely and coalesces simultaneous OAuth refreshe
   await Promise.all([client.getVideo('66666666-6666-4666-8666-666666666666'), client.getPrivateFileToken('66666666-6666-4666-8666-666666666666')]);
   assert.equal(oldTokenCalls, 2);
   assert.equal(tokenCalls, 2, 'one initial token plus one coalesced refresh');
+});
+
+test('putUploadChunk reads the final UUID from the real PeerTube body and from the legacy flat body, and rejects anything else', async () => {
+  const uuid = '77777777-7777-4777-8777-777777777777';
+  const bodies: unknown[] = [{ video: { id: 1, shortUUID: 'dfhVxfm7eLqTNCRWz1gwj4', uuid } }, { uuid }, { video: { id: 1 } }];
+  let current: unknown = null;
+  const client = new PeerTubeClient({ baseUrl: 'https://peertube.example', username: 'u', password: 'p', channelId: 1, fetch: async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/api/v1/oauth-clients/local') return new Response(JSON.stringify({ client_id: 'id', client_secret: 'secret' }), { status: 200 });
+    if (url.pathname === '/api/v1/users/token') return new Response(JSON.stringify({ access_token: 't', expires_in: 3600 }), { status: 200 });
+    return new Response(JSON.stringify(current), { status: 200 });
+  } });
+  const location = 'https://peertube.example/api/v1/videos/upload-resumable?upload_id=lease-1';
+  for (const [index, body] of bodies.entries()) {
+    current = body;
+    const attempt = client.putUploadChunk(location, 0, 3, 4, new TextEncoder().encode('abcd'));
+    if (index < 2) assert.equal((await attempt).uuid, uuid);
+    else await assert.rejects(attempt, (error: unknown) => error instanceof Error && 'code' in error && error.code === 'MEDIA_PROVIDER_UNAVAILABLE');
+  }
 });

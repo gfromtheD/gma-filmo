@@ -60,7 +60,7 @@ async function peerTubeHarness() {
       if (range === 'bytes */12') {
         assert.equal(body.length, 0);
         if (final) reply(response, 404);
-        else reply(response, 308, undefined, offset ? { Range: `bytes=0-${offset - 1}` } : {});
+        else reply(response, 308, undefined, { Range: `bytes=0-${offset - 1}` });
         return;
       }
       calls.put.push(range); const match = /^bytes (\d+)-(\d+)\/12$/.exec(range); assert.ok(match);
@@ -70,7 +70,7 @@ async function peerTubeHarness() {
       if (offset === 12) {
         final = true;
         if (dropFinal) { dropFinal = false; response.destroy(); return; }
-        reply(response, 200, { uuid: videoUUID });
+        reply(response, 200, { video: { id: 1, shortUUID: 'dfhVxfm7eLqTNCRWz1gwj4', uuid: videoUUID } });
       } else reply(response, 308, undefined, { Range: `bytes=0-${offset - 1}` });
     } else if (url.pathname === '/api/v1/users/me/videos' && request.method === 'GET') {
       const all = listings ?? [{ uuid: videoUUID, name: correlation, channel: { id: 73 }, privacy: { id: 3 } }];

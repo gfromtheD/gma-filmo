@@ -4,7 +4,11 @@ import { MediaError } from '../errors';
 const tokenSchema = z.object({ access_token: z.string().min(1), refresh_token: z.string().optional(), expires_in: z.number().positive().optional() }).passthrough();
 const configSchema = z.object({ serverVersion: z.string(), tracker: z.object({ enabled: z.boolean() }).passthrough(), transcoding: z.object({ hls: z.object({ enabled: z.boolean() }).passthrough() }).passthrough() }).passthrough();
 const meSchema = z.object({ id: z.number(), videoChannels: z.array(z.object({ id: z.number(), name: z.string() }).passthrough()) }).passthrough();
-const uploadFinalSchema = z.object({ uuid: z.string().uuid() }).passthrough();
+// PeerTube 8.x answers the last resumable PUT with `{ video: { id, shortUUID, uuid } }`; the flat `{ uuid }` is kept for compatibility.
+const uploadFinalSchema = z.union([
+  z.object({ video: z.object({ uuid: z.string().uuid() }).passthrough() }).passthrough().transform((body) => body.video.uuid),
+  z.object({ uuid: z.string().uuid() }).passthrough().transform((body) => body.uuid),
+]);
 const videoSchema = z.object({ uuid: z.string().uuid(), duration: z.number().nonnegative(), state: z.object({ id: z.number().int() }).passthrough(),
   streamingPlaylists: z.array(z.object({ playlistUrl: z.string(), files: z.array(z.unknown()).optional() }).passthrough()) }).passthrough();
 const fileTokenSchema = z.object({ files: z.object({ token: z.string().min(1), expires: z.string() }).passthrough() }).passthrough();
@@ -158,7 +162,7 @@ export class PeerTubeClient {
     if (![200, 201, 308].includes(response.status)) throw this.statusError(response.status);
     const final = response.status === 200 || response.status === 201 ? uploadFinalSchema.safeParse(response.body) : null;
     if (final && !final.success) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
-    return { status: response.status, range: response.headers.get('range'), uuid: final?.success ? final.data.uuid : null };
+    return { status: response.status, range: response.headers.get('range'), uuid: final?.success ? final.data : null };
   }
 
   async queryUploadOffset(location: string, total: number): Promise<{ status: number; range: string | null }> {
