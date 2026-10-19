@@ -7,7 +7,7 @@ import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { avatarContentFromId } from "@/lib/profiles/avatar";
 import { lockPageScroll } from "@/lib/scroll-lock";
-import { renderAvatar } from "@/lib/data/profile-avatars";
+import { isValidIconId, renderAvatar } from "@/lib/data/profile-avatars";
 import { ColorSheet, PhotoSheet, SIDE_SHEET_GAP, SIDE_SHEET_WIDTH, type SheetPlacement } from "./profile-edit-sheets";
 
 const NAME_MAX = 30;
@@ -20,7 +20,7 @@ function AvatarFill({ name, color, iconId, imageUrl }: { name: string; color: st
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={imageUrl} alt="" className="size-full rounded-full object-cover" />;
   }
-  if (iconId) return <div className="size-full overflow-hidden rounded-full">{renderAvatar(iconId, color)}</div>;
+  if (iconId && isValidIconId(iconId)) return <div className="size-full overflow-hidden rounded-full">{renderAvatar(iconId, color)}</div>;
   return (
     <div className="flex size-full items-center justify-center rounded-full text-[44px] font-extrabold text-[#03200F]" style={{ background: color }}>
       {(name.trim()[0] ?? "?").toUpperCase()}
