@@ -325,6 +325,8 @@ export type Database = {
           display_name: string
           id: string
           updated_at: string | null
+          username: string
+          username_changed_at: string | null
         }
         Insert: {
           avatar_color?: string | null
@@ -334,6 +336,8 @@ export type Database = {
           display_name?: string
           id: string
           updated_at?: string | null
+          username?: string
+          username_changed_at?: string | null
         }
         Update: {
           avatar_color?: string | null
@@ -343,6 +347,8 @@ export type Database = {
           display_name?: string
           id?: string
           updated_at?: string | null
+          username?: string
+          username_changed_at?: string | null
         }
         Relationships: []
       }
@@ -804,6 +810,7 @@ export type Database = {
       gma_title_command: { Args: { p_owner: string; p_action: string; p_payload: Json }; Returns: Json }
       gma_title_restore_version: { Args: { p_owner: string; p_title_id: number; p_expected_revision: number; p_restore_revision: number; p_idempotency_key: string }; Returns: Json }
       gma_upload_command: { Args: { p_owner: string; p_action: string; p_payload: Json }; Returns: Json }
+      username_available: { Args: { candidate: string }; Returns: boolean }
       [key: string]: { Args: Record<string, unknown>; Returns: Json }
     }
     Enums: {

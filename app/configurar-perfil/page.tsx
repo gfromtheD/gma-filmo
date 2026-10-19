@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import {
+  USERNAME_MAX, normalizeUsername, usernameErrorMessage, usernameProblem, usernameSaveError,
+} from "@/lib/profiles/username";
 
 const COLORS = [
   { id: "green",  hex: "#22B16B", label: "Verde" },
@@ -16,6 +19,10 @@ const COLORS = [
 export default function ConfigurarPerfilPage() {
   const router    = useRouter();
   const [name,    setName]    = useState("");
+  // @ público: llega el provisional que puso la base de datos; si lo cambia aquí, cuenta como su primer cambio.
+  const [username,        setUsername]        = useState("");
+  const [initialUsername, setInitialUsername] = useState("");
+  const [usernameError,   setUsernameError]   = useState<string | null>(null);
   const [color,   setColor]   = useState<string>(COLORS[0]!.hex);
   const [loading, setLoading] = useState(false);
   const [init,    setInit]    = useState(true);
@@ -28,9 +35,11 @@ export default function ConfigurarPerfilPage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_color")
+        .select("display_name, avatar_color, username")
         .eq("id", user.id)
         .maybeSingle();
+      setUsername(data?.username ?? "");
+      setInitialUsername(data?.username ?? "");
 
       // Skip setup if a real name is already saved
       const name = data?.display_name?.trim() ?? "";
@@ -66,9 +75,18 @@ export default function ConfigurarPerfilPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.replace("/"); return; }
 
+    const nextUsername = normalizeUsername(username);
+    const problem = nextUsername && nextUsername !== initialUsername ? usernameProblem(nextUsername) : null;
+    if (problem) { setUsernameError(usernameErrorMessage(problem)); setLoading(false); return; }
+
     await supabase
       .from("profiles")
       .upsert({ id: user.id, display_name: trimmed, avatar_color: color });
+
+    if (nextUsername && nextUsername !== initialUsername) {
+      const { error } = await supabase.from("profiles").update({ username: nextUsername }).eq("id", user.id);
+      if (error) { setUsernameError(usernameErrorMessage(usernameSaveError(error))); setLoading(false); return; }
+    }
 
     router.push("/perfiles");
     router.refresh();
@@ -125,7 +143,7 @@ export default function ConfigurarPerfilPage() {
           {/* Name */}
           <div>
             <label className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#585858]">
-              Nombre
+              Tu nombre
             </label>
             <input
               type="text"
@@ -137,7 +155,36 @@ export default function ConfigurarPerfilPage() {
               className="min-w-0 w-full rounded-md border border-gma-line-strong bg-gma-panel px-4 py-3 text-[16px] text-white placeholder-[#585858] outline-none transition-colors focus:border-[#22B16B]/60"
               required
             />
+            <p className="mt-1.5 text-[12px] text-[#686868]">Privado: solo lo ves tú.</p>
           </div>
+
+          {/* @usuario */}
+          {initialUsername && (
+            <div>
+              <label htmlFor="username" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-widest text-[#585858]">
+                Nombre de usuario
+              </label>
+              <div className="flex min-w-0 items-center rounded-md border border-gma-line-strong bg-gma-panel px-4 transition-colors focus-within:border-[#22B16B]/60">
+                <span aria-hidden="true" className="text-[16px] text-[#585858]">@</span>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => { setUsername(e.target.value); setUsernameError(null); }}
+                  maxLength={USERNAME_MAX + 1}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-invalid={usernameError ? true : undefined}
+                  aria-describedby="username-hint"
+                  className="min-w-0 w-full bg-transparent py-3 pl-0.5 text-[16px] text-white outline-none"
+                />
+              </div>
+              <p id="username-hint" role="status" className={`mt-1.5 text-[12px] ${usernameError ? "text-[#ff7b7b]" : "text-[#686868]"}`}>
+                {usernameError ?? "Público: es como te verán los demás al comentar. Puedes dejar este o elegir el tuyo."}
+              </p>
+            </div>
+          )}
 
           {/* Color */}
           <div>

@@ -7,7 +7,7 @@ import { useTransitionStore, type TransitionVariant } from "@/store/use-transiti
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
-import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
+import { COLOR_VALUES, isValidIconId, type AvatarColor } from "@/lib/data/profile-avatars";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { avatarContentFromId } from "@/lib/profiles/avatar";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -54,7 +54,7 @@ export function ProfileSelector() {
     return {
       name:       p.name,
       color:      colorHex,
-      iconId:     isImage ? "" : p.avatarId,
+      iconId:     !isImage && isValidIconId(p.avatarId) ? p.avatarId : "",
       imageUrl:   isImage ? p.avatarId : "",
     };
   }
@@ -63,7 +63,8 @@ export function ProfileSelector() {
     const colorKey = (Object.keys(COLOR_VALUES) as AvatarColor[]).find(
       (k) => COLOR_VALUES[k] === values.color,
     ) ?? "green";
-    const avatarId = values.imageUrl || values.iconId || "estrella";
+    // Sin foto ni icono se guarda "": el perfil muestra su inicial.
+    const avatarId = values.imageUrl || values.iconId || "";
 
     if (editingSubId) {
       await updateProfile(editingSubId, { name: values.name, avatarId, color: colorKey });

@@ -2,7 +2,7 @@
 
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useProfileStore } from "@/store/use-profile-store";
-import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
+import { COLOR_VALUES, isValidIconId, type AvatarColor } from "@/lib/data/profile-avatars";
 
 export interface ActiveProfileDisplay {
   displayName:    string;
@@ -39,7 +39,8 @@ export function useActiveProfileDisplay(): ActiveProfileDisplay {
   return {
     displayName:    subProfile.name,
     avatarColor:    colorHex,
-    avatarIconId:   isImage ? "" : subProfile.avatarId,
+    // Un icono fuera del catálogo (p. ej. el antiguo «estrella») cuenta como ninguno: se ve la inicial.
+    avatarIconId:   !isImage && isValidIconId(subProfile.avatarId) ? subProfile.avatarId : "",
     avatarImageUrl: isImage ? subProfile.avatarId : "",
     isSubProfile:   true,
   };

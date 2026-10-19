@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { COLOR_VALUES, renderAvatar, type AvatarColor } from "@/lib/data/profile-avatars";
+import { COLOR_VALUES, isValidIconId, renderAvatar, type AvatarColor } from "@/lib/data/profile-avatars";
 import { readableOn } from "@/lib/profiles/color-contrast";
 
 const FALLBACK_COLORS = ["#22B16B", "#E5654B", "#C28BE6", "#5B8FB0", "#E8C672"] as const;
@@ -57,7 +57,8 @@ export function ProfileAvatar({ name, url, iconId, color, size = 45 }: ProfileAv
     );
   }
 
-  if (iconId) {
+  // Un icono que no está en el catálogo (p. ej. el antiguo «estrella») no se dibuja como otro: se usa la inicial.
+  if (iconId && isValidIconId(iconId)) {
     return (
       <div aria-hidden="true" className={frame} style={frameStyle}>
         {renderAvatar(iconId, hex, fill ? undefined : size)}

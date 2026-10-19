@@ -13,11 +13,17 @@ import {
 import { useProfileStore } from "@/store/use-profile-store";
 import { avatarContentFromId, pickAvatar } from "@/lib/profiles/avatar";
 import { resizeToAvatarDataUrl } from "@/lib/profiles/image-resize";
+import { normalizeUsername, usernameProblem, usernameSaveError, type UsernameSaveError } from "@/lib/profiles/username";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
+  // Nombre personal: privado, solo lo ve su dueño.
   displayName:      string;
+  // @usuario (sin la arroba): público y único; es el nombre que ven los demás. "" hasta que carga.
+  username:         string;
+  // Último cambio elegido del @; null = sigue el provisional (el primer cambio es libre).
+  usernameChangedAt: Date | null;
   email:            string | null;
   memberSince:      Date | null;
   avatarColor:      string;
@@ -36,6 +42,8 @@ interface UserProfileContextValue extends UserProfile, ProfileSettings {
   userId:               string | null;
   isLoaded:             boolean;
   updateDisplayName:    (name: string) => Promise<void>;
+  /** Guarda un @ nuevo. Devuelve null si se guardó o el motivo por el que no. */
+  updateUsername:       (username: string) => Promise<UsernameSaveError | null>;
   updateAvatarColor:    (color: string) => Promise<void>;
   updateSettings:       (patch: Partial<ProfileSettings>) => void;
   refreshCreatorAvatar: () => Promise<void>;
@@ -54,6 +62,8 @@ export function deriveAvatarColor(email: string): string {
 
 const UserProfileContext = createContext<UserProfileContextValue>({
   displayName:       "",
+  username:          "",
+  usernameChangedAt: null,
   email:             null,
   memberSince:       null,
   avatarColor:       "#22B16B",
@@ -64,6 +74,7 @@ const UserProfileContext = createContext<UserProfileContextValue>({
   isLoaded:          false,
   ...DEFAULT_SETTINGS,
   updateDisplayName:    async () => {},
+  updateUsername:       async () => "unknown",
   updateAvatarColor:    async () => {},
   updateSettings:       () => {},
   refreshCreatorAvatar: async () => {},
@@ -85,6 +96,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
   const [profile, setProfile] = useState<UserProfile>({
     displayName:      "",
+    username:         "",
+    usernameChangedAt: null,
     email:            null,
     memberSince:      null,
     avatarColor:      "#22B16B",
@@ -102,11 +115,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     const supabase = getSupabaseBrowserClient();
 
     async function load() {
-      const [{ data: { user } }, { data: profileRow }, { data: creatorRow }] = await Promise.all([
+      const [{ data: { user } }, { data: profileRow, error: profileError }, { data: creatorRow }] = await Promise.all([
         supabase.auth.getUser(),
         supabase
           .from("profiles")
-          .select("display_name, avatar_color, avatar_url, avatar_id")
+          .select("display_name, avatar_color, avatar_url, avatar_id, username, username_changed_at")
           .eq("id", userId!)
           .maybeSingle(),
         supabase
@@ -121,12 +134,16 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       const emailLocal   = (user.email ?? "").split("@")[0] ?? "";
       const defaultColor = deriveAvatarColor(user.email ?? "");
 
-      if (!profileRow) {
-        await supabase.from("profiles").upsert({
+      // Solo si de verdad no hay fila: si la consulta falla, crearla pisaría el nombre guardado.
+      // La base de datos le da un @ provisional al crearla.
+      let createdUsername = "";
+      if (!profileRow && !profileError) {
+        const { data: created } = await supabase.from("profiles").upsert({
           id:           userId!,
           display_name: emailLocal,
           avatar_color: defaultColor,
-        });
+        }).select("username").maybeSingle();
+        createdUsername = created?.username ?? "";
       }
 
       const savedName  = profileRow?.display_name?.trim() ?? "";
@@ -134,6 +151,8 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
       setProfile({
         displayName:      savedName && savedName !== "Espectador" ? savedName : emailLocal,
+        username:         profileRow?.username ?? createdUsername,
+        usernameChangedAt: profileRow?.username_changed_at ? new Date(profileRow.username_changed_at) : null,
         email:            user.email ?? null,
         memberSince:      user.created_at ? new Date(user.created_at) : null,
         avatarColor:      savedColor || defaultColor,
@@ -166,6 +185,27 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     await getSupabaseBrowserClient()
       .from("profiles")
       .upsert({ id: userId, display_name: trimmed });
+  }, [userId]);
+
+  // La base de datos comprueba que esté libre y el plazo de 30 días; aquí solo se adelanta el formato.
+  const updateUsername = useCallback(async (input: string): Promise<UsernameSaveError | null> => {
+    if (!userId) return "unknown";
+    const next = normalizeUsername(input);
+    const problem = usernameProblem(next);
+    if (problem) return problem;
+    const { data, error } = await getSupabaseBrowserClient()
+      .from("profiles")
+      .update({ username: next })
+      .eq("id", userId)
+      .select("username, username_changed_at")
+      .single();
+    if (error || !data) return usernameSaveError(error);
+    setProfile((prev) => ({
+      ...prev,
+      username: data.username,
+      usernameChangedAt: data.username_changed_at ? new Date(data.username_changed_at) : null,
+    }));
+    return null;
   }, [userId]);
 
   const updateAvatarColor = useCallback(async (color: string) => {
@@ -230,6 +270,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         userId,
         isLoaded,
         updateDisplayName,
+        updateUsername,
         updateAvatarColor,
         updateSettings: updateSettingsAndAvatar,
         refreshCreatorAvatar,

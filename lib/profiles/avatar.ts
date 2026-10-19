@@ -10,6 +10,8 @@
  *  - o una imagen subida e incrustada («data:image/webp;base64,…»), ya reducida por el cliente.
  */
 
+import { isValidIconId } from "@/lib/data/profile-avatars";
+
 export type AvatarContent =
   | { readonly kind: "image"; readonly src: string }
   | { readonly kind: "icon"; readonly iconId: string }
@@ -35,8 +37,9 @@ function httpsPhoto(value: string | null | undefined): AvatarContent | null {
 }
 
 /**
- * Identificador de avatar → contenido. `null` si está vacío o es peligroso (esquemas no permitidos,
- * rutas relativas al protocolo, SVG incrustado…); nunca se convierte en foto ni en icono.
+ * Identificador de avatar → contenido. `null` si está vacío, es peligroso (esquemas no permitidos,
+ * rutas relativas al protocolo, SVG incrustado…) o es un icono que no está en el catálogo (p. ej. el antiguo
+ * «estrella»): nunca se convierte en foto ni en icono, y el perfil muestra su inicial.
  */
 export function avatarContentFromId(avatarId: string | null | undefined): AvatarContent | null {
   const id = avatarId?.trim() ?? "";
@@ -44,7 +47,7 @@ export function avatarContentFromId(avatarId: string | null | undefined): Avatar
   if (id.startsWith("/")) return id.startsWith("//") ? null : { kind: "image", src: id };
   if (id.startsWith("data:")) return DATA_IMAGE.test(id) ? { kind: "image", src: id } : null;
   if (id.includes(":")) return isHttpsUrl(id) ? { kind: "image", src: id } : null;
-  return { kind: "icon", iconId: id };
+  return isValidIconId(id) ? { kind: "icon", iconId: id } : null;
 }
 
 /**

@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
   const { data: { user } } = await admin.auth.admin.getUserById(userId);
   const [profile, creatorProfile, watchlist, ratings, history, comments, lists, notifications] = await Promise.all([
-    read("profiles", "id", "display_name"),
+    read("profiles", "id", "display_name, username, username_changed_at"),
     read("creator_profiles", "user_id", "studio_name, creator_name, role, location, bio, social_links"),
     read("watchlist", "user_id", "profile_id, pelicula_id, added_at"),
     read("ratings", "user_id", "profile_id, pelicula_id, score, comment, rated_at"),
