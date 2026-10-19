@@ -372,7 +372,8 @@ function ProfileCard() {
   function handleSaveSub(values: SubProfileValues) {
     if (!subProfile) return;
     const color = (Object.keys(COLOR_VALUES) as AvatarColor[]).find((k) => COLOR_VALUES[k] === values.color) ?? "green";
-    updateProfile(subProfile.id, { name: values.name, avatarId: values.imageUrl || values.iconId || "estrella", color });
+    // Sin foto ni icono se guarda "": el perfil muestra su inicial.
+    updateProfile(subProfile.id, { name: values.name, avatarId: values.imageUrl || values.iconId || "", color });
     setIsEditing(false);
   }
 

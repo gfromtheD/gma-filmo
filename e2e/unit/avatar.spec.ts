@@ -9,6 +9,8 @@ import {
 
 test("interpreta el identificador de avatar: icono, foto o nada", () => {
   expect(avatarContentFromId("cat")).toEqual({ kind: "icon", iconId: "cat" });
+  // Un icono que no está en el catálogo (el antiguo «estrella») no se dibuja como otro: no hay avatar y sale la inicial.
+  expect(avatarContentFromId("estrella")).toBeNull();
   expect(avatarContentFromId("/profiles/profile_01.jpg")).toEqual({ kind: "image", src: "/profiles/profile_01.jpg" });
   expect(avatarContentFromId("https://cdn.example.com/a.png")).toEqual({ kind: "image", src: "https://cdn.example.com/a.png" });
   expect(avatarContentFromId("data:image/webp;base64,AAAA")).toEqual({ kind: "image", src: "data:image/webp;base64,AAAA" });
