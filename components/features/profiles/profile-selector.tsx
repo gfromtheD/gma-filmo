@@ -8,9 +8,7 @@ import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
 import { COLOR_VALUES, isValidIconId, type AvatarColor } from "@/lib/data/profile-avatars";
-import { ProfileAvatar } from "@/components/ui/profile-avatar";
-import { UsernameNudge } from "@/components/features/profiles/username-nudge";
-import { avatarContentFromId } from "@/lib/profiles/avatar";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";import { avatarContentFromId } from "@/lib/profiles/avatar";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const displayItalic: React.CSSProperties = {
@@ -192,7 +190,6 @@ function ScreenA({
           ¿Quién está viendo?
         </h1>
         <p className="mb-9 text-center text-[16px] text-[#7C7C7C] sm:mb-16 sm:text-[18px]">Elige un perfil para continuar</p>
-        <UsernameNudge />
 
         <div className="grid w-full max-w-[1000px] grid-cols-2 justify-items-center gap-x-4 gap-y-8 sm:flex sm:flex-wrap sm:items-start sm:justify-center sm:gap-10">
 

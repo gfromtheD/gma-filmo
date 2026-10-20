@@ -16,7 +16,7 @@ function formatDay(date: Date): string {
 }
 
 /** El @usuario: público y único. Se puede cambiar una vez cada 30 días (el primer cambio, desde el provisional, es libre). */
-export function UsernameField() {
+export function UsernameField({ centered = false }: { readonly centered?: boolean }) {
   const { username, usernameChangedAt, updateUsername } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -57,8 +57,8 @@ export function UsernameField() {
       : `Puedes cambiarlo una vez cada ${USERNAME_COOLDOWN_DAYS} días.`;
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className={centered ? "text-center" : undefined}>
+      <div className={`flex flex-wrap items-center gap-3 ${centered ? "justify-center" : "justify-between"}`}>
         <div className="min-w-0">
           <span className="block break-all text-[15px] font-semibold text-white">{username ? formatHandle(username) : "—"}</span>
           <span className="mt-0.5 block text-[12.5px] text-[#8A8A8A]">{status}</span>
