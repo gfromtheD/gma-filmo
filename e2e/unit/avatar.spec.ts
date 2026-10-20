@@ -89,3 +89,10 @@ test("la huella corta es estable y distingue textos", () => {
   expect(shortHash("hola")).toBe(shortHash("hola"));
   expect(shortHash("hola")).not.toBe(shortHash("adios"));
 });
+
+test("la foto de creador subida por el motor (/api/media/<uuid>) se acepta; otras rutas propias no", () => {
+  const own = "/api/media/0b3c8f0e-5d1a-4a55-9a4e-2f7f3c1d9e11";
+  expect(pickAvatar({ creatorPhoto: own, chosen: "cat" })).toEqual({ kind: "image", src: own });
+  expect(pickAvatar({ creatorPhoto: "/api/media/otra-cosa", chosen: "cat" })).toEqual({ kind: "icon", iconId: "cat" });
+  expect(pickAvatar({ creatorPhoto: "//evil.test/a.png", chosen: "cat" })).toEqual({ kind: "icon", iconId: "cat" });
+});

@@ -31,9 +31,13 @@ function isHttpsUrl(value: string): boolean {
   }
 }
 
-/** Foto de perfil «externa» (creador o cuenta de Google): solo https. */
+/** Foto de creador subida por el motor de subidas: se sirve desde nuestra propia ruta («/api/media/<uuid>»). */
+const OWN_MEDIA_PATH = /^\/api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Foto de perfil «externa» (creador o cuenta de Google): https, o la ruta propia de una foto subida. */
 function httpsPhoto(value: string | null | undefined): AvatarContent | null {
-  return value && isHttpsUrl(value) ? { kind: "image", src: value } : null;
+  if (!value) return null;
+  return isHttpsUrl(value) || OWN_MEDIA_PATH.test(value) ? { kind: "image", src: value } : null;
 }
 
 /**
