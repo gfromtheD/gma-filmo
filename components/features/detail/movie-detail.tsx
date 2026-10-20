@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DetailsTab } from "@/components/features/detail/details-tab";
-import { DetailHeader } from "@/components/features/detail/detail-header";
+import { DETAIL_TERTIARY_ACTION, DetailHeader } from "@/components/features/detail/detail-header";
+import { AddToListMenu } from "@/components/features/space/add-to-list-menu";
+import { List } from "@/components/ui/icons";
 import { AmbientBackdrop } from "@/components/features/home/ambient-backdrop";
 import { DetailTabs, detailPanelId, type DetailTabItem } from "@/components/features/detail/detail-tabs";
 import { PosterCard } from "@/components/ui/poster-card";
@@ -122,6 +124,14 @@ export function MovieDetail({ movie, related, creator, extras: initialExtras = [
         onToggleList={() => void toggleList()}
         onRate={handleRate}
         onShare={() => void handleShare()}
+        listAction={
+          <AddToListMenu numericId={movie.numericId} title={movie.title} onError={notice.showError} onLoginRequired={notice.showLoginRequired} align="center">
+            <button type="button" className={DETAIL_TERTIARY_ACTION}>
+              <List size={22} />
+              A una lista
+            </button>
+          </AddToListMenu>
+        }
       />
 
       <div ref={tabsRef} className="scroll-mt-[var(--gma-header-h)]">

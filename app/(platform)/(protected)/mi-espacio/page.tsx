@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { MySpaceScreen } from "@/components/features/space/my-space-screen";
+import { MyListScreen } from "@/components/features/space/my-list-screen";
 import { GuestGate } from "@/components/ui/guest-gate";
 import { getPeliculas } from "@/lib/supabase/queries";
 
-export const metadata: Metadata = { title: "Mi Espacio" };
+export const metadata: Metadata = { title: "Mi lista" };
 
-export default async function MySpacePage() {
+export default async function MyListPage() {
   const items = await getPeliculas();
   return (
-    <GuestGate message="Tu espacio personal con watchlist, historial y valoraciones requiere una cuenta.">
-      <MySpaceScreen items={items} />
+    <GuestGate message="Para guardar cortos y crear tus propias listas necesitas una cuenta.">
+      <MyListScreen items={items} />
     </GuestGate>
   );
 }

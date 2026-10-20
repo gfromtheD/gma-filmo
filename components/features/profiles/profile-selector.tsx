@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { useTransitionStore, type TransitionVariant } from "@/store/use-transition-store";
 import { useProfileStore, type Profile } from "@/store/use-profile-store";
-import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
 import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
@@ -41,15 +40,9 @@ export function ProfileSelector() {
     isLoaded,
   } = useUserProfile();
 
-  const startExpand = useTransitionStore((s) => s.startExpand);
-
   const [editSupabase, setEditSupabase] = useState(false);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [creatingNew,  setCreatingNew]  = useState(false);
-  const [pinGate, setPinGate] = useState<{
-    id: string; name: string; isKids: boolean; correctPin: string;
-    origin: { x: number; y: number };
-  } | null>(null);
 
   const editingSubProfile = profiles.find((p) => p.id === editingSubId) ?? null;
 
@@ -63,10 +56,6 @@ export function ProfileSelector() {
       color:      colorHex,
       iconId:     isImage ? "" : p.avatarId,
       imageUrl:   isImage ? p.avatarId : "",
-      isKids:     p.isKids,
-      requirePin: p.requirePin,
-      pin:        p.pin,
-      autoplay:   p.autoplay,
     };
   }
 
@@ -77,18 +66,10 @@ export function ProfileSelector() {
     const avatarId = values.imageUrl || values.iconId || "estrella";
 
     if (editingSubId) {
-      await updateProfile(editingSubId, {
-        name: values.name, avatarId, color: colorKey,
-        isKids: values.isKids, requirePin: values.requirePin,
-        pin: values.pin, autoplay: values.autoplay,
-      });
+      await updateProfile(editingSubId, { name: values.name, avatarId, color: colorKey });
       setEditingSubId(null);
     } else {
-      await addProfile({
-        name: values.name, avatarId, color: colorKey,
-        isKids: values.isKids, requirePin: values.requirePin,
-        pin: values.pin, autoplay: values.autoplay,
-      });
+      await addProfile({ name: values.name, avatarId, color: colorKey });
       setCreatingNew(false);
     }
   }
@@ -110,27 +91,10 @@ export function ProfileSelector() {
       {(creatingNew || editingSubId !== null) && (
         <ProfileEditModal
           title={creatingNew ? "Nuevo perfil" : "Editar perfil"}
-          initialValues={editingSubProfile ? toModalValues(editingSubProfile) : { autoplay: true }}
+          initialValues={editingSubProfile ? toModalValues(editingSubProfile) : undefined}
           onSave={(v) => void handleSaveSubProfile(v)}
           onDelete={editingSubId ? () => void handleDeleteSub() : undefined}
           onClose={() => { setEditingSubId(null); setCreatingNew(false); }}
-        />
-      )}
-
-      {pinGate && (
-        <PinGate
-          name={pinGate.name}
-          correctPin={pinGate.correctPin}
-          onSuccess={() => {
-            const key = `gma_profile_visited_${pinGate.id}`;
-            const isFirstVisit = !localStorage.getItem(key);
-            if (isFirstVisit) localStorage.setItem(key, "1");
-            setActiveProfile({ id: pinGate.id, name: pinGate.name, isKids: pinGate.isKids });
-            const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-            startExpand(pinGate.origin, size, pinGate.name, isFirstVisit);
-            setTimeout(() => router.push(nextUrl), 950);
-          }}
-          onCancel={() => setPinGate(null)}
         />
       )}
 
@@ -142,16 +106,12 @@ export function ProfileSelector() {
         profiles={profiles}
         nextUrl={nextUrl}
         onSelectSupabase={() => {
-          setActiveProfile({ id: "__supabase__", name: supabaseName ?? "", isKids: false });
+          setActiveProfile({ id: "__supabase__", name: supabaseName ?? "" });
           router.push(nextUrl);
         }}
-        onSelectSub={(profile, origin) => {
-          if (profile.requirePin && profile.pin) {
-            setPinGate({ id: profile.id, name: profile.name, isKids: profile.isKids, correctPin: profile.pin, origin: origin ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 } });
-          } else {
-            setActiveProfile({ id: profile.id, name: profile.name, isKids: profile.isKids });
-            router.push(nextUrl);
-          }
+        onSelectSub={(profile) => {
+          setActiveProfile({ id: profile.id, name: profile.name });
+          router.push(nextUrl);
         }}
         onEditSupabase={() => setEditSupabase(true)}
         onEditSub={(id) => setEditingSubId(id)}
@@ -175,7 +135,7 @@ function ScreenA({
   profiles:         readonly Profile[];
   nextUrl:          string;
   onSelectSupabase: () => void;
-  onSelectSub:      (profile: Profile, origin?: { x: number; y: number }) => void;
+  onSelectSub:      (profile: Profile) => void;
   onEditSupabase:   () => void;
   onEditSub:        (id: string) => void;
   onAddProfile:     () => void;
@@ -187,15 +147,20 @@ function ScreenA({
   // de la misma animación — solo aplica al perfil principal, nunca a sub-perfiles.
   const isCreatorEntry = nextUrl.startsWith("/mi-estudio");
 
+  // El círculo que se expande usa el color de fondo que el usuario eligió para el perfil.
+  const supabaseColorHex = supabaseColor.startsWith("#")
+    ? supabaseColor
+    : COLOR_VALUES[supabaseColor as AvatarColor] ?? COLOR_VALUES.green;
+
   function triggerNav(
-    rect: DOMRect, navigate: () => void, name: string, profileId: string,
+    rect: DOMRect, navigate: () => void, name: string, profileId: string, color: string,
     variant: TransitionVariant = "viewer",
   ) {
     const key = `gma_profile_visited_${profileId}`;
     const isFirstVisit = !localStorage.getItem(key);
     if (isFirstVisit) localStorage.setItem(key, "1");
     const size = Math.hypot(window.innerWidth, window.innerHeight) * 2.6;
-    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit, variant);
+    startExpand({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, size, name, isFirstVisit, variant, color);
     setTimeout(navigate, 950);
   }
 
@@ -231,7 +196,7 @@ function ScreenA({
           {/* ── Primary Supabase profile ── */}
           {supabaseName !== null && (
             <ProfileCard
-              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "", "__supabase__", isCreatorEntry ? "creator" : "viewer")}
+              onClick={(rect) => triggerNav(rect, onSelectSupabase, supabaseName ?? "", "__supabase__", supabaseColorHex, isCreatorEntry ? "creator" : "viewer")}
               onEdit={onEditSupabase}
               glowColor={supabaseColor}
               label={supabaseName}
@@ -247,15 +212,10 @@ function ScreenA({
             return (
               <ProfileCard
                 key={profile.id}
-                onClick={(rect) =>
-                  profile.requirePin && profile.pin
-                    ? onSelectSub(profile, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
-                    : triggerNav(rect, () => onSelectSub(profile, { x: 0, y: 0 }), profile.name, profile.id)
-                }
+                onClick={(rect) => triggerNav(rect, () => onSelectSub(profile), profile.name, profile.id, colorHex)}
                 onEdit={() => onEditSub(profile.id)}
                 glowColor={colorHex}
                 label={profile.name}
-                badge={profile.isKids ? "niños" : undefined}
               >
                 <ProfileAvatar name={profile.name} color={profile.color} url={content.kind === "image" ? content.src : null} iconId={content.kind === "icon" ? content.iconId : null} size="fill" />
               </ProfileCard>
@@ -285,14 +245,13 @@ function ScreenA({
 // ─── Shared profile card ──────────────────────────────────────────────────────
 
 function ProfileCard({
-  children, onClick, onEdit, glowColor, label, badge,
+  children, onClick, onEdit, glowColor, label,
 }: {
   children:  React.ReactNode;
   onClick:   (rect: DOMRect) => void;
   onEdit:    () => void;
   glowColor: string;
   label:     string;
-  badge?:    string;
 }) {
   const btnRef = useRef<HTMLButtonElement>(null);
   return (
@@ -311,14 +270,6 @@ function ProfileCard({
         <div className="max-w-full break-words text-center text-[15px] font-semibold text-[#C4C4C4] sm:text-[17px] transition-colors group-hover:text-white">
           {label}
         </div>
-        {badge && (
-          <div
-            className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#545454]"
-            style={{ fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}
-          >
-            {badge}
-          </div>
-        )}
         <button
           type="button"
           onClick={onEdit}
@@ -328,98 +279,6 @@ function ProfileCard({
           <PencilIcon size={11} />
           Editar
         </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── PIN gate overlay ─────────────────────────────────────────────────────────
-
-function PinGate({
-  name, correctPin, onSuccess, onCancel,
-}: {
-  name:       string;
-  correctPin: string;
-  onSuccess:  () => void;
-  onCancel:   () => void;
-}) {
-  const viewportBounds = useVisibleViewport();
-  const [digits, setDigits] = useState(["", "", "", ""]);
-  const [error,  setError]  = useState(false);
-  const refs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
-
-  function handleChange(i: number, v: string) {
-    const digit = v.replace(/\D/g, "").slice(-1);
-    const next  = [...digits];
-    next[i]     = digit;
-    setDigits(next);
-    setError(false);
-    if (digit && i < 3) refs[i + 1]?.current?.focus();
-    if (digit && i === 3) {
-      const entered = [...next.slice(0, 3), digit].join("");
-      if (entered === correctPin) { onSuccess(); }
-      else { setError(true); setDigits(["", "", "", ""]); refs[0]?.current?.focus(); }
-    }
-  }
-
-  function handleKeyDown(i: number, e: React.KeyboardEvent) {
-    if (e.key === "Backspace" && !digits[i] && i > 0) {
-      refs[i - 1]?.current?.focus();
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-[700] overflow-y-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
-      role="dialog" aria-modal="true" aria-label={`PIN de ${name}`}
-      style={{ ...viewportBounds, background: "var(--gma-bg)" }}
-    >
-      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center justify-center">
-      <GmaLogo />
-      <div className="mt-8 flex w-full min-w-0 flex-col items-center gap-5 text-center sm:mt-16 sm:gap-6">
-        <h2 className="max-w-full break-words text-[26px] font-extrabold text-white sm:text-[32px]" style={displayItalic}>
-          ¿Quién es {name}?
-        </h2>
-        <p className="text-[15px] text-[#7C7C7C]">Introduce el PIN para acceder</p>
-
-        <div className="mt-2 flex gap-2 sm:gap-4">
-          {refs.map((ref, i) => (
-            <input
-              key={i}
-              ref={ref}
-              type="password"
-              inputMode="numeric"
-              maxLength={1}
-              value={digits[i] ?? ""}
-              autoFocus={i === 0}
-              onChange={(e) => handleChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              className="h-12 w-12 rounded-[14px] sm:h-16 sm:w-16 border text-center text-[28px] font-bold text-white outline-none transition-colors"
-              style={{
-                background:  "var(--gma-surface-2)",
-                borderColor: error ? "#ff5252" : digits[i] ? "#22B16B" : "var(--gma-surface)",
-              }}
-            />
-          ))}
-        </div>
-
-        {error && (
-          <p className="text-[13px] font-semibold text-[#ff5252]">PIN incorrecto. Inténtalo de nuevo.</p>
-        )}
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-4 min-h-11 px-4 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:text-[#7C7C7C]"
-        >
-          Volver a perfiles
-        </button>
-      </div>
       </div>
     </div>
   );

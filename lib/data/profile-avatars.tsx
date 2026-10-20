@@ -21,21 +21,12 @@ export type IconId =
 ;
 
 export type AvatarColor =
-  | "green"
-  | "red"
-  | "orange"
-  | "yellow"
-  | "blue"
-  | "purple"
-  | "pink"
-  | "brown"
-  | "navy"
-  | "cyan"
-  | "lime"
-  | "teal"
-  | "gold"
-  | "crimson"
-  | "violet";
+  | "crimson" | "red"    | "pink"   | "rose"     | "wine"
+  | "orange"  | "peach"  | "gold"   | "yellow"   | "sand"
+  | "lime"    | "mint"   | "green"  | "forest"   | "olive"
+  | "teal"    | "cyan"   | "sky"    | "petrol"   | "blue"
+  | "navy"    | "indigo" | "violet" | "purple"   | "fuchsia"
+  | "lavender"| "brown"  | "copper" | "slate"    | "silver";
 
 export const ICON_IDS: readonly IconId[] = [
   "gma",
@@ -46,10 +37,14 @@ export const ICON_IDS: readonly IconId[] = [
   "space-dj", "star-chef", "robot-pilot",
 ];
 
+// Ordenados por familia, en filas de 5 como la cuadrícula del selector: rojos, naranjas, verdes, azules, morados y neutros.
 export const COLOR_IDS: readonly AvatarColor[] = [
-  "green",  "red",    "orange", "yellow", "blue",
-  "navy",   "purple", "pink",   "teal",   "cyan",
-  "lime",   "brown",  "gold",   "crimson","violet",
+  "crimson",  "red",    "pink",   "rose",   "wine",
+  "orange",   "peach",  "gold",   "yellow", "sand",
+  "lime",     "mint",   "green",  "forest", "olive",
+  "teal",     "cyan",   "sky",    "petrol", "blue",
+  "navy",     "indigo", "violet", "purple", "fuchsia",
+  "lavender", "brown",  "copper", "slate",  "silver",
 ];
 
 export const ICON_LABELS: Record<IconId, string> = {
@@ -86,6 +81,21 @@ export const COLOR_VALUES: Record<AvatarColor, string> = {
   gold:    "#FF8C00",
   crimson: "#B71C1C",
   violet:  "#5E35B1",
+  rose:     "#F8A5C2",
+  wine:     "#7B1F3A",
+  peach:    "#FFAB91",
+  sand:     "#D7B98E",
+  mint:     "#69F0AE",
+  forest:   "#2E7D32",
+  olive:    "#827717",
+  sky:      "#81D4FA",
+  petrol:   "#00697F",
+  indigo:   "#3F51B5",
+  fuchsia:  "#D500F9",
+  lavender: "#B39DDB",
+  copper:   "#B87333",
+  slate:    "#607D8B",
+  silver:   "#B0BEC5",
 };
 
 // ─── Renderer ────────────────────────────────────────────────────────────────

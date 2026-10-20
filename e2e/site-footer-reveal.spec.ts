@@ -42,35 +42,56 @@ test.describe("movimiento normal", () => {
     expect(Math.abs(info.wrapperHeight - info.footerHeight)).toBeLessThanOrEqual(1);
   });
 
-  test("arriba del todo no se ve; al llegar al final se va destapando de abajo arriba", async ({ page }) => {
+  test("asoma primero la franja inferior y, si se sigue bajando, se completa el pie; nunca queda a medias", async ({ page }) => {
     const wrapper = await open(page);
     await expect(wrapper).toHaveAttribute("data-footer-reveal", "on", { timeout: 15_000 });
     await page.waitForTimeout(500);
-    const { vh, h } = await page.evaluate(() => ({
-      vh: window.innerHeight,
-      h: Math.round((document.querySelector("[data-footer-reveal]") as HTMLElement).getBoundingClientRect().height),
-    }));
-    const x = 120; // sobre la marca / texto de la izquierda del pie
+    const { vh, full, peek, max } = await page.evaluate(() => {
+      const zone = document.querySelector("[data-footer-reveal]") as HTMLElement;
+      return {
+        vh: window.innerHeight,
+        full: Math.round(zone.getBoundingClientRect().height),
+        peek: Number(zone.dataset.footerPeek),
+        max: document.documentElement.scrollHeight - window.innerHeight,
+      };
+    });
+    const x = 120; // sobre la parte izquierda del pie
+    const settle = () => page.waitForTimeout(900); // el pie completa su fase al dejar de hacer scroll
 
     // Arriba del todo: nada del pie asoma.
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await footerShowsAt(page, x, vh - 20)).toBe(false);
 
-    // Destapado a medias (150 px): se ve su parte baja, pero aún no la alta.
-    await page.evaluate((offset) => window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight - offset), 150);
-    await page.waitForTimeout(150);
+    // Asoma menos que la franja y se deja de hacer scroll: se completa la franja (año, legal y redes), no más.
+    await page.evaluate((y) => window.scrollTo(0, y), max - full + Math.round(peek / 2));
+    await settle();
     expect(await footerShowsAt(page, x, vh - 20)).toBe(true);
-    expect(await footerShowsAt(page, x, vh - h + 20)).toBe(false);
+    expect(await footerShowsAt(page, x, vh - peek - 40)).toBe(false);
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Política de privacidad" })).toBeInViewport();
 
-    // Al final del todo: entero.
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await page.waitForTimeout(150);
-    expect(await footerShowsAt(page, x, vh - h + 20)).toBe(true);
+    // Se fuerza a media segunda fase y se deja de hacer scroll: se completa el pie entero.
+    await page.evaluate((y) => window.scrollTo(0, y), max - Math.round((full - peek) / 2));
+    await settle();
+    expect(await footerShowsAt(page, x, vh - full + 20)).toBe(true);
+
+    // Se sube un poco y se deja: vuelve a la franja.
+    await page.evaluate((y) => window.scrollTo(0, y), max - 40);
+    await settle();
+    expect(await footerShowsAt(page, x, vh - peek - 40)).toBe(false);
     expect(await footerShowsAt(page, x, vh - 20)).toBe(true);
   });
 
+  test("la franja inferior lleva el año, los enlaces legales en horizontal y las redes", async ({ page }) => {
+    await open(page);
+    const bar = page.getByRole("contentinfo").getByRole("navigation", { name: "Legal" });
+    await expect(bar.getByRole("link")).toHaveCount(2);
+    const boxes = await bar.getByRole("link").evaluateAll((links) => links.map((l) => l.getBoundingClientRect().top));
+    expect(Math.abs(boxes[0]! - boxes[1]!)).toBeLessThanOrEqual(4); // en la misma línea
+    await expect(page.getByRole("contentinfo").getByRole("list", { name: "Redes sociales" })).toBeAttached();
+  });
+
   test("en una ventana más baja que el pie es un pie normal (se puede ver entero)", async ({ page }) => {
-    await page.setViewportSize({ width: 800, height: 300 });
+    await page.setViewportSize({ width: 800, height: 240 });
     const wrapper = await open(page);
     await expect(wrapper).toHaveAttribute("data-footer-reveal", "off", { timeout: 15_000 });
     const position = await page.evaluate(() => getComputedStyle((document.querySelector("[data-footer-reveal]") as HTMLElement).firstElementChild!).position);

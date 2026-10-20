@@ -8,7 +8,6 @@ import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
 import { UploadWizard }  from "./upload/upload-wizard";
 import { StudioSidebar } from "./studio-sidebar";
-import { StatsView }     from "./studio-stats-view";
 import { ProfileView }   from "./studio-profile-view";
 import { EditModal }     from "./studio-edit-modal";
 import { C }             from "./studio-ui";
@@ -23,7 +22,7 @@ export type { StudioTabId };
 interface StudioTitleRow {
   slug: string; title: string; synopsis: string | null; year: string | null;
   duration: string | null; genre: string | null; language: string | null;
-  r2_poster_url: string | null; created_at: string | null; status: string | null;
+  r2_poster_url: string | null; created_at: string | null; status: string | null; file_size_bytes: number | null;
 }
 
 export function StudioScreen() {
@@ -54,7 +53,7 @@ export function StudioScreen() {
             .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
             .eq("user_id", userId).maybeSingle(),
           supabase.from("peliculas")
-            .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at, status")
+            .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at, status, file_size_bytes")
             .eq("creator_user_id", userId).order("created_at", { ascending: false }).returns<StudioTitleRow[]>(),
         ]);
         if (profileResult.error || titlesResult.error || !profileResult.data) {
@@ -86,6 +85,7 @@ export function StudioScreen() {
               published: realTitles.filter(t => t.status === "publicado").length },
           },
           titles: realTitles,
+          storageUsedBytes: (titlesResult.data ?? []).reduce((sum, row) => sum + (Number(row.file_size_bytes) || 0), 0),
         });
         setLoadedUserId(userId);
       } catch {
@@ -160,8 +160,7 @@ export function StudioScreen() {
         <div className="min-w-0">
         {active === "inicio" && (
           <>
-            <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} />
-            <div style={{ marginTop: 40 }}><StatsView data={data} onToast={showToast} focusTitle={focusTitle} /></div>
+            <DashboardView data={data} onNav={nav} onOpenTitle={openTitleAndGoToTitles} focusTitle={focusTitle} />
           </>
         )}
         {active === "titulos" && (

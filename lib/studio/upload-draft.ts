@@ -178,7 +178,7 @@ function reviewData(d: UploadDraft): string[] {
   const missing: string[] = [...reviewTeam(d), ...reviewAwards(d)];
   if (!d.durationMinutes || d.durationMinutes <= 0) missing.push("Duración");
   if (!d.releaseYear) missing.push("Año de estreno");
-  else if (d.releaseYear < LIMITS.firstYear || d.releaseYear > new Date().getFullYear() + 2) missing.push("Un año de estreno válido");
+  else if (d.releaseYear < LIMITS.firstYear || d.releaseYear > new Date().getFullYear()) missing.push("Un año de estreno válido");
   if (d.categories.length === 0) missing.push("Categoría");
   if (!d.language) missing.push("Idioma original");
   if (d.srtSubtitles.length > LIMITS.srtFiles) missing.push(`Como mucho ${LIMITS.srtFiles} archivos SRT`);

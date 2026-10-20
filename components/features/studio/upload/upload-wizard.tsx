@@ -30,7 +30,7 @@ interface UploadWizardProps {
 
 /**
  * Pasarela de subida: tres pasos (vídeo, ficha, datos) con su estado a la izquierda y, al terminar, una página aparte
- * para revisar la ficha y enviarla. El borrador se guarda solo en el navegador y el motor se maneja únicamente a través
+ * para revisar la ficha y enviarla. El borrador se guarda solo y el motor se maneja únicamente a través
  * de `UploadEngine` (ver `lib/studio/engine.ts`).
  */
 export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
@@ -126,7 +126,7 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
       <div ref={panel} tabIndex={-1} className="min-w-0 outline-none">
         <ReviewPage
           draft={draft} update={update} reviews={reviews} goToStep={goToStep} onBack={() => setIsReviewing(false)}
-          onSubmit={() => void submit()} onGoToTitles={onGoToTitles} isSubmitting={isSubmitting} result={result} engineConnected={engine.connected}
+          onSubmit={() => void submit()} onGoToTitles={onGoToTitles} isSubmitting={isSubmitting} result={result}
         />
       </div>
     );
@@ -176,7 +176,7 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
           </ol>
         </nav>
         <div className="mt-4 hidden text-[12.5px] text-[#7C7C7C] lg:block">
-          <p aria-live="polite">{savedAt ? "Borrador guardado en este navegador." : "El borrador se guarda solo."}</p>
+          <p aria-live="polite">{savedAt ? "Borrador guardado." : "El borrador se guarda solo."}</p>
           {confirmReset ? (
             <p className="mt-2">¿Borrar todo y empezar de cero?{" "}
               <button type="button" onClick={startOver} className="font-bold text-[#ff7b7b] underline">Sí, borrar</button>{" · "}
@@ -189,11 +189,6 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
       </aside>
 
       <div ref={panel} tabIndex={-1} className="min-w-0 outline-none">
-        {!engine.connected && (
-          <p className="mb-5 rounded-[8px] border border-white/10 bg-white/5 p-3 text-[13.5px] leading-5 text-[#BBBBBB]">
-            Esta pasarela ya comprueba todo lo que pide, pero el motor que aloja los archivos aún no está conectado: tu borrador se guarda en este navegador.
-          </p>
-        )}
         {showErrors && review.status === "incomplete" && (
           <p role="alert" className="mb-5 rounded-[8px] border border-[#E8B84B]/30 bg-[#E8B84B]/10 p-3 text-[13.5px] leading-5 text-[#F0D58A]">
             Para completar este paso te falta: {review.missing.join(", ")}.

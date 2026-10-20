@@ -15,7 +15,10 @@ function pickGreeting(isFirstVisit: boolean): string {
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
 
-// "viewer" = verde de siempre (selector de perfiles). "creator" = invertido
+/** Verde de la marca: color del círculo si el perfil no trae el suyo. */
+export const BRAND_GREEN = "#22B16B";
+
+// "viewer" = color del perfil elegido (selector de perfiles). "creator" = invertido
 // (negro que se expande, texto verde) — solo para el onboarding de creador.
 export type TransitionVariant = "viewer" | "creator";
 
@@ -27,6 +30,8 @@ interface TransitionStore {
   profileName: string;
   greeting: string;
   variant: TransitionVariant;
+  // Color del círculo en la variante "viewer": el fondo que el usuario eligió para su perfil.
+  color: string;
   // Ruta desde la que se llamó a startExpand — el overlay espera a que el
   // pathname cambie respecto a esta para saber que la navegación ya ocurrió,
   // en vez de asumir que siempre se lanza desde "/perfiles".
@@ -37,6 +42,7 @@ interface TransitionStore {
     profileName: string,
     isFirstVisit: boolean,
     variant?: TransitionVariant,
+    color?: string,
   ) => void;
   startContract: () => void;
   setChipPos: (pos: { x: number; y: number }) => void;
@@ -51,14 +57,16 @@ export const useTransitionStore = create<TransitionStore>((set) => ({
   profileName: "",
   greeting: "",
   variant: "viewer",
+  color: BRAND_GREEN,
   startPath: "",
-  startExpand: (origin, size, profileName, isFirstVisit, variant = "viewer") =>
+  startExpand: (origin, size, profileName, isFirstVisit, variant = "viewer", color = BRAND_GREEN) =>
     set({
       phase: "expanding",
       origin,
       size,
       profileName,
       variant,
+      color,
       greeting: pickGreeting(isFirstVisit),
       startPath: typeof window !== "undefined" ? window.location.pathname : "",
     }),

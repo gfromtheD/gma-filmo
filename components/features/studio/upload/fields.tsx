@@ -23,14 +23,16 @@ interface FieldShellProps {
   readonly required?: boolean;
   readonly hint?: string;
   readonly error?: string | null;
+  /** Etiqueta solo para lectores de pantalla (cuando la fila ya tiene cabeceras visibles, como en los créditos). */
+  readonly labelHidden?: boolean;
   readonly children: ReactNode;
 }
 
 /** Etiqueta, ayuda y error alrededor de un control. */
-export function FieldShell({ id, label, required, hint, error, children }: FieldShellProps) {
+export function FieldShell({ id, label, required, hint, error, labelHidden, children }: FieldShellProps) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-[14px] font-bold text-white">
+      <label htmlFor={id} className={labelHidden ? "sr-only" : "text-[14px] font-bold text-white"}>
         {label}
         {required ? <span className="ml-1 text-[#22B16B]" aria-hidden="true">*</span> : <span className="ml-2 text-[12px] font-medium text-[#7C7C7C]">Opcional</span>}
         {required && <span className="sr-only"> (obligatorio)</span>}
@@ -54,12 +56,13 @@ interface TextFieldProps {
   readonly maxLength?: number;
   readonly min?: number;
   readonly autoComplete?: string;
+  readonly labelHidden?: boolean;
 }
 
-export function TextField({ label, value, onChange, required, hint, error, type = "text", placeholder, maxLength, min, autoComplete }: TextFieldProps) {
+export function TextField({ label, value, onChange, required, hint, error, type = "text", placeholder, maxLength, min, autoComplete, labelHidden }: TextFieldProps) {
   const id = useId();
   return (
-    <FieldShell id={id} label={label} required={required} hint={hint} error={error}>
+    <FieldShell id={id} label={label} required={required} hint={hint} error={error} labelHidden={labelHidden}>
       <input
         id={id} type={type} value={value} placeholder={placeholder} maxLength={maxLength} min={min} autoComplete={autoComplete}
         aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
@@ -114,6 +117,7 @@ interface SelectFieldProps {
   readonly hint?: string;
   readonly error?: string | null;
   readonly placeholder?: string;
+  readonly labelHidden?: boolean;
 }
 
 const MENU_CLASS =
@@ -126,7 +130,7 @@ const SEARCH_CLASS =
   "w-full rounded-[8px] border border-white/15 bg-black/40 px-3 py-2 text-[14px] text-white placeholder-[#7C7C7C] outline-none focus:border-[#22B16B]";
 
 /** Elección única en desplegable (mismo estilo que los filtros del catálogo); con buscador si hay muchas opciones. */
-export function SelectField({ label, value, options, onChange, required, hint, error, placeholder = "Elige una opción" }: SelectFieldProps) {
+export function SelectField({ label, value, options, onChange, required, hint, error, placeholder = "Elige una opción", labelHidden }: SelectFieldProps) {
   const id = useId();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -139,7 +143,7 @@ export function SelectField({ label, value, options, onChange, required, hint, e
   const pick = (next: string) => { onChange(next); setIsOpen(false); };
 
   return (
-    <FieldShell id={id} label={label} required={required} hint={hint} error={error}>
+    <FieldShell id={id} label={label} required={required} hint={hint} error={error} labelHidden={labelHidden}>
       <Popover.Root open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setQuery(""); }}>
         <Popover.Trigger id={id} type="button" aria-invalid={error ? true : undefined} className={`${INPUT_CLASS} group flex items-center justify-between gap-3 text-left`}>
           <span className={selected ? "text-white" : "text-[#7C7C7C]"}>{selected ? selected.label : placeholder}</span>

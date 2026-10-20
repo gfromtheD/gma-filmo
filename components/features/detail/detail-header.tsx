@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ShareAndroid as Share2 } from "@/components/ui/icons";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -17,7 +18,12 @@ interface DetailHeaderProps {
   readonly onToggleList: () => void;
   readonly onRate: () => void;
   readonly onShare: () => void;
+  /** Acción extra junto a Guardar (p. ej. «A una lista»); se pinta con el mismo estilo que el resto. */
+  readonly listAction?: ReactNode;
 }
+
+export const DETAIL_TERTIARY_ACTION =
+  "flex flex-col items-center justify-center gap-1.5 rounded-[4px] px-3 text-[12px] font-normal lg:text-[14px] lg:font-medium text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:h-10 lg:flex-row lg:gap-2.5 lg:px-3 h-16";
 
 const TERTIARY =
   "flex flex-col items-center justify-center gap-1.5 rounded-[4px] px-3 text-[12px] font-normal lg:text-[14px] lg:font-medium text-white transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:h-10 lg:flex-row lg:gap-2.5 lg:px-3";
@@ -35,6 +41,7 @@ export function DetailHeader({
   onToggleList,
   onRate,
   onShare,
+  listAction,
 }: DetailHeaderProps) {
   const director = getDirectorName(movie);
   const genre = movie.categories.find((c) => c !== "Cortometraje") ?? movie.genre ?? null;
@@ -112,11 +119,12 @@ export function DetailHeader({
             Ver ahora
           </button>
 
-          <div className="grid grid-cols-3 gap-1 lg:ml-auto lg:flex lg:gap-3">
+          <div className={`grid gap-1 lg:ml-auto lg:flex lg:gap-3 ${listAction ? "grid-cols-4" : "grid-cols-3"}`}>
             <button type="button" onClick={onToggleList} aria-pressed={inList} className={`${TERTIARY} h-16`}>
               <SaveIcon saved={inList} size={22} />
               {inList ? "Guardada" : "Guardar"}
             </button>
+            {listAction}
             <button type="button" onClick={onRate} className={`${TERTIARY} h-16`}>
               <GmaIcon name="star" size={22} />
               Valorar
