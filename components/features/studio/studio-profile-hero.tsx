@@ -53,8 +53,8 @@ export function ProfileHero(props: Props) {
   return (
     <section aria-label="Vista previa de tu ficha pública"
       className="relative overflow-clip rounded-[22px] border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-      <input ref={bannerInput} type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden onChange={pick("banner")} />
-      <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden onChange={pick("avatar")} />
+      <input ref={bannerInput} type="file" accept="image/*" hidden onChange={pick("banner")} />
+      <input ref={avatarInput} type="file" accept="image/*" hidden onChange={pick("avatar")} />
 
       {/* Banner */}
       <div className="group/banner relative aspect-[4/1] min-h-[150px] w-full overflow-hidden">

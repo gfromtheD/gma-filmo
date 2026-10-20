@@ -3,9 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { uploadAvatar, uploadBanner } from "@/lib/uploads/browser";
-import { IMAGE_SNIFF_BYTES, imageContentProblem, sniffImageType, validateFile } from "@/lib/studio/file-rules";
-import { readImageSize } from "@/lib/studio/image-size";
+import { uploadAvatar } from "@/lib/uploads/browser";
 import { socialUrl } from "@/lib/social-links";
 import { SocialLinksPanel, getSocialPlatform } from "@/components/ui/social-links-panel";
 import { TextAreaField, TextField } from "./upload/fields";
@@ -44,22 +42,27 @@ async function refreshPublicPage() {
   await fetch("/api/creator/refresh-public", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => undefined);
 }
 
-/** Antes de subir: peso, formato real (por el contenido) y medidas. Devuelve el motivo si no vale, o `null`. */
-async function imageProblem(kind: ImageKind, file: File): Promise<string | null> {
-  const basic = validateFile("image", file);
-  if (basic) return basic;
-  const maxBytes = MAX_IMAGE_BYTES[kind];
-  if (file.size > maxBytes) return `${IMAGE_NAME[kind]} pesa más de ${maxBytes / 1024 / 1024} MB.`;
-  const header = new Uint8Array(await file.slice(0, IMAGE_SNIFF_BYTES).arrayBuffer());
-  return imageContentProblem(sniffImageType(header), await readImageSize(file));
-}
-
-/** Sube la imagen por el motor de subidas y devuelve su dirección, o el mensaje de error. */
-async function uploadImage(kind: ImageKind, file: File): Promise<{ url?: string; error?: string }> {
+/**
+ * Sube la imagen y devuelve su dirección, o el mensaje de error. La foto va por el motor de subidas; el banner
+ * todavía no tiene ruta en el motor nuevo (el endpoint antiguo ya no lo acepta).
+ */
+async function uploadImage(kind: ImageKind, file: File, token: string): Promise<{ url?: string; error?: string }> {
+  if (kind === "avatar") {
+    try {
+      return { url: await uploadAvatar(file) };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "No se pudo subir la imagen." };
+    }
+  }
+  const body = new FormData();
+  body.append("file", file);
+  body.append("assetType", kind);
   try {
-    return { url: kind === "avatar" ? await uploadAvatar(file) : await uploadBanner(file) };
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "No se pudo subir la imagen." };
+    const res = await fetch("/api/upload/file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
+    const json = (await res.json().catch(() => ({}))) as { publicUrl?: string; error?: string };
+    return res.ok && json.publicUrl ? { url: json.publicUrl } : { error: "El banner aún no se puede cambiar: falta conectarlo al motor de subidas." };
+  } catch {
+    return { error: "Error de red al subir la imagen." };
   }
 }
 
@@ -115,12 +118,12 @@ export function ProfileView({ data, onToast }: Props) {
   }
 
   async function handlePickImage(kind: ImageKind, file: File) {
-    const problem = await imageProblem(kind, file);
-    if (problem) { onToast(`${IMAGE_NAME[kind]} no se ha subido. ${problem}`, { error: true }); return; }
+    if (!file.type.startsWith("image/")) { onToast("El archivo debe ser una imagen.", { error: true }); return; }
+    if (file.size > MAX_IMAGE_BYTES[kind]) { onToast(`La imagen supera el límite de ${MAX_IMAGE_BYTES[kind] / 1024 / 1024} MB.`, { error: true }); return; }
     setBusyImage(kind);
     const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
     if (!session) { setBusyImage(null); onToast("Sesión caducada. Vuelve a iniciar sesión.", { error: true }); return; }
-    const { url, error } = await uploadImage(kind, file);
+    const { url, error } = await uploadImage(kind, file, session.access_token);
     if (error || !url) { setBusyImage(null); onToast(error ?? "No se pudo subir la imagen.", { error: true }); return; }
     const isSaved = await saveImage(kind, url);
     setBusyImage(null);
