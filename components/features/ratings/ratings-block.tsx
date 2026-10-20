@@ -8,10 +8,12 @@ import { useIsGuest } from "@/hooks/use-is-guest";
 import { useRatings } from "@/hooks/use-ratings";
 import { useCommunityRatings, type CommunityReview } from "@/hooks/use-community-ratings";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileId } from "@/hooks/use-active-profile-id";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { starsToScore } from "@/lib/ratings/score-format";
+import { formatHandle } from "@/lib/profiles/username";
 import type { ReviewSort } from "@/lib/ratings/review-query";
 
 /** Reseñas que se cargan por página. */
@@ -37,8 +39,10 @@ type SaveState = { readonly status: "idle" | "saving" } | { readonly status: "er
 export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBlockProps) {
   const isGuest = useIsGuest();
   const currentUserId = useSupabaseUserId();
-  // El perfil activo del selector (foto o icono, color y nombre), el mismo con el que se guarda la valoración.
-  const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
+  // El perfil activo del selector (foto o icono y color), el mismo con el que se guarda la valoración. El nombre que
+  // se muestra es el @ de la cuenta, como lo ven los demás.
+  const { avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
+  const { username } = useUserProfile();
   const activeProfileId = useActiveProfileId();
   const { getRating, setRating, removeRating } = useRatings();
   const existingEntry = getRating(numericId);
@@ -170,7 +174,7 @@ export function RatingsBlock({ title, numericId, autoOpen, onChange }: RatingsBl
           <ReviewCard
             isOwn
             review={{
-              displayName: displayName || "Tú",
+              displayName: username ? formatHandle(username) : "Tú",
               avatarUrl:   avatarImageUrl || null,
               avatarIconId: avatarIconId || null,
               avatarColor: avatarColor || null,

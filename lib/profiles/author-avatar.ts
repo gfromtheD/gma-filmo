@@ -1,13 +1,15 @@
 /**
- * Cómo se muestra al autor de un comentario o una valoración: el perfil con el que escribió
- * (el principal de la cuenta o uno secundario del selector de perfiles). Lógica pura; la usan las
+ * Cómo se muestra al autor de un comentario o una valoración: el @usuario de la cuenta, con la foto o el icono
+ * y el color del perfil con el que escribió (el principal de la cuenta o uno secundario del selector de perfiles). Lógica pura; la usan las
  * APIs de comentarios y valoraciones y no depende de la red.
  */
 
 import { avatarContentFromId, avatarEndpointUrl, pickAvatar, type AvatarContent } from "@/lib/profiles/avatar";
+import { formatHandle } from "@/lib/profiles/username";
 
 export interface AccountProfile {
-  readonly display_name: string | null;
+  /** @usuario de la cuenta (sin la arroba): el único nombre que ven los demás. El nombre personal es privado. */
+  readonly username: string | null;
   /** Foto de la cuenta de Google (inicio de sesión). */
   readonly avatar_url: string | null;
   readonly avatar_color: string | null;
@@ -25,6 +27,7 @@ export interface SubProfile {
 }
 
 export interface AuthorDisplay {
+  /** «@usuario» de la cuenta, también cuando se escribe con un perfil secundario. */
   readonly displayName: string;
   /** Foto: https, ruta propia o dirección corta de una imagen subida. `null` si es un icono o no hay foto. */
   readonly avatarUrl: string | null;
@@ -64,10 +67,11 @@ export function resolveAuthor(input: {
   readonly fallbackName?: string;
 }): AuthorDisplay {
   const { userId, profileId, account, sub, creatorPhoto, fallbackName = "Usuario" } = input;
+  const displayName = account?.username ? formatHandle(account.username) : fallbackName;
 
   if (sub) {
     return {
-      displayName: sub.name || account?.display_name || fallbackName,
+      displayName,
       ...toDisplayParts(avatarContentFromId(sub.avatar_id) ?? { kind: "initial" }, userId, profileId),
       avatarColor: sub.color || null,
     };
@@ -75,7 +79,7 @@ export function resolveAuthor(input: {
 
   const content = pickAvatar({ creatorPhoto, chosen: account?.avatar_id, providerPhoto: account?.avatar_url });
   return {
-    displayName: account?.display_name || fallbackName,
+    displayName,
     ...toDisplayParts(content, userId, ""),
     avatarColor: account?.avatar_color ?? null,
   };

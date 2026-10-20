@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { authorKey, resolveAuthor, type AccountProfile, type SubProfile } from "../../lib/profiles/author-avatar";
 
 const account: AccountProfile = {
-  display_name: "Ana Cuenta",
+  username: "ana_cuenta",
   avatar_url: "https://lh3.googleusercontent.com/a/ana",
   avatar_color: "#22B16B",
   avatar_id: null,
@@ -11,7 +11,7 @@ const base = { userId: "u1", profileId: "", account, sub: null, creatorPhoto: nu
 
 test("perfil principal sin avatar elegido: usa la foto de la cuenta de Google, el nombre y el color", () => {
   expect(resolveAuthor(base)).toEqual({
-    displayName: "Ana Cuenta",
+    displayName: "@ana_cuenta",
     avatarUrl: "https://lh3.googleusercontent.com/a/ana",
     avatarIconId: null,
     avatarColor: "#22B16B",
@@ -20,7 +20,7 @@ test("perfil principal sin avatar elegido: usa la foto de la cuenta de Google, e
 
 test("perfil principal con un icono elegido: el icono manda sobre la foto de la cuenta", () => {
   expect(resolveAuthor({ ...base, account: { ...account, avatar_id: "cat" } })).toEqual({
-    displayName: "Ana Cuenta",
+    displayName: "@ana_cuenta",
     avatarUrl: null,
     avatarIconId: "cat",
     avatarColor: "#22B16B",
@@ -43,16 +43,25 @@ test("la foto de creador manda sobre todo en el perfil principal", () => {
   expect(result.avatarIconId).toBeNull();
 });
 
+test("con un perfil secundario se ve el @ de la cuenta, no el nombre del perfil", () => {
+  const sub: SubProfile = { name: "Perfil 2", avatar_id: "cat", color: "purple" };
+  expect(resolveAuthor({ ...base, profileId: "p_2", sub }).displayName).toBe("@ana_cuenta");
+});
+
+test("una cuenta sin @ (migración sin aplicar) sale como «Usuario», nunca con un nombre personal", () => {
+  expect(resolveAuthor({ ...base, account: { ...account, username: null } }).displayName).toBe("Usuario");
+});
+
 test("la foto de creador no se aplica a un perfil secundario", () => {
   const sub: SubProfile = { name: "Perfil 2", avatar_id: "cat", color: "purple" };
   const result = resolveAuthor({ ...base, profileId: "p_2", sub, creatorPhoto: "https://cdn.example.com/creador.jpg" });
-  expect(result).toEqual({ displayName: "Perfil 2", avatarUrl: null, avatarIconId: "cat", avatarColor: "purple" });
+  expect(result).toEqual({ displayName: "@ana_cuenta", avatarUrl: null, avatarIconId: "cat", avatarColor: "purple" });
 });
 
-test("un perfil secundario con foto propia usa su nombre, su foto y su color", () => {
+test("un perfil secundario con foto propia usa el @ de la cuenta, su foto y su color", () => {
   const sub: SubProfile = { name: "Perfil 2", avatar_id: "/profiles/profile_07.png", color: "purple" };
   expect(resolveAuthor({ ...base, profileId: "p_2", sub })).toEqual({
-    displayName: "Perfil 2",
+    displayName: "@ana_cuenta",
     avatarUrl: "/profiles/profile_07.png",
     avatarIconId: null,
     avatarColor: "purple",
@@ -61,7 +70,7 @@ test("un perfil secundario con foto propia usa su nombre, su foto y su color", (
 
 test("un perfil secundario sin avatar (o con uno no válido) no hereda la foto de la cuenta: sale su inicial", () => {
   const empty = resolveAuthor({ ...base, profileId: "p_2", sub: { name: "Sin avatar", avatar_id: "", color: "red" } });
-  expect(empty).toEqual({ displayName: "Sin avatar", avatarUrl: null, avatarIconId: null, avatarColor: "red" });
+  expect(empty).toEqual({ displayName: "@ana_cuenta", avatarUrl: null, avatarIconId: null, avatarColor: "red" });
   const bad = resolveAuthor({ ...base, profileId: "p_2", sub: { name: "X", avatar_id: "javascript:alert(1)", color: "red" } });
   expect(bad.avatarUrl).toBeNull();
   expect(bad.avatarIconId).toBeNull();

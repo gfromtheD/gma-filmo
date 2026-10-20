@@ -14,7 +14,7 @@ interface AuthorRef {
 }
 
 /**
- * Resuelve cómo se muestra cada autor (nombre, foto o icono y color) con los datos ACTUALES de su
+ * Resuelve cómo se muestra cada autor (@usuario, foto o icono y color) con los datos ACTUALES de su
  * perfil: así, lo que se edita en el selector de perfiles se aplica a todo lo ya publicado.
  * Un perfil secundario solo cuenta si pertenece a esa misma cuenta; si no, se usa el principal.
  * Solo servidor (usa el cliente de administración).
@@ -26,7 +26,7 @@ export async function loadAuthors(refs: readonly AuthorRef[]): Promise<Record<st
   if (userIds.length === 0) return {};
 
   const [{ data: accounts }, { data: creators }, { data: subs }] = await Promise.all([
-    admin.from("profiles").select("id, display_name, avatar_url, avatar_color, avatar_id").in("id", userIds),
+    admin.from("profiles").select("id, username, avatar_url, avatar_color, avatar_id").in("id", userIds),
     admin.from("creator_profiles").select("user_id, avatar_url").in("user_id", userIds),
     subIds.length > 0
       ? admin.from("sub_profiles").select("id, user_id, name, avatar_id, color").in("id", subIds)
@@ -37,7 +37,7 @@ export async function loadAuthors(refs: readonly AuthorRef[]): Promise<Record<st
     (accounts ?? []).map((account) => [
       account.id,
       {
-        display_name: account.display_name,
+        username: account.username,
         avatar_url: account.avatar_url,
         avatar_color: account.avatar_color,
         avatar_id: account.avatar_id,

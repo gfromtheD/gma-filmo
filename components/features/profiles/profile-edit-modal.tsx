@@ -6,6 +6,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { avatarContentFromId } from "@/lib/profiles/avatar";
+import { formatHandle } from "@/lib/profiles/username";
 import { lockPageScroll } from "@/lib/scroll-lock";
 import { isValidIconId, renderAvatar } from "@/lib/data/profile-avatars";
 import { ColorSheet, PhotoSheet, SIDE_SHEET_GAP, SIDE_SHEET_WIDTH, type SheetPlacement } from "./profile-edit-sheets";
@@ -64,7 +65,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
   // En escritorio la hoja sale hacia la derecha; en pantallas estrechas (móvil, vertical) sube desde abajo.
   const placement: SheetPlacement = useMediaQuery("(min-width: 900px)") ? "side" : "bottom";
   const titleId = useId();
-  const { displayName, avatarColor, chosenAvatarId, updateDisplayName, updateAvatarColor, updateSettings } = useUserProfile();
+  const { displayName, username, avatarColor, chosenAvatarId, updateDisplayName, updateAvatarColor, updateSettings } = useUserProfile();
 
   // Local state — seeded from initialValues (sub-profile) or context (Supabase profile)
   const [name,     setName]     = useState(initialValues?.name     ?? displayName);
@@ -235,6 +236,10 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
               </span>
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 transition-colors group-hover:bg-white/20 group-hover:text-white">{PENCIL}</span>
             </button>
+          )}
+          {/* Perfil principal: el nombre es personal; los demás ven el @ de la cuenta. */}
+          {!initialValues && username && (
+            <p className="px-4 text-center text-[13px] text-white/60">Solo tú ves este nombre · los demás ven {formatHandle(username)}</p>
           )}
         </motion.div>
 

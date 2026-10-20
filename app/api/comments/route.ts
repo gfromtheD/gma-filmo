@@ -4,6 +4,7 @@ import {
   type ParentRow, type ReplyTargetRow,
 } from "@/lib/comments/validation";
 import { loadAuthors } from "@/lib/profiles/author-lookup";
+import { formatHandle } from "@/lib/profiles/username";
 import { authorKey } from "@/lib/profiles/author-avatar";
 import { parseRuntimeSeconds } from "@/lib/comments/timestamp";
 import { hasLiked, ownsStoredComment, requestProfileId } from "@/lib/comments/ownership";
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("display_name, avatar_color")
+    .select("username, avatar_color")
     .eq("id", userId)
     .single();
 
@@ -138,7 +139,8 @@ export async function POST(request: Request) {
   const row = {
     pelicula_id:   peliculaId,
     user_id:       userId,
-    display_name:  profile?.display_name ?? "Usuario",
+    // Copia pública del nombre: el @, nunca el nombre personal (que es privado).
+    display_name:  profile?.username ? formatHandle(profile.username) : "Usuario",
     avatar_color:  profile?.avatar_color ?? null,
     parent_id:     parentId,
     content,

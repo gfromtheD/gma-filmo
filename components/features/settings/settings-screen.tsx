@@ -16,7 +16,9 @@ import { useProgress } from "@/hooks/use-progress";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { COLOR_VALUES, type AvatarColor } from "@/lib/data/profile-avatars";
 import { useProfileStore } from "@/store/use-profile-store";
+import { formatHandle } from "@/lib/profiles/username";
 import { ChangePasswordForm } from "./password-fields";
+import { UsernameField } from "./username-field";
 
 type Feedback = { readonly text: string; readonly danger?: boolean } | null;
 
@@ -391,6 +393,7 @@ function ProfileCard() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="break-words text-[22px] font-semibold leading-tight text-white">{displayName}</p>
+            {profile.username && <p className="mt-0.5 break-all text-[14px] font-medium text-[#5FD39A]">{formatHandle(profile.username)}</p>}
             <p className="mt-1 text-[13.5px] text-[#8A8A8A]">
               {isSubProfile ? "Perfil de tu cuenta" : profile.memberSince ? `En GMA Filmo desde ${formatMemberSince(profile.memberSince)}` : "Perfil principal"}
             </p>
@@ -432,6 +435,9 @@ export function SettingsScreen() {
 
       <motion.div variants={rise}><SectionTitle>Cuenta</SectionTitle></motion.div>
       <motion.section variants={rise} aria-label="Cuenta" className={`${GLASS} divide-y divide-white/[0.06]`}>
+        <Row title="Nombre de usuario" description="Tu @ es público: es como te ven los demás en comentarios y valoraciones. Tu nombre personal solo lo ves tú.">
+          <UsernameField />
+        </Row>
         <EmailRow email={profile.email ?? null} />
         <Row title="Contraseña" description="Cámbiala aquí mismo, sin esperar ningún correo.">
           <ChangePasswordForm email={profile.email ?? null} />
