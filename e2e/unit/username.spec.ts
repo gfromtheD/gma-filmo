@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
-  RESERVED_USERNAMES, USERNAME_COOLDOWN_DAYS, formatHandle, nextUsernameChangeAt, normalizeUsername, usernameErrorMessage,
+  RESERVED_USERNAMES, USERNAME_CHANGE_LIMIT, USERNAME_WINDOW_DAYS, formatHandle, usernameChangeStatus, normalizeUsername, usernameErrorMessage,
   usernameProblem, usernameSaveError,
 } from "../../lib/profiles/username";
 
@@ -26,12 +26,13 @@ test("el @ se muestra con la arroba", () => {
   expect(formatHandle("ana_g")).toBe("@ana_g");
 });
 
-test("plazo de 30 días: sin fecha (provisional) se puede cambiar ya; después, al cabo de 30 días", () => {
-  const changed = new Date("2026-10-01T10:00:00Z");
-  expect(nextUsernameChangeAt(null)).toBeNull();
-  expect(nextUsernameChangeAt(changed, new Date("2026-10-15T10:00:00Z"))).toEqual(new Date("2026-10-31T10:00:00Z"));
-  expect(nextUsernameChangeAt(changed, new Date("2026-10-31T10:00:01Z"))).toBeNull();
-  expect(USERNAME_COOLDOWN_DAYS).toBe(30);
+test("3 cambios cada 7 días: sin cambios previos quedan 3; al gastarlos, se libera uno cuando el más antiguo cumple la semana", () => {
+  const day = (d: number) => new Date(`2026-10-${String(d).padStart(2, "0")}T10:00:00Z`);
+  expect(usernameChangeStatus([])).toEqual({ remaining: 3, nextChange: null });
+  expect(usernameChangeStatus([day(1)], day(2))).toEqual({ remaining: 2, nextChange: null });
+  expect(usernameChangeStatus([day(1), day(2), day(3)], day(4))).toEqual({ remaining: 0, nextChange: day(8) });
+  expect(usernameChangeStatus([day(1), day(2), day(3)], new Date("2026-10-08T10:00:01Z"))).toEqual({ remaining: 1, nextChange: null });
+  expect([USERNAME_CHANGE_LIMIT, USERNAME_WINDOW_DAYS]).toEqual([3, 7]);
 });
 
 test("traduce los errores de la base de datos a un motivo", () => {

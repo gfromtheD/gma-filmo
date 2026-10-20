@@ -327,6 +327,7 @@ export type Database = {
           updated_at: string | null
           username: string
           username_changed_at: string | null
+          username_change_log: string[]
         }
         Insert: {
           avatar_color?: string | null
@@ -338,6 +339,7 @@ export type Database = {
           updated_at?: string | null
           username?: string
           username_changed_at?: string | null
+          username_change_log?: string[]
         }
         Update: {
           avatar_color?: string | null
@@ -349,6 +351,7 @@ export type Database = {
           updated_at?: string | null
           username?: string
           username_changed_at?: string | null
+          username_change_log?: string[]
         }
         Relationships: []
       }

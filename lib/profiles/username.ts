@@ -13,8 +13,9 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "admin", "administrador", "gma", "gmafilmo", "filmo", "soporte", "support",
   "moderador", "moderacion", "root", "sistema", "system", "oficial", "staff",
 ]);
-/** Días entre dos cambios del @. El primero (desde el @ provisional) es libre. */
-export const USERNAME_COOLDOWN_DAYS = 30;
+/** Cambios del @ permitidos dentro de una ventana móvil de `USERNAME_WINDOW_DAYS` días. El primero (desde el @ provisional) es libre. */
+export const USERNAME_CHANGE_LIMIT = 3;
+export const USERNAME_WINDOW_DAYS = 7;
 
 const DAY_MS = 86_400_000;
 
@@ -39,11 +40,19 @@ export function formatHandle(username: string): string {
   return `@${username}`;
 }
 
-/** Fecha a partir de la cual se puede volver a cambiar el @; `null` si ya se puede (o nunca se ha elegido). */
-export function nextUsernameChangeAt(changedAt: Date | null, now: Date = new Date()): Date | null {
-  if (!changedAt) return null;
-  const next = new Date(changedAt.getTime() + USERNAME_COOLDOWN_DAYS * DAY_MS);
-  return next.getTime() > now.getTime() ? next : null;
+export interface UsernameChangeStatus {
+  /** Cambios que quedan dentro de la ventana actual. */
+  readonly remaining: number;
+  /** Cuándo se libera un cambio; `null` si todavía queda alguno. */
+  readonly nextChange: Date | null;
+}
+
+/** Cambios que quedan a partir de las fechas de los últimos cambios del @ (las más antiguas que la ventana no cuentan). */
+export function usernameChangeStatus(changes: readonly Date[], now: Date = new Date()): UsernameChangeStatus {
+  const windowStart = now.getTime() - USERNAME_WINDOW_DAYS * DAY_MS;
+  const recent = changes.map((d) => d.getTime()).filter((t) => t > windowStart).sort((a, b) => a - b);
+  const remaining = Math.max(0, USERNAME_CHANGE_LIMIT - recent.length);
+  return { remaining, nextChange: remaining === 0 ? new Date(recent[0]! + USERNAME_WINDOW_DAYS * DAY_MS) : null };
 }
 
 /** Error de Supabase al guardar el @ → motivo para la persona. */
@@ -61,7 +70,7 @@ export function usernameErrorMessage(reason: UsernameSaveError): string {
     case "chars": return "Solo letras sin tilde, números y «_».";
     case "reserved": return "Ese nombre está reservado.";
     case "taken": return "Ese @ ya lo usa otra persona.";
-    case "cooldown": return `Solo puedes cambiar tu @ una vez cada ${USERNAME_COOLDOWN_DAYS} días.`;
+    case "cooldown": return `Ya has cambiado tu @ ${USERNAME_CHANGE_LIMIT} veces en ${USERNAME_WINDOW_DAYS} días. Inténtalo más adelante.`;
     case "unknown": return "No se pudo guardar. Inténtalo de nuevo.";
   }
 }

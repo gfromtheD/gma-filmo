@@ -3,14 +3,14 @@
 import { useState, type FormEvent } from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useUsernameAvailability } from "@/hooks/use-username-availability";
-import { nextUsernameChangeAt, normalizeUsername, usernameProblem, type UsernameSaveError } from "@/lib/profiles/username";
+import { normalizeUsername, usernameChangeStatus, usernameProblem, type UsernameSaveError } from "@/lib/profiles/username";
 
 /**
  * Estado de la edición del @ de la cuenta (la comparten Ajustes y el editor de perfil): borrador, comprobación en
  * vivo de formato y disponibilidad, y guardado. Los textos y la forma las pone quien lo usa.
  */
 export function useUsernameEditor() {
-  const { username, usernameChangedAt, updateUsername } = useUserProfile();
+  const { username, usernameChanges, updateUsername } = useUserProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraftValue] = useState("");
   const [error, setError] = useState<UsernameSaveError | null>(null);
@@ -19,7 +19,7 @@ export function useUsernameEditor() {
 
   const candidate = normalizeUsername(draft);
   const availability = useUsernameAvailability(candidate, username);
-  const nextChange = nextUsernameChangeAt(usernameChangedAt);
+  const { remaining, nextChange } = usernameChangeStatus(usernameChanges);
   const problem = candidate === "" ? null : usernameProblem(candidate);
   const shownError: UsernameSaveError | null = error ?? problem ?? (availability === "taken" ? "taken" : null);
   const canSave = candidate !== "" && candidate !== username && !problem && availability !== "taken" && !isSaving;
@@ -52,7 +52,7 @@ export function useUsernameEditor() {
   }
 
   return {
-    username, usernameChangedAt, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving, saved,
+    username, remaining, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving, saved,
     start, cancel, setDraft, submit,
   };
 }
