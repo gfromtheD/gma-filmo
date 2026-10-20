@@ -8,6 +8,7 @@ import { UploadError } from '@/lib/uploads/repository';
 import type { JsonObject, UploadSessionRow, UploadJobRow, ProviderSnapshot } from '@/types/media-engine';
 import { getMediaConfig } from './config';
 import { canonicalRequestHash } from './idempotency';
+import { describeFailure } from '@/lib/uploads/failure';
 import { MediaRepository } from './repository';
 import { MediaProviderRegistry } from './registry';
 import { createMediaRegistry } from './runtime';
@@ -183,6 +184,8 @@ export class MediaService {
       if(current.state==='running') await this.repo.finishJob(job.id,worker,true);
     } catch(error) {
       const code=error instanceof UploadError || error instanceof MediaError ? error.code : error instanceof Error && 'code' in error && typeof error.code==='string'?error.code:'UPLOAD_JOB_FAILED';
+      // El código guardado en el trabajo puede ser genérico (UPLOAD_JOB_FAILED): se deja la excepción original en el registro.
+      if(code!=='UPLOAD_CLEANUP_UNCONFIRMED')console.error('[uploads] job failed',{kind:job.kind,session:String(job.session_id).slice(0,8),attempt:job.attempts,...describeFailure(error)});
       const current=await this.repo.job(job.id);
       if(current.state==='running' && current.lease_owner===worker) {
         if(code==='UPLOAD_CLEANUP_UNCONFIRMED')await this.repo.jobControl(job.id,worker,'poll',context.processingGeneration);
