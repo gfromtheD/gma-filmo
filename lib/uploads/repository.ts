@@ -166,9 +166,10 @@ export class UploadRepository {
       if (titleError) translateDatabaseError(titleError);
       if (z.array(z.unknown()).parse(titles ?? []).length) return true;
     }
-    // Avatar delivery is public only after a real profile points to the normalized asset.
-    if (asset.role === 'avatar' && asset.delivery_path) {
-      const { data: profiles, error: profileError } = await this.db.from("creator_profiles").select("user_id").eq("user_id", asset.owner_id).eq("avatar_url", asset.delivery_path).limit(1);
+    // Avatar and banner delivery is public only after a real profile points to the normalized asset.
+    if ((asset.role === 'avatar' || asset.role === 'banner') && asset.delivery_path) {
+      const column = asset.role === 'avatar' ? "avatar_url" : "banner_url";
+      const { data: profiles, error: profileError } = await this.db.from("creator_profiles").select("user_id").eq("user_id", asset.owner_id).eq(column, asset.delivery_path).limit(1);
       if (profileError) translateDatabaseError(profileError);
       if (z.array(z.unknown()).parse(profiles ?? []).length) return true;
     }

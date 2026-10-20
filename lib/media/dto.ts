@@ -3,7 +3,7 @@ import type { MediaAssetDTO, MediaAssetRow, UploadSessionDTO, UploadSessionRow }
 import { mediaAssetDTOSchema, uploadSessionDTOSchema } from './contracts';
 
 const assetRowSchema = z.object({
-  id: z.string().uuid(), owner_id: z.string().uuid(), role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar']),
+  id: z.string().uuid(), owner_id: z.string().uuid(), role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar','banner']),
   provider: z.enum(['r2','stream','mock','peertube']), provider_ref: z.string().nullable(),
   state: z.enum(['received','validating','processing','ready','failed','rejected','deleting','deleted']),
   expected_input_bytes: z.number().int().nonnegative(), received_bytes: z.number().int().nonnegative().nullable(),
@@ -16,7 +16,7 @@ const assetRowSchema = z.object({
 
 const sessionRowSchema = z.object({
   id: z.string().uuid(), owner_id: z.string().uuid(), draft_id: z.string().uuid(), asset_id: z.string().uuid(),
-  role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar']),
+  role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar','banner']),
   slot: z.string(), language: z.string().nullable(), provider: z.enum(['r2','stream','mock','peertube']),
   provider_ref: z.string().nullable(), provider_data: z.record(z.string(), z.unknown()), object_key: z.string().nullable(),
   multipart_upload_id: z.string().nullable(), part_size: z.number().int().nonnegative(), transfer_generation: z.number().int().positive(),
@@ -70,7 +70,7 @@ export function parseUploadSessionRow(input: unknown): UploadSessionRow {
 }
 
 export const draftDTOSchema = z.object({
- id:z.string().uuid(),purpose:z.enum(['title','avatar']),state:z.enum(['draft','published','abandoned']),revision:z.number().int().nonnegative(),titleId:z.number().nullable(),
+ id:z.string().uuid(),purpose:z.enum(['title','avatar','banner']),state:z.enum(['draft','published','abandoned']),revision:z.number().int().nonnegative(),titleId:z.number().nullable(),
  metadata:z.object({title:z.string().optional(),synopsis:z.string().nullable().optional(),year:z.string().optional(),language:z.string().optional(),genre:z.string().optional()}).strict(),createdAt:z.string(),updatedAt:z.string(),
 }).strict();
 export function mapDraftDTO(row: import('@/types/media-engine').UploadDraftRow) {

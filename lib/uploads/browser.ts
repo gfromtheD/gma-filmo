@@ -146,3 +146,13 @@ export async function uploadAvatar(file:File) {
  await uploadApi('/api/upload-drafts/'+draft.id+'/avatar','POST');
  return result.asset.delivery_path!;
 }
+/** Banner de la ficha de creador: mismo recorrido que el avatar; devuelve la ruta que queda en `creator_profiles.banner_url`. */
+export async function uploadBanner(file:File) {
+ const {managedDraftSchema,uploadManagedAsset}=await import('./managed-browser');
+ const {data:{session}}=await getSupabaseBrowserClient().auth.getSession();if(!session)throw new Error('Inicia sesión');
+ const created=await uploadApi<{draft:unknown}>('/api/upload-drafts','POST',{purpose:'banner'});
+ const draft=managedDraftSchema.parse(created.draft);
+ const ready=await uploadManagedAsset({file,role:'banner',draft,idempotencyKey:crypto.randomUUID(),signal:new AbortController().signal});
+ await uploadApi('/api/upload-drafts/'+draft.id+'/banner','POST');
+ return `/api/media/${ready.asset.mediaId}`;
+}

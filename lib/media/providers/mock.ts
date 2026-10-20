@@ -18,7 +18,7 @@ export interface MockChunkRepository {
 
 export class MockMediaProvider implements MediaProvider {
   readonly key = 'mock' as const;
-  readonly capabilities = { roles: ['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar'] as const,
+  readonly capabilities = { roles: ['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar','banner'] as const,
     processing: 'local' as const, retry: 'local-job' as const };
 
   constructor(private readonly storage: MockMediaStorage, private readonly repository: MockChunkRepository,
