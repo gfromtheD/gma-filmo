@@ -5,8 +5,10 @@
 
 /** Límites de la subida. */
 export const LIMITS = {
-  /** Peso máximo de una imagen (JPG, PNG o GIF). */
+  /** Peso máximo de una imagen (JPG, PNG, WebP o AVIF). */
   imageBytes: 10 * 1024 * 1024,
+  /** Píxeles máximos de una imagen (25 megapíxeles, el tope con el que el servidor la puede leer). */
+  imagePixels: 25_000_000,
   /** Peso máximo del vídeo cuando se aporta por enlace de Dropbox. */
   linkedVideoBytes: 5 * 1024 ** 3,
   /** Caracteres de la sinopsis corta. */
@@ -19,7 +21,8 @@ export const LIMITS = {
   extras: 12,
 } as const;
 
-export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif"] as const;
+/** Formatos de imagen que admite el motor (se reconocen por el contenido del archivo, no por su extensión). */
+export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
 
 /** Categorías de la obra (selección múltiple). */
 export const CATEGORIES = ["Animación", "Documental", "Experimental", "Fantástico", "Ficción", "Otros", "Terror", "Videoclip"] as const;
