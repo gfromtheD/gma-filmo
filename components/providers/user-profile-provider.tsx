@@ -24,6 +24,8 @@ export interface UserProfile {
   username:         string;
   // Último cambio elegido del @; null = sigue el provisional (el primer cambio es libre).
   usernameChangedAt: Date | null;
+  // Fechas de los últimos cambios del @ (para saber cuántos quedan en la ventana de 7 días).
+  usernameChanges:  Date[];
   email:            string | null;
   memberSince:      Date | null;
   avatarColor:      string;
@@ -60,10 +62,26 @@ export function deriveAvatarColor(email: string): string {
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
+/**
+ * Fechas de los últimos cambios del @ (`profiles.username_change_log`). Si la columna aún no existe en la base
+ * (migración 20261027 sin aplicar) o falla la lectura, se usa solo la fecha del último cambio.
+ */
+async function fetchUsernameChanges(
+  supabase: ReturnType<typeof getSupabaseBrowserClient>,
+  userId: string,
+  lastChangedAt: string | null,
+): Promise<Date[]> {
+  const { data, error } = await supabase.from("profiles").select("username_change_log").eq("id", userId).maybeSingle();
+  const log = !error && Array.isArray(data?.username_change_log) ? data.username_change_log : null;
+  const dates = log ?? (lastChangedAt ? [lastChangedAt] : []);
+  return dates.map((value) => new Date(value));
+}
+
 const UserProfileContext = createContext<UserProfileContextValue>({
   displayName:       "",
   username:          "",
   usernameChangedAt: null,
+  usernameChanges:   [],
   email:             null,
   memberSince:       null,
   avatarColor:       "#22B16B",
@@ -98,6 +116,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     displayName:      "",
     username:         "",
     usernameChangedAt: null,
+    usernameChanges:  [],
     email:            null,
     memberSince:      null,
     avatarColor:      "#22B16B",
@@ -131,6 +150,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
       if (!user) return;
 
+      const changeLog = await fetchUsernameChanges(supabase, userId!, profileRow?.username_changed_at ?? null);
       const emailLocal   = (user.email ?? "").split("@")[0] ?? "";
       const defaultColor = deriveAvatarColor(user.email ?? "");
 
@@ -153,6 +173,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         displayName:      savedName && savedName !== "Espectador" ? savedName : emailLocal,
         username:         profileRow?.username ?? createdUsername,
         usernameChangedAt: profileRow?.username_changed_at ? new Date(profileRow.username_changed_at) : null,
+        usernameChanges:  changeLog,
         email:            user.email ?? null,
         memberSince:      user.created_at ? new Date(user.created_at) : null,
         avatarColor:      savedColor || defaultColor,
@@ -200,10 +221,12 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       .select("username, username_changed_at")
       .single();
     if (error || !data) return usernameSaveError(error);
+    const changeLog = await fetchUsernameChanges(getSupabaseBrowserClient(), userId, data.username_changed_at);
     setProfile((prev) => ({
       ...prev,
       username: data.username,
       usernameChangedAt: data.username_changed_at ? new Date(data.username_changed_at) : null,
+      usernameChanges: changeLog,
     }));
     return null;
   }, [userId]);

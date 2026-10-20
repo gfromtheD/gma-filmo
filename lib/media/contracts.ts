@@ -174,7 +174,7 @@ export const transferDescriptorSchema: z.ZodType<TransferDescriptor> = z.discrim
 export const mediaAssetDTOSchema: z.ZodType<MediaAssetDTO> = z.object({
   mediaId: z.string().uuid(),
   status: z.enum(['received', 'validating', 'processing', 'ready', 'failed', 'rejected', 'deleting', 'deleted']),
-  role: z.enum(['main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar']),
+  role: z.enum(['main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar', 'banner']),
   durationSeconds: z.number().nonnegative().nullable(),
   receivedBytes: safeBytes.nullable(),
   revision,
@@ -195,7 +195,7 @@ export const uploadSessionDTOSchema: z.ZodType<UploadSessionDTO> = z.object({
   sessionId: z.string().uuid(),
   mediaId: z.string().uuid(),
   draftId: z.string().uuid(),
-  role: z.enum(['main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar']),
+  role: z.enum(['main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar', 'banner']),
   slot: z.string().min(1).max(200),
   language: z.string().min(2).max(35).nullable(),
   state: z.enum(['provisioning', 'uploading', 'paused', 'uploaded', 'cancelling', 'cancelled', 'expired', 'failed']),
@@ -219,7 +219,7 @@ export const uploadMutationEnvelopeSchema = z.object({
 }).strict().refine((result) => result.session.mediaId === result.asset.mediaId, 'La sesión y el activo deben compartir identidad');
 
 export const assetRoleSchema: z.ZodType<AssetRole> = z.enum([
-  'main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar',
+  'main', 'trailer', 'extras', 'intro', 'poster', 'poster_h', 'poster_v', 'subtitles', 'avatar', 'banner',
 ]);
 
 export type ParsedTransferDescriptor = TransferDescriptor;

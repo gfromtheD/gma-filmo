@@ -14,7 +14,7 @@ export async function session(db: MediaDatabase, id: string): Promise<UploadSess
 
 export async function uploading(db: MediaDatabase, provider: MediaProviderKey = 'mock', role: AssetRole = 'main', owner = OWNER, bytes = 100) {
   await db.exec('UPDATE gma_upload_policy SET legacy_inventory_verified=true');
-  const draft = await uploadCommand<UploadDraftRow>(db, 'create_draft', { purpose: role === 'avatar' ? 'avatar' : 'title' }, owner);
+  const draft = await uploadCommand<UploadDraftRow>(db, 'create_draft', { purpose: role === 'avatar' || role === 'banner' ? role : 'title' }, owner);
   let current = await uploadCommand<UploadSessionRow>(db, 'reserve', {
     draft_id: draft.id, revision: draft.revision, role, bytes, sha256: SHA, video_provider: provider, auxiliary_provider: provider === 'mock' ? 'mock' : 'r2',
     file_name: role === 'subtitles' ? 'cues.vtt' : role.startsWith('poster') || role === 'avatar' ? 'poster.png' : 'film.mp4',

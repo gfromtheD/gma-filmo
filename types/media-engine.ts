@@ -11,6 +11,7 @@ export const ASSET_ROLES = [
   'poster_v',
   'subtitles',
   'avatar',
+  'banner',
 ] as const;
 export type AssetRole = (typeof ASSET_ROLES)[number];
 

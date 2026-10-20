@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { database as legacyDatabase, command as uploadCommand, OWNER, OTHER } from '../uploads/database';
 
 export { OWNER, OTHER, uploadCommand };
-export const mediaMigrations = ['supabase/migrations/202610080002_media_commands.sql','supabase/migrations/202610080003_media_publish_lifecycle.sql','supabase/migrations/2026100800031_media_title_lifecycle.sql','supabase/migrations/202610080004_media_delivery_security.sql','supabase/migrations/202610080005_media_coordination.sql','supabase/migrations/202610080006_media_gateway.sql','supabase/migrations/202610080007_media_gateway_grants.sql','supabase/migrations/202610080008_title_writes_server_only.sql'];
+export const mediaMigrations = ['supabase/migrations/202610080002_media_commands.sql','supabase/migrations/202610080003_media_publish_lifecycle.sql','supabase/migrations/2026100800031_media_title_lifecycle.sql','supabase/migrations/202610080004_media_delivery_security.sql','supabase/migrations/202610080005_media_coordination.sql','supabase/migrations/202610080006_media_gateway.sql','supabase/migrations/202610080007_media_gateway_grants.sql','supabase/migrations/202610080008_title_writes_server_only.sql','supabase/migrations/20261026_media_banner_role.sql'];
 
 export async function database(): Promise<PGlite> {
   const db = await legacyDatabase();
