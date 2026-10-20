@@ -151,3 +151,74 @@ test('ciclo de vida de títulos: sin motor solo existe el borrado histórico; co
   assert.deepEqual(await on.remove('s', 4), { accepted: true, deletionState: 'pending' });
   await assert.rejects(on.remove('s'), /TITLE_REVISION_REQUIRED/);
 });
+
+// ── Hueco ocupado por una subida anterior (UPLOAD_SLOT_OCCUPIED) ─────────────────────────────────────────────────────
+
+/** Simula que el servidor libera el hueco al cancelar (la función `cancel` borra la fila del borrador al instante). */
+function withServerSlots(h: ReturnType<typeof fakeDeps>) {
+  const base = h.deps.api.bind(h.deps);
+  h.deps.api = (async (path: string, method?: string, body?: unknown) => {
+    const cancel = /\/api\/uploads\/([^/]+)\/cancel$/.exec(path);
+    if (cancel) (h.detail.uploads as ManagedEnvelope[]).splice(0, h.detail.uploads.length, ...h.detail.uploads.filter(u => u.session.sessionId !== cancel[1]));
+    return base(path, method, body);
+  }) as MediaEngineDeps['api'];
+  return h;
+}
+
+test('un hueco ocupado por una subida muerta de una sesión anterior se libera y la subida sigue', async () => {
+  const h = withServerSlots(fakeDeps());
+  const dead = envelope('poster_h', 'received', 7);
+  (h.detail.uploads as ManagedEnvelope[]).push(dead);
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(asset.status, 'done');
+  const cancel = h.calls.find(c => c.path.endsWith('/cancel'));
+  assert.ok(cancel, 'se canceló la subida que ocupaba el hueco');
+  assert.equal(cancel!.path, `/api/uploads/${dead.session.sessionId}/cancel`);
+  assert.deepEqual(cancel!.body, { revision: dead.session.revision });
+  assert.equal(h.uploads.length, 1);
+  assert.equal(h.uploads[0]!.role, 'poster_h');
+});
+
+test('otros huecos del borrador no se tocan al subir a uno concreto', async () => {
+  const h = withServerSlots(fakeDeps());
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('main', 'ready', 1), envelope('poster_h', 'received', 7));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'poster', rule: 'image', file: file('cartel.png') }, () => undefined);
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0, 'el cartel (poster_v) no ocupa nada: no se cancela ni el vídeo ni el banner');
+});
+
+test('una subida del mismo hueco que esta página puede reanudar no se cancela', async () => {
+  const h = withServerSlots(fakeDeps({}));
+  const live = { ...envelope('main', 'uploading', 3), session: { ...envelope('main', 'uploading', 3).session, state: 'uploading' } } as unknown as ManagedEnvelope;
+  h.deps.uploadAsset = async input => {
+    h.uploads.push({ role: input.role, language: input.language, sessionId: input.sessionId });
+    if (!h.detail.uploads.includes(live)) (h.detail.uploads as ManagedEnvelope[]).push(live); // el servidor crea la sesión en la primera subida
+    input.onEnvelope?.(live);
+    return live;
+  };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('a.mp4') }, () => undefined); // la primera vez la registra
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('a.mp4') }, () => undefined); // la segunda la reanuda
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+  assert.equal(h.uploads[1]!.sessionId, live.session.sessionId);
+});
+
+test('los extras tienen hueco propio por subida: nunca se cancela otro extra', async () => {
+  const h = withServerSlots(fakeDeps());
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('extras', 'ready', 5));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'extra:0', rule: 'video', file: file('extra.mp4') }, () => undefined);
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+test('si el servidor no deja liberar el hueco, el usuario ve el motivo y no se sube nada', async () => {
+  const h = fakeDeps();
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('poster_h', 'received', 7));
+  h.deps.api = (async () => { throw new Error('UPLOAD_ASSET_IN_USE'); }) as MediaEngineDeps['api'];
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(asset.status, 'error');
+  assert.match(String(asset.error), /UPLOAD_ASSET_IN_USE/);
+  assert.equal(h.uploads.length, 0);
+});

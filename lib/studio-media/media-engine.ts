@@ -76,6 +76,21 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     return deps.getDraft(await deps.ownerId());
   }
 
+  /**
+   * El servidor es quien sabe qué subida ocupa cada hueco del borrador; esta página solo lo recuerda mientras no se recarga
+   * (`sessions`). Si una subida anterior quedó atascada, fallida o es de antes de recargar, reservar de nuevo el hueco daría
+   * `UPLOAD_SLOT_OCCUPIED`. Quien vuelve a subir un archivo a un hueco quiere sustituir lo que había: se cancela esa subida
+   * (el servidor libera el hueco al instante) y se vuelve a leer el borrador. Los extras tienen hueco propio por subida.
+   */
+  async function releaseOccupiedSlot(detail: ManagedDraftDetail, role: AssetRole, language: string | undefined, keepSessionId?: string): Promise<ManagedDraftDetail> {
+    if (role === 'extras') return detail;
+    const serverSlot = role === 'subtitles' ? `subtitles:${language || 'und'}` : role;
+    const stale = detail.uploads.filter(u => u.session.slot === serverSlot && u.session.sessionId !== keepSessionId && !['cancelling', 'cancelled'].includes(u.session.state));
+    if (stale.length === 0) return detail;
+    for (const u of stale) await deps.api(`/api/uploads/${u.session.sessionId}/cancel`, 'POST', { revision: u.session.revision });
+    return serverDraft();
+  }
+
   async function uploadAsset(request: AssetRequest, onProgress: (p: number) => void, signal?: AbortSignal, onProcessing?: () => void): Promise<MediaUploadedAsset> {
     const { file, slot } = request;
     const fail = (error: string): MediaUploadedAsset => ({ name: file.name, sizeBytes: file.size, url: null, status: 'error', error });
@@ -83,17 +98,18 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     if (!mapping.supported) return fail(mapping.reason);
     const limit = serverLimitProblem(mapping.role, file.size);
     if (limit) return fail(limit);
-    const detail = await serverDraft();
     const previous = sessions.get(slot);
+    // Reanudar solo si la sesión anterior de este hueco sigue viva y es del mismo rol.
+    const resumable = previous && previous.session.role === mapping.role && ['uploading', 'paused'].includes(previous.session.state) ? previous : null;
     const controller = new AbortController();
     signal?.addEventListener('abort', () => controller.abort(), { once: true });
     if (signal?.aborted) controller.abort();
     try {
+      const detail = await releaseOccupiedSlot(await serverDraft(), mapping.role, mapping.language, resumable?.session.sessionId);
       const envelope = await deps.uploadAsset({
         file, role: mapping.role, ...(mapping.language ? { language: mapping.language } : {}), draft: detail.draft,
         idempotencyKey: deps.newKey(),
-        // Reanudar solo si la sesión anterior de este hueco sigue viva y es del mismo rol.
-        ...(previous && previous.session.role === mapping.role && ['uploading', 'paused'].includes(previous.session.state) ? { sessionId: previous.session.sessionId } : {}),
+        ...(resumable ? { sessionId: resumable.session.sessionId } : {}),
         signal: controller.signal,
         onEnvelope: e => { sessions.set(slot, e); },
         onProgress,
