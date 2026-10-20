@@ -6,6 +6,8 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { MediaError, mediaErrorResponse } from '@/lib/media/errors';
 import { uploadEngineEnabled } from './config';
 import { UploadError } from './repository';
+import { describeFailure } from './failure';
+export { describeFailure };
 export async function owner(request:Request):Promise<string> {
  const id=await getUserId(request);if(!id)throw new UploadError('UPLOAD_UNAUTHORIZED',401);return id;
 }
@@ -17,13 +19,6 @@ export function engineGate(admission=false) {if(admission && process.env.UPLOADS
 export async function jsonBody(request:Request) {
  const raw=await request.text();if(Buffer.byteLength(raw,'utf8')>24000)throw new UploadError('UPLOAD_INVALID_INPUT',400);
  try{return JSON.parse(raw) as unknown;}catch{throw new UploadError('UPLOAD_INVALID_INPUT',400);}
-}
-const LOG_MESSAGE_MAX=300;
-export function describeFailure(e:unknown):{name:string;code?:string;message:string} {
- const err=e as {name?:unknown;code?:unknown;message?:unknown}|null;
- const raw=typeof err?.message==='string'?err.message:String(e);
- const message=raw.replace(/[A-Za-z0-9+/_=-]{32,}/g,'[redacted]').slice(0,LOG_MESSAGE_MAX);
- return {name:typeof err?.name==='string'?err.name:typeof e,...(typeof err?.code==='string'?{code:err.code}:{}),message};
 }
 export async function respond(action:()=>Promise<unknown>,status=200) {
  try {const result=await action();if(result instanceof Response)return result;return NextResponse.json(result,{status,headers:{'Cache-Control':'private, no-store'}});}
