@@ -1,9 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useUsernameAvailability } from "@/hooks/use-username-availability";
 import {
   USERNAME_COOLDOWN_DAYS, USERNAME_MAX, formatHandle, nextUsernameChangeAt, normalizeUsername, usernameErrorMessage,
   usernameProblem, type UsernameSaveError,
@@ -11,30 +11,8 @@ import {
 
 const BUTTON =
   "inline-flex min-h-11 items-center justify-center rounded-full bg-white/[0.07] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.13] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
-/** Espera tras la última tecla antes de preguntar si el @ está libre. */
-const AVAILABILITY_DELAY_MS = 400;
-
-type Availability = "idle" | "checking" | "free" | "taken";
-
 function formatDay(date: Date): string {
   return date.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
-}
-
-/** Mientras se escribe: ¿el @ es válido y está libre? Pregunta a la base de datos (el @ propio cuenta como libre). */
-function useAvailability(candidate: string, current: string): Availability {
-  const [state, setState] = useState<Availability>("idle");
-  useEffect(() => {
-    if (candidate === current || usernameProblem(candidate)) { setState("idle"); return; }
-    setState("checking");
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      void getSupabaseBrowserClient().rpc("username_available", { candidate }).then(({ data, error }) => {
-        if (!cancelled) setState(error ? "idle" : data ? "free" : "taken");
-      });
-    }, AVAILABILITY_DELAY_MS);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [candidate, current]);
-  return state;
 }
 
 /** El @usuario: público y único. Se puede cambiar una vez cada 30 días (el primer cambio, desde el provisional, es libre). */
@@ -47,7 +25,7 @@ export function UsernameField() {
   const [isSaving, setIsSaving] = useState(false);
 
   const candidate = normalizeUsername(draft);
-  const availability = useAvailability(candidate, username);
+  const availability = useUsernameAvailability(candidate, username);
   const nextChange = nextUsernameChangeAt(usernameChangedAt);
   const isProvisional = usernameChangedAt === null;
   const problem = candidate === "" ? null : usernameProblem(candidate);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useUsernameAvailability } from "@/hooks/use-username-availability";
 import {
   USERNAME_MAX, normalizeUsername, usernameErrorMessage, usernameProblem, usernameSaveError,
 } from "@/lib/profiles/username";
@@ -26,6 +27,12 @@ export default function ConfigurarPerfilPage() {
   const [color,   setColor]   = useState<string>(COLORS[0]!.hex);
   const [loading, setLoading] = useState(false);
   const [init,    setInit]    = useState(true);
+
+  // Mientras escribe: formato y disponibilidad del @ (el provisional de partida no cuenta como cambio).
+  const candidate = normalizeUsername(username);
+  const availability = useUsernameAvailability(candidate, initialUsername);
+  const candidateProblem = candidate !== "" && candidate !== initialUsername ? usernameProblem(candidate) : null;
+  const candidateProblemMessage = candidateProblem ? usernameErrorMessage(candidateProblem) : null;
 
   useEffect(() => {
     async function checkProfile() {
@@ -101,6 +108,7 @@ export default function ConfigurarPerfilPage() {
   }
 
   const initial = name[0]?.toUpperCase() ?? "?";
+  const shownUsernameError = usernameError ?? candidateProblemMessage ?? (availability === "taken" ? usernameErrorMessage("taken") : null);
 
   return (
     <div
@@ -175,13 +183,16 @@ export default function ConfigurarPerfilPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  aria-invalid={usernameError ? true : undefined}
+                  aria-invalid={shownUsernameError ? true : undefined}
                   aria-describedby="username-hint"
                   className="min-w-0 w-full bg-transparent py-3 pl-0.5 text-[16px] text-white outline-none"
                 />
               </div>
-              <p id="username-hint" role="status" className={`mt-1.5 text-[12px] ${usernameError ? "text-[#ff7b7b]" : "text-[#686868]"}`}>
-                {usernameError ?? "Público: es como te verán los demás al comentar. Puedes dejar este o elegir el tuyo."}
+              <p id="username-hint" role="status" className={`mt-1.5 text-[12px] ${shownUsernameError ? "text-[#ff7b7b]" : availability === "free" ? "text-[#5FD39A]" : "text-[#686868]"}`}>
+                {shownUsernameError
+                  ?? (availability === "checking" ? "Comprobando…"
+                    : availability === "free" ? `@${candidate} está libre.`
+                      : "Público: es como te verán los demás al comentar. Puedes dejar este o elegir el tuyo.")}
               </p>
             </div>
           )}
@@ -214,7 +225,7 @@ export default function ConfigurarPerfilPage() {
 
           <button
             type="submit"
-            disabled={loading || !name.trim()}
+            disabled={loading || !name.trim() || availability === "taken" || Boolean(candidateProblem)}
             className="mt-2 w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Guardando…" : "Empezar a ver →"}
