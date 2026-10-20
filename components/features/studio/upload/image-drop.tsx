@@ -21,15 +21,17 @@ interface ImageDropProps {
   readonly doneBadge?: "tick" | "chip";
   /** Contenido de relleno cuando aún no hay imagen (una ilustración o un texto). */
   readonly placeholder?: ReactNode;
+  /** El error de subida lo muestra quien usa la zona (por ejemplo, en un aviso común), no la propia zona. */
+  readonly hideError?: boolean;
 }
 
-const ACCEPT = "image/jpeg,image/png,image/gif";
+const ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 
 /**
  * Zona de imagen de la ficha: se pulsa o se arrastra un archivo encima y la imagen aparece justo donde se verá. Sirve
  * para banner, cartel, retrato y fotogramas; la forma la pone quien la usa.
  */
-export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint, required, advice, adviceClassName = "", doneBadge = "tick", placeholder }: ImageDropProps) {
+export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint, required, advice, adviceClassName = "", doneBadge = "tick", placeholder, hideError = false }: ImageDropProps) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [isOver, setIsOver] = useState(false);
@@ -108,7 +110,12 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
           </button>
         )}
       </div>
-      {status === "error" && <p role="alert" className="text-[13px] text-[#ff7b7b]">{asset?.error ?? "No se pudo subir."}</p>}
+      {status === "error" && !hideError && (
+        <p role="alert" className="relative z-[4] flex items-start gap-2 rounded-[10px] border border-[#ff5252]/60 bg-[#2a0d0d] px-3 py-2 text-[13.5px] font-medium leading-5 text-[#ffb3b3]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#ff7b7b]"><path d="M12 8v5M12 16.5v.01" /><circle cx="12" cy="12" r="9" /></svg>
+          <span><strong className="font-bold text-white">{label}: no se ha subido.</strong> {asset?.error ?? "No se pudo subir."}</span>
+        </p>
+      )}
       {advice && advice !== dismissedAdvice && (
         <p className={`flex items-start gap-1.5 text-[12.5px] text-[#E8B84B] ${adviceClassName}`}>
           <button

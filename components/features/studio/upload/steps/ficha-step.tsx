@@ -3,6 +3,7 @@
 import { CARD_CLASS, StepHeading, TextAreaField, TextField } from "../fields";
 import { ExtrasSection } from "../extras-section";
 import { ImageDrop } from "../image-drop";
+import { ImageErrors, ImagePreviews, type ImageFeedbackItem } from "../image-feedback";
 import { errorIf, type StepProps } from "../step-props";
 import { IMAGE_SLOTS, LIMITS, type ImageSlotId } from "@/lib/studio/catalogs";
 
@@ -17,18 +18,24 @@ export function FichaStep(props: StepProps) {
     return (
       <ImageDrop
         label={spec.label} required={spec.required} asset={draft.images[id]} className={className} placeholder={placeholder}
-        hint={`${spec.width} × ${spec.height} px`} advice={files.advice[id]} adviceClassName={adviceClassName} doneBadge={doneBadge}
+        hint={`${spec.width} × ${spec.height} px`} advice={files.advice[id]} adviceClassName={adviceClassName} doneBadge={doneBadge} hideError
         onFile={(f) => files.upload(id, "image", f, { width: spec.width, height: spec.height })}
         onRemove={() => files.remove(id)}
       />
     );
   };
 
+  const feedback: ImageFeedbackItem[] = IMAGE_SLOTS.map((spec) => ({
+    id: spec.id, label: spec.label, asset: draft.images[spec.id], aspect: `${spec.width} / ${spec.height}`,
+  }));
+
   return (
     <section aria-labelledby="step-ficha" className="flex flex-col gap-6">
       <div id="step-ficha">
-        <StepHeading title="Crea tu ficha" intro="Esta es la página de tu título, todavía vacía. Pulsa cada zona para rellenarla: JPG, PNG o GIF de hasta 10 MB cada imagen." />
+        <StepHeading title="Crea tu ficha" intro="Esta es la página de tu título, todavía vacía. Pulsa cada zona para rellenarla: JPG, PNG, WebP o AVIF de hasta 10 MB cada imagen (máximo 25 megapíxeles)." />
       </div>
+
+      <ImageErrors items={feedback} />
 
       <div className="overflow-hidden rounded-[14px] border border-white/10 bg-black/40 backdrop-blur-md">
         {drop("banner", "aspect-video w-full rounded-none border-0", <span aria-hidden="true" className="mb-1 text-[28px] text-white/30">▭</span>,
@@ -50,6 +57,8 @@ export function FichaStep(props: StepProps) {
           </div>
         </div>
       </div>
+
+      <ImagePreviews items={feedback} />
 
       <div className={CARD_CLASS}>
         <TextAreaField label="Sinopsis larga" required rows={7} value={draft.synopsisLong} onChange={(v) => update({ synopsisLong: v })}

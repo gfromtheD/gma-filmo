@@ -110,12 +110,16 @@ test("un archivo que no cumple las reglas se rechaza con el motivo", async ({ pa
   await open(page);
   await goStep(page, "Crea tu ficha");
   const poster = page.locator("[data-file-slot='Cartel']");
-  await poster.locator("input[type=file]").setInputFiles({ name: "cartel.webp", mimeType: "image/webp", buffer: PNG });
-  await expect(poster.getByRole("alert")).toContainText("JPG, PNG o GIF");
+  await poster.locator("input[type=file]").setInputFiles({ name: "cartel.gif", mimeType: "image/gif", buffer: PNG });
+  const rejected = page.getByRole("alert").filter({ hasText: "Cartel: no se ha subido" });
+  await expect(rejected).toContainText("JPG, PNG, WebP o AVIF");
+  await expect(rejected).toContainText("Medida esperada: 595 × 842 px");
+  await expect(poster.getByText("Subido")).toHaveCount(0);
   await poster.getByRole("button", { name: /Descartar/ }).click();
   await poster.locator("input[type=file]").setInputFiles({ name: "cartel.png", mimeType: "image/png", buffer: PNG });
   await expect(poster.getByText("Subido")).toBeVisible({ timeout: 10_000 });
   await expect(poster.getByText(/más pequeña que la medida sugerida|proporción es distinta/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Vista previa de las imágenes" }).getByAltText("Vista previa: Cartel")).toBeVisible();
 });
 
 test("el pie de la web solo aparece en la revisión final", async ({ page }) => {

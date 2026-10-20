@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { validateFile, imageSizeAdvice } from "../../lib/studio/file-rules";
+import { validateFile, imageSizeAdvice, imageContentProblem, sniffImageType } from "../../lib/studio/file-rules";
 import { loadDraft, saveDraft, clearDraft, DRAFT_STORAGE_KEY, type DraftStorage } from "../../lib/studio/draft-storage";
 import { buildLegacyTitlePayload } from "../../lib/studio/legacy-payload";
 import { emptyDraft, type UploadDraft } from "../../lib/studio/upload-draft";
@@ -8,12 +8,35 @@ const MB = 1024 * 1024;
 const file = (name: string, size: number, type: string) => ({ name, size, type });
 
 test.describe("reglas de archivos", () => {
-  test("imágenes: JPG, PNG o GIF de hasta 10 MB", () => {
+  test("imágenes: JPG, PNG, WebP o AVIF de hasta 10 MB", () => {
     expect(validateFile("image", file("a.jpg", 2 * MB, "image/jpeg"))).toBeNull();
     expect(validateFile("image", file("a.png", 10 * MB, "image/png"))).toBeNull();
-    expect(validateFile("image", file("a.gif", MB, "image/gif"))).toBeNull();
-    expect(validateFile("image", file("a.webp", MB, "image/webp"))).toMatch(/JPG|PNG|GIF/);
+    expect(validateFile("image", file("a.webp", MB, "image/webp"))).toBeNull();
+    expect(validateFile("image", file("a.avif", MB, "image/avif"))).toBeNull();
+    expect(validateFile("image", file("a.avif", MB, ""))).toBeNull(); // sin tipo: se confía en la extensión y luego en el contenido
+    expect(validateFile("image", file("a.gif", MB, "image/gif"))).toMatch(/GIF/);
+    expect(validateFile("image", file("a.bmp", MB, "image/bmp"))).toMatch(/JPG, PNG, WebP o AVIF/);
     expect(validateFile("image", file("a.jpg", 10 * MB + 1, "image/jpeg"))).toMatch(/10 MB/);
+  });
+
+  test("imágenes: el formato real se reconoce por el contenido", () => {
+    const bytes = (...values: number[]) => Uint8Array.from([...values, ...new Array(32).fill(0)]);
+    const ascii = (text: string) => [...text].map((c) => c.charCodeAt(0));
+    expect(sniffImageType(bytes(0xff, 0xd8, 0xff, 0xe0))).toBe("image/jpeg");
+    expect(sniffImageType(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))).toBe("image/png");
+    expect(sniffImageType(bytes(...ascii("RIFF"), 0, 0, 0, 0, ...ascii("WEBP")))).toBe("image/webp");
+    expect(sniffImageType(bytes(0, 0, 0, 28, ...ascii("ftypavif")))).toBe("image/avif");
+    expect(sniffImageType(bytes(...ascii("GIF89a")))).toBeNull(); // un GIF, aunque se llame .jpg
+    expect(sniffImageType(new Uint8Array())).toBeNull();
+  });
+
+  test("imágenes: medidas que no valen se rechazan con la medida esperada", () => {
+    const expected = { width: 1920, height: 1080 };
+    expect(imageContentProblem("image/jpeg", { width: 1920, height: 1080 }, expected)).toBeNull();
+    expect(imageContentProblem("image/png", { width: 5000, height: 5000 }, expected)).toBeNull(); // 25 Mpx justos
+    expect(imageContentProblem("image/png", { width: 6000, height: 5000 }, expected)).toMatch(/30,0 megapíxeles[\s\S]*1920 × 1080/);
+    expect(imageContentProblem(null, { width: 100, height: 100 }, expected)).toMatch(/JPG, PNG, WebP o AVIF/);
+    expect(imageContentProblem("image/jpeg", null, expected)).toMatch(/dañado[\s\S]*1920 × 1080/);
   });
 
   test("subtítulos: archivos .srt pequeños", () => {
