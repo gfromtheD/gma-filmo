@@ -5,21 +5,10 @@ import type { AssetRequest, UploadEngine } from "@/lib/studio/engine";
 import {
   IMAGE_SNIFF_BYTES, imageContentProblem, imageSizeAdvice, sniffImageType, validateFile, type PixelSize,
 } from "@/lib/studio/file-rules";
+import { readImageSize } from "@/lib/studio/image-size";
 import type { UploadedAsset } from "@/lib/studio/upload-draft";
 
 type SetAsset = (slot: string, asset: UploadedAsset | null) => void;
-
-/** Mide una imagen en el navegador (para dar un consejo de tamaño); `null` si no se puede leer. */
-async function readImageSize(file: File): Promise<PixelSize | null> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const size = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return size;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Sube archivos a través del motor y mantiene el borrador al día: el hueco pasa por «subiendo» (con porcentaje) y acaba
