@@ -18,10 +18,19 @@ export async function jsonBody(request:Request) {
  const raw=await request.text();if(Buffer.byteLength(raw,'utf8')>24000)throw new UploadError('UPLOAD_INVALID_INPUT',400);
  try{return JSON.parse(raw) as unknown;}catch{throw new UploadError('UPLOAD_INVALID_INPUT',400);}
 }
+const LOG_MESSAGE_MAX=300;
+export function describeFailure(e:unknown):{name:string;code?:string;message:string} {
+ const err=e as {name?:unknown;code?:unknown;message?:unknown}|null;
+ const raw=typeof err?.message==='string'?err.message:String(e);
+ const message=raw.replace(/[A-Za-z0-9+/_=-]{32,}/g,'[redacted]').slice(0,LOG_MESSAGE_MAX);
+ return {name:typeof err?.name==='string'?err.name:typeof e,...(typeof err?.code==='string'?{code:err.code}:{}),message};
+}
 export async function respond(action:()=>Promise<unknown>,status=200) {
  try {const result=await action();if(result instanceof Response)return result;return NextResponse.json(result,{status,headers:{'Cache-Control':'private, no-store'}});}
   catch(e) {
+   if(e instanceof MediaError && e.status>=500)console.error('[uploads] media error',describeFailure(e));
    if(e instanceof MediaError) return NextResponse.json(mediaErrorResponse(e),{status:e.status,headers:{'Cache-Control':'no-store'}});
+   if(!(e instanceof UploadError)&&!(e instanceof ZodError))console.error('[uploads] unexpected failure',describeFailure(e));
    const error=e instanceof UploadError?e:e instanceof ZodError?new UploadError('UPLOAD_INVALID_INPUT',400):new UploadError('UPLOAD_UNAVAILABLE',503);
    return NextResponse.json({error:{code:error.code,message:error.code,retryable:error.status>=500 || error.code==='UPLOAD_NOT_COMPLETE'},requestId:randomUUID()},{status:error.status,headers:{'Cache-Control':'no-store'}});
  }
