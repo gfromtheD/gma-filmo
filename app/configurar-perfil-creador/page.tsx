@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Upload, ShieldCheck, MediaVideo as Clapperboard, ArrowLeft } from "@/components/ui/icons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { uploadAvatar } from "@/lib/uploads/browser";
 import { ThreeDMarquee } from "@/components/ui/three-d-marquee";
 import AnimatedGradientBackground from "@/components/ui/animated-gradient-background";
 import { SocialLinksPanel, socialDisplayText } from "@/components/ui/social-links-panel";
@@ -78,28 +79,10 @@ export default function ConfigurarPerfilCreadorPage() {
     });
     setAvatarUploading(true);
 
-    const supabase = getSupabaseBrowserClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setError("Sesión caducada. Vuelve a iniciar sesión."); setAvatarUploading(false); return; }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("assetType", "avatar");
-
     try {
-      const res = await fetch("/api/upload/file", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: formData,
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((body as { error?: string }).error ?? "No se pudo subir la imagen.");
-        return;
-      }
-      setAvatarUrl((body as { publicUrl: string }).publicUrl);
-    } catch {
-      setError("Error de red al subir la imagen.");
+      setAvatarUrl(await uploadAvatar(file));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo subir la imagen.");
     } finally {
       setAvatarUploading(false);
     }

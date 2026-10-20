@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { uploadAvatar } from "@/lib/uploads/browser";
 import { socialUrl } from "@/lib/social-links";
 import { SocialLinksPanel, getSocialPlatform } from "@/components/ui/social-links-panel";
 import { TextAreaField, TextField } from "./upload/fields";
@@ -41,15 +42,25 @@ async function refreshPublicPage() {
   await fetch("/api/creator/refresh-public", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } }).catch(() => undefined);
 }
 
-/** Sube la imagen a R2 y devuelve su URL pública, o el mensaje de error. */
+/**
+ * Sube la imagen y devuelve su dirección, o el mensaje de error. La foto va por el motor de subidas; el banner
+ * todavía no tiene ruta en el motor nuevo (el endpoint antiguo ya no lo acepta).
+ */
 async function uploadImage(kind: ImageKind, file: File, token: string): Promise<{ url?: string; error?: string }> {
+  if (kind === "avatar") {
+    try {
+      return { url: await uploadAvatar(file) };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "No se pudo subir la imagen." };
+    }
+  }
   const body = new FormData();
   body.append("file", file);
   body.append("assetType", kind);
   try {
     const res = await fetch("/api/upload/file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
     const json = (await res.json().catch(() => ({}))) as { publicUrl?: string; error?: string };
-    return res.ok && json.publicUrl ? { url: json.publicUrl } : { error: json.error ?? "No se pudo subir la imagen." };
+    return res.ok && json.publicUrl ? { url: json.publicUrl } : { error: "El banner aún no se puede cambiar: falta conectarlo al motor de subidas." };
   } catch {
     return { error: "Error de red al subir la imagen." };
   }
