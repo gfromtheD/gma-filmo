@@ -4,6 +4,7 @@ import { transferAsset } from '@/lib/media/transports';
 import { uploadMutationEnvelopeSchema, transferDescriptorSchema } from '@/lib/media/contracts';
 import type { AssetRole, UploadSessionDTO, MediaAssetDTO, TransferDescriptor } from '@/types/media-engine';
 import { hashFile, uploadApi } from './browser';
+import { isLiveUpload } from './live-upload';
 
 export const managedDraftSchema = z.object({ id: z.string().uuid(), purpose: z.enum(['title', 'avatar']), state: z.enum(['draft', 'published', 'abandoned']),
   revision: z.number().int().nonnegative(), titleId: z.number().nullable(), metadata: z.record(z.string(), z.unknown()), createdAt: z.string(), updatedAt: z.string() }).strict();
@@ -14,9 +15,10 @@ export type ManagedDraftDetail = z.infer<typeof managedDraftDetailSchema>;
 const managedDraftLoads = new Map<string, Promise<ManagedDraftDetail>>();
 
 export function buildMainMediaPublishPayload(detail: ManagedDraftDetail, selectedMediaId: string) {
-  const main = detail.uploads.find(item => item.session.role === 'main' && item.asset.mediaId === selectedMediaId);
+  const live = detail.uploads.filter(isLiveUpload);
+  const main = live.find(item => item.session.role === 'main' && item.asset.mediaId === selectedMediaId);
   if (!main || main.asset.status !== 'ready') throw new Error('UPLOAD_MAIN_NOT_READY');
-  if (detail.uploads.some(item => item.asset.status !== 'ready')) throw new Error('UPLOAD_ATTACHMENTS_NOT_READY');
+  if (live.some(item => item.asset.status !== 'ready')) throw new Error('UPLOAD_ATTACHMENTS_NOT_READY');
   return { draft_id: detail.draft.id, revision: detail.draft.revision, main_media_id: main.asset.mediaId } as const;
 }
 
