@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { workPath } from "@/lib/catalog/work-path";
 import { EditPencil, Trash } from "@/components/ui/icons";
 import { PosterArt } from "@/components/ui/poster-art";
 import type { RatingEntry } from "@/hooks/use-ratings";
@@ -42,11 +43,11 @@ export function DiaryList({ items, entries, onEdit, onRemove }: Props) {
                     <span className="block text-[20px] font-semibold leading-none tabular-nums text-white">{date.getDate()}</span>
                     <span className="block text-[11.5px] text-[#7C7C7C]">{date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "")}</span>
                   </span>
-                  <Link href={`/cortos/${item.id}`} className="w-11 shrink-0 overflow-hidden rounded-[6px]">
+                  <Link href={workPath(item)} className="w-11 shrink-0 overflow-hidden rounded-[6px]">
                     <PosterArt style={item.style} title="" kind="movie" ratio="portrait" imageUrl={item.imageUrl} />
                   </Link>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/cortos/${item.id}`} className="block truncate text-[15px] font-semibold text-white hover:underline">{item.title}</Link>
+                    <Link href={workPath(item)} className="block truncate text-[15px] font-semibold text-white hover:underline">{item.title}</Link>
                     <div className="mt-1 flex items-center gap-2">
                       <StarRating value={entry.rating} readOnly size={14} gap={2} />
                       <span className="text-[12.5px] tabular-nums text-[#8A8A8A]">{entry.rating.toLocaleString("es-ES", { minimumFractionDigits: 1 })}</span>
