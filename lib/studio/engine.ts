@@ -1,7 +1,7 @@
 import { buildLegacyTitlePayload } from "@/lib/studio/legacy-payload";
 import { validateFile, type FileRuleKind } from "@/lib/studio/file-rules";
 import { createLazyMediaEngine } from "@/lib/studio-media/lazy-media-engine";
-import type { UploadDraft, UploadedAsset } from "@/lib/studio/upload-draft";
+import type { UploadDraft, UploadedAsset, UploadPhase } from "@/lib/studio/upload-draft";
 
 /**
  * EL ENCHUFE entre la interfaz de subida y el motor que aloja y sirve los archivos.
@@ -34,7 +34,11 @@ export interface UploadEngine {
    * Sube un archivo. `onProgress` informa del porcentaje de subida; `onProcessing` (opcional) avisa de que la subida ha
    * terminado y el servidor está procesando el vídeo (conversión, optimización, versiones HLS…).
    */
-  uploadAsset(request: AssetRequest, onProgress: (percent: number) => void, signal?: AbortSignal, onProcessing?: () => void): Promise<UploadedAsset>;
+  uploadAsset(
+    request: AssetRequest, onProgress: (percent: number) => void, signal?: AbortSignal, onProcessing?: () => void,
+    /** Cambio de etapa (`checking` → `uploading` → `processing`); `percent` solo en `checking` (avance de la comprobación). */
+    onPhase?: (phase: UploadPhase, percent?: number) => void,
+  ): Promise<UploadedAsset>;
   submit(draft: UploadDraft): Promise<SubmitResult>;
 }
 

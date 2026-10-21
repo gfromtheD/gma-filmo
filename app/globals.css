@@ -224,6 +224,12 @@ body::-webkit-scrollbar {
   -ms-overflow-style: none;
 }
 
+/* Barra de una etapa sin porcentaje (p. ej. «Procesar»): un tramo que va y viene. */
+@keyframes gma-sweep {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+
 @keyframes blink {
   50% { opacity: 0; }
 }

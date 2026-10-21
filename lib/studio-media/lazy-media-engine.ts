@@ -17,8 +17,8 @@ export function createLazyMediaEngine(getDraft: () => UploadDraft): UploadEngine
   return {
     id: 'media',
     connected: true,
-    uploadAsset: async (request: AssetRequest, onProgress, signal, onProcessing): Promise<UploadedAsset> =>
-      (await engine()).uploadAsset(request, onProgress, signal, onProcessing),
+    uploadAsset: async (request: AssetRequest, onProgress, signal, onProcessing, onPhase): Promise<UploadedAsset> =>
+      (await engine()).uploadAsset(request, onProgress, signal, onProcessing, onPhase),
     submit: async (draft: UploadDraft): Promise<SubmitResult> => (await engine()).submit(draft),
     cancelAsset: async (slot) => (await engine()).cancelAsset(slot),
     pauseAsset: async (slot) => (await engine()).pauseAsset(slot),
