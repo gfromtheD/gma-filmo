@@ -111,7 +111,8 @@ export function StudioScreen() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        showToast((body as { error?: string }).error ?? "Error al eliminar", { error: true });
+        const err = (body as { error?: string | { message?: string } }).error;
+        showToast((typeof err === "string" ? err : err?.message) ?? "Error al eliminar", { error: true });
         return;
       }
       setData((d) => {

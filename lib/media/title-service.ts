@@ -1,5 +1,6 @@
 import {draftDTOSchema} from './dto';
 import {z} from 'zod';
+import {randomUUID} from 'node:crypto';
 import {MediaRepository} from './repository';
 import {canonicalRequestHash} from './idempotency';
 import {metadataSchema,revisionSchema,uuid} from '@/lib/uploads/contracts';
@@ -31,7 +32,9 @@ export class TitleService {
    const input=editTitleSchema.parse(body);return {title:mapTitleDTO(await this.repo.uploadCommand(owner,'edit_title',{...input,slug}))};
  }
  async lifecycle(owner:string,slug:string,action:'unpublish'|'republish'|'delete',body:unknown) {
-   const input=titleLifecycleSchema.parse(body);const row=await this.repo.title(slug,owner);const id=z.number().int().positive().parse(row.id);
+   const row=await this.repo.title(slug,owner);const id=z.number().int().positive().parse(row.id);
+   // Sin cuerpo (el panel de Mi Estudio usa el DELETE histórico): la revisión sale de la fila del propio dueño y la clave se genera aquí.
+   const input=body===undefined?{revision:z.number().int().nonnegative().parse(row.media_revision),idempotency_key:randomUUID()}:titleLifecycleSchema.parse(body);
    const raw=await this.repo.titleCommand(owner,action,{title_id:id,expected_revision:input.revision,idempotency_key:input.idempotency_key,
      request_hash:canonicalRequestHash({title_id:id,action,revision:input.revision})});
    if(action==='delete') {
