@@ -5,6 +5,7 @@ import styles from "./studio-responsive.module.css";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState } from "react";
 import { Plus, Search, Eye, EyeClosed as EyeOff, EditPencil as Pencil, Trash as Trash2, MoreHoriz as MoreHorizontal, RefreshDouble as RefreshCw, StatsReport as BarChart2, Xmark as X, Clock, WarningTriangle as AlertTriangle, Upload, ViewGrid as LayoutGrid, List, CheckCircle as CheckCircle2 } from "@/components/ui/icons";
+import { DeletingVeil } from "./studio-deleting";
 import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 
@@ -87,17 +88,18 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
       <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", cursor: "pointer", width: "100%", padding: 0, border: 0, background: "transparent", color: "inherit", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} hover />
         <div style={{ position: "absolute", top: 9, left: 9 }}><StatusBadge status={t.status} size="sm" /></div>
+        {t.deleting && <DeletingVeil />}
       </button>
       <div style={{ ...row(), justifyContent: "space-between", alignItems: "flex-start", marginTop: 12, gap: 8 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
           <div style={{ fontSize: 12, fontWeight: 600, marginTop: 3, color: C.textMuted }}>{t.type} · {t.duration}</div>
         </div>
-        <Menu align="right" trigger={
+        {!t.deleting && <Menu align="right" trigger={
           <button aria-label={`Opciones de ${t.title}`} className="st-btn st-btn-ghost st-btn-icon" style={{ width: 32, height: 32 }}>
             <MoreHorizontal size={18} />
           </button>
-        } items={actionsFor(t, handlers)} />
+        } items={actionsFor(t, handlers)} />}
       </div>
       <div className="st-sep" style={{ margin: "11px 0 10px" }} />
       {t.status === "publicado" ? (
@@ -134,8 +136,9 @@ function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
     <div className={styles.listRow} style={glass({ padding: 12, display: "grid",
       gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, alignItems: "center" })}>
-      <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ width: 52, cursor: "pointer", padding: 0, border: 0, background: "transparent", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
+      <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", width: 52, cursor: "pointer", padding: 0, border: 0, background: "transparent", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} rounded={7} />
+        {t.deleting && <DeletingVeil size={26} compact />}
       </button>
       <div style={{ minWidth: 0, cursor: "pointer" }} onClick={() => handlers.onOpen(t)}>
         <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
@@ -148,11 +151,11 @@ function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
           : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}
       </div>
       <div data-label="Valoración">{t.status === "publicado" ? <Stars value={t.rating ?? 0} size={12} showNum /> : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}</div>
-      <Menu align="right" trigger={
+      {t.deleting ? <span style={{ width: 34 }} /> : <Menu align="right" trigger={
         <button aria-label={`Opciones de ${t.title}`} className="st-btn st-btn-ghost st-btn-icon" style={{ width: 34, height: 34 }}>
           <MoreHorizontal size={18} />
         </button>
-      } items={actionsFor(t, handlers)} />
+      } items={actionsFor(t, handlers)} />}
     </div>
   );
 }

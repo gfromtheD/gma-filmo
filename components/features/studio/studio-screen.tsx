@@ -4,6 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import { useState, useEffect, useCallback } from "react";
 import { Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
+import { DeleteTitleDialog } from "./studio-deleting";
 import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
 import { UploadWizard }  from "./upload/upload-wizard";
@@ -24,6 +25,17 @@ interface StudioTitleRow {
   slug: string; title: string; synopsis: string | null; year: string | null;
   duration: string | null; genre: string | null; language: string | null;
   r2_poster_url: string | null; created_at: string | null; status: string | null; file_size_bytes: number | null;
+  media_delete_state: string | null;
+}
+
+/** Cada cuánto se pregunta si el servidor ya terminó de borrar los archivos de una obra. */
+const DELETE_POLL_MS = 4000;
+
+/** Quita obras de la lista y recalcula los contadores del creador. */
+function withoutTitles(d: StudioData, slugs: readonly string[]): StudioData {
+  const titles = d.titles.filter((x) => !slugs.includes(x.id));
+  return { ...d, titles, creator: { ...d.creator, stats: { ...d.creator.stats, titles: titles.length,
+    published: titles.filter((x) => x.status === "publicado").length } } };
 }
 
 /** Audiencia real del creador; `null` si no se pudo calcular (el panel lo dice en vez de enseñar ceros inventados). */
@@ -68,14 +80,16 @@ export function StudioScreen() {
             .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
             .eq("user_id", userId).maybeSingle(),
           supabase.from("peliculas")
-            .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at, status, file_size_bytes")
+            .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, created_at, status, file_size_bytes, media_delete_state")
             .eq("creator_user_id", userId).order("created_at", { ascending: false }).returns<StudioTitleRow[]>(),
         ]);
         if (profileResult.error || titlesResult.error || !profileResult.data) {
           throw new Error("No se pudo cargar el estudio");
         }
         const profile = profileResult.data;
-        const realTitles: StudioTitle[] = (titlesResult.data ?? []).map((row) => ({
+        // «done»: el servidor ya borró todo y la obra no debe volver a aparecer. «pending»: se está borrando ahora mismo.
+        const visibleRows = (titlesResult.data ?? []).filter((row) => row.media_delete_state !== "done");
+        const realTitles: StudioTitle[] = visibleRows.map((row) => ({
           id: row.slug, title: row.title,
           type: row.genre === "Película" ? "Película" : "Cortometraje",
           genre: row.genre ?? "Cortometraje",
@@ -86,6 +100,7 @@ export function StudioScreen() {
           description: row.synopsis ?? "", language: row.language ?? "",
           subtitles: [], poster: STUDIO_DATA.posters["nieve"]!,
           r2PosterUrl: row.r2_poster_url ?? undefined,
+          deleting: row.media_delete_state === "pending",
           publishDate: row.created_at ? new Date(row.created_at).toLocaleDateString("es-ES") : undefined,
         }));
         if (cancelled) return;
@@ -117,12 +132,18 @@ export function StudioScreen() {
     setTitlesVersion((v) => v + 1);
   }, []);
 
-  const handleDelete = useCallback(async (t: StudioTitle) => {
-    const supabase = getSupabaseBrowserClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { showToast("No autenticado", { error: true }); return; }
+  const [deleteTarget, setDeleteTarget] = useState<StudioTitle | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
+  /** Tras confirmar: el servidor acepta el borrado (202) y la obra queda «eliminando» hasta que termine de borrar sus archivos. */
+  const confirmDelete = useCallback(async () => {
+    const t = deleteTarget;
+    if (!t) return;
+    setDeleteBusy(true);
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { showToast("No autenticado", { error: true }); return; }
       const res = await fetch(`/api/titles/${encodeURIComponent(t.id)}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -133,16 +154,40 @@ export function StudioScreen() {
         showToast((typeof err === "string" ? err : err?.message) ?? "Error al eliminar", { error: true });
         return;
       }
-      setData((d) => {
-        const titles = d.titles.filter((x) => x.id !== t.id);
-        return { ...d, titles, creator: { ...d.creator, stats: { ...d.creator.stats,
-          titles: titles.length, published: titles.filter(x => x.status === "publicado").length } } };
-      });
-      showToast(`«${t.title}» eliminado`);
+      if (res.status === 202) {
+        setData((d) => ({ ...d, titles: d.titles.map((x) => (x.id === t.id ? { ...x, deleting: true } : x)) }));
+        showToast(`Eliminando «${t.title}»: se están borrando sus archivos del servidor`);
+      } else {
+        setData((d) => withoutTitles(d, [t.id]));
+        showToast(`«${t.title}» eliminado`);
+      }
     } catch {
       showToast("Error de red al eliminar", { error: true });
+    } finally {
+      setDeleteBusy(false);
+      setDeleteTarget(null);
     }
-  }, []);
+  }, [deleteTarget]);
+
+  // Mientras alguna obra se está borrando, se pregunta cada pocos segundos hasta que el servidor confirma que terminó.
+  const deletingKey = data.titles.filter((t) => t.deleting).map((t) => t.id).join("|");
+  useEffect(() => {
+    if (!deletingKey || !userId) return;
+    const slugs = deletingKey.split("|");
+    const timer = setInterval(() => {
+      void (async () => {
+        const { data: rows, error } = await getSupabaseBrowserClient().from("peliculas")
+          .select("slug, media_delete_state").eq("creator_user_id", userId).in("slug", slugs)
+          .returns<{ slug: string; media_delete_state: string | null }[]>();
+        if (error) return;
+        const finished = slugs.filter((slug) => { const row = rows?.find((r) => r.slug === slug); return !row || row.media_delete_state === "done"; });
+        if (finished.length === 0) return;
+        setData((d) => withoutTitles(d, finished));
+        showToast(finished.length === 1 ? "Obra eliminada del servidor" : `${finished.length} obras eliminadas del servidor`);
+      })();
+    }, DELETE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [deletingKey, userId]);
 
   function showToast(msg: string, opts?: { error?: boolean }) {
     setToast({ msg, error: opts?.error, key: Date.now() });
@@ -184,7 +229,7 @@ export function StudioScreen() {
         )}
         {active === "titulos" && (
           <TitlesView data={data} onNav={nav} onEditTitle={setEditTitle}
-            onToast={showToast} onDelete={handleDelete} openTitle={openTitle} setOpenTitle={setOpenTitle} />
+            onToast={showToast} onDelete={setDeleteTarget} openTitle={openTitle} setOpenTitle={setOpenTitle} />
         )}
         {active === "subir" && (
           <UploadWizard onGoToTitles={() => { handlePublished(); nav("titulos"); }} />
@@ -197,6 +242,7 @@ export function StudioScreen() {
 
       {/* Edit modal */}
       <EditModal title={editTitle} onClose={() => setEditTitle(null)} onToast={showToast} data={data} />
+      <DeleteTitleDialog title={deleteTarget} busy={deleteBusy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void confirmDelete()} />
 
       {/* Toast */}
       {toast && (
