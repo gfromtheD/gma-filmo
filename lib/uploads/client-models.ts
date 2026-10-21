@@ -1,5 +1,5 @@
 import type { MediaAssetDTO, UploadSessionDTO } from '@/types/media-engine';
-export type UploadRole = "main" | "trailer" | "intro" | "extras" | "poster" | "poster_h" | "poster_v" | "subtitles" | "avatar";
+export type UploadRole = "main" | "trailer" | "intro" | "extras" | "extra_image" | "poster" | "poster_h" | "poster_v" | "subtitles" | "avatar";
 export type ClientUploadState = "pending" | "hashing" | "uploading" | "paused" | "processing" | "done" | "error" | "cancelling";
 
 export type ManagedClientUploadState = 'pending' | 'uploading' | 'paused' | 'processing' | 'done' | 'error' | 'cancelling';

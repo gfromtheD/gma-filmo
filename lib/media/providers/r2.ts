@@ -14,7 +14,7 @@ const deletionPending = (safeAfter: string): DeletionObservation => ({ absent: f
 
 export class R2MediaProvider implements MediaProvider {
   readonly key = 'r2' as const;
-  readonly capabilities = { roles: ['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar'] as const, processing: 'local' as const, retry: 'local-job' as const };
+  readonly capabilities = { roles: ['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar'] as const, processing: 'local' as const, retry: 'local-job' as const };
 
   constructor(private readonly video: R2VideoProvider, private readonly auxiliary: AuxiliaryProvider) {}
 

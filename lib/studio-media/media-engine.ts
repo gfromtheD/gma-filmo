@@ -91,7 +91,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
    * (el servidor libera el hueco al instante) y se vuelve a leer el borrador. Los extras tienen hueco propio por subida.
    */
   async function releaseOccupiedSlot(detail: ManagedDraftDetail, role: AssetRole, language: string | undefined, keepSessionId?: string): Promise<ManagedDraftDetail> {
-    if (role === 'extras') return detail;
+    if (role === 'extras' || role === 'extra_image') return detail;
     const serverSlot = role === 'subtitles' ? `subtitles:${language || 'und'}` : role;
     const stale = detail.uploads.filter(u => u.session.slot === serverSlot && u.session.sessionId !== keepSessionId && !['cancelling', 'cancelled'].includes(u.session.state));
     if (stale.length === 0) return detail;

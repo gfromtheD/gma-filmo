@@ -3,7 +3,7 @@ import type { MediaAssetDTO, MediaAssetRow, UploadSessionDTO, UploadSessionRow }
 import { mediaAssetDTOSchema, uploadSessionDTOSchema } from './contracts';
 
 const assetRowSchema = z.object({
-  id: z.string().uuid(), owner_id: z.string().uuid(), role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar']),
+  id: z.string().uuid(), owner_id: z.string().uuid(), role: z.enum(['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar']),
   provider: z.enum(['r2','stream','mock','peertube']), provider_ref: z.string().nullable(),
   state: z.enum(['received','validating','processing','ready','failed','rejected','deleting','deleted']),
   expected_input_bytes: z.number().int().nonnegative(), received_bytes: z.number().int().nonnegative().nullable(),
@@ -16,7 +16,7 @@ const assetRowSchema = z.object({
 
 const sessionRowSchema = z.object({
   id: z.string().uuid(), owner_id: z.string().uuid(), draft_id: z.string().uuid(), asset_id: z.string().uuid(),
-  role: z.enum(['main','trailer','extras','intro','poster','poster_h','poster_v','subtitles','avatar']),
+  role: z.enum(['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar']),
   slot: z.string(), language: z.string().nullable(), provider: z.enum(['r2','stream','mock','peertube']),
   provider_ref: z.string().nullable(), provider_data: z.record(z.string(), z.unknown()), object_key: z.string().nullable(),
   multipart_upload_id: z.string().nullable(), part_size: z.number().int().nonnegative(), transfer_generation: z.number().int().positive(),

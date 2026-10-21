@@ -62,7 +62,7 @@ test('mapeo explícito de huecos de Windows a roles del motor', () => {
   assert.deepEqual(mapSlot(d, 'poster'), { supported: true, role: 'poster_v' });
   assert.deepEqual(mapSlot(d, 'banner'), { supported: true, role: 'poster_h' });
   assert.deepEqual(mapSlot(d, 'extra:0'), { supported: true, role: 'extras' });
-  assert.equal(mapSlot(d, 'extra:1').supported, false, 'extras de imagen: decisión pendiente');
+  assert.deepEqual(mapSlot(d, 'extra:1'), { supported: true, role: 'extra_image' }, 'los extras de imagen van al motor con su propio rol');
   assert.equal(mapSlot(d, 'srt:0').supported, false, 'dos SRT del mismo idioma');
   assert.deepEqual(mapSlot(draftFixture(), 'srt:0'), { supported: true, role: 'subtitles', language: 'en' });
 });
@@ -97,7 +97,7 @@ test('mediaEngine sube con el rol correcto, avisa del procesado y devuelve la id
 test('mediaEngine no envía al servidor huecos sin soporte ni archivos por encima del límite real', async () => {
   const { deps, uploads } = fakeDeps();
   const engine = createMediaEngine(deps, { getDraft: () => draftFixture() });
-  assert.equal((await engine.uploadAsset({ slot: 'extra:1', rule: 'image', file: file('foto.png') }, () => undefined)).status, 'error');
+  assert.equal((await engine.uploadAsset({ slot: 'extra:7', rule: 'image', file: file('foto.png') }, () => undefined)).status, 'error', 'un extra que no existe en el borrador no se envía');
   const big = { name: 'trailer.mp4', size: 2 * 1024 ** 3, type: 'video/mp4' } as File;
   assert.equal((await engine.uploadAsset({ slot: 'trailer', rule: 'video', file: big }, () => undefined)).status, 'error');
   assert.equal(uploads.length, 0);
@@ -290,4 +290,27 @@ test('la subida cancelada no ocupa el hueco ni hace falta cancelarla otra vez al
   await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
   assert.equal(uploads.length, 1);
   assert.equal(calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+// ── Extras de imagen ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+test('un extra de imagen se sube con su propio rol y no cancela el vídeo ni otras imágenes', async () => {
+  const h = fakeDeps();
+  // En el servidor ya hay otro extra de imagen y uno de vídeo: cada extra tiene su hueco propio.
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('extra_image', 'ready', 5), envelope('extras', 'ready', 6), envelope('main', 'ready', 1));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'extra:1', rule: 'image', file: file('fotograma.png') }, () => undefined);
+  assert.equal(asset.status, 'done');
+  assert.equal(h.uploads.at(-1)!.role, 'extra_image');
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+test('los tres tipos de extra de la ficha (fotograma, póster y vídeo) tienen hueco en el motor', () => {
+  const d = draftFixture({ extras: [{ kind: 'fotograma', file: null }, { kind: 'poster', file: null }, { kind: 'video', file: null }] });
+  assert.deepEqual(['extra:0', 'extra:1', 'extra:2'].map(s => (mapSlot(d, s) as { role?: string }).role), ['extra_image', 'extra_image', 'extras']);
+});
+
+test('las imágenes de extras respetan el límite de 10 MB del servidor', () => {
+  assert.equal(serverLimitProblem('extra_image', 5 * 1024 ** 2), null);
+  assert.ok(serverLimitProblem('extra_image', 11 * 1024 ** 2));
 });
