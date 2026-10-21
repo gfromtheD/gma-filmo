@@ -10,6 +10,10 @@ import {legacyMediaUrl,resolveLegacyPlayback} from './legacy-playback';
 import type {ProviderPlaybackContext} from './provider';
 import {safeMediaPath} from '@/lib/uploads/video-processing';
 const notFound=()=>new MediaError('MEDIA_NOT_FOUND');
+// Imágenes de títulos publicados: el CDN guarda la redirección 1 h y el navegador 5 min. Debe quedar por debajo de la caducidad de la URL firmada (24 h)
+// aunque se sirva obsoleta (1 h + 10 min de gracia). Si un archivo se sustituye cambia de id, así que nunca se ve una imagen vieja bajo el mismo enlace.
+const PUBLIC_IMAGE_CACHE='public, max-age=300, s-maxage=3600, stale-while-revalidate=600';
+const CACHEABLE_IMAGE_ROLES=['poster','poster_h','poster_v','extra_image'];
 export class PlaybackService {
  readonly service:MediaService;
  constructor(readonly repo=new MediaRepository(),registry?:MediaProviderRegistry){this.service=new MediaService(repo,registry);}
@@ -88,7 +92,9 @@ export class PlaybackService {
   const provider=this.service.registry.get(context.asset.provider);
   if(provider.readAuxiliary){const result=await provider.readAuxiliary(context);if(result.bytes.byteLength>4*1024**2 || !['text/vtt','image/webp'].includes(result.mimeType))throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
    return new Response(Buffer.from(result.bytes),{headers:{'Content-Type':result.mimeType,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}
-  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);return new Response(null,{status:307,headers:{Location:mediaUrlSchema.parse(delivery.url),'Cache-Control':'private, no-store'}});
+  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);
+  const cacheable=CACHEABLE_IMAGE_ROLES.includes(context.asset.role) && await this.repo.isPublishedTitleAsset(id);
+  return new Response(null,{status:307,headers:{'Cache-Control':cacheable?PUBLIC_IMAGE_CACHE:'private, no-store',Location:mediaUrlSchema.parse(delivery.url)}});
  }
  async deliverHls(id:string,relative:string,owner:string|null):Promise<Response> {
   safeMediaPath(relative);const output=await this.repo.authorizedOutput(id,relative,owner);

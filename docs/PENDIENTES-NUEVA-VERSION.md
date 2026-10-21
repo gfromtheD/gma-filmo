@@ -441,3 +441,9 @@ La adaptación de `studio-upload-view.tsx` y `studio-upload-orbital.tsx` es visu
 - [x] La duración se guarda con el mismo formato que las obras antiguas («1h 02m», «9m 40s»).
 - [ ] **Revisión editorial: EN PAUSA (decisión de G).** Qué se revisa, quién revisa y cómo se aprueba queda sin definir hasta que la publicación directa funcione de punta a punta con vídeo real. Mientras tanto, con `NEXT_PUBLIC_STUDIO_PUBLISH=direct` cualquier creador con ficha publica al enviar. Cuando se retome: modo `hold` + cola de revisión + aviso al creador.
 - [ ] Colecciones y categorías de la sección de películas: se crearán cuando estén subidas todas las películas previstas.
+
+## Imágenes: entrega rápida y coste a futuro
+
+- **Versión 1 (hecha):** las imágenes de títulos publicados (póster, banner, imágenes de extras) siguen en el bucket privado de R2, pero la redirección `/api/media/<id>` se cachea (CDN 1 h, navegador 5 min), así que no cuesta una llamada a Vercel ni a la base de datos en cada vista. Coste añadido: cero.
+- [ ] Si el tráfico crece y las llamadas a funciones o las operaciones de R2 se acercan al límite gratuito: bucket público de R2 con dominio propio y caché inmutable, guardando la URL directa al publicar. Medir antes con el panel de Vercel (invocaciones de `/api/media`) y el de Cloudflare (operaciones clase B).
+- [ ] Trailers y extras en vídeo se quedan en el VPS (HLS); revisar ancho de banda del VPS si crece la audiencia.
