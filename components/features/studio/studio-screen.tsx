@@ -15,7 +15,8 @@ import { STUDIO_DATA }   from "./studio-data";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
 import { useAuth } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import type { StudioTitle, StudioTabId } from "./studio-types";
+import { applyAudience, audienceSchema } from "@/lib/studio/audience";
+import type { StudioTitle, StudioTabId, StudioData } from "./studio-types";
 export type { StudioTabId };
 
 // Las columnas de la migración de subidas aún no figuran en los tipos generados.
@@ -23,6 +24,20 @@ interface StudioTitleRow {
   slug: string; title: string; synopsis: string | null; year: string | null;
   duration: string | null; genre: string | null; language: string | null;
   r2_poster_url: string | null; created_at: string | null; status: string | null; file_size_bytes: number | null;
+}
+
+/** Audiencia real del creador; `null` si no se pudo calcular (el panel lo dice en vez de enseñar ceros inventados). */
+async function loadAudience(supabase: ReturnType<typeof getSupabaseBrowserClient>) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const res = await fetch("/api/creator/audience", { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+    if (!res.ok) return null;
+    const parsed = audienceSchema.safeParse(await res.json());
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 export function StudioScreen() {
@@ -74,7 +89,7 @@ export function StudioScreen() {
           publishDate: row.created_at ? new Date(row.created_at).toLocaleDateString("es-ES") : undefined,
         }));
         if (cancelled) return;
-        setData({
+        const base: StudioData = {
           ...STUDIO_DATA,
           creator: {
             ...STUDIO_DATA.creator,
@@ -86,7 +101,10 @@ export function StudioScreen() {
           },
           titles: realTitles,
           storageUsedBytes: (titlesResult.data ?? []).reduce((sum, row) => sum + (Number(row.file_size_bytes) || 0), 0),
-        });
+        };
+        const audience = await loadAudience(supabase);
+        if (cancelled) return;
+        setData(audience ? applyAudience(base, audience) : base);
         setLoadedUserId(userId);
       } catch {
         if (!cancelled) setLoadError("No se pudo cargar tu estudio. Revisa la conexión e inténtalo de nuevo.");

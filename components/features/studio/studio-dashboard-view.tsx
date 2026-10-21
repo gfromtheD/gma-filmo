@@ -109,7 +109,7 @@ export function DashboardView({ data, onNav }: Props) {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         <motion.section variants={rise} aria-label="Tu audiencia" className={`${GLASS} lg:row-span-2`}>
-          <AudiencePanel titles={titles} />
+          <AudiencePanel titles={titles} totalViewers={creator.stats.totalViews} trend={data.viewsTrend} />
         </motion.section>
 
         <motion.section variants={rise} aria-label="Tu ficha de creador" className="lg:col-start-2">

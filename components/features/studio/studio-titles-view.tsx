@@ -197,7 +197,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
           )}
           {t.status === "publicado" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 18 }}>
-              {([["Vistas", fmtFull(t.views), <Eye size={15} key="e" color={C.accentH} />],
+              {([["Espectadores", fmtFull(t.views), <Eye size={15} key="e" color={C.accentH} />],
                 ["Valoración", (t.rating ?? 0).toFixed(1), <CheckCircle2 size={15} key="s" color={C.accentH} />],
                 ["Comentarios", t.comments ?? 0, <X size={15} key="m" color={C.accentH} />]] as [string, string | number, React.ReactNode][]).map(([l, v, ic]) => (
                 <div key={l} style={card({ padding: "13px 12px" })}>
@@ -325,7 +325,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
       ) : layout === "lista" ? (
         <div style={col(10)}>
           <div className={styles.listHeader} style={{ display: "grid", gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, padding: "0 12px" }}>
-            {["", "Título", "Estado", "Vistas", "Valoración", ""].map((h, i) => (
+            {["", "Título", "Estado", "Espectadores", "Valoración", ""].map((h, i) => (
               <div key={i} style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: C.textFaint }}>{h}</div>
             ))}
           </div>
