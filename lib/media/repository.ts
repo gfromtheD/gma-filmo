@@ -130,6 +130,14 @@ export class MediaRepository {
   async titleMedia(id:number):Promise<Array<{asset_id:string;role:string;slot:string;language:string|null;position:number}>> {
     return z.array(z.object({asset_id:z.string().uuid(),role:z.string(),slot:z.string(),language:z.string().nullable(),position:z.number().int()})).parse(await this.result(this.query('gma_title_media').select('asset_id,role,slot,language,position').eq('title_id',id).order('position')));
   }
+  /** ¿El archivo pertenece a un título publicado y vivo? Entonces es público y su entrega se puede cachear. */
+  async isPublishedTitleAsset(asset:string):Promise<boolean> {
+    const rows=z.array(z.object({title_id:z.number().int()})).parse(await this.result(this.query('gma_title_media').select('title_id').eq('asset_id',asset).limit(1)));
+    if(!rows[0])return false;
+    const title=z.object({status:z.string().nullable(),media_delete_state:z.string().nullable()}).nullable()
+      .parse(await this.result(this.query('peliculas').select('status,media_delete_state').eq('id',rows[0].title_id).maybeSingle()));
+    return title?.status==='published' && (title.media_delete_state??'none')==='none';
+  }
   async titleVersions(id:number,owner:string):Promise<Array<{revision:number;owner_id:string;retained_until:string;snapshot:Record<string,unknown>}>> {
     return z.array(z.object({revision:z.number().int().nonnegative(),owner_id:z.string().uuid(),retained_until:z.string().datetime({offset:true}),snapshot:z.record(z.string(),z.unknown())}))
       .parse(await this.result(this.query('gma_title_media_versions').select('revision,owner_id,retained_until,snapshot').eq('title_id',id).eq('owner_id',owner).order('revision').limit(16)));
