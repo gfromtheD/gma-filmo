@@ -78,7 +78,7 @@ export function PosterCard({
       detailHref={detailHref}
       onPointerEnter={preview.keepOpen}
       onPointerLeave={preview.scheduleClose}
-      onClose={preview.close}
+      onClose={preview.dismiss}
       isClosing={preview.isClosing}
       onLoginRequired={notice.showLoginRequired}
       onSaveError={() => notice.showError(watchlistErrorMessage())}
