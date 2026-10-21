@@ -17,7 +17,7 @@
  * Todas las dependencias de red se inyectan (`MediaEngineDeps`) para probarlo sin navegador.
  */
 import type { AssetRequest, SubmitResult, UploadEngine } from '@/lib/studio/engine';
-import type { UploadDraft, UploadedAsset } from '@/lib/studio/upload-draft';
+import type { UploadDraft, UploadedAsset, UploadPhase } from '@/lib/studio/upload-draft';
 import type { AssetRole } from '@/types/media-engine';
 import type { ManagedDraftDetail, ManagedEnvelope } from '@/lib/uploads/managed-browser';
 import { engineMetadata, fichaFromDraft, mapSlot, serverLimitProblem, type EngineMetadata } from './mapping';
@@ -34,6 +34,7 @@ export interface MediaEngineDeps {
   uploadAsset(input: {
     file: File; role: AssetRole; language?: string; draft: ManagedDraftDetail['draft']; idempotencyKey: string; sessionId?: string;
     signal: AbortSignal; onEnvelope?: (e: ManagedEnvelope) => void; onProgress?: (p: number) => void; onState?: (s: string) => void;
+    onHashProgress?: (fraction: number) => void; processingWaitMs?: number;
   }): Promise<ManagedEnvelope>;
   saveMetadata(detail: ManagedDraftDetail, metadata: EngineMetadata): Promise<ManagedDraftDetail['draft']>;
   api<T>(path: string, method?: string, body?: unknown): Promise<T>;
@@ -55,7 +56,13 @@ export interface MediaUploadEngine extends Omit<UploadEngine, 'id'> {
   saveFicha(draft: UploadDraft): Promise<{ revision: number }>;
 }
 
+// Textos con los que el cliente de subidas (managed-browser.ts) anuncia cada etapa.
+const CHECKING = 'Comprobando identidad';
+const TRANSFERRING = 'Transfiriendo';
 const VALIDATING = 'Validando y procesando';
+/** Roles de vídeo: se convierten en el servidor y una obra larga tarda mucho más que los 90 s que se esperan por defecto. */
+const LONG_PROCESSING_ROLES: ReadonlySet<string> = new Set(['main', 'trailer', 'extras', 'intro']);
+const LONG_PROCESSING_WAIT_MS = 6 * 60 * 60 * 1000;
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
 
 function toAsset(file: { name: string; size: number }, envelope: ManagedEnvelope): MediaUploadedAsset {
@@ -91,7 +98,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     return serverDraft();
   }
 
-  async function uploadAsset(request: AssetRequest, onProgress: (p: number) => void, signal?: AbortSignal, onProcessing?: () => void): Promise<MediaUploadedAsset> {
+  async function uploadAsset(request: AssetRequest, onProgress: (p: number) => void, signal?: AbortSignal, onProcessing?: () => void, onPhase?: (phase: UploadPhase, percent?: number) => void): Promise<MediaUploadedAsset> {
     const { file, slot } = request;
     const fail = (error: string): MediaUploadedAsset => ({ name: file.name, sizeBytes: file.size, url: null, status: 'error', error });
     const mapping = mapSlot(options.getDraft(), slot);
@@ -113,7 +120,14 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
         signal: controller.signal,
         onEnvelope: e => { sessions.set(slot, e); },
         onProgress,
-        onState: state => { if (state === VALIDATING) onProcessing?.(); },
+        onState: state => {
+          if (state === CHECKING) onPhase?.('checking', 0);
+          else if (state === TRANSFERRING) onPhase?.('uploading', 0);
+          else if (state === VALIDATING) { onPhase?.('processing'); onProcessing?.(); }
+        },
+        onHashProgress: fraction => onPhase?.('checking', Math.round(fraction * 100)),
+        // Un vídeo largo tarda en convertirse mucho más que los 90 s por defecto: se espera con calma y la página sigue mostrando «procesando».
+        ...(LONG_PROCESSING_ROLES.has(mapping.role) ? { processingWaitMs: LONG_PROCESSING_WAIT_MS } : {}),
       });
       sessions.set(slot, envelope);
       return toAsset(file, envelope);

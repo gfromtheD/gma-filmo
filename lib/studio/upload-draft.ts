@@ -20,12 +20,18 @@ export const UPLOAD_STEPS: readonly UploadStepInfo[] = [
   { id: "datos", label: "Completa los detalles" },
 ];
 
+/** Etapa de una subida: comprobar el archivo en el navegador, enviarlo y procesarlo en el servidor. */
+export type UploadPhase = "checking" | "uploading" | "processing";
+
 /** Un archivo del borrador: lo que se sabe de él y cómo va su subida. */
 export interface UploadedAsset {
   readonly name: string;
   readonly sizeBytes: number;
   readonly url: string | null;
   readonly status: "pending" | "uploading" | "processing" | "done" | "error";
+  /** Etapa en curso mientras `status` es «uploading» o «processing». Sin dato, se entiende «uploading». */
+  readonly phase?: UploadPhase;
+  /** Avance (0–100) de la etapa en curso, no del conjunto. */
   readonly progress?: number;
   readonly error?: string;
   /** Subido en modo local: validado, pero todavía no enviado al motor de alojamiento. */

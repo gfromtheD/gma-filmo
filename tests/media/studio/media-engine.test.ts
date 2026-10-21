@@ -222,3 +222,36 @@ test('si el servidor no deja liberar el hueco, el usuario ve el motivo y no se s
   assert.match(String(asset.error), /UPLOAD_ASSET_IN_USE/);
   assert.equal(h.uploads.length, 0);
 });
+
+// ── Etapas de la subida (comprobar → subir → procesar) y espera del procesado ─────────────────────────────────────────
+
+test('las etapas llegan en orden y la comprobación informa de su avance', async () => {
+  const h = fakeDeps();
+  h.deps.uploadAsset = async input => {
+    input.onState?.('Comprobando identidad');
+    input.onHashProgress?.(0.5);
+    input.onState?.('Transfiriendo');
+    input.onProgress?.(40);
+    input.onState?.('Validando y procesando');
+    return envelope(input.role, 'ready', 1);
+  };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const phases: Array<[string, number | undefined]> = [];
+  let processing = 0;
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('peli.mp4') }, () => undefined, undefined, () => { processing += 1; }, (phase, percent) => phases.push([phase, percent]));
+  assert.deepEqual(phases, [['checking', 0], ['checking', 50], ['uploading', 0], ['processing', undefined]]);
+  assert.equal(processing, 1, 'el aviso antiguo de «procesando» se mantiene');
+});
+
+test('un vídeo espera horas a que el servidor lo convierta; una imagen, el plazo normal', async () => {
+  const waits: Record<string, number | undefined> = {};
+  const h = fakeDeps();
+  h.deps.uploadAsset = async input => { waits[input.role] = input.processingWaitMs; return envelope(input.role, 'ready', 1); };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('peli.mp4') }, () => undefined);
+  await engine.uploadAsset({ slot: 'trailer', rule: 'video', file: file('trailer.mp4') }, () => undefined);
+  await engine.uploadAsset({ slot: 'poster', rule: 'image', file: file('cartel.png') }, () => undefined);
+  assert.equal(waits.main, 6 * 60 * 60 * 1000);
+  assert.equal(waits.trailer, 6 * 60 * 60 * 1000);
+  assert.equal(waits.poster_v, undefined, 'las imágenes no cambian el plazo por defecto');
+});

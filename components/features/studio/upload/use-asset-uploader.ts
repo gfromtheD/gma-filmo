@@ -5,7 +5,7 @@ import type { AssetRequest, UploadEngine } from "@/lib/studio/engine";
 import {
   IMAGE_SNIFF_BYTES, imageContentProblem, imageSizeAdvice, sniffImageType, validateFile, type PixelSize,
 } from "@/lib/studio/file-rules";
-import type { UploadedAsset } from "@/lib/studio/upload-draft";
+import type { UploadedAsset, UploadPhase } from "@/lib/studio/upload-draft";
 
 type SetAsset = (slot: string, asset: UploadedAsset | null) => void;
 
@@ -55,13 +55,20 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
       }
       const controller = new AbortController();
       controllers.current.set(slot, controller);
-      setAsset(slot, { name: file.name, sizeBytes: file.size, url: null, status: "uploading", progress: 0 });
+      const base = { name: file.name, sizeBytes: file.size, url: null } as const;
+      let phase: UploadPhase = "uploading";
+      setAsset(slot, { ...base, status: "uploading", phase, progress: 0 });
       try {
         const result = await engine.uploadAsset(
           request,
-          (percent) => setAsset(slot, { name: file.name, sizeBytes: file.size, url: null, status: "uploading", progress: percent }),
+          // Al acabar, el cliente avisa con un 100 % que ya no pinta nada: la etapa de procesado manda.
+          (percent) => { if (phase !== "processing") setAsset(slot, { ...base, status: "uploading", phase: "uploading", progress: percent }); },
           controller.signal,
-          () => setAsset(slot, { name: file.name, sizeBytes: file.size, url: null, status: "processing" }),
+          () => { phase = "processing"; setAsset(slot, { ...base, status: "processing", phase: "processing" }); },
+          (next, percent) => {
+            phase = next;
+            setAsset(slot, next === "processing" ? { ...base, status: "processing", phase: next } : { ...base, status: "uploading", phase: next, progress: percent ?? 0 });
+          },
         );
         if (!controller.signal.aborted) setAsset(slot, result);
       } catch (error) {

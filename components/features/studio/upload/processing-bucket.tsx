@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useState, type ReactNode } from "react";
+import type { UploadPhase } from "@/lib/studio/upload-draft";
+import { ProgressRing } from "./progress-ring";
 
 /**
  * Pantalla de carga de la caja de subida mientras el motor procesa el vídeo (conversión, optimización, versiones HLS…).
@@ -9,7 +11,9 @@ import { useEffect, useId, useState, type ReactNode } from "react";
  * la caja representa el trabajo desde que empieza la subida hasta que el vídeo está listo. Adaptada del componente
  * Bucket (21st.dev): se quitaron los iconos de terceros y la mayoría de filtros SVG, y se ajustó al tema oscuro de GMA.
  *
- * Las tareas son un texto orientativo que va rotando: no miden el avance real del motor.
+ * Cada etapa cae como una pastilla nueva con su propio anillo de progreso: comprobar el archivo y subirlo miden su avance
+ * real; el procesado del servidor aún no lo informa, así que su anillo gira (no se inventa un porcentaje) y sus tareas son
+ * un texto orientativo que va rotando.
  */
 
 interface Stage {
@@ -19,6 +23,12 @@ interface Stage {
 }
 
 const ICON_PROPS = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, className: "size-5" } as const;
+
+const CHECKING_STAGE: Stage = {
+  title: "Comprobando archivo",
+  description: "Verificamos que está entero antes de enviarlo",
+  icon: <svg {...ICON_PROPS}><path d="M12 3 4.5 6v5.5c0 4.4 3.1 8 7.5 9.5 4.4-1.5 7.5-5.1 7.5-9.5V6L12 3Z" /><path d="m9 12 2 2 4-4" /></svg>,
+};
 
 const UPLOADING_STAGE: Stage = {
   title: "Subiendo tu vídeo",
@@ -68,19 +78,25 @@ function useIsNarrow(): boolean {
 
 const GLASS_STROKE = "rgba(255,255,255,0.16)";
 
-export function ProcessingBucket({ phase, className = "" }: { readonly phase: "uploading" | "processing"; readonly className?: string }) {
+export function ProcessingBucket({ phase, progress = null, className = "" }: {
+  readonly phase: UploadPhase;
+  /** Avance (0–100) de la etapa en curso; `null` si no lo informa. */
+  readonly progress?: number | null;
+  readonly className?: string;
+}) {
   const reduceMotion = useReducedMotion() ?? false;
   const isNarrow = useIsNarrow();
   const [index, setIndex] = useState(0);
   const gradientId = useId().replace(/:/g, "");
 
   useEffect(() => {
-    if (reduceMotion || phase === "uploading") return;
+    if (reduceMotion || phase !== "processing") return;
     const timer = setInterval(() => setIndex((i) => (i + 1) % PROCESSING_STAGES.length), ROTATE_MS);
     return () => clearInterval(timer);
   }, [reduceMotion, phase]);
 
-  const stage = phase === "uploading" ? UPLOADING_STAGE : PROCESSING_STAGES[index % PROCESSING_STAGES.length]!;
+  const stage = phase === "checking" ? CHECKING_STAGE : phase === "uploading" ? UPLOADING_STAGE : PROCESSING_STAGES[index % PROCESSING_STAGES.length]!;
+  const percent = phase === "processing" || progress === null ? null : Math.round(progress);
 
   return (
     <div className={`relative isolate w-full max-w-[420px] ${className}`} style={{ aspectRatio: "655 / 352" }} role="status" aria-label={`${stage.title}. ${stage.description}`}>
@@ -109,11 +125,16 @@ export function ProcessingBucket({ phase, className = "" }: { readonly phase: "u
               animate={{ y: 0, opacity: 1, scale: isNarrow ? 0.95 : 1.15 }}
               exit={reduceMotion ? undefined : { y: isNarrow ? 90 : 120, scale: 0.8, transition: { duration: 0.8 } }}
               transition={{ duration: 0.5, ease: EASE }}
-              className="absolute flex w-[240px] origin-bottom items-center gap-2 rounded-full border border-white/12 bg-gma-surface p-2 shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+              className="absolute flex w-[276px] max-w-[92%] origin-bottom items-center gap-2 rounded-full border border-white/12 bg-gma-surface p-2 shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#22B16B]/15 text-[#2AC57A]">{stage.icon}</span>
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-[13px] font-bold leading-none text-white">{stage.title}</span>
+              <ProgressRing value={percent} label={stage.title} size={48} className="-m-1">
+                <span className="flex size-10 items-center justify-center rounded-full bg-[#22B16B]/15 text-[#2AC57A]">{stage.icon}</span>
+              </ProgressRing>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="whitespace-nowrap text-[13px] font-bold leading-none text-white">{stage.title}</span>
+                  {percent !== null && <span className="whitespace-nowrap text-[12px] font-bold leading-none tabular-nums text-[#2AC57A]">{percent} %</span>}
+                </span>
                 <span className="text-[11.5px] leading-snug text-[#A8A8A8]">{stage.description}</span>
               </span>
             </motion.div>
