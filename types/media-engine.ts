@@ -5,6 +5,7 @@ export const ASSET_ROLES = [
   'main',
   'trailer',
   'extras',
+  'extra_image',
   'intro',
   'poster',
   'poster_h',

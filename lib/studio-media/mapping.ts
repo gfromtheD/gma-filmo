@@ -3,7 +3,7 @@
  * Módulo puro, sin red ni navegador: lo usan el adaptador `mediaEngine` y sus pruebas.
  *
  * Reglas (ver docs/handoff/INTEGRACION-MOTOR-REGISTRO.md, «Mapeo de huecos»):
- *  video → main · trailer → trailer · poster → poster_v · banner → poster_h · extra:N (vídeo) → extras
+ *  video → main · trailer → trailer · poster → poster_v · banner → poster_h · extra:N (vídeo) → extras · extra:N (imagen) → extra_image
  *  srt:N → subtitles con el idioma de ese SRT · extra:N de imagen → NO soportado (decisión de producto pendiente).
  */
 import type { AssetRole } from '@/types/media-engine';
@@ -25,9 +25,7 @@ export function mapSlot(draft: UploadDraft, slot: string): SlotMapping {
   if (extra) {
     const item = draft.extras[Number(extra[1])];
     if (!item) return { supported: false, reason: 'El extra no existe en el borrador.' };
-    return item.kind === 'video'
-      ? { supported: true, role: 'extras' }
-      : { supported: false, reason: 'Los extras de imagen todavía no se pueden alojar en el motor.' };
+    return { supported: true, role: item.kind === 'video' ? 'extras' : 'extra_image' };
   }
   const srt = /^srt:(\d+)$/.exec(slot);
   if (srt) {
