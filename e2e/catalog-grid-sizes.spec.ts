@@ -75,12 +75,11 @@ test("de 1200 a 2200 px las portadas no bajan de 255 px ni pasan de 440 px (Film
   }
 });
 
-test("la sección «Películas» usa la misma cuadrícula (cuando haya más de una)", async ({ page }) => {
+test("la página «Películas» (/peliculas) usa la misma cuadrícula que los cortos", async ({ page }) => {
   await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/cortos", { waitUntil: "load" });
-  const sections = page.locator("section").filter({ has: page.getByRole("heading", { name: "Películas" }) });
-  await expect(sections.first()).toBeVisible({ timeout: 20_000 });
-  const cols = await sections.first().locator("div.grid").first().evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+  await page.goto("/peliculas", { waitUntil: "load" });
+  await expect(page.getByRole("heading", { name: "Películas", level: 1 })).toBeVisible({ timeout: 20_000 });
+  const cols = await page.locator("div.grid").first().evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
   expect(cols).toBe(4);
 });

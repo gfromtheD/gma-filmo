@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { workPath } from "@/lib/catalog/work-path";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Undo as RotateCcw, Redo as RotateCw, SkipPrev as SkipBack, SkipNext as SkipForward, SoundHigh as Volume2, SoundOff as VolumeX, Maximize, Collapse as Minimize2, ArrowLeft, Settings, Airplay, Xmark as X } from "@/components/ui/icons";
@@ -1071,7 +1072,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             navigatedRef.current = true;
             countdownDismissRef.current = true;
             setCountdownSecs(null);
-            router.push(`/cortos/${item.id}?valorar=1`);
+            router.push(`${workPath(item)}?valorar=1`);
           }}
         />
       )}

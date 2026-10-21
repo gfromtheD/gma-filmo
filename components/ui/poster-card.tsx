@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { workPath } from "@/lib/catalog/work-path";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { SaveIcon } from "@/components/ui/save-icon";
@@ -57,7 +58,7 @@ export function PosterCard({
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
   const notice = useNoticeToast();
-  const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : `/cortos/${item.id}`);
+  const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : workPath(item));
   const wrapProps = hoverPreview
     ? {
         ref: preview.anchorRef,

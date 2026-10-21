@@ -433,3 +433,11 @@ Estas casillas identifican cambios constatables en el código y comprobados en n
 - [ ] Comprobar físicamente Safari/iPhone, Chrome/Android y una tablet; declarar por separado cualquier prueba que solo sea emulada.
 
 La adaptación de `studio-upload-view.tsx` y `studio-upload-orbital.tsx` es visual. **SUB-01 y SUB-02 siguen pendientes:** no se ha reparado el motor ni verificado capacidad, cuota, reanudación o publicación real. Esta actualización tampoco implementa la configuración de cuentas de donación.
+
+
+## Publicación de títulos y revisión editorial (2026-10-21)
+
+- [x] Corto o película: lo decide la duración REAL del vídeo, medida en el servidor al publicar. Criterio de la industria (Academia, AFI, BFI): corto = 40 minutos o menos; película = más de 40. La base escribe `peliculas.genre` y la web enruta con `lib/catalog/work-path.ts` (`/cortos/<id>` o `/peliculas/<id>`).
+- [x] La duración se guarda con el mismo formato que las obras antiguas («1h 02m», «9m 40s»).
+- [ ] **Revisión editorial: EN PAUSA (decisión de G).** Qué se revisa, quién revisa y cómo se aprueba queda sin definir hasta que la publicación directa funcione de punta a punta con vídeo real. Mientras tanto, con `NEXT_PUBLIC_STUDIO_PUBLISH=direct` cualquier creador con ficha publica al enviar. Cuando se retome: modo `hold` + cola de revisión + aviso al creador.
+- [ ] Colecciones y categorías de la sección de películas: se crearán cuando estén subidas todas las películas previstas.

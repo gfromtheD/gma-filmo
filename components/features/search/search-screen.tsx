@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useRef } from "react";
+import { workPath } from "@/lib/catalog/work-path";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -148,7 +149,7 @@ export function SearchScreen({ items }: SearchScreenProps) {
               {results.length > 0 ? (
                 <div className={GRID_CLASS}>
                   {results.map(({ item }) => (
-                    <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={`/cortos/${item.id}`} />
+                    <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={workPath(item)} />
                   ))}
                 </div>
               ) : (
@@ -243,7 +244,7 @@ function Idle({ items, collections, recent, onPick, onForget, onClearRecent }: I
           <h2 className="mb-6 text-center text-[20px] font-semibold text-[#EEF1F6]">Destacados hoy</h2>
           <div className={GRID_CLASS}>
             {featured.map((item) => (
-              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={`/cortos/${item.id}`} />
+              <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption href={workPath(item)} />
             ))}
           </div>
         </section>
