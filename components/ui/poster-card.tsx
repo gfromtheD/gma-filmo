@@ -58,7 +58,8 @@ export function PosterCard({
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
   const notice = useNoticeToast();
-  const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : workPath(item));
+  // La ficha es siempre la de la obra; `href` solo manda sobre el clic en la imagen (p. ej. «Continuar viendo» reanuda).
+  const detailHref = item.kind === "series" ? `/series/${item.id}` : workPath(item);
   const wrapProps = hoverPreview
     ? {
         ref: preview.anchorRef,
