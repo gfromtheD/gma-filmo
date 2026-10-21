@@ -18,5 +18,5 @@ export async function DELETE(req:Request,{params}:Context){
   if(result.status===200)revalidateTag('peliculas');
   return NextResponse.json(result.body,{status:result.status});
  }
- return respond(async()=>{const result=await new TitleService().lifecycle(await owner(req),params.slug,'delete',await jsonBody(req));revalidateTag('peliculas');return result;},202);
+ return respond(async()=>{const result=await new TitleService().lifecycle(await owner(req),params.slug,'delete',req.headers.get('content-length')==='0'||!req.body?undefined:await jsonBody(req));revalidateTag('peliculas');return result;},202);
 }
