@@ -22,6 +22,8 @@ export interface StudioTitle {
   subtitles: string[];
   poster: PosterData;
   r2PosterUrl?: string;
+  /** El servidor está borrando sus archivos (borrado asíncrono): se enseña el progreso hasta que desaparece. */
+  deleting?: boolean;
   views?: number;
   rating?: number;
   ratingCount?: number;
