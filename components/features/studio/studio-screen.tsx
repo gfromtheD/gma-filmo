@@ -32,10 +32,15 @@ interface StudioTitleRow {
 /** Cada cuánto se pregunta si el servidor ya terminó de borrar los archivos de una obra. */
 const DELETE_POLL_MS = 4000;
 
-/** Quita obras de la lista y recalcula los contadores del creador. */
+/** Almacenamiento usado: solo cuentan las obras que siguen existiendo (las ya borradas del servidor no se listan). */
+function storageOf(titles: readonly StudioTitle[]): number {
+  return titles.reduce((sum, t) => sum + (t.sizeBytes ?? 0), 0);
+}
+
+/** Quita obras de la lista y recalcula los contadores del creador y el almacenamiento. */
 function withoutTitles(d: StudioData, slugs: readonly string[]): StudioData {
   const titles = d.titles.filter((x) => !slugs.includes(x.id));
-  return { ...d, titles, creator: { ...d.creator, stats: { ...d.creator.stats, titles: titles.length,
+  return { ...d, titles, storageUsedBytes: storageOf(titles), creator: { ...d.creator, stats: { ...d.creator.stats, titles: titles.length,
     published: titles.filter((x) => x.status === "publicado").length } } };
 }
 
@@ -102,6 +107,7 @@ export function StudioScreen() {
           subtitles: [], poster: STUDIO_DATA.posters["nieve"]!,
           r2PosterUrl: row.r2_poster_url ?? undefined,
           deleting: row.media_delete_state === "pending",
+          sizeBytes: Number(row.file_size_bytes) || 0,
           publishDate: row.created_at ? new Date(row.created_at).toLocaleDateString("es-ES") : undefined,
         }));
         if (cancelled) return;
@@ -116,7 +122,7 @@ export function StudioScreen() {
               published: realTitles.filter(t => t.status === "publicado").length },
           },
           titles: realTitles,
-          storageUsedBytes: (titlesResult.data ?? []).reduce((sum, row) => sum + (Number(row.file_size_bytes) || 0), 0),
+          storageUsedBytes: storageOf(realTitles),
         };
         const audience = await loadAudience(supabase);
         if (cancelled) return;
