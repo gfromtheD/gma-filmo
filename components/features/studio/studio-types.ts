@@ -24,6 +24,8 @@ export interface StudioTitle {
   r2PosterUrl?: string;
   /** El servidor está borrando sus archivos (borrado asíncrono): se enseña el progreso hasta que desaparece. */
   deleting?: boolean;
+  /** Lo que ocupa en el almacenamiento (`peliculas.file_size_bytes`). El panel suma esto de las obras que siguen existiendo. */
+  sizeBytes?: number;
   views?: number;
   rating?: number;
   ratingCount?: number;
