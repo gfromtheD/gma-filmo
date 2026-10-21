@@ -5,6 +5,7 @@ import styles from "./studio-responsive.module.css";
 import { useState, useEffect, useCallback } from "react";
 import { Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
 import { DeleteTitleDialog } from "./studio-deleting";
+import { ProgressRing } from "./upload/progress-ring";
 import { DashboardView } from "./studio-dashboard-view";
 import { TitlesView }    from "./studio-titles-view";
 import { UploadWizard }  from "./upload/upload-wizard";
@@ -212,9 +213,15 @@ export function StudioScreen() {
     </div>;
   }
   if (authLoading || !user || loadedUserId !== user.id) {
-    return <p role="status" style={{ padding: "72px 28px", color: C.textSec }}>
-      {authLoading || user ? "Cargando tu estudio…" : "Inicia sesión para acceder a tu estudio."}
-    </p>;
+    const isLoading = authLoading || Boolean(user);
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
+        {isLoading && <ProgressRing value={null} label="Cargando tu estudio" size={44} />}
+        <p role="status" className="text-[15px] font-medium text-[#A8A8A8]">
+          {isLoading ? "Cargando tu estudio…" : "Inicia sesión para acceder a tu estudio."}
+        </p>
+      </div>
+    );
   }
 
   return (
