@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {gatewayCapToken} from './delivery-token';
 import {createHash} from 'node:crypto';
 import {MediaService} from './service';
 import {MediaRepository} from './repository';
@@ -37,7 +38,7 @@ export class PlaybackService {
   const url=await this.legacyFallback(title);if(!url)throw notFound();return url;
  }
  private async registerDelivery(url:string,expiresAt:number|null,context:Awaited<ReturnType<MediaService['context']>>,owner:string|null,titleSlug:string|null){
-  const token=new URL(url).searchParams.get('cap');if(!token)return;
+  const token=gatewayCapToken(url);if(!token)return;
   if(!expiresAt)throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
   await this.repo.registerGatewayGrant(owner,context.asset.id,context.processingGeneration,titleSlug?null:context.session.draft_id,titleSlug,
    createHash('sha256').update(token).digest('hex'),new Date(expiresAt).toISOString());
