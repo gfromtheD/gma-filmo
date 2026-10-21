@@ -90,10 +90,10 @@ export class PlaybackService {
  async deliverAuxiliary(id:string,owner:string|null):Promise<Response> {
   const context=await this.context(id,owner);if(!['subtitles','poster','poster_h','poster_v','avatar','extra_image'].includes(context.asset.role))throw notFound();
   const provider=this.service.registry.get(context.asset.provider);
-  if(provider.readAuxiliary){const result=await provider.readAuxiliary(context);if(result.bytes.byteLength>4*1024**2 || !['text/vtt','image/webp'].includes(result.mimeType))throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-   return new Response(Buffer.from(result.bytes),{headers:{'Content-Type':result.mimeType,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}
-  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);
   const cacheable=CACHEABLE_IMAGE_ROLES.includes(context.asset.role) && await this.repo.isPublishedTitleAsset(id);
+  if(provider.readAuxiliary){const result=await provider.readAuxiliary(context);if(result.bytes.byteLength>4*1024**2 || !['text/vtt','image/webp'].includes(result.mimeType))throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
+   return new Response(Buffer.from(result.bytes),{headers:{'Content-Type':result.mimeType,'Cache-Control':cacheable?PUBLIC_IMAGE_CACHE:'private, no-store','X-Content-Type-Options':'nosniff'}});}
+  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);
   return new Response(null,{status:307,headers:{'Cache-Control':cacheable?PUBLIC_IMAGE_CACHE:'private, no-store',Location:mediaUrlSchema.parse(delivery.url)}});
  }
  async deliverHls(id:string,relative:string,owner:string|null):Promise<Response> {
