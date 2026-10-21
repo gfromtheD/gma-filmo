@@ -20,6 +20,7 @@ import type { AssetRequest, SubmitResult, UploadEngine } from '@/lib/studio/engi
 import type { UploadDraft, UploadedAsset, UploadPhase } from '@/lib/studio/upload-draft';
 import type { AssetRole } from '@/types/media-engine';
 import type { ManagedDraftDetail, ManagedEnvelope } from '@/lib/uploads/managed-browser';
+import { isLiveUpload } from '@/lib/uploads/live-upload';
 import { engineMetadata, fichaFromDraft, mapSlot, serverLimitProblem, type EngineMetadata } from './mapping';
 
 export type MediaUploadedAsset = UploadedAsset & {
@@ -169,9 +170,10 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
         return { status: 'queued', message: 'Tu título y todos sus archivos están guardados. Se publicará cuando se active la publicación.' };
       }
       const fresh = await serverDraft();
-      const main = fresh.uploads.find(u => u.session.role === 'main' && u.asset.status === 'ready');
+      const live = fresh.uploads.filter(isLiveUpload); // las canceladas o sustituidas siguen en la lista del servidor, pero ya no cuentan
+      const main = live.find(u => u.session.role === 'main' && u.asset.status === 'ready');
       if (!main) return { status: 'error', message: 'La película todavía no está lista.' };
-      if (fresh.uploads.some(u => u.asset.status !== 'ready')) return { status: 'error', message: 'Algún archivo todavía se está procesando.' };
+      if (live.some(u => u.asset.status !== 'ready')) return { status: 'error', message: 'Algún archivo todavía se está procesando.' };
       const published = await deps.api<{ title: { slug: string } }>('/api/titles', 'POST', {
         draft_id: fresh.draft.id, revision: Math.max(updated.revision, fresh.draft.revision), main_media_id: main.asset.mediaId,
       });

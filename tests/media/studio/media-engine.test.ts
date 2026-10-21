@@ -255,3 +255,39 @@ test('un vídeo espera horas a que el servidor lo convierta; una imagen, el plaz
   assert.equal(waits.trailer, 6 * 60 * 60 * 1000);
   assert.equal(waits.poster_v, undefined, 'las imágenes no cambian el plazo por defecto');
 });
+
+// ── Enviar con subidas canceladas o sustituidas en la lista del servidor ──────────────────────────────────────────────
+
+/** Una subida que el usuario canceló o sustituyó: el servidor la sigue listando, con su archivo ya «borrado». */
+function cancelled(role: string, n: number): ManagedEnvelope {
+  const e = envelope(role, 'ready', n);
+  return { ...e, session: { ...e.session, state: 'cancelled' }, asset: { ...e.asset, status: 'deleted', deliveryUrl: null } } as unknown as ManagedEnvelope;
+}
+
+test('enviar con subidas canceladas en la lista publica: solo cuentan las que siguen en uso', async () => {
+  const { deps, detail, calls } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('main', 8), cancelled('poster_h', 9), envelope('main', 'ready', 1), envelope('poster_h', 'ready', 2));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture(), publishMode: 'direct' });
+  const result = await engine.submit(draftFixture());
+  assert.equal(result.status, 'published', JSON.stringify(result));
+  assert.ok(calls.some(c => c.path === '/api/titles'), 'se llamó a publicar');
+});
+
+test('enviar sigue avisando si una subida en uso aún se procesa, aunque haya canceladas', async () => {
+  const { deps, detail, calls } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('main', 8), envelope('main', 'ready', 1), envelope('trailer', 'processing', 3));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture(), publishMode: 'direct' });
+  const result = await engine.submit(draftFixture());
+  assert.equal(result.status, 'error');
+  assert.match(result.message, /todavía se está procesando/);
+  assert.ok(!calls.some(c => c.path === '/api/titles'), 'no se publicó');
+});
+
+test('la subida cancelada no ocupa el hueco ni hace falta cancelarla otra vez al volver a subir', async () => {
+  const { deps, detail, calls, uploads } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('poster_h', 9));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(uploads.length, 1);
+  assert.equal(calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
