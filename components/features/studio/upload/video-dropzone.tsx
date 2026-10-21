@@ -97,7 +97,7 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
 
         {file && showsBucket && (
           <>
-            <ProcessingBucket phase={phase} progress={stageProgress} className="mt-6 mb-8" />
+            <ProcessingBucket phase={phase} progress={stageProgress} className="mt-20 mb-8" />
             <UploadProgress phase={phase} progress={stageProgress} sizeBytes={file.sizeBytes} />
             <div className="min-w-0 max-w-full">
               <p className="text-[17px] font-extrabold text-white">
