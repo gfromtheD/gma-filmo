@@ -4,7 +4,7 @@ import { transferAsset } from '@/lib/media/transports';
 import { uploadMutationEnvelopeSchema, transferDescriptorSchema } from '@/lib/media/contracts';
 import type { AssetRole, UploadSessionDTO, MediaAssetDTO, TransferDescriptor } from '@/types/media-engine';
 import { hashFile, uploadApi } from './browser';
-import { retryOnRevisionConflict } from './retry-conflict';
+import { retryOnRevisionConflict, retryWhileBusy } from './retry-conflict';
 import { isLiveUpload } from './live-upload';
 
 export const managedDraftSchema = z.object({ id: z.string().uuid(), purpose: z.enum(['title', 'avatar']), state: z.enum(['draft', 'published', 'abandoned']),
@@ -73,7 +73,7 @@ export async function uploadManagedAsset(input: { file: File; role: AssetRole; l
     envelope = managedEnvelopeSchema.parse(resumed);
   } else {
     // Dos subidas casi simultáneas leen la misma revisión del borrador y solo una puede reservar: la otra relee y reintenta.
-    const reserved = await retryOnRevisionConflict(async () => {
+    const reserved = await retryWhileBusy(() => retryOnRevisionConflict(async () => {
       const currentDraftResponse = await uploadApi<{ draft: unknown }>(`/api/upload-drafts/${draft.id}`);
       const currentDraft = managedDraftSchema.parse(currentDraftResponse.draft);
       return uploadApi(`/api/uploads`, 'POST', {
@@ -81,7 +81,7 @@ export async function uploadManagedAsset(input: { file: File; role: AssetRole; l
         file_name: file.name, content_type: file.type || 'application/octet-stream',
         ...(role === 'subtitles' ? { language: input.language ?? 'und' } : {}), idempotency_key: input.idempotencyKey,
       });
-    });
+    }));
     envelope = managedEnvelopeSchema.parse(reserved);
   }
   input.onEnvelope?.(envelope);

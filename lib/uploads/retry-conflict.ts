@@ -29,3 +29,32 @@ export async function retryOnRevisionConflict<T>(
     }
   }
 }
+
+/** Código del servidor cuando el usuario ya tiene el máximo de subidas activas a la vez. */
+export const CONCURRENCY_LIMIT = "UPLOAD_CONCURRENCY_LIMIT";
+
+const BUSY_INTERVAL_MS = 4000;
+const BUSY_MAX_WAIT_MS = 3 * 60 * 1000;
+
+/**
+ * Si el usuario ya tiene el máximo de subidas activas, la nueva espera su turno (se reintenta cada pocos segundos, hasta unos
+ * minutos) en vez de fallar: así puede soltar película, tráiler y varios extras de una vez y se van subiendo según quedan huecos.
+ */
+export async function retryWhileBusy<T>(
+  operation: () => Promise<T>,
+  options: { readonly maxWaitMs?: number; readonly intervalMs?: number; readonly sleep?: (ms: number) => Promise<void> } = {},
+): Promise<T> {
+  const maxWait = options.maxWaitMs ?? BUSY_MAX_WAIT_MS;
+  const interval = options.intervalMs ?? BUSY_INTERVAL_MS;
+  const sleep = options.sleep ?? wait;
+  let waited = 0;
+  for (;;) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== CONCURRENCY_LIMIT || waited >= maxWait) throw error;
+      await sleep(interval);
+      waited += interval;
+    }
+  }
+}

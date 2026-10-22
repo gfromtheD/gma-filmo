@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { REVISION_CONFLICT, retryOnRevisionConflict } from "../../lib/uploads/retry-conflict";
+import { CONCURRENCY_LIMIT, REVISION_CONFLICT, retryOnRevisionConflict, retryWhileBusy } from "../../lib/uploads/retry-conflict";
 
 const noWait = async () => undefined;
 
@@ -33,6 +33,31 @@ test.describe("retryOnRevisionConflict", () => {
     let calls = 0;
     await expect(retryOnRevisionConflict(async () => { calls++; throw new Error("UPLOAD_SLOT_OCCUPIED"); }, { sleep: noWait }))
       .rejects.toThrow("UPLOAD_SLOT_OCCUPIED");
+    expect(calls).toBe(1);
+  });
+});
+
+test.describe("retryWhileBusy", () => {
+  test("espera turno mientras el servidor dice que hay demasiadas subidas y acaba entrando", async () => {
+    let calls = 0;
+    const waits: number[] = [];
+    const result = await retryWhileBusy(async () => { calls++; if (calls < 4) throw new Error(CONCURRENCY_LIMIT); return "dentro"; },
+      { intervalMs: 10, sleep: async (ms) => { waits.push(ms); } });
+    expect(result).toBe("dentro");
+    expect(calls).toBe(4);
+    expect(waits).toHaveLength(3);
+  });
+
+  test("se rinde si el turno no llega en el tiempo máximo", async () => {
+    let calls = 0;
+    await expect(retryWhileBusy(async () => { calls++; throw new Error(CONCURRENCY_LIMIT); }, { maxWaitMs: 30, intervalMs: 10, sleep: async () => undefined }))
+      .rejects.toThrow(CONCURRENCY_LIMIT);
+    expect(calls).toBe(4);
+  });
+
+  test("otros errores no esperan", async () => {
+    let calls = 0;
+    await expect(retryWhileBusy(async () => { calls++; throw new Error("UPLOAD_QUOTA_EXCEEDED"); }, { sleep: async () => undefined })).rejects.toThrow("UPLOAD_QUOTA_EXCEEDED");
     expect(calls).toBe(1);
   });
 });
