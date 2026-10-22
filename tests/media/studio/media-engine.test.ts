@@ -314,3 +314,36 @@ test('las imágenes de extras respetan el límite de 10 MB del servidor', () => 
   assert.equal(serverLimitProblem('extra_image', 5 * 1024 ** 2), null);
   assert.ok(serverLimitProblem('extra_image', 11 * 1024 ** 2));
 });
+
+test('tras recargar, quitar un archivo cancela su sesión en el servidor aunque esta página no la recuerde', async () => {
+  const h = fakeDeps();
+  const stale = envelope('extra_image', 'processing', 7);
+  Object.assign(stale.session, { fileName: 'images.jpg', expectedBytes: 47000, state: 'uploading' });
+  (h.detail.uploads as ManagedEnvelope[]).push(stale);
+  const asset = { name: 'images.jpg', sizeBytes: 47000, url: null, status: 'error' as const };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture({ extras: [{ kind: 'fotograma', file: asset }] }) });
+  await engine.cancelAsset('extra:0');
+  const cancel = h.calls.find(c => /\/cancel$/.test(c.path));
+  assert.ok(cancel, 'debe llamar a cancelar en el servidor');
+  assert.match(cancel!.path, new RegExp(stale.session.sessionId));
+});
+
+test('tras recargar, quitar un archivo que el servidor ya no tiene no falla ni cancela nada', async () => {
+  const h = fakeDeps();
+  const asset = { name: 'otro.jpg', sizeBytes: 10, url: null, status: 'error' as const };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture({ extras: [{ kind: 'fotograma', file: asset }] }) });
+  await engine.cancelAsset('extra:0');
+  assert.equal(h.calls.some(c => /\/cancel$/.test(c.path)), false);
+});
+
+test('tras recargar, guardar la ficha vuelve a enlazar los extras ya subidos con su medio', async () => {
+  const h = fakeDeps();
+  const extra = envelope('extra_image', 'ready', 8);
+  Object.assign(extra.session, { fileName: 'frame.jpg', expectedBytes: 30267, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(extra);
+  const draft = draftFixture({ extras: [{ kind: 'fotograma', file: { name: 'frame.jpg', sizeBytes: 30267, url: null, status: 'done' as const } }] });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft });
+  await engine.saveFicha(draft);
+  const put = h.calls.find(c => c.method === 'PUT');
+  assert.ok(put && JSON.stringify(put.body).includes(extra.asset.mediaId), 'la ficha debe llevar el medio del extra');
+});
