@@ -219,7 +219,8 @@ test('si el servidor no deja liberar el hueco, el usuario ve el motivo y no se s
   const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
   const asset = await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
   assert.equal(asset.status, 'error');
-  assert.match(String(asset.error), /UPLOAD_ASSET_IN_USE/);
+  assert.match(String(asset.error), /se está usando/);
+  assert.doesNotMatch(String(asset.error), /UPLOAD_/, 'el usuario no ve el código crudo');
   assert.equal(h.uploads.length, 0);
 });
 
