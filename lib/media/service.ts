@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { createMediaJobProcessors, mediaJobBackoff, type MediaJobProcessors } from './jobs';
 import { MediaError } from './errors';
+import { provisioningNeverBound } from './stale-provision';
 import { reserveSchema } from '@/lib/uploads/contracts';
 import { assertUploadInput } from '@/lib/uploads/policy';
 import { UploadError } from '@/lib/uploads/repository';
@@ -227,7 +228,14 @@ export class MediaService {
     const provider=this.registry.get(context.session.provider);
     if(context.privateState.creation_pending===true || context.privateState.finalization_pending===true || !context.privateState.uploadId && context.session.provider_data.provision_started===true) {
       const binding=await provider.recoverUpload(context);
-      if(!binding)throw new UploadError('UPLOAD_CLEANUP_UNCONFIRMED');
+      if(!binding) {
+        // Sin archivo atado en el proveedor y pasado el plazo del provisioning: no hay nada que borrar allí (ver stale-provision.ts).
+        if(provisioningNeverBound({privateState:context.privateState,providerData:context.session.provider_data,createdAt:context.session.created_at,now:this.clock.now()})) {
+          await this.repo.command(context.session.owner_id,'delete_confirmed',{session_id:context.session.id,absent:true,writes_revoked:true,safe_after:null});
+          return;
+        }
+        throw new UploadError('UPLOAD_CLEANUP_UNCONFIRMED');
+      }
       await this.repo.command(context.session.owner_id,'bind_upload',{session_id:context.session.id,transfer_generation:context.transferGeneration,upload_id:binding.uploadId,provider_media_id:binding.providerMediaId,private_state:{...binding.privateState,uploadId:binding.uploadId,creation_pending:false}});
       context=await this.context(context.session.id);
     }
