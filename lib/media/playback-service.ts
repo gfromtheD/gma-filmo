@@ -25,7 +25,9 @@ export class PlaybackService {
   return row;
  }
  private async context(id:string,owner:string|null,slug:string|null=null) {
-  await this.repo.authorizePlayback(id,owner,slug);const session=await this.repo.assetSession(id);return this.service.context(session.id);
+  // Autorizar y leer la sesión no dependen entre sí (no se devuelve nada hasta que ambas acaban); y la sesión ya leída se reutiliza.
+  const [,session]=await Promise.all([this.repo.authorizePlayback(id,owner,slug),this.repo.assetSession(id)]);
+  return this.service.contextFromSession(session);
  }
  private base(context:Awaited<ReturnType<MediaService['context']>>,title:Record<string,unknown>|null):ProviderPlaybackContext {
   return {...context,authorization:title?'published-title':'owner-preview',titleSlug:title?String(title.slug):null,titleId:title?Number(title.id):null,titleRevision:title?Number(title.media_revision??0):null,subtitles:[],posterUrl:null,thumbnails:null,fallback:null};
@@ -74,10 +76,14 @@ export class PlaybackService {
     return resolveLegacyPlayback(title);
   }
   if(mains.length!==1)throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-  const context=this.base(await this.context(mains[0]!.asset_id,owner,slug),title);mark('contexto');
-  if(await this.legacyFallback(title))context.fallback={kind:'mp4',url:`/api/titles/${encodeURIComponent(slug)}/legacy-fallback`};
-  mark('respaldo');
-  const auxiliary=await this.resolveAuxiliaries(slug,owner,PLAYER_AUXILIARY_ROLES);mark('auxiliares');
+  // Contexto del vídeo, respaldo histórico y subtítulos/póster son lecturas independientes: van a la vez (cada ida y vuelta a la base cuesta ~200 ms).
+  const [mainContext,hasLegacyFallback,auxiliary]=await Promise.all([
+   this.context(mains[0]!.asset_id,owner,slug),this.legacyFallback(title),
+   this.resolveAuxiliaries(slug,owner,PLAYER_AUXILIARY_ROLES,{title,junction}),
+  ]);
+  const context=this.base(mainContext,title);
+  if(hasLegacyFallback)context.fallback={kind:'mp4',url:`/api/titles/${encodeURIComponent(slug)}/legacy-fallback`};
+  mark('lecturas');
   context.subtitles=auxiliary.media.filter(m=>m.role==='subtitles' && m.url).map((m,i)=>({id:m.mediaId,language:m.language??'und',label:m.language??'Subtítulos',url:m.url!,default:i===0,format:'vtt' as const}));
   context.posterUrl=auxiliary.media.find(m=>['poster','poster_h','poster_v'].includes(m.role))?.url??null;
   const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(context));mark('proveedor');
@@ -101,8 +107,8 @@ export class PlaybackService {
   if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);return source;
  }
  /** `only`: limita a ciertos roles. Arrancar la película solo necesita subtítulos y póster; resolver el tráiler y los extras (que ahora se piden al abrirlos) añadía llamadas y concesiones de entrega en cada reproducción. */
- async resolveAuxiliaries(slug:string,owner:string|null,only?:readonly string[]) {
-  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
+ async resolveAuxiliaries(slug:string,owner:string|null,only?:readonly string[],known?:{title:Record<string,unknown>;junction:Awaited<ReturnType<MediaRepository['titleMedia']>>}) {
+  const title=known?.title??await this.title(slug,owner);const junction=known?.junction??await this.repo.titleMedia(Number(title.id));
   const media=await Promise.all(junction.filter(m=>m.role!=='main' && (!only || only.includes(m.role))).map(async m=>{
    const context=await this.context(m.asset_id,owner,slug);const provider=this.service.registry.get(context.asset.provider);
    const common={mediaId:m.asset_id,role:m.role,slot:m.slot,language:m.language,position:m.position};
