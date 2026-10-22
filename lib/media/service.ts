@@ -24,6 +24,13 @@ export class MediaService {
     private readonly processors: MediaJobProcessors = createMediaJobProcessors()) {
     this.registry = registry ?? createMediaRegistry(repo);
   }
+  /** Contexto a partir de una sesión que ya se leyó: evita volver a pedirla. */
+  async contextFromSession(session: UploadSessionRow, metadata=true): Promise<ProviderAssetContext> {
+    const [asset, privateState] = await Promise.all([this.repo.asset(session.asset_id, metadata), this.repo.optionalPrivateState(session.id)]);
+    return { session, asset, privateState, correlationId: randomUUID(),
+      transferGeneration: session.transfer_generation, processingGeneration: asset.processing_generation, expectedAssetRevision: asset.revision,
+      signal: new AbortController().signal, clock: this.clock };
+  }
   async context(id: string, owner?: string, metadata=true): Promise<ProviderAssetContext> {
     // El estado privado solo necesita el id de la sesión: se pide a la vez que ella (cada ida y vuelta a la base cuesta ~100 ms).
     const [session, privateState] = await Promise.all([this.repo.session(id, owner), this.repo.optionalPrivateState(id)]);

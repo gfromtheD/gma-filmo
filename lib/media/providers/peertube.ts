@@ -146,10 +146,10 @@ export class PeerTubeMediaProvider implements MediaProvider {
 
   async getPlayback(context: ProviderPlaybackContext): Promise<PlaybackSource> {
     if (!context.asset.provider_ref || context.asset.state !== 'ready') throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-    const video = await this.client.getVideo(context.asset.provider_ref);
+    // El vídeo en PeerTube y el recibo de la subida (base de datos) no dependen entre sí: se piden a la vez.
+    const [video, receipt] = await Promise.all([this.client.getVideo(context.asset.provider_ref), this.receipts.get(context)]);
     if (!video || mapPeerTubeState(video.stateId).status !== 'published' || video.duration <= 0 || video.streamingPlaylists.length === 0) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     this.client.validatePlaylistReference(video.streamingPlaylists[0]!.playlistUrl);
-    const receipt = await this.receipts.get(context);
     const proof = receipt ? proofSchema.safeParse(receipt.proof) : null;
     if (!receipt?.complete || !proof?.success || proof.data.videoUUID !== video.uuid) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     const namespace = `asset/${context.asset.id}/${context.processingGeneration}/`;
