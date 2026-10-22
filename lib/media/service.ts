@@ -38,11 +38,19 @@ export class MediaService {
     return uploadMutationEnvelopeSchema.parse(result);
   }
   async reserve(owner: string, input: unknown) {
+    // Tiempos por fase (ms): para localizar dónde se va el tiempo de una reserva (cada una tarda varios segundos).
+    const startedAt = Date.now(); const marks: Array<[string, number]> = []; const mark = (name: string) => { marks.push([name, Date.now() - startedAt]); };
+    try { return await this.reserveTimed(owner, input, mark); }
+    finally { console.log('[uploads] reserva', JSON.stringify({ total_ms: Date.now() - startedAt, fases_ms: marks })); }
+  }
+  private async reserveTimed(owner: string, input: unknown, mark: (name: string) => void) {
     const payload = reserveSchema.parse(input);
     try { assertUploadInput(payload.role, payload.bytes, payload.sha256); } catch { throw new UploadError('UPLOAD_INVALID_INPUT', 400); }
     if (payload.role !== 'avatar') await this.repo.assertCreator(owner);
+    mark('creador');
     const hash = canonicalRequestHash(payload, { omitTopLevel: ['revision'] });
     const existing = await this.repo.lookupReservation(owner, payload.idempotency_key);
+    mark('busca');
     let session: UploadSessionRow;let created=false;
     if (existing) {
       if (existing.request_hash !== hash) throw new UploadError('UPLOAD_IDEMPOTENCY_CONFLICT');
@@ -52,8 +60,12 @@ export class MediaService {
       const reservation=await this.repo.reserve(owner,{...payload,video_provider:this.registry.defaultForNewReservation(),auxiliary_provider:config.auxiliaryProvider,request_hash:hash});
       session=reservation.session;created=reservation.created;
     }
-    if (session.state === 'provisioning') await this.provision(session.id, owner);
-    return { created, result: await this.envelope(owner, session.id, true) };
+    mark('reserva_bd');
+    if (session.state === 'provisioning') await this.provision(session.id, owner, true, mark);
+    mark('provision');
+    const result = await this.envelope(owner, session.id, true);
+    mark('sobre');
+    return { created, result };
   }
   async complete(owner: string, id: string, generation: number) {
     const context = await this.context(id, owner);
@@ -73,21 +85,27 @@ export class MediaService {
     return this.envelope(owner, id);
   }
 
-  async provision(id: string, owner: string, finish = true) {
+  async provision(id: string, owner: string, finish = true, mark: (name: string) => void = () => undefined) {
     let context = await this.context(id, owner);
     if (context.session.state !== 'provisioning') return;
+    mark('prov_contexto');
     const beforeIntent = context;
     const fresh = await this.repo.provisionIntent(owner, id);
+    mark('prov_intencion');
     context = await this.context(id, owner);
     const provider = this.registry.get(context.session.provider);
+    mark('prov_contexto2');
     const binding = fresh ? await provider.provisionUpload(beforeIntent) : await provider.recoverUpload(context);
+    mark('prov_proveedor');
     if (!binding) throw new UploadError('UPLOAD_PROVISION_RECOVERY_REQUIRED', 503);
     await this.repo.command(owner, 'bind_upload', { session_id: id, transfer_generation: context.transferGeneration,
       upload_id: binding.uploadId, provider_media_id: binding.providerMediaId,
       private_state: { ...binding.privateState, uploadId: binding.uploadId, creation_pending: false } });
+    mark('prov_enlace');
     if (!finish) return;
     const worker = randomUUID(); const job = await this.repo.claimSession(id, 'provision', worker);
     if (job) await this.repo.finishJob(job.id, worker, true);
+    mark('prov_trabajo');
   }
 
   async drafts(owner:string) {return {version:1 as const,drafts:(await this.repo.drafts(owner)).map(mapDraftDTO)};}

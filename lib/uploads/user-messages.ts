@@ -5,6 +5,7 @@
 const MESSAGES: Readonly<Record<string, string>> = {
   UPLOAD_REVISION_CONFLICT: "Se estaba guardando otro cambio a la vez. Inténtalo de nuevo en unos segundos.",
   UPLOAD_SLOT_OCCUPIED: "Ya hay un archivo subiéndose en ese hueco. Espera a que termine o cancélalo.",
+  UPLOAD_CONCURRENCY_LIMIT: "Ya tienes varios archivos subiéndose a la vez. Esperamos a que termine alguno y sigue solo.",
   UPLOAD_QUOTA_EXCEEDED: "No te queda espacio suficiente para este archivo.",
   UPLOAD_MEDIA_NOT_READY: "Algún archivo todavía no está listo. Espera a que termine de procesarse.",
   UPLOAD_NOT_COMPLETE: "La transferencia no ha terminado. Vuelve a intentarlo.",
