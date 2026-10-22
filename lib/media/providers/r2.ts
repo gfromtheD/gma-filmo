@@ -6,6 +6,7 @@ import type { PlaybackSource } from '@/types/playback';
 import type { MediaProvider, ProviderAssetContext, ProviderPlaybackContext, ProviderUploadContext, DeletionObservation } from '../provider';
 import { R2VideoProvider } from '@/lib/uploads/r2-video';
 import { AuxiliaryProvider } from '@/lib/uploads/auxiliary';
+import { auxiliaryDeletionDeadline } from './deletion-deadline';
 import { ProviderError } from '@/lib/uploads/stream';
 import { legacySession } from './legacy-context';
 
@@ -93,7 +94,8 @@ export class R2MediaProvider implements MediaProvider {
   async cancelUpload(context: ProviderUploadContext): Promise<DeletionObservation> {
     const s = this.session(context);
     if (VIDEO_ROLES.has(s.role)) await this.video.cancelUpload(s);
-    const deadline = Math.max(context.clock.now(), Date.parse(s.expires_at));
+    const deadline = VIDEO_ROLES.has(s.role) ? Math.max(context.clock.now(), Date.parse(s.expires_at))
+      : auxiliaryDeletionDeadline(s.expires_at, context.privateState.expiresAt, context.clock.now());
     return deletionPending(new Date(deadline).toISOString());
   }
 
@@ -137,8 +139,10 @@ export class R2MediaProvider implements MediaProvider {
 
   async deleteAsset(context: ProviderAssetContext): Promise<DeletionObservation> {
     const s = this.session(context);
-    const absent = VIDEO_ROLES.has(s.role) ? await this.video.deleteObject(s) : await this.auxiliary.delete(s);
-    return absent ? { absent: true, writesRevoked: true, safeAfter: null } : deletionPending(s.expires_at);
+    const safeAfter = auxiliaryDeletionDeadline(s.expires_at, context.privateState.expiresAt, context.clock.now());
+    const absent = VIDEO_ROLES.has(s.role) ? await this.video.deleteObject(s) : await this.auxiliary.delete(s, safeAfter);
+    return absent ? { absent: true, writesRevoked: true, safeAfter: null }
+      : deletionPending(new Date(VIDEO_ROLES.has(s.role) ? Date.parse(s.expires_at) : safeAfter).toISOString());
   }
 
   async readAuxiliary(context:ProviderAssetContext):Promise<{bytes:Uint8Array;mimeType:'text/vtt'|'image/webp'}> {
