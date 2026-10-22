@@ -145,6 +145,7 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
                 <ExtraVideoPlayer
                   key={extra.id}
                   src={extra.videoUrl}
+                  managedEndpoint={extra.managedEndpoint}
                   poster={extra.posterUrl ?? undefined}
                   heading={{ kind: extra.kindLabel, title: extra.title, counter }}
                 />

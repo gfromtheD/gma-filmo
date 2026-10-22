@@ -78,6 +78,15 @@ export class PlaybackService {
   const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(this.base(context,null)));
   if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,null);return source;
  }
+ /** Reproducción de UN vídeo auxiliar (tráiler, extra o intro) de un título publicado: lo que abre el visor de extras de la ficha. */
+ async resolveTitleVideo(slug:string,assetId:string,owner:string|null) {
+  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
+  const item=junction.find(m=>m.asset_id===assetId && ['trailer','extras','intro'].includes(m.role));
+  if(!item)throw notFound();
+  const context=this.base(await this.context(assetId,owner,slug),title);
+  const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(context));
+  if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);return source;
+ }
  async resolveAuxiliaries(slug:string,owner:string|null) {
   const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
   const media=await Promise.all(junction.filter(m=>m.role!=='main').map(async m=>{

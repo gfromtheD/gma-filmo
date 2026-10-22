@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { MovieDetail } from "@/components/features/detail/movie-detail";
 import { getPeliculaBySlug, getRelatedPeliculas, getCreatorByArtistaSlugs } from "@/lib/supabase/queries";
 import { getExtrasByPeliculaId } from "@/lib/extras/queries";
+import { getEngineExtras } from "@/lib/media/engine-extras";
 import { workPath } from "@/lib/catalog/work-path";
 
 /** «También te puede gustar»: 3 filas de 4 en escritorio. */
@@ -31,14 +32,17 @@ export async function WorkDetailPage({ id, section, rate }: { readonly id: strin
     .map((a) => a.slug)
     .filter((s): s is string => Boolean(s));
 
-  const [related, creator, extras] = await Promise.all([
+  const [related, creator, legacyExtras, engineExtras] = await Promise.all([
     getRelatedPeliculas(movie.id, movie.categories, RELATED_COUNT, {
       author: movie.author,
       year: movie.year,
     }),
     getCreatorByArtistaSlugs(artistaSlugs),
     getExtrasByPeliculaId(movie.numericId),
+    getEngineExtras(movie.numericId, movie.id),
   ]);
+  // Lo que sube el creador con el motor (tráiler primero, extras en vídeo e imagen) va antes que los extras históricos.
+  const extras = [...engineExtras, ...legacyExtras];
 
   return <MovieDetail movie={movie} related={related} creator={creator} extras={extras} autoOpenRating={rate === true} />;
 }
