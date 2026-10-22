@@ -137,7 +137,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       if (isAbort(error)) throw error;
       const envelope = (error as { envelope?: ManagedEnvelope | null }).envelope;
       if (envelope) { sessions.set(slot, envelope); return toAsset(file, envelope); }
-      return fail(uploadUserMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.'));
+      return fail(uploadUserMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.', (error as { fields?: string[] }).fields));
     }
   }
 
@@ -238,7 +238,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       });
       return { status: 'published', slug: published.title.slug, message: 'Tu título se ha publicado.' };
     } catch (error) {
-      return { status: 'error', message: uploadUserMessage(error instanceof Error ? error.message : 'No se pudo enviar el título.') };
+      return { status: 'error', message: uploadUserMessage(error instanceof Error ? error.message : 'No se pudo enviar el título.', (error as { fields?: string[] }).fields) };
     }
   }
 

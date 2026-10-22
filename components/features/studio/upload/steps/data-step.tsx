@@ -77,7 +77,7 @@ export function DataStep(props: StepProps) {
           <div className="flex flex-col gap-4">
             <CheckboxField label="Esta obra contiene contenido creado o asistido con IA" checked={draft.ai.used} onChange={(v) => update({ ai: { ...draft.ai, used: v } })} />
             {draft.ai.used && (
-              <TextAreaField label="Qué partes" rows={2} maxLength={LIMITS.shortSynopsisChars} value={draft.ai.note}
+              <TextAreaField label="Qué partes" rows={2} maxLength={LIMITS.aiNoteChars} value={draft.ai.note}
                 onChange={(v) => update({ ai: { ...draft.ai, note: v } })} hint="Por ejemplo: voz, imágenes de fondo, guion." />
             )}
           </div>

@@ -35,14 +35,27 @@ const MESSAGES: Readonly<Record<string, string>> = {
   MEDIA_NOT_FOUND: "No se encontró el archivo.",
 };
 
+/** Nombre, para el creador, de cada campo que el servidor puede rechazar. */
+const FIELD_LABELS: Readonly<Record<string, string>> = {
+  title: "Título", originalTitle: "Título original", synopsis: "Sinopsis", synopsisShort: "Sinopsis corta", synopsisLong: "Sinopsis larga",
+  durationMinutes: "Duración", releaseYear: "Año de estreno", year: "Año de estreno", productionCountry: "País de producción",
+  language: "Idioma original", ageRating: "Edad recomendada", categories: "Categoría", genres: "Género", genre: "Género", themes: "Temática",
+  team: "Créditos", awards: "Premios y selecciones", ai: "Nota sobre la IA", subtitleLanguages: "Subtítulos", extras: "Extras",
+  allowComments: "Comentarios", acceptedTerms: "Aceptación de términos", firstFilm: "Ópera prima",
+};
+
 const GENERIC = "No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
 const CODE = /\b(?:UPLOAD|MEDIA|IDEMPOTENCY)_[A-Z_]+\b/;
 
 /** Traduce un mensaje de error del motor de subidas a algo que entienda un creador. Los textos que ya están en español se respetan. */
-export function uploadUserMessage(raw: string | null | undefined): string {
+export function uploadUserMessage(raw: string | null | undefined, fields?: readonly string[]): string {
   const text = (raw ?? "").trim();
   if (!text) return GENERIC;
   const code = CODE.exec(text)?.[0];
+  if (code === "UPLOAD_INVALID_INPUT" && fields && fields.length > 0) {
+    const labels = [...new Set(fields.map((f) => FIELD_LABELS[f.split(".")[0]!] ?? null).filter((l): l is string => l !== null))];
+    if (labels.length > 0) return `Revisa estos campos: ${labels.join(", ")}. El servidor no los acepta tal como están.`;
+  }
   if (code) return MESSAGES[code] ?? GENERIC;
   if (/^[A-Z0-9_]{6,}$/.test(text)) return GENERIC;
   return text;
