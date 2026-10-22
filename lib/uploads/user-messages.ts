@@ -1,0 +1,49 @@
+/**
+ * Mensajes para el creador. El servidor responde con códigos estables (`UPLOAD_*`, `MEDIA_*`) que la lógica del cliente sigue
+ * leyendo tal cual; aquí se traducen SOLO al mostrarlos, para que nadie vea `UPLOAD_REVISION_CONFLICT` en pantalla.
+ */
+const MESSAGES: Readonly<Record<string, string>> = {
+  UPLOAD_REVISION_CONFLICT: "Se estaba guardando otro cambio a la vez. Inténtalo de nuevo en unos segundos.",
+  UPLOAD_SLOT_OCCUPIED: "Ya hay un archivo subiéndose en ese hueco. Espera a que termine o cancélalo.",
+  UPLOAD_QUOTA_EXCEEDED: "No te queda espacio suficiente para este archivo.",
+  UPLOAD_MEDIA_NOT_READY: "Algún archivo todavía no está listo. Espera a que termine de procesarse.",
+  UPLOAD_NOT_COMPLETE: "La transferencia no ha terminado. Vuelve a intentarlo.",
+  UPLOAD_PROCESSING_PENDING: "El archivo sigue procesándose. Puede tardar unos minutos.",
+  UPLOAD_SOURCE_MISMATCH: "El archivo no coincide con el que empezaste a subir. Elige el mismo archivo para continuar.",
+  UPLOAD_INVALID_INPUT: "Falta algún dato o no es válido. Revísalo e inténtalo de nuevo.",
+  UPLOAD_INVALID_ASSET: "El archivo no es válido o no tiene un formato admitido.",
+  UPLOAD_ASSET_IN_USE: "Ese archivo todavía se está usando. Inténtalo de nuevo en un momento.",
+  UPLOAD_CANCELLED: "La subida se canceló.",
+  UPLOAD_EXPIRED: "La subida caducó. Vuelve a subir el archivo.",
+  UPLOAD_UNAUTHORIZED: "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+  UPLOAD_FORBIDDEN: "No tienes permiso para hacer esto.",
+  UPLOAD_NOT_FOUND: "No se encontró lo que buscabas. Recarga la página.",
+  UPLOAD_ADMISSION_PAUSED: "Las subidas están en pausa un momento. Inténtalo más tarde.",
+  UPLOAD_ENGINE_DISABLED: "Las subidas no están disponibles ahora mismo.",
+  UPLOAD_UNAVAILABLE: "El servicio de subidas no responde. Inténtalo de nuevo en un momento.",
+  UPLOAD_DATABASE_UNAVAILABLE: "El servicio no responde. Inténtalo de nuevo en un momento.",
+  UPLOAD_PROVISION_PENDING: "Estamos preparando la subida. Inténtalo de nuevo en unos segundos.",
+  UPLOAD_PROVISION_RECOVERY_REQUIRED: "Estamos preparando la subida. Inténtalo de nuevo en unos segundos.",
+  UPLOAD_TRANSFER_EXPIRED: "El enlace de subida caducó. Vuelve a intentarlo.",
+  UPLOAD_PROTOCOL_UNSUPPORTED: "Este tipo de archivo no se puede subir ahora mismo.",
+  UPLOAD_RECEIPT_UNVERIFIED: "No pudimos comprobar que el archivo llegó entero. Vuelve a subirlo.",
+  UPLOAD_PROVIDER_OBJECT_MISSING: "El archivo no llegó a guardarse. Vuelve a subirlo.",
+  UPLOAD_IDEMPOTENCY_CONFLICT: "Ese envío ya se había hecho con otros datos. Recarga la página.",
+  IDEMPOTENCY_CONFLICT: "Ese envío ya se había hecho con otros datos. Recarga la página.",
+  MEDIA_PROCESSING_FAILED: "No se pudo procesar el vídeo. Prueba con otro archivo o con otro formato (MP4).",
+  MEDIA_PROVIDER_UNAVAILABLE: "El servicio de vídeo no está disponible un momento. Inténtalo de nuevo.",
+  MEDIA_NOT_FOUND: "No se encontró el archivo.",
+};
+
+const GENERIC = "No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
+const CODE = /\b(?:UPLOAD|MEDIA|IDEMPOTENCY)_[A-Z_]+\b/;
+
+/** Traduce un mensaje de error del motor de subidas a algo que entienda un creador. Los textos que ya están en español se respetan. */
+export function uploadUserMessage(raw: string | null | undefined): string {
+  const text = (raw ?? "").trim();
+  if (!text) return GENERIC;
+  const code = CODE.exec(text)?.[0];
+  if (code) return MESSAGES[code] ?? GENERIC;
+  if (/^[A-Z0-9_]{6,}$/.test(text)) return GENERIC;
+  return text;
+}

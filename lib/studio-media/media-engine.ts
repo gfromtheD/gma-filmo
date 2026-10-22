@@ -21,6 +21,7 @@ import type { UploadDraft, UploadedAsset, UploadPhase } from '@/lib/studio/uploa
 import type { AssetRole } from '@/types/media-engine';
 import type { ManagedDraftDetail, ManagedEnvelope } from '@/lib/uploads/managed-browser';
 import { isLiveUpload } from '@/lib/uploads/live-upload';
+import { uploadUserMessage } from '@/lib/uploads/user-messages';
 import { engineMetadata, fichaFromDraft, mapSlot, serverLimitProblem, type EngineMetadata } from './mapping';
 
 export type MediaUploadedAsset = UploadedAsset & {
@@ -136,7 +137,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       if (isAbort(error)) throw error;
       const envelope = (error as { envelope?: ManagedEnvelope | null }).envelope;
       if (envelope) { sessions.set(slot, envelope); return toAsset(file, envelope); }
-      return fail(error instanceof Error ? error.message : 'No se pudo subir el archivo.');
+      return fail(uploadUserMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.'));
     }
   }
 
@@ -237,7 +238,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       });
       return { status: 'published', slug: published.title.slug, message: 'Tu título se ha publicado.' };
     } catch (error) {
-      return { status: 'error', message: error instanceof Error ? error.message : 'No se pudo enviar el título.' };
+      return { status: 'error', message: uploadUserMessage(error instanceof Error ? error.message : 'No se pudo enviar el título.') };
     }
   }
 
