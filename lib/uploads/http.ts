@@ -35,7 +35,7 @@ export async function respond(action:()=>Promise<unknown>,status=200) {
    if(!(e instanceof UploadError)&&!(e instanceof ZodError))console.error('[uploads] unexpected failure',describeFailure(e));
    const error=e instanceof UploadError?e:e instanceof ZodError?new UploadError('UPLOAD_INVALID_INPUT',400):new UploadError('UPLOAD_UNAVAILABLE',503);
    // Qué campos rechazó el esquema (solo sus nombres, nunca los valores): el cliente los traduce para decirle al creador cuál corregir.
-   const fields=e instanceof ZodError?[...new Set(e.issues.map(i=>i.path.filter(p=>typeof p==='string').slice(0,2).join('.')).filter(Boolean))].slice(0,10):undefined;
+   const fields=e instanceof ZodError?[...new Set(e.issues.map(i=>i.path.filter(p=>typeof p==='string').slice(0,2).join('.')).filter(Boolean).map(name=>name.slice(0,60)))].slice(0,10):undefined;
    return NextResponse.json({error:{code:error.code,message:error.code,retryable:error.status>=500 || error.code==='UPLOAD_NOT_COMPLETE',...(fields&&fields.length?{fields}:{})},requestId:randomUUID()},{status:error.status,headers:{'Cache-Control':'no-store'}});
  }
 }
