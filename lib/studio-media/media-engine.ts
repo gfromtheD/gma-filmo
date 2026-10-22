@@ -203,6 +203,21 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     return { revision: saved.ficha.revision };
   }
 
+  /**
+   * Antes de enviar: lo que el servidor guarda en este borrador y la página ya no referencia (un archivo descartado tras recargar,
+   * una subida de otra sesión) se cancela. Si no, una subida a medias bloquearía el envío y una ya terminada se publicaría con la obra
+   * sin que el usuario la viera. Solo actúa si el vídeo principal quedó emparejado (prueba de que el emparejamiento funciona) y nunca
+   * toca el vídeo principal.
+   */
+  async function cancelOrphanUploads(): Promise<void> {
+    if (!sessions.has('video')) return;
+    const tracked = new Set([...sessions.values()].map(e => e.session.sessionId));
+    const orphans = (await serverDraft()).uploads.filter(u => isLiveUpload(u) && u.session.role !== 'main' && !tracked.has(u.session.sessionId));
+    for (const u of orphans) {
+      await deps.api(`/api/uploads/${u.session.sessionId}/cancel`, 'POST', { revision: u.session.revision }).catch(() => undefined);
+    }
+  }
+
   async function submit(draft: UploadDraft): Promise<SubmitResult> {
     try {
       const detail = await serverDraft();
@@ -211,6 +226,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       if ((options.publishMode ?? 'hold') === 'hold') {
         return { status: 'queued', message: 'Tu título y todos sus archivos están guardados. Se publicará cuando se active la publicación.' };
       }
+      await cancelOrphanUploads();
       const fresh = await serverDraft();
       const live = fresh.uploads.filter(isLiveUpload); // las canceladas o sustituidas siguen en la lista del servidor, pero ya no cuentan
       const main = live.find(u => u.session.role === 'main' && u.asset.status === 'ready');

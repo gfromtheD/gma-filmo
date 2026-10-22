@@ -347,3 +347,38 @@ test('tras recargar, guardar la ficha vuelve a enlazar los extras ya subidos con
   const put = h.calls.find(c => c.method === 'PUT');
   assert.ok(put && JSON.stringify(put.body).includes(extra.asset.mediaId), 'la ficha debe llevar el medio del extra');
 });
+
+test('enviar cancela las subidas huérfanas del servidor (descartadas tras recargar) y no toca las referenciadas ni el vídeo', async () => {
+  const h = withServerSlots(fakeDeps());
+  const video = envelope('main', 'ready', 1);
+  Object.assign(video.session, { fileName: 'ep.mp4', expectedBytes: 100, state: 'uploaded' });
+  const kept = envelope('poster_h', 'ready', 2);
+  Object.assign(kept.session, { fileName: 'frame.jpg', expectedBytes: 30, state: 'uploaded' });
+  const orphan = envelope('extra_image', 'processing', 3);
+  Object.assign(orphan.session, { fileName: 'viejo.jpg', expectedBytes: 40, state: 'uploading' });
+  (h.detail.uploads as ManagedEnvelope[]).push(video, kept, orphan);
+  const draft = draftFixture({
+    video: { file: { name: 'ep.mp4', sizeBytes: 100, url: null, status: 'done' as const } },
+    images: { poster: null, banner: { name: 'frame.jpg', sizeBytes: 30, url: null, status: 'done' as const } },
+    extras: [],
+  });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft, publishMode: 'direct' });
+  const result = await engine.submit(draft);
+  const cancelled = h.calls.filter(c => /\/cancel$/.test(c.path)).map(c => c.path);
+  assert.equal(cancelled.length, 1, 'solo la huérfana');
+  assert.match(cancelled[0]!, new RegExp(orphan.session.sessionId));
+  assert.equal(result.status, 'published');
+});
+
+test('enviar no cancela nada si no consigue emparejar el vídeo principal (protección ante datos locales incompletos)', async () => {
+  const h = withServerSlots(fakeDeps());
+  const video = envelope('main', 'ready', 1);
+  Object.assign(video.session, { fileName: 'otro.mp4', expectedBytes: 5, state: 'uploaded' });
+  const extra = envelope('extra_image', 'ready', 2);
+  Object.assign(extra.session, { fileName: 'x.jpg', expectedBytes: 6, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(video, extra);
+  const draft = draftFixture({ video: { file: { name: 'ep.mp4', sizeBytes: 100, url: null, status: 'done' as const } }, extras: [] });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft, publishMode: 'direct' });
+  await engine.submit(draft);
+  assert.equal(h.calls.some(c => /\/cancel$/.test(c.path)), false);
+});
