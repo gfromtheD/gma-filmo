@@ -25,16 +25,24 @@ export class MediaService {
     this.registry = registry ?? createMediaRegistry(repo);
   }
   async context(id: string, owner?: string, metadata=true): Promise<ProviderAssetContext> {
-    const session = await this.repo.session(id, owner); const asset = await this.repo.asset(session.asset_id,metadata);
-    return { session, asset, privateState: await this.repo.optionalPrivateState(id), correlationId: randomUUID(),
+    // El estado privado solo necesita el id de la sesión: se pide a la vez que ella (cada ida y vuelta a la base cuesta ~100 ms).
+    const [session, privateState] = await Promise.all([this.repo.session(id, owner), this.repo.optionalPrivateState(id)]);
+    const asset = await this.repo.asset(session.asset_id,metadata);
+    return { session, asset, privateState, correlationId: randomUUID(),
       transferGeneration: session.transfer_generation, processingGeneration: asset.processing_generation, expectedAssetRevision: asset.revision,
       signal: new AbortController().signal, clock: this.clock };
   }
   async envelope(owner: string, id: string, includeTransfer = false) {
-    const context = await this.context(id, owner); const draft = await this.repo.draft(owner, context.session.draft_id);
-    const result = { version: 1 as const, session: mapUploadSessionDTO(context.session, Math.max(context.asset.received_bytes ?? 0,await this.repo.confirmedOffset(id,context.transferGeneration))), asset: mapMediaAssetDTO(context.asset), draftRevision: draft.revision,
-      ...(includeTransfer && ['uploading','paused'].includes(context.session.state)
-        ? { transfer: transferDescriptorSchema.parse(await this.registry.get(context.session.provider).getTransfer(context)) } : {}) };
+    const context = await this.context(id, owner);
+    const wantsTransfer = includeTransfer && ['uploading','paused'].includes(context.session.state);
+    // Borrador, offset confirmado y descriptor de transferencia no dependen entre sí: se piden a la vez (el descriptor consulta al proveedor).
+    const [draft, confirmed, transfer] = await Promise.all([
+      this.repo.draft(owner, context.session.draft_id),
+      this.repo.confirmedOffset(id, context.transferGeneration),
+      wantsTransfer ? this.registry.get(context.session.provider).getTransfer(context) : Promise.resolve(null),
+    ]);
+    const result = { version: 1 as const, session: mapUploadSessionDTO(context.session, Math.max(context.asset.received_bytes ?? 0, confirmed)), asset: mapMediaAssetDTO(context.asset), draftRevision: draft.revision,
+      ...(transfer ? { transfer: transferDescriptorSchema.parse(transfer) } : {}) };
     return uploadMutationEnvelopeSchema.parse(result);
   }
   async reserve(owner: string, input: unknown) {
@@ -46,11 +54,14 @@ export class MediaService {
   private async reserveTimed(owner: string, input: unknown, mark: (name: string) => void) {
     const payload = reserveSchema.parse(input);
     try { assertUploadInput(payload.role, payload.bytes, payload.sha256); } catch { throw new UploadError('UPLOAD_INVALID_INPUT', 400); }
-    if (payload.role !== 'avatar') await this.repo.assertCreator(owner);
-    mark('creador');
+    mark('validado');
     const hash = canonicalRequestHash(payload, { omitTopLevel: ['revision'] });
-    const existing = await this.repo.lookupReservation(owner, payload.idempotency_key);
-    mark('busca');
+    // Comprobar que es creador y buscar una reserva anterior no dependen entre sí: van a la vez.
+    const [, existing] = await Promise.all([
+      payload.role !== 'avatar' ? this.repo.assertCreator(owner) : Promise.resolve(),
+      this.repo.lookupReservation(owner, payload.idempotency_key),
+    ]);
+    mark('creador_y_busca');
     let session: UploadSessionRow;let created=false;
     if (existing) {
       if (existing.request_hash !== hash) throw new UploadError('UPLOAD_IDEMPOTENCY_CONFLICT');
