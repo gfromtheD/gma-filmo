@@ -40,3 +40,15 @@ test.describe("uploadUserMessage con campos rechazados", () => {
     expect(uploadUserMessage("UPLOAD_INVALID_INPUT")).toMatch(/Falta algún dato/);
   });
 });
+
+test.describe("uploadUserMessage con errores de la pasarela", () => {
+  test("un 5xx al enviar el archivo sugiere revisar que sea un vídeo válido", () => {
+    expect(uploadUserMessage("UPLOADX_HTTP_502")).toMatch(/vídeo válido/);
+    expect(uploadUserMessage("UPLOADX_HTTP_503")).not.toMatch(/UPLOADX/);
+  });
+
+  test("413 y 422 tienen su propio aviso", () => {
+    expect(uploadUserMessage("UPLOADX_HTTP_413")).toMatch(/demasiado grande/);
+    expect(uploadUserMessage("UPLOADX_HTTP_422")).toMatch(/no parece un vídeo/);
+  });
+});

@@ -45,7 +45,15 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   allowComments: "Comentarios", acceptedTerms: "Aceptación de términos", firstFilm: "Ópera prima",
 };
 
-const GENERIC = "No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
+const TRANSPORT_SERVER_ERROR = "No pudimos recibir el archivo. Comprueba que es un vídeo válido (MP4) y vuelve a intentarlo.";
+/** Respuestas del servidor de subida (pasarela) mientras se envía el archivo. */
+const TRANSPORT_MESSAGES: Readonly<Record<string, string>> = {
+  "413": "El archivo es demasiado grande.",
+  "415": "Este formato de vídeo no se admite. Prueba con MP4.",
+  "422": "El archivo no parece un vídeo válido. Prueba con otro (MP4).",
+};
+
+const GENERIC ="No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
 const CODE = /\b(?:UPLOAD|MEDIA|IDEMPOTENCY)_[A-Z_]+\b/;
 
 /** Traduce un mensaje de error del motor de subidas a algo que entienda un creador. Los textos que ya están en español se respetan. */
@@ -57,6 +65,8 @@ export function uploadUserMessage(raw: string | null | undefined, fields?: reado
     const labels = [...new Set(fields.map((f) => FIELD_LABELS[f.split(".")[0]!] ?? null).filter((l): l is string => l !== null))];
     if (labels.length > 0) return `Revisa estos campos: ${labels.join(", ")}. El servidor no los acepta tal como están.`;
   }
+  const transport = /\bUPLOADX_HTTP_(\d{3})\b/.exec(text)?.[1];
+  if (transport) return TRANSPORT_MESSAGES[transport] ?? (transport.startsWith("5") ? TRANSPORT_SERVER_ERROR : GENERIC);
   if (code) return MESSAGES[code] ?? GENERIC;
   if (/^[A-Z0-9_]{6,}$/.test(text)) return GENERIC;
   return text;
