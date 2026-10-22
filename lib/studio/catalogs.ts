@@ -13,6 +13,16 @@ export const LIMITS = {
   linkedVideoBytes: 5 * 1024 ** 3,
   /** Caracteres de la sinopsis corta. */
   shortSynopsisChars: 250,
+  /** Caracteres del título original (el servidor rechaza la ficha entera si se pasa: debe coincidir con `lib/media/ficha.ts`). */
+  originalTitleChars: 160,
+  /** Caracteres de la sinopsis larga. */
+  longSynopsisChars: 10_000,
+  /** Caracteres del nombre de una persona del equipo. */
+  teamNameChars: 120,
+  /** Caracteres del festival o del premio. */
+  awardChars: 160,
+  /** Caracteres de la nota sobre el uso de IA. */
+  aiNoteChars: 1000,
   /** Primer año que se admite como año de estreno (el del primer cine). */
   firstYear: 1895,
   /** Archivos de subtítulos (.srt) que se admiten. */

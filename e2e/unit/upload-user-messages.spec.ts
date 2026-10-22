@@ -27,3 +27,16 @@ test.describe("uploadUserMessage", () => {
     expect(uploadUserMessage(undefined)).toMatch(/Inténtalo de nuevo/);
   });
 });
+
+test.describe("uploadUserMessage con campos rechazados", () => {
+  test("dice qué campos corregir en vez de un aviso genérico", () => {
+    const text = uploadUserMessage("UPLOAD_INVALID_INPUT", ["originalTitle", "ficha.team"]);
+    expect(text).toContain("Título original");
+    expect(text).not.toMatch(/UPLOAD_/);
+  });
+
+  test("sin campos conocidos vuelve al mensaje general", () => {
+    expect(uploadUserMessage("UPLOAD_INVALID_INPUT", ["algoDesconocido"])).toMatch(/Falta algún dato/);
+    expect(uploadUserMessage("UPLOAD_INVALID_INPUT")).toMatch(/Falta algún dato/);
+  });
+});

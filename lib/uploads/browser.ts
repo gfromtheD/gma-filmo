@@ -14,7 +14,7 @@ export async function uploadApi<T>(path:string,method='GET',body?:unknown):Promi
  if(!session)throw new Error('Inicia sesión para subir contenido');
  let response=await execute(session.access_token);
  if(response.status===401){session=(await auth.refreshSession()).data.session;if(!session)throw new Error('Inicia sesión para continuar');response=await execute(session.access_token);}
- const data=await response.json();if(!response.ok)throw new Error(typeof data.error==='string'?data.error:data.error?.message??'No se pudo completar la operación');return data as T;
+ const data=await response.json();if(!response.ok)throw Object.assign(new Error(typeof data.error==='string'?data.error:data.error?.message??'No se pudo completar la operación'),{fields:Array.isArray(data.error?.fields)?data.error.fields as string[]:undefined});return data as T;
 }
 let draftTask:Promise<UploadDraft>|undefined;
 let draftOwner='';

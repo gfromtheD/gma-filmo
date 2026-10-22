@@ -49,7 +49,7 @@ export function FichaStep(props: StepProps) {
           <div className="flex min-w-0 flex-col gap-4 sm:pt-28">
             <TextField label="Título" required value={draft.title} onChange={(v) => update({ title: v })}
               error={errorIf(showErrors, !draft.title.trim(), "Escribe el título.")} />
-            <TextField label="Título original" value={draft.originalTitle} onChange={(v) => update({ originalTitle: v })}
+            <TextField label="Título original" value={draft.originalTitle} onChange={(v) => update({ originalTitle: v })} maxLength={LIMITS.originalTitleChars}
               hint="Solo si es distinto del título." />
             <TextAreaField label="Sinopsis corta" required rows={3} maxLength={LIMITS.shortSynopsisChars} value={draft.synopsisShort}
               onChange={(v) => update({ synopsisShort: v })} hint="Una o dos frases que enganchen: se ve sobre el banner."
@@ -61,7 +61,7 @@ export function FichaStep(props: StepProps) {
       <ImagePreviews items={feedback} />
 
       <div className={CARD_CLASS}>
-        <TextAreaField label="Sinopsis larga" required rows={7} value={draft.synopsisLong} onChange={(v) => update({ synopsisLong: v })}
+        <TextAreaField label="Sinopsis larga" required rows={7} maxLength={LIMITS.longSynopsisChars} value={draft.synopsisLong} onChange={(v) => update({ synopsisLong: v })}
           hint="Cuenta la historia con más detalle: aparece en «Detalles» de la ficha."
           error={errorIf(showErrors, !draft.synopsisLong.trim(), "Escribe la sinopsis larga.")} />
       </div>
