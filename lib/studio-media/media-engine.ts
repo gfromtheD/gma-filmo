@@ -140,7 +140,48 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     }
   }
 
+  /** Archivo local de un hueco (lo que el borrador recuerda tras recargar la página). */
+  function localFile(draft: UploadDraft, slot: string): { name: string; sizeBytes: number } | null {
+    if (slot === 'video') return draft.video.file;
+    if (slot === 'trailer') return draft.trailer.file;
+    if (slot === 'poster') return draft.images.poster;
+    if (slot === 'banner') return draft.images.banner;
+    const extra = /^extra:(\d+)$/.exec(slot);
+    if (extra) return draft.extras[Number(extra[1])]?.file ?? null;
+    const srt = /^srt:(\d+)$/.exec(slot);
+    return srt ? draft.srtSubtitles[Number(srt[1])]?.file ?? null : null;
+  }
+
+  /**
+   * Tras recargar la página el borrador local recuerda los archivos, pero el mapa hueco → sesión se pierde y el servidor sigue
+   * teniéndolas. Sin él, quitar un archivo no cancelaba su sesión (quedaba viva y bloqueaba el envío con «algún archivo todavía
+   * se está procesando») y la ficha perdía el vínculo con el banner o el cartel. Se reconstruye emparejando rol, nombre y tamaño.
+   */
+  async function adoptServerSessions(slots: readonly string[]): Promise<void> {
+    const missing = slots.filter(slot => !sessions.has(slot));
+    if (missing.length === 0) return;
+    const draft = options.getDraft();
+    const live = (await serverDraft()).uploads.filter(isLiveUpload);
+    const taken = new Set([...sessions.values()].map(e => e.session.sessionId));
+    for (const slot of missing) {
+      const file = localFile(draft, slot);
+      const mapping = mapSlot(draft, slot);
+      if (!file || !mapping.supported) continue;
+      const match = live.find(u => !taken.has(u.session.sessionId) && u.session.role === mapping.role
+        && u.session.fileName === file.name && u.session.expectedBytes === file.sizeBytes);
+      if (!match) continue;
+      sessions.set(slot, match);
+      taken.add(match.session.sessionId);
+    }
+  }
+
+  const ALL_SLOTS = (draft: UploadDraft): string[] => [
+    'video', 'trailer', 'poster', 'banner',
+    ...draft.extras.map((_, i) => `extra:${i}`), ...draft.srtSubtitles.map((_, i) => `srt:${i}`),
+  ];
+
   async function sessionAction(slot: string, action: 'cancel' | 'pause'): Promise<void> {
+    await adoptServerSessions([slot]);
     const current = sessions.get(slot);
     if (!current) return;
     const result = await deps.api<ManagedEnvelope>(`/api/uploads/${current.session.sessionId}/${action}`, 'POST', { revision: current.session.revision });
@@ -149,6 +190,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
   }
 
   async function saveFicha(draft: UploadDraft): Promise<{ revision: number }> {
+    await adoptServerSessions(ALL_SLOTS(draft));
     const detail = await serverDraft();
     if (fichaRevision === null) {
       const current = await deps.api<{ ficha: { revision: number } | null }>(`/api/upload-drafts/${detail.draft.id}/ficha`);
