@@ -95,4 +95,6 @@ export interface MovieExtra {
   readonly mediaType: "video" | "image";
   readonly posterUrl: string | null;
   readonly durationLabel: string | null;
+  /** Vídeo alojado por el motor (HLS en el VPS): se reproduce pidiendo su fuente a este endpoint en vez de usar `videoUrl`. */
+  readonly managedEndpoint?: string;
 }
