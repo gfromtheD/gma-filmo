@@ -71,3 +71,15 @@ test('4.4/4.8 final receipt after offset200 and late UUID cancellation cannot le
  const uncertain=new PeerTubeMediaProvider(client,'https://media.example',{issue:()=>({token:'double',expiresAt:1800000000000})},{get:async()=>null});
  assert.equal((await uncertain.deleteAsset({...ctx,privateState:{...ctx.privateState,finalization_pending:true},processingGeneration:1})).absent,false);
 });
+
+test('un PUT final rechazado por PeerTube (sin vídeo creado) se da por borrado pasado el margen, no se reintenta para siempre',async()=>{
+ const ctx=context();ctx.asset.provider_ref=null;
+ const client={cancelUpload:async()=>true,recoverVideoByCorrelation:async()=>null,deleteVideo:async()=>true} as unknown as PeerTubeClient;
+ const provider=new PeerTubeMediaProvider(client,'https://media.example',{issue:()=>({token:'double',expiresAt:1800000000000})},{get:async()=>null});
+ const checkpoint={...ctx.privateState,finalization_pending:true,localOffset:12,sourceSha256:'a'.repeat(64)};
+ const now=Date.parse('2026-10-07T10:00:00.000Z');
+ const recent=await provider.deleteAsset({...ctx,privateState:{...checkpoint,finalizingAt:new Date(now-60_000).toISOString()},processingGeneration:1});
+ assert.equal(recent.absent,false);
+ const settled=await provider.deleteAsset({...ctx,privateState:{...checkpoint,finalizingAt:new Date(now-16*60_000).toISOString()},processingGeneration:1});
+ assert.deepEqual(settled,{absent:true,writesRevoked:true,safeAfter:null});
+});

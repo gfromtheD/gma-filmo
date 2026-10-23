@@ -13,7 +13,10 @@ export interface PeerTubeGatewayReceiptLookup {
 const proofSchema = z.object({ kind: z.literal('peertube-gateway'), uploadId: z.string().min(1), videoUUID: z.string().uuid(), totalBytes: z.number().int().positive(),
   upstreamReceivedBytes: z.number().int().nonnegative(), gmaSha256: z.string().regex(/^[a-f0-9]{64}$/), correlationName: z.string().min(1), finalizingAt: z.string().datetime() }).strict();
 
-const VIDEO_EXTENSIONS: Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
+/** Margen tras el último PUT para que PeerTube cree el vídeo; pasado, si no existe, ya no existirá. */
+export const FINALIZATION_SETTLE_MS = 15 * 60_000;
+
+const VIDEO_EXTENSIONS:Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
 
 /** PeerTube validates the extension of `filename`; the user's own file name is never forwarded. */
 export function videoExtension(contentType: string): string {
@@ -202,7 +205,12 @@ export class PeerTubeMediaProvider implements MediaProvider {
         return {absent:false,writesRevoked:cancelled.writesRevoked,safeAfter:context.session.expires_at};
       }
       const recovered=await this.client.recoverVideoByCorrelation(checkpoint.data.correlationName);
-      if(!recovered)return {absent:false,writesRevoked:true,safeAfter:context.session.expires_at};
+      // PeerTube rechazó el último PUT (p. ej. un archivo que no es vídeo) y nunca creó el vídeo: con la subida ya cancelada
+      // y pasado el margen, ya no puede aparecer. Sin esto el borrado se reintentaba para siempre.
+      if(!recovered){
+        const settled=context.clock.now()-Date.parse(checkpoint.data.finalizingAt)>=FINALIZATION_SETTLE_MS;
+        return settled?{absent:true,writesRevoked:true,safeAfter:null}:{absent:false,writesRevoked:true,safeAfter:context.session.expires_at};
+      }
       const absent=await this.client.deleteVideo(recovered);
       return {absent,writesRevoked:absent,safeAfter:absent?null:context.session.expires_at};
     }
