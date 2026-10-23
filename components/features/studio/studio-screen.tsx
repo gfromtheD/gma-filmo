@@ -44,6 +44,19 @@ function withoutTitles(d: StudioData, slugs: readonly string[]): StudioData {
     published: titles.filter((x) => x.status === "publicado").length } } };
 }
 
+/**
+ * Al borrar, la obra desaparece de la vista al momento (ya no se puede ver ni descargar); el servidor termina de limpiar sus
+ * archivos por detrás y el panel solo enseña «Liberando espacio» hasta que confirma.
+ */
+function startFreeing(d: StudioData, t: StudioTitle): StudioData {
+  const rest = withoutTitles(d, [t.id]);
+  return { ...rest, freeing: [...(d.freeing ?? []).filter((f) => f.id !== t.id), { id: t.id, sizeBytes: t.sizeBytes ?? 0 }] };
+}
+
+function stopFreeing(d: StudioData, slugs: readonly string[]): StudioData {
+  return { ...d, freeing: (d.freeing ?? []).filter((f) => !slugs.includes(f.id)) };
+}
+
 /** Audiencia real del creador; `null` si no se pudo calcular (el panel lo dice en vez de enseñar ceros inventados). */
 async function loadAudience(supabase: ReturnType<typeof getSupabaseBrowserClient>) {
   try {
@@ -93,8 +106,11 @@ export function StudioScreen() {
           throw new Error("No se pudo cargar el estudio");
         }
         const profile = profileResult.data;
-        // «done»: el servidor ya borró todo y la obra no debe volver a aparecer. «pending»: se está borrando ahora mismo.
-        const visibleRows = (titlesResult.data ?? []).filter((row) => row.media_delete_state !== "done");
+        // «done»: el servidor ya borró todo. «pending»: borrada por el creador; solo queda liberar su espacio por detrás.
+        const allRows = titlesResult.data ?? [];
+        const visibleRows = allRows.filter((row) => row.media_delete_state !== "done" && row.media_delete_state !== "pending");
+        const freeing = allRows.filter((row) => row.media_delete_state === "pending")
+          .map((row) => ({ id: row.slug, sizeBytes: Number(row.file_size_bytes) || 0 }));
         const realTitles: StudioTitle[] = visibleRows.map((row) => ({
           id: row.slug, title: row.title,
           type: row.genre === "Película" ? "Película" : "Cortometraje",
@@ -106,7 +122,6 @@ export function StudioScreen() {
           description: row.synopsis ?? "", language: row.language ?? "",
           subtitles: [], poster: STUDIO_DATA.posters["nieve"]!,
           r2PosterUrl: row.r2_poster_url ?? undefined,
-          deleting: row.media_delete_state === "pending",
           sizeBytes: Number(row.file_size_bytes) || 0,
           publishDate: row.created_at ? new Date(row.created_at).toLocaleDateString("es-ES") : undefined,
         }));
@@ -123,6 +138,7 @@ export function StudioScreen() {
           },
           titles: realTitles,
           storageUsedBytes: storageOf(realTitles),
+          freeing,
         };
         const audience = await loadAudience(supabase);
         if (cancelled) return;
@@ -161,13 +177,8 @@ export function StudioScreen() {
         showToast((typeof err === "string" ? err : err?.message) ?? "Error al eliminar", { error: true });
         return;
       }
-      if (res.status === 202) {
-        setData((d) => ({ ...d, titles: d.titles.map((x) => (x.id === t.id ? { ...x, deleting: true } : x)) }));
-        showToast(`Eliminando «${t.title}»: se están borrando sus archivos del servidor`);
-      } else {
-        setData((d) => withoutTitles(d, [t.id]));
-        showToast(`«${t.title}» eliminado`);
-      }
+      setData((d) => (res.status === 202 ? startFreeing(d, t) : withoutTitles(d, [t.id])));
+      showToast(`«${t.title}» eliminado`);
     } catch {
       showToast("Error de red al eliminar", { error: true });
     } finally {
@@ -176,8 +187,8 @@ export function StudioScreen() {
     }
   }, [deleteTarget]);
 
-  // Mientras alguna obra se está borrando, se pregunta cada pocos segundos hasta que el servidor confirma que terminó.
-  const deletingKey = data.titles.filter((t) => t.deleting).map((t) => t.id).join("|");
+  // Mientras se libera el espacio de alguna obra borrada, se pregunta cada pocos segundos hasta que el servidor confirma que terminó.
+  const deletingKey = (data.freeing ?? []).map((f) => f.id).join("|");
   useEffect(() => {
     if (!deletingKey || !userId) return;
     const slugs = deletingKey.split("|");
@@ -189,8 +200,7 @@ export function StudioScreen() {
         if (error) return;
         const finished = slugs.filter((slug) => { const row = rows?.find((r) => r.slug === slug); return !row || row.media_delete_state === "done"; });
         if (finished.length === 0) return;
-        setData((d) => withoutTitles(d, finished));
-        showToast(finished.length === 1 ? "Obra eliminada del servidor" : `${finished.length} obras eliminadas del servidor`);
+        setData((d) => stopFreeing(d, finished));
       })();
     }, DELETE_POLL_MS);
     return () => clearInterval(timer);
