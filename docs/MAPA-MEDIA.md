@@ -37,8 +37,13 @@ El tope de 12 extras y 5 subtítulos se comprueba en el servidor (`UPLOAD_SLOT_L
 
 ## Qué pasa con un vídeo en el VPS
 
-PeerTube lo convierte a HLS en 720p y 360p (`/var/www/peertube/config/production.yaml`, bloque `transcoding`).
-El original no se guarda (`original_file.keep: false`).
+PeerTube lo convierte a HLS en su resolución original, 720p y 360p (`/var/www/peertube/config/production.yaml`, bloque
+`transcoding`). El original no se guarda (`original_file.keep: false`).
+
+La codificación usa el perfil `gma` (`transcoding.profile: 'gma'`), que añade el plugin
+`infrastructure/peertube/plugin-gma-codificacion`: en 1080p o más, preset `medium` y techo de ~3,5 Mbps (−30 % de red frente
+al perfil por defecto, con la misma calidad a la vista según VMAF). 720p y 360p siguen como en PeerTube. Cómo instalarlo o
+actualizarlo: el README del plugin.
 
 ## Borrado
 

@@ -1,0 +1,20 @@
+{
+  "name": "peertube-plugin-gma-codificacion",
+  "version": "1.1.0",
+  "description": "Perfil de x264 «gma» para GMA Filmo: preset medium y techo de 1080p o más a 0,07 bits por píxel",
+  "engine": {
+    "peertube": ">=8.0.0"
+  },
+  "keywords": [
+    "peertube",
+    "plugin"
+  ],
+  "homepage": "https://github.com/gfromtheD/gma-filmo",
+  "author": "GMA Filmo",
+  "bugs": "https://github.com/gfromtheD/gma-filmo/issues",
+  "library": "./main.js",
+  "staticDirs": {},
+  "css": [],
+  "clientScripts": [],
+  "translations": {}
+}
