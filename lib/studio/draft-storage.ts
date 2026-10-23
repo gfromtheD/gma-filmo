@@ -10,11 +10,13 @@ export interface DraftStorage {
 export const DRAFT_STORAGE_KEY = "gma-studio-upload-draft";
 
 /** Un archivo que se guardó con un enlace temporal del navegador (`blob:`) o a medio subir ya no existe al volver. */
-function reviveAsset<T extends UploadedAsset | null | undefined>(asset: T): T {
-  if (!asset) return asset;
+function reviveAsset<T extends UploadedAsset | null | undefined>(stored: T): T {
+  if (!stored) return stored;
+  // La vista previa local (`blob:`) muere al recargar: se vuelve a la imagen del servidor.
+  const asset = stored.previewUrl ? { ...stored, previewUrl: undefined } : stored;
   const lost = asset.url?.startsWith("blob:") ?? false;
   const interrupted = asset.status === "uploading" || asset.status === "processing" || asset.status === "pending";
-  if (!lost && !interrupted) return asset;
+  if (!lost && !interrupted) return asset as T;
   return { ...asset, url: null, status: "error", progress: undefined, error: "Vuelve a subir este archivo." } as T;
 }
 

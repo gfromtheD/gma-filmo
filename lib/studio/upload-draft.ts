@@ -36,7 +36,13 @@ export interface UploadedAsset {
   readonly error?: string;
   /** Subido en modo local: validado, pero todavía no enviado al motor de alojamiento. */
   readonly localOnly?: boolean;
+  /** Imagen elegida, vista desde el propio navegador (`blob:`) mientras se sube: no espera al servidor. No se guarda. */
+  readonly previewUrl?: string;
 }
+
+/** Lo que se pinta como vista previa de una imagen: la local en cuanto se elige; si no hay, la del servidor al terminar. */
+export const previewSrc = (asset: UploadedAsset | null | undefined): string | null =>
+  asset && asset.status !== "error" ? asset.previewUrl ?? (asset.status === "done" ? asset.url : null) : null;
 
 /** Una persona de la ficha: solo nombre y papel (sin datos de contacto; esos van en el perfil del creador). */
 export interface TeamMember {
