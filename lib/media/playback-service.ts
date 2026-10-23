@@ -117,7 +117,7 @@ export class PlaybackService {
   }));return {version:1 as const,media};
  }
  async deliverAuxiliary(id:string,owner:string|null):Promise<Response> {
-  const context=await this.context(id,owner);if(!['subtitles','poster','poster_h','poster_v','avatar','extra_image'].includes(context.asset.role))throw notFound();
+  const context=await this.context(id,owner);if(!['subtitles','poster','poster_h','poster_v','avatar','extra_image','banner'].includes(context.asset.role))throw notFound();
   const provider=this.service.registry.get(context.asset.provider);
   const cacheable=CACHEABLE_IMAGE_ROLES.includes(context.asset.role) && await this.repo.isPublishedTitleAsset(id);
   if(provider.readAuxiliary){const result=await provider.readAuxiliary(context);if(result.bytes.byteLength>4*1024**2 || !['text/vtt','image/webp'].includes(result.mimeType))throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');

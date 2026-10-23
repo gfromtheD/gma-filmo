@@ -7,7 +7,7 @@ import { hashFile, uploadApi } from './browser';
 import { retryOnRevisionConflict, retryWhileBusy } from './retry-conflict';
 import { isLiveUpload } from './live-upload';
 
-export const managedDraftSchema = z.object({ id: z.string().uuid(), purpose: z.enum(['title', 'avatar']), state: z.enum(['draft', 'published', 'abandoned']),
+export const managedDraftSchema = z.object({ id: z.string().uuid(), purpose: z.enum(['title', 'avatar', 'banner']), state: z.enum(['draft', 'published', 'abandoned']),
   revision: z.number().int().nonnegative(), titleId: z.number().nullable(), metadata: z.record(z.string(), z.unknown()), createdAt: z.string(), updatedAt: z.string() }).strict();
 export const managedEnvelopeSchema = uploadMutationEnvelopeSchema;
 export const managedDraftDetailSchema = z.object({ version: z.literal(1), draft: managedDraftSchema, uploads: z.array(managedEnvelopeSchema) }).strict();

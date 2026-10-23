@@ -8,8 +8,7 @@ import { useProfileStore, type Profile } from "@/store/use-profile-store";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { ProfileEditModal, type SubProfileValues } from "@/components/features/profiles/profile-edit-modal";
 import { COLOR_VALUES, isValidIconId, type AvatarColor } from "@/lib/data/profile-avatars";
-import { ProfileAvatar } from "@/components/ui/profile-avatar";
-import { avatarContentFromId } from "@/lib/profiles/avatar";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";import { avatarContentFromId } from "@/lib/profiles/avatar";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const displayItalic: React.CSSProperties = {

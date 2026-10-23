@@ -235,5 +235,5 @@ export interface MediaReadQuery extends PromiseLike<{ data: unknown; error: { me
 }
 export interface MediaReadClient { from(table: string): MediaReadQuery }
 
-const draftRowSchema = z.object({ id:z.string().uuid(),owner_id:z.string().uuid(),purpose:z.enum(['title','avatar']),state:z.enum(['draft','published','abandoned']),metadata:z.record(z.string(),z.unknown()),revision:z.number().int().nonnegative(),title_id:z.number().nullable(),created_at:z.string(),updated_at:z.string() }).passthrough();
+const draftRowSchema = z.object({ id:z.string().uuid(),owner_id:z.string().uuid(),purpose:z.enum(['title','avatar','banner']),state:z.enum(['draft','published','abandoned']),metadata:z.record(z.string(),z.unknown()),revision:z.number().int().nonnegative(),title_id:z.number().nullable(),created_at:z.string(),updated_at:z.string() }).passthrough();
 const jobRowSchema = z.object({ id:z.string().uuid(),kind:z.enum(['provision','verify','process','reconcile','delete']),session_id:z.string().uuid().nullable(),payload:z.record(z.string(),z.unknown()),dedupe_key:z.string(),state:z.enum(['pending','running','done','dead']),attempts:z.number().int(),run_after:z.string(),lease_owner:z.string().nullable(),lease_until:z.string().nullable(),last_error:z.string().nullable(),created_at:z.string(),updated_at:z.string() }).passthrough();

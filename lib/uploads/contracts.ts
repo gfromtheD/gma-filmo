@@ -7,7 +7,7 @@ export const metadataSchema=z.object({
  genre:z.string().refine(x=>CREATOR_GENRES.some(g=>g.label===x)).optional(),
 }).strict();
 export const reserveSchema=z.object({draft_id:uuid,revision:z.number().int().nonnegative(),
- role:z.enum(['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar']),
+ role:z.enum(['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar','banner']),
  bytes:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/),
  file_name:z.string().min(1).max(255),content_type:z.string().min(1).max(100),
  language:z.string().regex(/^[a-zA-Z0-9-]{2,35}$/).optional(),idempotency_key:uuid}).strict();

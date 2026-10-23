@@ -65,7 +65,7 @@ export interface VerifiedAuxiliary {
   height: number | null;
 }
 export interface UploadDraft {
-  id: string; owner_id: string; purpose: "title" | "avatar";
+  id: string; owner_id: string; purpose: "title" | "avatar" | "banner";
   state: "draft" | "published" | "abandoned"; revision: number;
   metadata: Record<string, unknown>; title_id: number | null;
 }
