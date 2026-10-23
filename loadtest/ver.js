@@ -7,7 +7,7 @@
 //   TITULOS     slugs de obras publicadas con el motor (separados por comas)
 //   CALIDAD     max | min (por defecto max: una buena conexión pide la mejor)
 //   COLCHON     segundos de vídeo que se descargan sin esperar al empezar (por defecto 30, como hls.js)
-//   GOBERNADOR  1 = obedece el semáforo de calidad de la pasarela (/carga) con las mismas reglas que el reproductor real
+//   GOBERNADOR  1 = obedece el semáforo de calidad de la pasarela (/playback/carga) con las mismas reglas que el reproductor real
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Counter, Rate, Trend } from "k6/metrics";
@@ -89,7 +89,7 @@ function techoPara(nivel, nuevo, alturaActual) {
 }
 
 function consultarNivel(origin) {
-  const r = http.get(`${origin}/carga`, { tags: { nombre: "carga" } });
+  const r = http.get(`${origin}/playback/carga`, { tags: { nombre: "carga" } });
   try { const n = r.json("nivel"); return n === "media" || n === "baja" ? n : "alta"; } catch (e) { return "alta"; }
 }
 

@@ -9,7 +9,7 @@ const CONSULTA_MS = 20_000;
 
 /**
  * Aplica al reproductor el reparto de calidad por carga (ver lib/media/quality-governor.ts). Solo en HLS del motor: la
- * pasarela que sirve el vídeo es la misma que publica `/carga`. Si el semáforo no responde, no se limita nada.
+ * pasarela que sirve el vídeo es la misma que publica `/playback/carga`. Si el semáforo no responde, no se limita nada.
  */
 export function useQualityGovernor(engine: PlaybackEngine | null, source: PlaybackSource | null) {
   const [niveles, setNiveles] = useState<number[]>([]);
@@ -39,7 +39,7 @@ export function useQualityGovernor(engine: PlaybackEngine | null, source: Playba
 
     const consultar = async () => {
       try {
-        const res = await fetch(`${origin}/carga`, { cache: 'no-store' });
+        const res = await fetch(`${origin}/playback/carga`, { cache: 'no-store' });
         const body = res.ok ? await res.json() as { nivel?: unknown } : null;
         nivel = esNivel(body?.nivel) ? body.nivel : 'alta';
       } catch { nivel = 'alta'; }
