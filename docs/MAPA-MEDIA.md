@@ -42,5 +42,7 @@ El original no se guarda (`original_file.keep: false`).
 
 ## Borrado
 
-Al borrar una obra desaparece de la vista al momento. Por detrás: el vídeo se borra de PeerTube y las imágenes de R2
-en cuanto caduca su URL de subida (leída de la propia URL, máx. 1 h desde que se subieron).
+Al borrar una obra desaparece de la vista al momento (salida animada). Por detrás, en segundos: el vídeo se borra de
+PeerTube y las imágenes de R2 (se marca su clave final y se quita su `ingest/`). El bucket privado tiene la regla de ciclo
+de vida `gma-ingest-expira-3-dias`: cualquier objeto bajo `ingest/` con más de 3 días se borra solo, así que una URL de
+subida reutilizada después de borrar no deja nada para siempre.
