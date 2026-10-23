@@ -4,6 +4,7 @@
  */
 const MESSAGES: Readonly<Record<string, string>> = {
   UPLOAD_REVISION_CONFLICT: "Se estaba guardando otro cambio a la vez. Inténtalo de nuevo en unos segundos.",
+  UPLOAD_RATE_LIMITED: "Vas muy rápido: espera un momento antes de subir más archivos.",
   UPLOAD_SLOT_LIMIT: "Has llegado al máximo de esta obra: 12 extras y 5 archivos de subtítulos.",
   UPLOAD_SLOT_OCCUPIED: "Ya hay un archivo subiéndose en ese hueco. Espera a que termine o cancélalo.",
   UPLOAD_CONCURRENCY_LIMIT: "Ya tienes varios archivos subiéndose a la vez. Esperamos a que termine alguno y sigue solo.",

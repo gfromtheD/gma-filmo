@@ -35,7 +35,7 @@ export function translateDatabaseError(error: DatabaseFailure): never {
   const code = error?.message?.match(/UPLOAD_[A-Z_]+/)?.[0];
   if (code) {
     const status = code === "UPLOAD_POLICY_UNAVAILABLE" ? 503 : code === "UPLOAD_NOT_FOUND" ? 404 : code === "UPLOAD_FORBIDDEN" ? 403
-      : code === "UPLOAD_QUOTA_EXCEEDED" ? 413 : (code === "UPLOAD_INVALID_INPUT" || code === "UPLOAD_SOURCE_MISMATCH") ? 400 : 409;
+      : code === "UPLOAD_QUOTA_EXCEEDED" ? 413 : code === "UPLOAD_RATE_LIMITED" ? 429 : (code === "UPLOAD_INVALID_INPUT" || code === "UPLOAD_SOURCE_MISMATCH") ? 400 : 409;
     throw new UploadError(code, status);
   }
   // Database failures must never turn into an empty quota or a permissive result.

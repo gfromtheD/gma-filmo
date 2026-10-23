@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { CONCURRENCY_LIMIT, REVISION_CONFLICT, retryOnRevisionConflict, retryWhileBusy } from "../../lib/uploads/retry-conflict";
+import { CONCURRENCY_LIMIT, RATE_LIMITED, REVISION_CONFLICT, retryOnRevisionConflict, retryWhileBusy } from "../../lib/uploads/retry-conflict";
 
 const noWait = async () => undefined;
 
@@ -59,5 +59,15 @@ test.describe("retryWhileBusy", () => {
     let calls = 0;
     await expect(retryWhileBusy(async () => { calls++; throw new Error("UPLOAD_QUOTA_EXCEEDED"); }, { sleep: async () => undefined })).rejects.toThrow("UPLOAD_QUOTA_EXCEEDED");
     expect(calls).toBe(1);
+  });
+});
+
+test.describe("retryWhileBusy con el freno de reservas", () => {
+  test("si salta el tope por minuto, espera y vuelve a intentarlo", async () => {
+    let calls = 0;
+    const result = await retryWhileBusy(async () => { calls++; if (calls < 3) throw new Error(RATE_LIMITED); return "dentro"; },
+      { intervalMs: 10, sleep: async () => undefined });
+    expect(result).toBe("dentro");
+    expect(calls).toBe(3);
   });
 });

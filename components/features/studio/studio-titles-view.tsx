@@ -84,7 +84,7 @@ interface Handlers {
 
 function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
-    <div style={glass({ padding: 12, display: "flex", flexDirection: "column" })}>
+    <div className={t.deleting ? styles.leaving : undefined} style={glass({ padding: 12, display: "flex", flexDirection: "column" })}>
       <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", cursor: "pointer", width: "100%", padding: 0, border: 0, background: "transparent", color: "inherit", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} type={t.type} year={t.year} hover />
         <div style={{ position: "absolute", top: 9, left: 9 }}><StatusBadge status={t.status} size="sm" /></div>
@@ -134,7 +134,7 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
 
 function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
   return (
-    <div className={styles.listRow} style={glass({ padding: 12, display: "grid",
+    <div className={`${styles.listRow}${t.deleting ? ` ${styles.leaving}` : ""}`} style={glass({ padding: 12, display: "grid",
       gridTemplateColumns: "52px 2.4fr 1fr 1.1fr 0.9fr 40px", gap: 16, alignItems: "center" })}>
       <button type="button" aria-label={`Abrir ${t.title}`} className="focus-visible:outline-2 focus-visible:outline-[#22B16B]" style={{ position: "relative", width: 52, cursor: "pointer", padding: 0, border: 0, background: "transparent", textAlign: "left" }} onClick={() => handlers.onOpen(t)}>
         <Poster data={t.poster} imageUrl={t.r2PosterUrl} title={t.title} rounded={7} />
