@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "./fields";
-import { ReviewPage } from "./review-page";
+import { PUBLISHES_DIRECTLY, ReviewPage } from "./review-page";
+import { PublishedScreen, PublishingScreen } from "./publish-screens";
 import { useAssetUploader } from "./use-asset-uploader";
 import type { StepProps } from "./step-props";
 import { VideoStep } from "./steps/video-step";
@@ -46,6 +47,8 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  /** Obra recién enviada: se enseña la confirmación en vez de volver al formulario (que ya está vacío). */
+  const [sent, setSent] = useState<{ readonly title: string; readonly slug: string | null; readonly published: boolean } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const skipFocus = useRef(true);
@@ -105,10 +108,14 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
   };
 
   async function submit() {
+    const title = draft.title.trim();
     setIsSubmitting(true);
     const outcome = await engine.submit(draft);
     setResult(outcome);
     setIsSubmitting(false);
+    if (outcome.status === "error") return;
+    // Enviada: la confirmación sustituye a la revisión y el borrador empieza de cero para la siguiente obra.
+    setSent({ title, slug: outcome.status === "published" ? outcome.slug || null : null, published: outcome.status === "published" });
     if (outcome.status === "published") { clearDraft(window.localStorage); setDraft(emptyDraft()); }
   }
 
@@ -117,12 +124,29 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
     setDraft(emptyDraft());
     setAttempted(new Set());
     setResult(null);
+    setSent(null);
     setStepIndex(0);
     setIsReviewing(false);
     setConfirmReset(false);
   }
 
   if (!isReady) return <p role="status" className="py-10 text-[15px] text-[#A8A8A8]">Cargando tu borrador…</p>;
+
+  if (sent) {
+    return (
+      <div ref={panel} tabIndex={-1} className="min-w-0 outline-none">
+        <PublishedScreen title={sent.title} slug={sent.slug} published={sent.published} onGoToTitles={onGoToTitles} onNewUpload={startOver} />
+      </div>
+    );
+  }
+
+  if (isReviewing && isSubmitting) {
+    return (
+      <div ref={panel} tabIndex={-1} className="min-w-0 outline-none">
+        <PublishingScreen title={draft.title.trim()} publishes={PUBLISHES_DIRECTLY} />
+      </div>
+    );
+  }
 
   if (isReviewing) {
     return (

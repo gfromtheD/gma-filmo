@@ -31,7 +31,7 @@ function teamByRole(draft: UploadDraft): [string, string[]][] {
 }
 
 /** Con `NEXT_PUBLIC_STUDIO_PUBLISH=direct` el título se publica al enviarlo: el texto no debe hablar de revisión. */
-const PUBLISHES_DIRECTLY = process.env.NEXT_PUBLIC_STUDIO_PUBLISH === "direct";
+export const PUBLISHES_DIRECTLY = process.env.NEXT_PUBLIC_STUDIO_PUBLISH === "direct";
 
 const CHIP = "rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[13px] text-[#E0E0E0]";
 
