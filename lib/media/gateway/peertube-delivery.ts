@@ -31,6 +31,8 @@ export interface PeerTubeDeliveryDeps {
 }
 
 const MANIFEST = 'application/vnd.apple.mpegurl';
+const GRANT_CACHE_MS = 30_000;
+const GRANT_CACHE_MAX = 5_000;
 const PASS_HEADERS = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'last-modified', 'etag'];
 
 export function createPeerTubeDelivery(deps: PeerTubeDeliveryDeps): GatewayDelivery {
@@ -38,6 +40,7 @@ export function createPeerTubeDelivery(deps: PeerTubeDeliveryDeps): GatewayDeliv
   const now = deps.now ?? (() => Date.now());
   const videos = new Map<string, { playlistUrl: string; until: number }>();
   const tokens = new Map<string, { token: string; until: number }>();
+  const grants = new Map<string, { access: { provider_ref: string; expected_input_bytes: number }; sessionId: string; until: number }>();
 
   async function playlistFor(uuid: string): Promise<string> {
     const cached = videos.get(uuid);
@@ -58,6 +61,22 @@ export function createPeerTubeDelivery(deps: PeerTubeDeliveryDeps): GatewayDeliv
     return issued.token;
   }
 
+  /**
+   * La concesión de una capacidad (y la sesión de su archivo) se consulta en BD una vez y se recuerda unos segundos: un vídeo
+   * pide un trozo cada pocos segundos y antes cada trozo pagaba dos viajes seguidos a la BD. La firma y la caducidad de la
+   * capacidad se siguen comprobando en cada petición; una concesión retirada deja de valer como mucho a los GRANT_CACHE_MS.
+   */
+  async function grantFor(assetId: string, generation: number, tokenHash: string) {
+    const key = `${assetId}:${generation}:${tokenHash}`;
+    const cached = grants.get(key);
+    if (cached && cached.until > now()) return cached;
+    const [access, session] = await Promise.all([deps.repository.peerTubeAccess(assetId, generation, tokenHash), deps.repository.assetSession(assetId)]);
+    if (grants.size >= GRANT_CACHE_MAX) grants.clear();
+    const entry = { access, sessionId: session.id, until: now() + GRANT_CACHE_MS };
+    grants.set(key, entry);
+    return entry;
+  }
+
   return async (request: IncomingMessage, response: ServerResponse, url: URL) => {
     const rawPath = (request.url ?? '').split('?')[0] ?? '';
     if (rawPath.includes('%') || rawPath.includes('\\') || rawPath.split('/').some(s => s === '..' || s === '.')) throw new MediaError('MEDIA_NOT_FOUND');
@@ -69,9 +88,8 @@ export function createPeerTubeDelivery(deps: PeerTubeDeliveryDeps): GatewayDeliv
     if (url.searchParams.getAll('cap').length !== 1 || [...url.searchParams.keys()].some(k => k !== 'cap')) throw new MediaError('UPLOAD_UNAUTHORIZED');
 
     const tokenHash = createHash('sha256').update(token).digest('hex');
-    const access = await deps.repository.peerTubeAccess(assetId, generation, tokenHash);
-    const session = await deps.repository.assetSession(assetId);
-    await verifyMediaCapability(token, { sessionId: session.id, assetId, generation, scope: 'playback', method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+    const { access, sessionId } = await grantFor(assetId, generation, tokenHash);
+    await verifyMediaCapability(token, { sessionId, assetId, generation, scope: 'playback', method: request.method === 'HEAD' ? 'HEAD' : 'GET',
       resourcePath: `asset/${assetId}/${generation}/${relative}`, expectedBytes: access.expected_input_bytes }, deps.publicKeys, async () => true);
 
     const playlistUrl = await playlistFor(access.provider_ref);
