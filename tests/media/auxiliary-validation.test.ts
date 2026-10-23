@@ -25,3 +25,10 @@ test('shared image normalizer decodes, bounds, rotates and hashes the same WebP 
   await assert.rejects(normalizeImage(tooManyPixels, 'poster'), (error: unknown) =>
     error instanceof AuxiliaryValidationError && error.code === 'IMAGE_INVALID');
 });
+
+test('un AVIF (que sharp informa como heif + av1) se admite y se normaliza a WebP', async () => {
+  const avif = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#c33' } }).avif().toBuffer();
+  const normalized = await normalizeImage(avif, 'avatar');
+  assert.equal(normalized.mimeType, 'image/webp');
+  assert.equal(normalized.width, 64);
+});

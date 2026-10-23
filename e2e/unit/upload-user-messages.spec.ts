@@ -58,3 +58,10 @@ test.describe("uploadUserMessage con el tope de extras", () => {
     expect(uploadUserMessage("UPLOAD_SLOT_LIMIT")).toMatch(/12 extras/);
   });
 });
+
+test.describe("uploadUserMessage con archivos auxiliares inválidos", () => {
+  test("una imagen ilegible dice qué formatos se admiten", () => {
+    expect(uploadUserMessage("IMAGE_INVALID")).toMatch(/AVIF/);
+    expect(uploadUserMessage("SUBTITLE_INVALID")).toMatch(/\.srt/);
+  });
+});

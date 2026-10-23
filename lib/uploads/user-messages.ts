@@ -35,6 +35,9 @@ const MESSAGES: Readonly<Record<string, string>> = {
   MEDIA_PROCESSING_FAILED: "No se pudo procesar el vídeo. Prueba con otro archivo o con otro formato (MP4).",
   MEDIA_PROVIDER_UNAVAILABLE: "El servicio de vídeo no está disponible un momento. Inténtalo de nuevo.",
   MEDIA_NOT_FOUND: "No se encontró el archivo.",
+  IMAGE_INVALID: "La imagen no se pudo leer. Usa un JPG, PNG, WebP o AVIF.",
+  SUBTITLE_INVALID: "El archivo de subtítulos no es un .srt válido.",
+  NORMALIZED_ASSET_TOO_LARGE: "La imagen es demasiado grande incluso optimizada. Prueba con una más pequeña.",
 };
 
 /** Nombre, para el creador, de cada campo que el servidor puede rechazar. */
@@ -54,8 +57,8 @@ const TRANSPORT_MESSAGES: Readonly<Record<string, string>> = {
   "422": "El archivo no parece un vídeo válido. Prueba con otro (MP4).",
 };
 
-const GENERIC ="No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
-const CODE = /\b(?:UPLOAD|MEDIA|IDEMPOTENCY)_[A-Z_]+\b/;
+const GENERIC = "No se pudo completar. Inténtalo de nuevo y, si sigue fallando, avísanos.";
+const CODE = /\b(?:(?:UPLOAD|MEDIA|IDEMPOTENCY)_[A-Z_]+|IMAGE_INVALID|SUBTITLE_INVALID|NORMALIZED_ASSET_TOO_LARGE)\b/;
 
 /** Traduce un mensaje de error del motor de subidas a algo que entienda un creador. Los textos que ya están en español se respetan. */
 export function uploadUserMessage(raw: string | null | undefined, fields?: readonly string[]): string {
