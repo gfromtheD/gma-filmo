@@ -12,8 +12,8 @@ export function createMediaGateway(deps:GatewayDependencies,delivery?:GatewayDel
       response.setHeader('Access-Control-Expose-Headers','Range, Content-Range, Content-Length, Accept-Ranges');}
     const url=new URL(request.url??'','http://127.0.0.1');
     if(url.pathname==='/health' && request.method==='GET'){response.setHeader('Content-Type','application/json');response.end('{"ok":true}');return;}
-    // Semáforo para el reproductor: solo el nivel y la ocupación redondeada, nada que identifique a nadie.
-    if(url.pathname==='/carga' && request.method==='GET' && deps.carga){const c=await deps.carga();response.setHeader('Content-Type','application/json');
+    // Semáforo para el reproductor (también bajo /playback/, que nginx ya envía a la pasarela): solo el nivel y la ocupación redondeada, nada que identifique a nadie.
+    if((url.pathname==='/carga' || url.pathname==='/playback/carga') && request.method==='GET' && deps.carga){const c=await deps.carga();response.setHeader('Content-Type','application/json');
       response.end(JSON.stringify({nivel:c.nivel,ocupacion:Math.round(c.ocupacion*100)/100}));return;}
     if(request.method==='OPTIONS'){
       if(!origin || !['PUT','GET','HEAD'].includes(String(request.headers['access-control-request-method'])))throw new MediaError('UPLOAD_UNAUTHORIZED',{status:403});
