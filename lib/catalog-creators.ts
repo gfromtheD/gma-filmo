@@ -3,6 +3,7 @@ import historicalCreators from "@/creators-data.json";
 import sourceCreators from "@/lib/data/catalog-creators.json";
 import type { ArtistCredit, MovieMedia } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
+import { cachedImageUrl } from "@/lib/r2/public-image";
 
 export function creditNameKey(name: string): string {
   return name.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
@@ -22,7 +23,7 @@ export const catalogCreators = historicalCreators.map(creator => {
 
 export function catalogCredit(name: string, role: string): ArtistCredit {
   const creator = catalogCreators.find(record => creditNameKey(record.name) === creditNameKey(name));
-  return { name, role, slug: creator?.slug ?? catalogCreditSlug(name), photoUrl: creator?.r2_photo_url ?? null };
+  return { name, role, slug: creator?.slug ?? catalogCreditSlug(name), photoUrl: cachedImageUrl(creator?.r2_photo_url ?? null) };
 }
 
 export function creatorShorts(slug: string, films: readonly MovieMedia[]): MovieMedia[] {
@@ -37,7 +38,7 @@ export function catalogProfile(slug: string, films: readonly MovieMedia[]): Crea
   if (!record && !credit) return null;
   return {
     slug, nombre: record?.name ?? credit!.name,
-    foto_perfil: record?.r2_photo_url ?? credit?.photoUrl ?? null,
+    foto_perfil: cachedImageUrl(record?.r2_photo_url ?? credit?.photoUrl ?? null),
     imagen_portada: null, nacionalidad: null, bio: record?.bio ?? null,
     redes_sociales: record && "social_links" in record ? record.social_links : [],
     donacion_paypal: null, donacion_patreon: null, donacion_bitcoin: null,
@@ -69,7 +70,7 @@ export function addCatalogCredits(filmSlug: string, credits: readonly ArtistCred
       const credit = result[index]!;
       if (!credit.role) result[index] = { ...credit, role: creator.role ?? "" };
     } else {
-      result.push({ name: creator.name, slug: creator.slug, role: creator.role ?? "", photoUrl: creator.r2_photo_url });
+      result.push({ name: creator.name, slug: creator.slug, role: creator.role ?? "", photoUrl: cachedImageUrl(creator.r2_photo_url) });
     }
   }
   return result;
