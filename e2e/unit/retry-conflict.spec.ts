@@ -71,3 +71,12 @@ test.describe("retryWhileBusy con el freno de reservas", () => {
     expect(calls).toBe(3);
   });
 });
+
+test.describe("retryWhileBusy mientras se prepara la subida", () => {
+  test("una respuesta reintentable de preparación se repite en vez de fallar", async () => {
+    let calls = 0;
+    const result = await retryWhileBusy(async () => { calls++; if (calls < 2) throw new Error("UPLOAD_PROVISION_RECOVERY_REQUIRED"); return "dentro"; },
+      { intervalMs: 10, sleep: async () => undefined });
+    expect(result).toBe("dentro");
+  });
+});

@@ -34,6 +34,9 @@ export async function retryOnRevisionConflict<T>(
 export const CONCURRENCY_LIMIT = "UPLOAD_CONCURRENCY_LIMIT";
 /** Código del servidor cuando se reservan demasiados archivos en un minuto (freno anti-scripts). */
 export const RATE_LIMITED = "UPLOAD_RATE_LIMITED";
+/** El servidor aún está preparando la subida (respuesta reintentable): la misma reserva, con su misma clave, se repite. */
+const PROVISION_PENDING = ["UPLOAD_PROVISION_PENDING", "UPLOAD_PROVISION_RECOVERY_REQUIRED"];
+const WAIT_CODES: ReadonlySet<string> = new Set([CONCURRENCY_LIMIT, RATE_LIMITED, ...PROVISION_PENDING]);
 
 const BUSY_INTERVAL_MS = 4000;
 const BUSY_MAX_WAIT_MS = 3 * 60 * 1000;
@@ -41,7 +44,7 @@ const BUSY_MAX_WAIT_MS = 3 * 60 * 1000;
 /**
  * Si el usuario ya tiene el máximo de subidas activas, la nueva espera su turno (se reintenta cada pocos segundos, hasta unos
  * minutos) en vez de fallar: así puede soltar película, tráiler y varios extras de una vez y se van subiendo según quedan huecos.
- * Lo mismo si salta el freno de reservas por minuto: una persona casi nunca lo alcanza y, si pasa, solo espera un poco.
+ * Lo mismo si salta el freno de reservas por minuto, o si el servidor aún está preparando la subida: solo se espera un poco.
  */
 export async function retryWhileBusy<T>(
   operation: () => Promise<T>,
@@ -55,7 +58,7 @@ export async function retryWhileBusy<T>(
     try {
       return await operation();
     } catch (error) {
-      if (!(error instanceof Error) || (error.message !== CONCURRENCY_LIMIT && error.message !== RATE_LIMITED) || waited >= maxWait) throw error;
+      if (!(error instanceof Error) || !WAIT_CODES.has(error.message) || waited >= maxWait) throw error;
       await sleep(interval);
       waited += interval;
     }
