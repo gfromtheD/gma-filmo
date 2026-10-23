@@ -25,7 +25,8 @@ test('transfer descriptors reject provider branching, unsafe headers and invalid
 
   assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, provider: 'peertube' }).success, false);
   assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, offset: 1025 }).success, false);
-  assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, chunkSize: 17 * 1024 * 1024 }).success, false);
+  assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, chunkSize: 32 * 1024 * 1024 }).success, true);
+  assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, chunkSize: 33 * 1024 * 1024 }).success, false);
   assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, headers: { Authorization: 'ok\r\nX-Evil: yes' } }).success, false);
   assert.equal(transferDescriptorSchema.safeParse({ ...uploadx, url: 'https://user:password@gateway.example/transfer' }).success, false);
 });

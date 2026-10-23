@@ -3,7 +3,8 @@ import { mkdir, statfs } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { MediaError } from '../errors';
 
-export const MAX_CHUNK_BYTES = 16 * 1024 * 1024;
+/** Tope de un trozo de subida (igual que el CHECK de gma_media_upload_chunks). */
+export const MAX_CHUNK_BYTES = 32 * 1024 * 1024;
 export function parseContentRange(value: string | undefined, total: number) {
   const query = /^bytes \*\/(\d+)$/.exec(value ?? '');
   if (query && Number(query[1]) === total) return { query:true as const };

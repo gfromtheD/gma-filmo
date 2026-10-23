@@ -16,7 +16,13 @@ const proofSchema = z.object({ kind: z.literal('peertube-gateway'), uploadId: z.
 /** Margen tras el último PUT para que PeerTube cree el vídeo; pasado, si no existe, ya no existirá. */
 export const FINALIZATION_SETTLE_MS = 15 * 60_000;
 
-const VIDEO_EXTENSIONS:Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
+/**
+ * Trozo de subida hacia la pasarela. Cada trozo paga unos trámites fijos (permiso, turno, registro en la base de datos y
+ * entrega a PeerTube, ~1,5 s); con 32 MiB se pagan la cuarta parte de veces que con 8 MiB.
+ */
+export const UPLOAD_CHUNK_BYTES = 32 * 1024 * 1024;
+
+const VIDEO_EXTENSIONS: Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
 
 /** PeerTube validates the extension of `filename`; the user's own file name is never forwarded. */
 export function videoExtension(contentType: string): string {
@@ -77,7 +83,7 @@ export class PeerTubeMediaProvider implements MediaProvider {
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > context.session.expected_input_bytes) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
     const grant=this.issuer.issue({sessionId:context.session.id,assetId:context.asset.id,generation:context.transferGeneration,scope:'upload',method:'PUT',namespace:`transfer/${context.session.id}/${context.transferGeneration}/`,expectedBytes:context.session.expected_input_bytes,ttlSeconds:900});
     return { protocol: 'uploadx' as const, url: `${this.gatewayOrigin.origin}/transfer/${context.session.id}`,
-      headers: {Authorization:`Bearer ${grant.token}`}, chunkSize: 8 * 1024 * 1024, offset, totalBytes: context.session.expected_input_bytes, expiresAt: new Date(grant.expiresAt).toISOString() };
+      headers: {Authorization:`Bearer ${grant.token}`}, chunkSize: UPLOAD_CHUNK_BYTES, offset, totalBytes: context.session.expected_input_bytes, expiresAt: new Date(grant.expiresAt).toISOString() };
   }
 
   private async finalReceipt(context: ProviderUploadContext): Promise<UploadReceipt> {

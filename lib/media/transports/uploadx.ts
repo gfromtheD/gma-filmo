@@ -9,7 +9,27 @@ export interface UploadxOptions {
   signal: AbortSignal;
   fetcher?: UploadxFetch;
   onProgress?: (confirmedBytes: number, totalBytes: number) => void;
+  /** Bytes que probablemente ya han salido del trozo en vuelo (solo para pintar una barra fluida; nunca para reanudar). */
+  onEstimate?: (estimatedBytes: number, totalBytes: number) => void;
   wait?: (milliseconds: number, signal: AbortSignal) => Promise<void>;
+}
+
+/** Velocidad supuesta para el primer trozo (~2 MB/s); después se usa la medida del trozo anterior. */
+const INITIAL_BYTES_PER_MS = 2_000;
+const ESTIMATE_EVERY_MS = 400;
+/** La estimación nunca llega al final del trozo: el 100 % de un trozo lo confirma el servidor. */
+const ESTIMATE_CEILING = 0.95;
+
+/** Mientras un trozo viaja, avisa cada poco de cuánto habrá salido según la velocidad medida. Devuelve la función que lo para. */
+function estimateInFlight(offset: number, size: number, total: number, bytesPerMs: number,
+  onEstimate: UploadxOptions['onEstimate']): () => void {
+  if (!onEstimate) return () => undefined;
+  const startedAt = Date.now();
+  const timer = setInterval(() => {
+    const sent = Math.min(size * ESTIMATE_CEILING, bytesPerMs * (Date.now() - startedAt));
+    onEstimate(offset + Math.floor(sent), total);
+  }, ESTIMATE_EVERY_MS);
+  return () => clearInterval(timer);
 }
 
 function parseOffset(response: Response, previous: number, total: number): number {
@@ -45,17 +65,21 @@ export async function uploadx(options: UploadxOptions): Promise<void> {
   }
   let offset = transfer.offset;
   let finalConfirmed = false;
+  let bytesPerMs = INITIAL_BYTES_PER_MS;
   options.onProgress?.(offset, total);
   for (let attempt = 0; offset < total;) {
     if (signal.aborted) throw new DOMException('Interrumpido', 'AbortError');
     if (Date.parse(transfer.expiresAt) <= Date.now()) transfer = await options.refresh();
     const end = Math.min(offset + transfer.chunkSize, total) - 1;
+    const sentAt = Date.now();
+    const estimate = estimateInFlight(offset, end - offset + 1, total, bytesPerMs, options.onEstimate);
     try {
       const response = await fetcher(transfer.url, {
         method: 'PUT', signal,
         headers: { ...transfer.headers, 'Content-Type': file.type || 'application/octet-stream', 'Content-Range': `bytes ${offset}-${end}/${total}` },
         body: file.slice(offset, end + 1),
-      });
+      }).finally(estimate);
+      bytesPerMs = (end - offset + 1) / Math.max(1, Date.now() - sentAt);
       const confirmed = parseOffset(response, offset, total);
       if (confirmed === offset && response.status !== 200) throw new Error('UPLOADX_OFFSET_NOT_ADVANCED');
       offset = confirmed;
