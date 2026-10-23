@@ -105,9 +105,9 @@ test.describe("borrador en el navegador", () => {
     const storage = fakeStorage();
     saveDraft(storage, { ...emptyDraft(), video: { file: { name: "v.mp4", sizeBytes: 9, url: null, status: "uploading", progress: 33 } } });
     expect(loadDraft(storage).video.file).toMatchObject({ status: "error" });
-    // un vídeo que se estaba procesando al cerrar la página tampoco se puede dar por bueno
+    // un vídeo que el servidor estaba convirtiendo no se da por bueno, pero tampoco se pierde: sigue «procesando» y se vuelve a vigilar
     saveDraft(storage, { ...emptyDraft(), video: { file: { name: "v.mp4", sizeBytes: 9, url: null, status: "processing" } } });
-    expect(loadDraft(storage).video.file).toMatchObject({ status: "error" });
+    expect(loadDraft(storage).video.file).toMatchObject({ status: "processing" });
   });
 
   test("un guardado corrupto o de otra versión no rompe nada: borrador vacío", () => {

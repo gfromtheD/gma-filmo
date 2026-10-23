@@ -40,6 +40,11 @@ export interface UploadEngine {
     onPhase?: (phase: UploadPhase, percent?: number) => void,
   ): Promise<UploadedAsset>;
   submit(draft: UploadDraft): Promise<SubmitResult>;
+  /**
+   * Tras recargar la página: vuelve a vigilar un archivo que ya se envió y el servidor seguía convirtiendo, hasta que acaba.
+   * `null` si el servidor ya no lo tiene. Sin este método (motores sin servidor), ese archivo hay que volver a subirlo.
+   */
+  resumeProcessing?(slot: string, signal: AbortSignal): Promise<UploadedAsset | null>;
 }
 
 const wait = (ms: number, signal?: AbortSignal) =>

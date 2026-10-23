@@ -48,6 +48,7 @@ export type PublishMode = 'hold' | 'direct';
 
 export interface MediaUploadEngine extends Omit<UploadEngine, 'id'> {
   readonly id: 'media';
+  resumeProcessing(slot: string, signal: AbortSignal): Promise<MediaUploadedAsset | null>;
   /** Cancela la sesión en el servidor (libera la reserva de cuota). Usar al quitar un archivo, no al salir de la página. */
   cancelAsset(slot: string): Promise<void>;
   /** Pausa en el servidor una transferencia en curso. */
@@ -65,7 +66,13 @@ const VALIDATING = 'Validando y procesando';
 /** Roles de vídeo: se convierten en el servidor y una obra larga tarda mucho más que los 90 s que se esperan por defecto. */
 const LONG_PROCESSING_ROLES: ReadonlySet<string> = new Set(['main', 'trailer', 'extras', 'intro']);
 const LONG_PROCESSING_WAIT_MS = 6 * 60 * 60 * 1000;
+/** Cada cuánto se pregunta por una conversión que se vuelve a vigilar tras recargar (como `uploadManagedAsset`). */
+const PROCESSING_POLL_MS = 1500;
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
+const pause = (ms: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
+  const timer = setTimeout(resolve, ms);
+  signal.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Interrumpido', 'AbortError')); }, { once: true });
+});
 
 function toAsset(file: { name: string; size: number }, envelope: ManagedEnvelope): MediaUploadedAsset {
   const base = { name: file.name, sizeBytes: file.size, sessionId: envelope.session.sessionId, mediaId: envelope.asset.mediaId, role: envelope.session.role };
@@ -175,6 +182,28 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     }
   }
 
+  /**
+   * Tras recargar: lo que ya se envió entero lo sigue convirtiendo el servidor. Se empareja con su subida y se espera a que
+   * acabe, en vez de pedir que se vuelva a subir (con una película de varios GB, eso era volver a empezar).
+   */
+  async function resumeProcessing(slot: string, signal: AbortSignal): Promise<MediaUploadedAsset | null> {
+    await adoptServerSessions([slot]);
+    const adopted = sessions.get(slot);
+    const file = localFile(options.getDraft(), slot);
+    if (!adopted || !file) return null;
+    const deadline = Date.now() + LONG_PROCESSING_WAIT_MS;
+    let envelope = adopted;
+    for (;;) {
+      if (signal.aborted) throw new DOMException('Interrumpido', 'AbortError');
+      envelope = await deps.api<ManagedEnvelope>(`/api/uploads/${envelope.session.sessionId}`);
+      sessions.set(slot, envelope);
+      if (!isLiveUpload(envelope)) return null;
+      const asset = toAsset({ name: file.name, size: file.sizeBytes }, envelope);
+      if (asset.status !== 'processing' || Date.now() >= deadline) return asset;
+      await pause(PROCESSING_POLL_MS, signal);
+    }
+  }
+
   const ALL_SLOTS = (draft: UploadDraft): string[] => [
     'video', 'trailer', 'poster', 'banner',
     ...draft.extras.map(extraSlot), ...draft.srtSubtitles.map((_, i) => `srt:${i}`),
@@ -247,6 +276,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     uploadAsset,
     submit,
     saveFicha,
+    resumeProcessing,
     cancelAsset: slot => sessionAction(slot, 'cancel'),
     pauseAsset: slot => sessionAction(slot, 'pause'),
     async retryAsset(slot) {
