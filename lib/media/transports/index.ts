@@ -14,6 +14,7 @@ export async function transferAsset(input: { file: File; sessionId: string; desc
     case 'tus': await tusAsset(file, descriptor, signal, onProgress); return;
     case 'uploadx': await uploadx({ file, transfer: descriptor, refresh: async () => {
       const next = await refresh(); if (next.protocol !== 'uploadx') throw new Error('UPLOAD_PROTOCOL_CHANGED'); return next;
-    }, signal, onProgress: (confirmed, total) => onProgress(total ? confirmed / total * 100 : 0) }); return;
+    }, signal, onProgress: (confirmed, total) => onProgress(total ? confirmed / total * 100 : 0),
+      onEstimate: (estimated, total) => onProgress(total ? estimated / total * 100 : 0) }); return;
   }
 }

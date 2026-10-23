@@ -76,3 +76,12 @@ test('uploadx probes once after the last chunk response is lost and the refreshe
     }, wait: async () => undefined });
   assert.deepEqual(ranges, ['bytes 6-7/8', 'bytes */8']);
 });
+
+test('uploadx estima el avance del trozo en vuelo sin pasar del 95 % ni retroceder', async () => {
+  const estimates: number[] = [];
+  await uploadx({ file, transfer: descriptor(0, 8), refresh: async () => descriptor(0, 8), signal: new AbortController().signal,
+    fetcher: async () => { await new Promise((resolve) => setTimeout(resolve, 900)); return new Response(null, { status: 200 }); },
+    onEstimate: (bytes) => estimates.push(bytes), wait: async () => undefined });
+  assert.ok(estimates.length >= 1);
+  assert.ok(estimates.every((bytes, i) => bytes <= 8 * 0.95 && (i === 0 || bytes >= estimates[i - 1]!)));
+});

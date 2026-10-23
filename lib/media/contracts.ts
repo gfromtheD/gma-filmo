@@ -164,7 +164,7 @@ export const transferDescriptorSchema: z.ZodType<TransferDescriptor> = z.discrim
     protocol: z.literal('uploadx'),
     url: mediaUrlSchema,
     headers: transferHeadersSchema,
-    chunkSize: positiveSafeBytes.max(16 * 1024 * 1024),
+    chunkSize: positiveSafeBytes.max(32 * 1024 * 1024),
     offset: safeBytes,
     totalBytes: positiveSafeBytes,
     expiresAt: z.string().datetime({ offset: true }),

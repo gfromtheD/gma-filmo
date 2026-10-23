@@ -29,13 +29,10 @@ export async function transferPeerTube(context:ProviderAssetContext,storage:Mock
     if(context.signal.aborted)throw new MediaError('UPLOAD_CANCELLED');
     await repo.renewTransfer(session.owner_id,session.id,generation,writer,fence);
   };
-  await assertLease();
-  const privateState=await repo.privateState(session.id);
+  const [,privateState,sqlChunks,disk]=await Promise.all([assertLease(),repo.privateState(session.id),repo.transferChunks(session.id,generation),storage.offset(session.id,generation)]);
   const binding=bindingSchema.parse(privateState);
   const correlation=`gma-${asset.id}-a${generation}`;
   if(binding.correlationName!==correlation)throw new MediaError('IDEMPOTENCY_CONFLICT');
-  const sqlChunks=await repo.transferChunks(session.id,generation);
-  const disk=await storage.offset(session.id,generation);
   if(disk.chunks.length!==sqlChunks.length)throw new MediaError('UPLOAD_REVISION_CONFLICT');
   let localOffset=0;
   for(let i=0;i<sqlChunks.length;i++){

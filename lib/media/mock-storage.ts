@@ -10,7 +10,7 @@ import { MediaError } from './errors';
 
 const uuid = z.string().uuid();
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
-const maxChunkBytes = 16 * 1024 * 1024;
+const maxChunkBytes = 32 * 1024 * 1024;
 
 export interface MockChunkInput {
   sessionId: string; assetId: string; generation: number; fence: number;

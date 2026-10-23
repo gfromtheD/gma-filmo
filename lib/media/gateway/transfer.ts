@@ -31,8 +31,10 @@ export async function transfer(request:IncomingMessage,response:ServerResponse,i
   const writer=`gateway-${randomUUID()}`;const claim=await deps.repository.claimTransfer(session.owner_id,id,session.transfer_generation,writer);
   let leaseError:unknown;const heartbeat=setInterval(()=>{void deps.repository.renewTransfer(session.owner_id,id,session.transfer_generation,writer,claim.fence).catch(error=>{leaseError=error;});},5_000);
   try {
-    mark('claim');context=await service.context(id);
-    await deps.storage.recoverCommitted(id,session.transfer_generation,await deps.repository.transferChunks(id,session.transfer_generation));
+    mark('claim');
+    // Lecturas independientes tras el turno: en paralelo (cada viaje a la base de datos son ~35-100 ms por trozo).
+    const [fresh,committed]=await Promise.all([service.context(id),deps.repository.transferChunks(id,session.transfer_generation)]);context=fresh;
+    await deps.storage.recoverCommitted(id,session.transfer_generation,committed);
     mark('recover1');
     if(!range.query){
       await (deps.diskCheck??requireDisk)(deps.storage.root,range.size);
@@ -45,12 +47,14 @@ export async function transfer(request:IncomingMessage,response:ServerResponse,i
         });
     }
     mark('guardado');
-    let offset=(await deps.storage.recoverCommitted(id,session.transfer_generation,await deps.repository.transferChunks(id,session.transfer_generation))).offset;
+    const [afterCommit,peerTubeContext]=await Promise.all([deps.repository.transferChunks(id,session.transfer_generation),
+      session.provider==='peertube'?service.context(id):Promise.resolve(null)]);
+    let offset=(await deps.storage.recoverCommitted(id,session.transfer_generation,afterCommit)).offset;
     mark('recover2');
     if(session.provider==='peertube'){
-      if(!deps.peerTube)throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
+      if(!deps.peerTube||!peerTubeContext)throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
       const {transferPeerTube}=await import('./peertube-transfer');
-      offset=(await transferPeerTube(await service.context(id),deps.storage,deps.repository,deps.peerTube)).offset;
+      offset=(await transferPeerTube(peerTubeContext,deps.storage,deps.repository,deps.peerTube)).offset;
     }else if(offset===session.expected_input_bytes){
       const receipt=await deps.storage.complete(id,session.asset_id,session.transfer_generation,session.expected_input_bytes,session.source_sha256);
       const uploadId=context.privateState.uploadId;if(typeof uploadId!=='string')throw new MediaError('UPLOAD_PROVISION_RECOVERY_REQUIRED');

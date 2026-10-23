@@ -59,3 +59,8 @@ test('5.2 HTTP elects one in-flight writer and rejects concurrent upload without
  release();assert.equal((await first).status,200);assert.equal((await h.repo.transferChunks(h.id,1)).length,1);
  }finally{release();await h.close();}
 });
+test('trozos de hasta 32 MiB: el límite exacto entra y uno más grande no',()=>{
+ const total=40_000_000;
+ assert.deepEqual(parseContentRange(`bytes 0-${32*1024*1024-1}/${total}`,total),{query:false,start:0,end:32*1024*1024-1,size:32*1024*1024});
+ assert.throws(()=>parseContentRange(`bytes 0-${32*1024*1024}/${total}`,total));
+});
