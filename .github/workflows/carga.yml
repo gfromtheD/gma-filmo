@@ -19,7 +19,7 @@ on:
         description: "Usuarios simultáneos en total (se reparten entre las máquinas)"
         default: "25"
       maquinas:
-        description: "Máquinas (1-5)"
+        description: "Máquinas (1-20; cada una sale por una IP distinta)"
         default: "1"
       meseta:
         description: "Segundos manteniendo la carga"
@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        maquina: [1, 2, 3, 4, 5]
+        maquina: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     steps:
       - name: ¿Participa esta máquina?
         id: turno
