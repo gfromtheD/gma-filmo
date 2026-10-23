@@ -383,3 +383,41 @@ test('enviar no cancela nada si no consigue emparejar el vídeo principal (prote
   await engine.submit(draft);
   assert.equal(h.calls.some(c => /\/cancel$/.test(c.path)), false);
 });
+
+test('tras recargar, un vídeo que el servidor seguía convirtiendo se vuelve a vigilar y queda listo sin volver a subirlo', async () => {
+  const polled: string[] = [];
+  const h = fakeDeps({
+    async api<T>(path: string) { polled.push(path); return envelope('main', 'ready', 9) as T; },
+  });
+  const converting = envelope('main', 'validating', 9);
+  Object.assign(converting.session, { fileName: 'peli.mp4', expectedBytes: 368, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(converting);
+  const draft = draftFixture({ video: { file: { name: 'peli.mp4', sizeBytes: 368, url: null, status: 'processing' as const } } });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft });
+  const result = await engine.resumeProcessing('video', new AbortController().signal);
+  assert.equal(result?.status, 'done');
+  assert.equal((result as { mediaId?: string }).mediaId, converting.asset.mediaId);
+  assert.deepEqual(polled, [`/api/uploads/${converting.session.sessionId}`]);
+  assert.equal(h.uploads.length, 0, 'no se vuelve a subir nada');
+});
+
+test('tras recargar, una conversión que falló en el servidor se enseña como error', async () => {
+  const h = fakeDeps({
+    async api<T>() { return envelope('main', 'failed', 9, { error: { code: 'MEDIA_PROCESSING_FAILED', retryable: true } } as never) as T; },
+  });
+  const converting = envelope('main', 'validating', 9);
+  Object.assign(converting.session, { fileName: 'peli.mp4', expectedBytes: 368, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(converting);
+  const draft = draftFixture({ video: { file: { name: 'peli.mp4', sizeBytes: 368, url: null, status: 'processing' as const } } });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft });
+  const result = await engine.resumeProcessing('video', new AbortController().signal);
+  assert.equal(result?.status, 'error');
+});
+
+test('tras recargar, si el servidor ya no tiene la subida que se estaba convirtiendo, no hay nada que vigilar', async () => {
+  const h = fakeDeps();
+  const draft = draftFixture({ video: { file: { name: 'peli.mp4', sizeBytes: 368, url: null, status: 'processing' as const } } });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft });
+  assert.equal(await engine.resumeProcessing('video', new AbortController().signal), null);
+  assert.equal(h.calls.length, 0);
+});

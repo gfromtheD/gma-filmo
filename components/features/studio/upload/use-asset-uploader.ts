@@ -87,5 +87,27 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
     [engine, setAsset],
   );
 
-  return { upload, remove, advice };
+  /**
+   * Tras recargar: un archivo que ya se envió y el servidor seguía convirtiendo se vuelve a vigilar hasta que acaba. Si el
+   * motor no sabe hacerlo o el servidor ya no lo tiene, se pide volver a subirlo (como antes).
+   */
+  const resume = useCallback(
+    async (slot: string, asset: UploadedAsset) => {
+      const lost: UploadedAsset = { ...asset, url: null, status: "error", progress: undefined, error: "Vuelve a subir este archivo." };
+      if (!engine.resumeProcessing) return setAsset(slot, lost);
+      const controller = new AbortController();
+      controllers.current.set(slot, controller);
+      try {
+        const result = await engine.resumeProcessing(slot, controller.signal);
+        if (!controller.signal.aborted) setAsset(slot, result ?? lost);
+      } catch (error) {
+        if ((error as { name?: string }).name !== "AbortError") setAsset(slot, lost);
+      } finally {
+        if (controllers.current.get(slot) === controller) controllers.current.delete(slot);
+      }
+    },
+    [engine, setAsset],
+  );
+
+  return { upload, remove, resume, advice };
 }

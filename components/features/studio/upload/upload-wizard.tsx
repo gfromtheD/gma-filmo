@@ -12,7 +12,7 @@ import { DataStep } from "./steps/data-step";
 import { useFooterHiddenStore } from "@/store/use-footer-hidden-store";
 import { getUploadEngine, type SubmitResult } from "@/lib/studio/engine";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/studio/draft-storage";
-import { UPLOAD_STEPS, emptyDraft, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
+import { UPLOAD_STEPS, emptyDraft, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
 
 const SAVE_DELAY_MS = 500;
 
@@ -83,6 +83,15 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
   const update = useCallback((patch: Partial<UploadDraft>) => setDraft((d) => ({ ...d, ...patch })), []);
   const setAssetInDraft = useCallback((slot: string, asset: Parameters<typeof setAsset>[2]) => setDraft((d) => setAsset(d, slot, asset)), []);
   const uploader = useAssetUploader(engine, setAssetInDraft);
+
+  // Al volver a la página, lo que el servidor seguía convirtiendo se vuelve a vigilar (una sola vez, con el borrador recién leído).
+  const resumed = useRef(false);
+  const { resume } = uploader;
+  useEffect(() => {
+    if (!isReady || resumed.current) return;
+    resumed.current = true;
+    for (const [slot, asset] of processingAssets(draftRef.current ?? emptyDraft())) void resume(slot, asset);
+  }, [isReady, resume]);
 
   const reviews = useMemo(() => reviewDraft(draft), [draft]);
   const step = UPLOAD_STEPS[stepIndex]!;

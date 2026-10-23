@@ -7,7 +7,7 @@ import type { AssetRequest, SubmitResult, UploadEngine } from '@/lib/studio/engi
 import type { UploadDraft, UploadedAsset } from '@/lib/studio/upload-draft';
 import type { MediaUploadEngine } from './media-engine';
 
-export function createLazyMediaEngine(getDraft: () => UploadDraft): UploadEngine & Pick<MediaUploadEngine, 'cancelAsset' | 'pauseAsset' | 'retryAsset' | 'saveFicha'> {
+export function createLazyMediaEngine(getDraft: () => UploadDraft): UploadEngine & Pick<MediaUploadEngine, 'cancelAsset' | 'pauseAsset' | 'retryAsset' | 'saveFicha' | 'resumeProcessing'> {
   let loaded: Promise<MediaUploadEngine> | null = null;
   const engine = () => (loaded ??= (async () => {
     const [{ createMediaEngine, browserMediaEngineDeps }] = await Promise.all([import('./media-engine')]);
@@ -24,6 +24,7 @@ export function createLazyMediaEngine(getDraft: () => UploadDraft): UploadEngine
     pauseAsset: async (slot) => (await engine()).pauseAsset(slot),
     retryAsset: async (slot) => (await engine()).retryAsset(slot),
     saveFicha: async (draft) => (await engine()).saveFicha(draft),
+    resumeProcessing: async (slot, signal) => (await engine()).resumeProcessing(slot, signal),
   };
 }
 
