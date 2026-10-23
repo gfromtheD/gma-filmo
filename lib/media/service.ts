@@ -17,6 +17,9 @@ import type { ProviderAssetContext, ProviderClock } from './provider';
 import { mapMediaAssetDTO, mapUploadSessionDTO, mapDraftDTO } from './dto';
 import { uploadMutationEnvelopeSchema, transferDescriptorSchema, mediaProofSchema } from './contracts';
 
+/** Errores de un archivo auxiliar que ningún reintento arregla (el archivo es así). */
+const PERMANENT_VALIDATION_CODES: ReadonlySet<string> = new Set(['IMAGE_INVALID', 'SUBTITLE_INVALID', 'NORMALIZED_ASSET_TOO_LARGE']);
+
 export class MediaService {
   readonly registry: MediaProviderRegistry;
   constructor(readonly repo = new MediaRepository(), registry?: MediaProviderRegistry,
@@ -226,6 +229,9 @@ export class MediaService {
       const current=await this.repo.job(job.id);
       if(current.state==='running' && current.lease_owner===worker) {
         if(code==='UPLOAD_CLEANUP_UNCONFIRMED')await this.repo.jobControl(job.id,worker,'poll',context.processingGeneration);
+        else if(job.kind==='verify' && PERMANENT_VALIDATION_CODES.has(code) && (context.asset.state==='validating' || context.asset.state==='processing'))
+          // Reintentar no arregla un archivo inválido: se rechaza a la primera para que el creador lo sepa ya.
+          await this.repo.command(context.session.owner_id,'failed',{...this.fence(context,job,worker),error_code:code,retryable:false});
         else await this.repo.finishJob(job.id,worker,false,code,new Date(this.clock.now()+mediaJobBackoff(job.attempts)).toISOString());
       }
     } finally {clearInterval(heartbeat);abort.abort();}
