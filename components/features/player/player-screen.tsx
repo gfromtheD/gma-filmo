@@ -764,7 +764,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           descargue los primeros segundos; YouTube no se monta hasta el final. */}
       <div className="absolute inset-0">
         {phase === "loading" || (showSplash && !(mp4Url || managedEndpoint)) ? (
-          <PosterArt style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
+          <PosterArt fill style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         ) : mp4Url || managedEndpoint ? (
           <video
             ref={attachVideo} src={mp4Url ?? undefined}

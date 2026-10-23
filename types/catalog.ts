@@ -32,6 +32,8 @@ interface MediaBase {
   readonly tagline?: string;
   readonly style: PosterStyle;
   readonly imageUrl?: string;
+  /** Cartel vertical (si la obra lo tiene); lo vertical lo usa antes que `imageUrl`, que es la imagen ancha. */
+  readonly portraitImageUrl?: string;
   readonly videoUrl?: string;
   readonly r2VideoUrl?: string;
   /** Tráiler opcional (mp4). Si existe, el hero de portada lo reproduce tras unos segundos. */
