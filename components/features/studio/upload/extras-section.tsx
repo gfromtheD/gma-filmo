@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { CARD_CLASS } from "./fields";
 import type { StepProps } from "./step-props";
 import { VideoDropzone } from "./video-dropzone";
+import { ProgressRing } from "./progress-ring";
 import { IMAGE_MIME_TYPES, LIMITS } from "@/lib/studio/catalogs";
 import { extraSlot, previewSrc, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
 
@@ -101,7 +102,8 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
   const file = extra.file;
   const status = file?.status;
   const label = `Extra ${index + 1}`;
-  const removeVerb = status === "uploading" || status === "processing" ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
+  const isBusy = status === "uploading" || status === "processing";
+  const removeVerb = isBusy ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
   const preview = extra.kind !== "video" ? previewSrc(file) : null;
 
   return (
@@ -115,12 +117,12 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={extra.thumb} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
-            <span aria-hidden="true" className="absolute left-1/2 top-1/2 grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white">
+            {!isBusy && <span aria-hidden="true" className="absolute left-1/2 top-1/2 grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white">
               <svg viewBox="0 0 24 24" className="ml-0.5 size-4" fill="currentColor"><path d="M8 5.5v13l10.5-6.5L8 5.5Z" /></svg>
-            </span>
+            </span>}
           </>
         )}
-        {extra.kind === "video" && status !== "error" && !extra.thumb && (
+        {extra.kind === "video" && status !== "error" && !extra.thumb && !isBusy && (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-white/10 to-white/[0.02] p-2 text-center">
             <div className="min-w-0">
               <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto size-7 text-white/70" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m10.5 9.5 4 2.5-4 2.5v-5Z" /></svg>
@@ -129,11 +131,14 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
           </div>
         )}
         {status === "error" && <p role="alert" className="absolute inset-0 grid place-items-center p-2 text-center text-[11px] leading-snug text-[#ff7b7b]">{file?.error ?? "No se pudo subir."}</p>}
-        {(status === "uploading" || status === "processing") && (
-          <div className="absolute inset-x-0 bottom-0 bg-black/65 px-2 py-1.5">
-            <p className="text-[10.5px] font-semibold text-white">{status === "processing" ? "Procesando…" : "Subiendo…"}</p>
-            <div role="progressbar" aria-label={`Subiendo ${label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(file?.progress ?? 0)} className="mt-1 h-1 overflow-hidden rounded-full bg-white/15">
-              <div className="h-full bg-[#22B16B] transition-[width]" style={{ width: `${file?.progress ?? 0}%` }} />
+        {isBusy && (
+          // Anillo en el centro (no tapa el nombre de abajo): se llena con la subida; al procesar, gira sin inventar porcentaje.
+          <div className="absolute inset-0 grid place-items-center bg-black/45">
+            <div className="flex flex-col items-center gap-1">
+              <ProgressRing value={status === "processing" ? null : Math.round(file?.progress ?? 0)} label={`${status === "processing" ? "Procesando" : "Subiendo"} ${label}`} size={52} stroke={4}>
+                {status !== "processing" && <span className="text-[12px] font-bold tabular-nums text-white">{Math.round(file?.progress ?? 0)}%</span>}
+              </ProgressRing>
+              <span className="text-[10.5px] font-semibold text-white/85">{status === "processing" ? "Procesando…" : "Subiendo…"}</span>
             </div>
           </div>
         )}
