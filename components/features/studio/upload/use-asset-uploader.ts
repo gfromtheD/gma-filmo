@@ -44,7 +44,9 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
       }
       const controller = new AbortController();
       controllers.current.set(slot, controller);
-      const base = { name: file.name, sizeBytes: file.size, url: null } as const;
+      // Las imágenes se ven al instante desde el propio archivo; la del servidor llega al terminar sin que cambie nada.
+      const previewUrl = request.rule === "image" ? URL.createObjectURL(file) : undefined;
+      const base = { name: file.name, sizeBytes: file.size, url: null, ...(previewUrl ? { previewUrl } : {}) } as const;
       let phase: UploadPhase = "uploading";
       setAsset(slot, { ...base, status: "uploading", phase, progress: 0 });
       try {
@@ -59,7 +61,7 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
             setAsset(slot, next === "processing" ? { ...base, status: "processing", phase: next } : { ...base, status: "uploading", phase: next, progress: percent ?? 0 });
           },
         );
-        if (!controller.signal.aborted) setAsset(slot, result);
+        if (!controller.signal.aborted) setAsset(slot, previewUrl ? { ...result, previewUrl } : result);
       } catch (error) {
         if ((error as { name?: string }).name !== "AbortError") {
           setAsset(slot, { name: file.name, sizeBytes: file.size, url: null, status: "error", error: "No se pudo subir el archivo." });

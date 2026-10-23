@@ -5,7 +5,7 @@ import { CARD_CLASS } from "./fields";
 import type { StepProps } from "./step-props";
 import { VideoDropzone } from "./video-dropzone";
 import { IMAGE_MIME_TYPES, LIMITS } from "@/lib/studio/catalogs";
-import { extraSlot, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
+import { extraSlot, previewSrc, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
 
 const KIND_LABEL: Record<ExtraKind, string> = { fotograma: "Fotograma", poster: "Póster", video: "Vídeo" };
 const VIDEO_EXTENSIONS = /\.(mp4|mov|mkv|avi|webm|m4v|mpg|mpeg|mxf|wmv)$/i;
@@ -102,14 +102,14 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
   const status = file?.status;
   const label = `Extra ${index + 1}`;
   const removeVerb = status === "uploading" || status === "processing" ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
-  const showImage = extra.kind !== "video" && status === "done" && file?.url;
+  const preview = extra.kind !== "video" ? previewSrc(file) : null;
 
   return (
     <li data-file-slot={label} title={file?.name} className={TILE_SIZE}>
       <div className={`relative size-full overflow-hidden rounded-[10px] border bg-white/[0.04] ${status === "error" ? "border-[#ff5252]/50" : "border-white/10"}`}>
-        {showImage && (
+        {preview && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={file!.url!} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
+          <img src={preview} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
         )}
         {extra.kind === "video" && status !== "error" && extra.thumb && (
           <>

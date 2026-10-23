@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ReactNode } from "react";
-import type { UploadedAsset } from "@/lib/studio/upload-draft";
+import { previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
 
 interface ImageDropProps {
   readonly label: string;
@@ -39,7 +39,8 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
   const [dismissedAdvice, setDismissedAdvice] = useState<string | null>(null);
   const status = asset?.status;
   const removeVerb = status === "uploading" ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
-  const showImage = status === "done" && asset?.url;
+  const preview = previewSrc(asset);
+  const showImage = Boolean(preview);
 
   function pick(files: FileList | null) {
     const file = files?.[0];
@@ -61,7 +62,7 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
       >
         {showImage && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={asset.url!} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
+          <img src={preview!} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
         )}
 
         <input ref={input} id={id} type="file" accept={ACCEPT} onChange={(e) => pick(e.target.files)} className="peer sr-only" />

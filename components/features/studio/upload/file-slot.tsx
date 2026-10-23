@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import type { UploadedAsset } from "@/lib/studio/upload-draft";
+import { previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
 import { BUTTON_SECONDARY } from "./fields";
 
 interface FileSlotProps {
@@ -63,9 +63,9 @@ export function FileSlot({ label, required, rules, hint, accept, asset, advice, 
 
       {asset ? (
         <div className="flex items-center gap-3">
-          {previewImage && status === "done" && asset.url && (
+          {previewImage && previewSrc(asset) && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={asset.url} alt={`Vista previa: ${label}`} className="h-14 w-14 shrink-0 rounded-[6px] object-cover" />
+            <img src={previewSrc(asset)!} alt={`Vista previa: ${label}`} className="h-14 w-14 shrink-0 rounded-[6px] object-cover" />
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] text-white">{asset.name} <span className="text-[#7C7C7C]">· {fmtBytes(asset.sizeBytes)}</span></p>

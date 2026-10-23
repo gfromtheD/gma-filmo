@@ -1,6 +1,6 @@
 "use client";
 
-import type { UploadedAsset } from "@/lib/studio/upload-draft";
+import { previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
 
 export interface ImageFeedbackItem {
   readonly id: string;
@@ -27,7 +27,7 @@ export function ImageErrors({ items }: { readonly items: readonly ImageFeedbackI
 
 /** Vista previa de las imágenes ya subidas, cada una con su forma real; no sale hasta que hay alguna. */
 export function ImagePreviews({ items }: { readonly items: readonly ImageFeedbackItem[] }) {
-  const ready = items.filter((item) => item.asset?.status === "done" && item.asset.url);
+  const ready = items.filter((item) => previewSrc(item.asset));
   if (ready.length === 0) return null;
   return (
     <section aria-label="Vista previa de las imágenes" className="flex flex-col gap-2 rounded-[14px] border border-white/10 bg-black/30 p-4">
@@ -37,7 +37,7 @@ export function ImagePreviews({ items }: { readonly items: readonly ImageFeedbac
           <li key={item.id} className={`flex min-w-0 flex-col gap-1.5 ${item.id === "poster" ? "w-[120px]" : "min-w-[240px] flex-1"}`}>
             <div className="overflow-hidden rounded-[8px] border border-white/10 bg-black/50" style={{ aspectRatio: item.aspect }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.asset!.url!} alt={`Vista previa: ${item.label}`} className="h-full w-full object-cover" />
+              <img src={previewSrc(item.asset)!} alt={`Vista previa: ${item.label}`} className="h-full w-full object-cover" />
             </div>
             <span className="text-[12px] text-[#A8A8A8]">{item.label}</span>
           </li>
