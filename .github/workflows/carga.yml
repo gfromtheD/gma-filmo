@@ -1,0 +1,73 @@
+name: Pruebas de carga
+
+# Se lanza a mano (gh workflow run carga.yml -f ...). Reparte los usuarios entre varias máquinas de GitHub para que la red
+# de una sola no sea el cuello de botella. Ver loadtest/README.md.
+on:
+  workflow_dispatch:
+    inputs:
+      escenario:
+        description: "Recorrido"
+        type: choice
+        options: [navegar, ver]
+        default: navegar
+      forma:
+        description: "carga | estres | pico"
+        type: choice
+        options: [carga, estres, pico]
+        default: carga
+      usuarios:
+        description: "Usuarios simultáneos en total (se reparten entre las máquinas)"
+        default: "25"
+      maquinas:
+        description: "Máquinas (1-5)"
+        default: "1"
+      meseta:
+        description: "Segundos manteniendo la carga"
+        default: "180"
+      titulos:
+        description: "Slugs de obras del motor para «ver» (separados por comas)"
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-de-carga
+  cancel-in-progress: false
+
+jobs:
+  carga:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        maquina: [1, 2, 3, 4, 5]
+    steps:
+      - name: ¿Participa esta máquina?
+        id: turno
+        run: |
+          if [ "${{ matrix.maquina }}" -le "${{ inputs.maquinas }}" ]; then
+            echo "activa=true" >> "$GITHUB_OUTPUT"
+            echo "usuarios=$(( (${{ inputs.usuarios }} + ${{ inputs.maquinas }} - 1) / ${{ inputs.maquinas }} ))" >> "$GITHUB_OUTPUT"
+          else
+            echo "activa=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.turno.outputs.activa == 'true'
+      - uses: grafana/setup-k6-action@v1
+        if: steps.turno.outputs.activa == 'true'
+      - name: k6 ${{ inputs.escenario }} (${{ inputs.forma }})
+        if: steps.turno.outputs.activa == 'true'
+        continue-on-error: true
+        env:
+          USUARIOS: ${{ steps.turno.outputs.usuarios }}
+          FORMA: ${{ inputs.forma }}
+          MESETA: ${{ inputs.meseta }}
+          TITULOS: ${{ inputs.titulos }}
+        run: k6 run --quiet --summary-export "resumen-${{ matrix.maquina }}.json" "loadtest/${{ inputs.escenario }}.js"
+      - uses: actions/upload-artifact@v4
+        if: steps.turno.outputs.activa == 'true'
+        with:
+          name: resumen-${{ matrix.maquina }}
+          path: resumen-${{ matrix.maquina }}.json
