@@ -80,7 +80,7 @@ export function DetailHeader({
       <div className="relative z-[2] flex flex-col px-4 pb-8 pt-16 lg:min-h-[inherit] lg:justify-end lg:px-16 lg:pt-40">
         <div className="flex items-end gap-6">
           <div className="hidden aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-[3px] shadow-xl lg:block">
-            <PosterArt fill style={movie.style} title={movie.title} kind={movie.kind} ratio="portrait" imageUrl={movie.imageUrl} />
+            <PosterArt fill style={movie.style} title={movie.title} kind={movie.kind} ratio="portrait" imageUrl={movie.portraitImageUrl ?? movie.imageUrl} />
           </div>
 
           <div className="min-w-0">

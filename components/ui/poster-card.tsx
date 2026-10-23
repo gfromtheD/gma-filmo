@@ -109,7 +109,7 @@ export function PosterCard({
           {progressBar}
         </div>
       ) : (
-        <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={item.imageUrl} blurTitleOnHover={hoverOverlay} />
+        <PosterArt style={item.style} title={item.title} kind={item.kind} genre={item.genre} ratio={ratio} imageUrl={ratio === "portrait" ? item.portraitImageUrl ?? item.imageUrl : item.imageUrl} blurTitleOnHover={hoverOverlay} />
       )}
       {hoverOverlay && <CardInfoOverlay item={item} />}
       {!caption && progressBar}

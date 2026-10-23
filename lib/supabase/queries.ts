@@ -56,6 +56,7 @@ type PeliculaRow = {
   duration: string | null;
   author: string | null;
   r2_poster_url: string | null;
+  r2_poster_vertical_url?: string | null;
   r2_video_url: string | null;
   playback_kind?: string;
   status?: string | null;
@@ -196,6 +197,7 @@ function toMovieMedia(
     runtime: p.duration ?? "Corto",
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
+    portraitImageUrl: p.r2_poster_vertical_url ?? undefined,
     r2VideoUrl,
     playbackRef: toPlaybackReference(p.slug, p.playback_kind),
     playbackKind: p.playback_kind==='media'?'media':p.playback_kind==='r2_hls'?'r2_hls':p.playback_kind==='stream'?'stream':'legacy',
