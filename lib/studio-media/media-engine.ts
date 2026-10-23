@@ -17,7 +17,7 @@
  * Todas las dependencias de red se inyectan (`MediaEngineDeps`) para probarlo sin navegador.
  */
 import type { AssetRequest, SubmitResult, UploadEngine } from '@/lib/studio/engine';
-import type { UploadDraft, UploadedAsset, UploadPhase } from '@/lib/studio/upload-draft';
+import { extraIndexOf, extraSlot, type UploadDraft, type UploadedAsset, type UploadPhase } from '@/lib/studio/upload-draft';
 import type { AssetRole } from '@/types/media-engine';
 import type { ManagedDraftDetail, ManagedEnvelope } from '@/lib/uploads/managed-browser';
 import { isLiveUpload } from '@/lib/uploads/live-upload';
@@ -147,8 +147,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     if (slot === 'trailer') return draft.trailer.file;
     if (slot === 'poster') return draft.images.poster;
     if (slot === 'banner') return draft.images.banner;
-    const extra = /^extra:(\d+)$/.exec(slot);
-    if (extra) return draft.extras[Number(extra[1])]?.file ?? null;
+    if (slot.startsWith('extra:')) return draft.extras[extraIndexOf(draft, slot)]?.file ?? null;
     const srt = /^srt:(\d+)$/.exec(slot);
     return srt ? draft.srtSubtitles[Number(srt[1])]?.file ?? null : null;
   }
@@ -178,7 +177,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
 
   const ALL_SLOTS = (draft: UploadDraft): string[] => [
     'video', 'trailer', 'poster', 'banner',
-    ...draft.extras.map((_, i) => `extra:${i}`), ...draft.srtSubtitles.map((_, i) => `srt:${i}`),
+    ...draft.extras.map(extraSlot), ...draft.srtSubtitles.map((_, i) => `srt:${i}`),
   ];
 
   async function sessionAction(slot: string, action: 'cancel' | 'pause'): Promise<void> {

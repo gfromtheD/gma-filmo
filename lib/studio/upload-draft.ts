@@ -59,8 +59,23 @@ export type ExtraKind = "fotograma" | "poster" | "video";
 
 /** Material extra de la ficha: fotogramas, pósters y vídeos (entrevistas, making of…). */
 export interface ExtraItem {
+  /** Identidad estable del hueco (`extra:<id>`): quitar otro extra no la cambia. Los borradores antiguos no la tienen. */
+  readonly id?: string;
   readonly kind: ExtraKind;
   readonly file: UploadedAsset | null;
+}
+
+/** Hueco de un extra: `extra:<id>`, o `extra:<posición>` en borradores guardados antes de que los extras tuvieran id. */
+export const extraSlot = (extra: ExtraItem, index: number): string => `extra:${extra.id ?? index}`;
+
+/** Posición del extra de un hueco `extra:…` (por id, o por posición si el extra no tiene id), o -1. */
+export function extraIndexOf(draft: Pick<UploadDraft, "extras">, slot: string): number {
+  const key = /^extra:([\w-]+)$/.exec(slot)?.[1];
+  if (!key) return -1;
+  const byId = draft.extras.findIndex((e) => e.id === key);
+  if (byId >= 0) return byId;
+  const index = /^\d+$/.test(key) ? Number(key) : -1;
+  return index >= 0 && index < draft.extras.length && !draft.extras[index]!.id ? index : -1;
 }
 
 export interface UploadDraft {
@@ -234,13 +249,12 @@ export function isReadyToSubmit(draft: UploadDraft): boolean {
 
 /**
  * Un hueco identifica dónde va un archivo dentro del borrador:
- * `video`, `trailer`, un id de imagen (`poster`, `banner`), `extra:<n>` o `srt:<n>`.
+ * `video`, `trailer`, un id de imagen (`poster`, `banner`), `extra:<id>` (ver `extraSlot`) o `srt:<n>`.
  */
 export function getAsset(draft: UploadDraft, slot: string): UploadedAsset | null {
   if (slot === "video") return draft.video.file;
   if (slot === "trailer") return draft.trailer.file;
-  const extraSlot = slot.match(/^extra:(\d+)$/);
-  if (extraSlot) return draft.extras[Number(extraSlot[1])]?.file ?? null;
+  if (slot.startsWith("extra:")) return draft.extras[extraIndexOf(draft, slot)]?.file ?? null;
   if (slot in draft.images) return draft.images[slot as ImageSlotId];
   const srt = slot.match(/^srt:(\d+)$/);
   if (srt) return draft.srtSubtitles[Number(srt[1])]?.file ?? null;
@@ -255,9 +269,8 @@ export function setAsset(draft: UploadDraft, slot: string, asset: UploadedAsset 
   if (slot === "trailer") {
     return { ...draft, trailer: { file: asset } };
   }
-  const extraSlot = slot.match(/^extra:(\d+)$/);
-  if (extraSlot) {
-    const index = Number(extraSlot[1]);
+  if (slot.startsWith("extra:")) {
+    const index = extraIndexOf(draft, slot);
     return { ...draft, extras: draft.extras.map((e, i) => (i === index ? { ...e, file: asset } : e)) };
   }
   if (slot in draft.images) return { ...draft, images: { ...draft.images, [slot]: asset } };
