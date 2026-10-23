@@ -60,6 +60,36 @@ const PROCESSING_STAGES: readonly Stage[] = [
   },
 ];
 
+/** Lo que pasa al publicar, contado sin tecnicismos: van cayendo en la caja mientras el servidor guarda la obra. */
+const PUBLISHING_STAGES: readonly Stage[] = [
+  {
+    title: "Revisando tu ficha",
+    description: "Comprobamos que no falta nada",
+    icon: <svg {...ICON_PROPS}><path d="M9 11l3 3 8-8" /><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" /></svg>,
+  },
+  {
+    title: "Guardando en nuestros servidores",
+    description: "Tu obra queda a salvo con nosotros",
+    icon: <svg {...ICON_PROPS}><rect x="4" y="4" width="16" height="6" rx="1.5" /><rect x="4" y="14" width="16" height="6" rx="1.5" /><path d="M8 7h.01M8 17h.01" /></svg>,
+  },
+  {
+    title: "Registrando la obra",
+    description: "Le damos su sitio en el catálogo",
+    icon: <svg {...ICON_PROPS}><path d="M5 4h11l3 3v13H5z" /><path d="M9 12h6M9 16h6M9 8h3" /></svg>,
+  },
+  {
+    title: "Enlazando vídeo e imágenes",
+    description: "Película, tráiler, cartel y extras, juntos",
+    icon: <svg {...ICON_PROPS}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" /><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" /></svg>,
+  },
+  {
+    title: "Preparando tu ficha pública",
+    description: "Ya casi la pueden ver todos",
+    icon: <svg {...ICON_PROPS}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>,
+  },
+];
+const PUBLISH_ROTATE_MS = 1700;
+
 const ROTATE_MS = 2600;
 const EASE = [0.455, 0.03, 0.515, 0.955] as const;
 
@@ -85,9 +115,7 @@ export function ProcessingBucket({ phase, progress = null, className = "" }: {
   readonly className?: string;
 }) {
   const reduceMotion = useReducedMotion() ?? false;
-  const isNarrow = useIsNarrow();
   const [index, setIndex] = useState(0);
-  const gradientId = useId().replace(/:/g, "");
 
   useEffect(() => {
     if (reduceMotion || phase !== "processing") return;
@@ -97,6 +125,27 @@ export function ProcessingBucket({ phase, progress = null, className = "" }: {
 
   const stage = phase === "checking" ? CHECKING_STAGE : phase === "uploading" ? UPLOADING_STAGE : PROCESSING_STAGES[index % PROCESSING_STAGES.length]!;
   const percent = phase === "processing" || progress === null ? null : Math.round(progress);
+  return <BucketScene stage={stage} percent={percent} className={className} />;
+}
+
+/** La misma caja al publicar: las tareas de guardar y registrar la obra van cayendo una tras otra hasta que termina. */
+export function PublishingBucket({ className = "" }: { readonly className?: string }) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (reduceMotion) return;
+    // Recorre las etapas una vez y se queda en la última hasta que el servidor confirma.
+    const timer = setInterval(() => setIndex((i) => Math.min(i + 1, PUBLISHING_STAGES.length - 1)), PUBLISH_ROTATE_MS);
+    return () => clearInterval(timer);
+  }, [reduceMotion]);
+  return <BucketScene stage={PUBLISHING_STAGES[index]!} percent={null} className={className} />;
+}
+
+/** Dibujo de la cubeta de cristal con la pastilla de la tarea en curso cayendo dentro. */
+function BucketScene({ stage, percent, className }: { readonly stage: Stage; readonly percent: number | null; readonly className: string }) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const isNarrow = useIsNarrow();
+  const gradientId = useId().replace(/:/g, "");
 
   return (
     <div className={`relative isolate w-full max-w-[420px] ${className}`} style={{ aspectRatio: "655 / 352" }} role="status" aria-label={`${stage.title}. ${stage.description}`}>
