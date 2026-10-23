@@ -11,6 +11,7 @@ import { FILM_CONTENT } from "@/lib/data/film-taglines";
 import { getStudioBanner } from "@/lib/supabase/studio-banner";
 import { CREATOR_PROFILES_TAG } from "@/lib/studio-creator-banner";
 import { FILM_LONG_SYNOPSES } from "@/lib/data/film-long-synopses";
+import { cachedImageUrl } from "@/lib/r2/public-image";
 
 // ── Deterministic visual style from slug ─────────────────────────────────────
 const TONES: readonly (readonly [string, string])[] = [
@@ -156,7 +157,7 @@ function toMovieMedia(
     .map((pa) => ({
       name:     pa.artistas!.name,
       role:     roleByName.get(pa.artistas!.name.toLowerCase()) ?? "",
-      photoUrl: pa.artistas!.r2_photo_url,
+      photoUrl: cachedImageUrl(pa.artistas!.r2_photo_url),
       slug:     pa.artistas!.slug ?? null,
     }));
 
@@ -167,7 +168,7 @@ function toMovieMedia(
       if (existing) continue;
       const match = artistaMap?.get(creditNameKey(credit.name));
       artistas.push(match
-        ? { name: match.name, role: credit.role, photoUrl: match.r2_photo_url, slug: match.slug }
+        ? { name: match.name, role: credit.role, photoUrl: cachedImageUrl(match.r2_photo_url), slug: match.slug }
         : catalogCredit(credit.name, credit.role));
     }
   }
@@ -178,7 +179,7 @@ function toMovieMedia(
     artistas = addCatalogCredits(p.slug, artistas);
   }
 
-  const imageUrl    = p.r2_poster_url ?? p.thumbnail_url ?? undefined;
+  const imageUrl    = cachedImageUrl(p.r2_poster_url ?? p.thumbnail_url ?? undefined);
   const r2VideoUrl  = p.r2_video_url ?? undefined;
   const subtitleUrl = p.r2_subtitle_url ?? undefined;
   const content    = FILM_CONTENT[p.slug];
@@ -197,7 +198,7 @@ function toMovieMedia(
     runtime: p.duration ?? "Corto",
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,
-    portraitImageUrl: p.r2_poster_vertical_url ?? undefined,
+    portraitImageUrl: cachedImageUrl(p.r2_poster_vertical_url ?? undefined),
     r2VideoUrl,
     playbackRef: toPlaybackReference(p.slug, p.playback_kind),
     playbackKind: p.playback_kind==='media'?'media':p.playback_kind==='r2_hls'?'r2_hls':p.playback_kind==='stream'?'stream':'legacy',
@@ -494,7 +495,7 @@ async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null
       return {
         slug:             artista.slug as string,
         nombre:           artista.name as string,
-        foto_perfil:      (artista.r2_photo_url as string | null) ?? null,
+        foto_perfil:      cachedImageUrl((artista.r2_photo_url as string | null) ?? null),
         imagen_portada:   null,
         nacionalidad:     null,
         bio:              (artista.bio as string | null) ?? catalog?.bio ?? null,

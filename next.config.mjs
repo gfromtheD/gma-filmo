@@ -91,7 +91,20 @@ const nextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      {
+        // Portadas de R2 por la red de Vercel (ver lib/r2/public-image.ts): un día en su caché, una hora en el navegador.
+        source: "/r2/:path*",
+        headers: [
+          { key: "Vercel-CDN-Cache-Control", value: "max-age=86400, stale-while-revalidate=604800" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+          { key: "x-vercel-enable-rewrite-caching", value: "1" },
+        ],
+      },
     ];
+  },
+
+  async rewrites() {
+    return [{ source: "/r2/:path*", destination: `https://${r2Hostname}/:path*` }];
   },
 
   images: {
