@@ -13,6 +13,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createMediaGateway } from '../../lib/media/gateway/server';
 import { createPeerTubeDelivery } from '../../lib/media/gateway/peertube-delivery';
+import { createEgressMeter } from '../../lib/media/gateway/egress';
 import { MediaRepository } from '../../lib/media/repository';
 import { MockMediaStorage } from '../../lib/media/mock-storage';
 import { PeerTubeClient } from '../../lib/media/providers/peertube-client';
@@ -38,7 +39,9 @@ async function main() {
   await peerTube.validateInstance();
   const repository = new MediaRepository();
   const storage = new MockMediaStorage(path.resolve(required('MEDIA_SPOOL_DIR')));
-  const deps = { repository, storage, publicKeys, origins, peerTube };
+  // Capacidad útil de la tarjeta de red (1 Gbit/s medidos en las pruebas de carga: ~960 Mbit/s reales).
+  const medidor = createEgressMeter({ capacidadMbps: Number(process.env.MEDIA_GATEWAY_EGRESS_MBPS ?? 950) });
+  const deps = { repository, storage, publicKeys, origins, peerTube, carga: medidor.carga };
   const server = createMediaGateway(deps, createPeerTubeDelivery({ repository, client: peerTube, publicKeys }));
   server.requestTimeout = 120_000; server.headersTimeout = 15_000; server.maxHeadersCount = 40;
   server.listen(Number(process.env.MEDIA_GATEWAY_PORT ?? 4319), '127.0.0.1', () => console.log('MEDIA_GATEWAY_READY'));

@@ -5,7 +5,7 @@
 import http from "k6/http";
 import { check, group, sleep } from "k6";
 import { Trend } from "k6/metrics";
-import { BASE_URL, SLO, pick, stages } from "./lib/config.js";
+import { BASE_URL, SLO, esperarInicio, pick, stages } from "./lib/config.js";
 
 const pagina = new Trend("pagina_ms", true);
 const imagen = new Trend("imagen_ms", true);
@@ -18,6 +18,8 @@ export const options = {
     imagen_ms: [`p(95)<${SLO.imagenP95Ms}`],
   },
 };
+
+export function setup() { esperarInicio(); }
 
 const IMAGEN = /(https:\/\/pub-[a-z0-9]+\.r2\.dev\/[^"\\\s]+?\.(?:jpe?g|png|webp)|\/api\/media\/[a-f0-9-]{36})/g;
 const FICHA = /\/(peliculas|cortos)\/([a-zA-Z0-9_-]+)(?=["\\])/g;

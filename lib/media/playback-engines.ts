@@ -23,6 +23,11 @@ export class PlaybackEngine {
   private removeRestore = () => {};
   private source: Exclude<PlaybackSource, { kind: 'youtube' }> | null = null;
   private restoring = false;
+  /** Techo de altura (px) que marca el reparto por carga; Infinity = sin techo. */
+  private maxHeight = Number.POSITIVE_INFINITY;
+  /** Calidad elegida a mano (altura) o null = automática. */
+  private fixedHeight: number | null = null;
+  private onLevels: (heights: number[]) => void = () => {};
   private readonly onNativeError = () => {
     if (!this.hls && this.video.error) this.failure({ category: this.video.error.code === 2 ? 'network' : 'media' });
   };
@@ -61,10 +66,17 @@ export class PlaybackEngine {
     }
     const noRetry = { maxNumRetry: 0, retryDelayMs: 0, maxRetryDelayMs: 0 };
     const policy = { default: { maxTimeToFirstByteMs: 10000, maxLoadTimeMs: 20000, timeoutRetry: noRetry, errorRetry: noRetry } };
-    // Arranque rápido: primer fragmento en la calidad más baja; el ABR sube después según el ancho de banda medido.
-    const hls = new HlsClass({ startLevel: 0, capLevelToPlayerSize: true, startFragPrefetch: true, maxBufferLength: 30, maxMaxBufferLength: 60, backBufferLength: 30,
-      manifestLoadPolicy: policy, playlistLoadPolicy: policy, fragLoadPolicy: policy });
+    // Se empieza en la máxima calidad permitida (regla de G); el ABR solo baja si la conexión del espectador no da.
+    // Sin capLevelToPlayerSize: hls.js reescribiría el mismo techo (autoLevelCapping) que pone el reparto por carga.
+    const hls = new HlsClass({ startLevel: -1, abrEwmaDefaultEstimate: 6_000_000, capLevelToPlayerSize: false, startFragPrefetch: true,
+      maxBufferLength: 30, maxMaxBufferLength: 60, backBufferLength: 30, manifestLoadPolicy: policy, playlistLoadPolicy: policy, fragLoadPolicy: policy });
     this.hls = hls;
+    hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+      if (this.hls !== hls) return;
+      this.onLevels(this.levelHeights());
+      hls.startLevel = this.levelIndexFor(this.fixedHeight ?? this.maxHeight);
+      this.applyQuality();
+    });
     hls.on(HlsClass.Events.ERROR, (_event, data) => {
       const details = data.networkDetails as { status?: unknown } | null | undefined;
       const status = data.response?.code ?? (typeof details?.status === 'number' ? details.status : undefined);
@@ -100,6 +112,29 @@ export class PlaybackEngine {
     if (this.hls) this.hls.audioTrack = index;
     else { const tracks = (this.video as NativeVideo).audioTracks!; for (let i = 0; i < tracks.length; i++) tracks[i]!.enabled = i === index; }
     this.onAudio(); return true;
+  }
+  /** Alturas disponibles (p. ej. [360, 720, 1080]); vacío fuera de hls.js. */
+  levelHeights(): number[] { return this.hls ? [...new Set(this.hls.levels.map(level => level.height))].sort((a, b) => a - b) : []; }
+  /** Altura que se está viendo ahora, si se sabe. */
+  currentHeight(): number | null { const level = this.hls?.levels[this.hls.currentLevel]; return level ? level.height : null; }
+  onLevelsChanged(listener: (heights: number[]) => void): void { this.onLevels = listener; }
+  /** Techo por carga (en automático) y calidad fija (a mano). Se aplican sin cortar el vídeo. */
+  setQuality(maxHeight: number, fixedHeight: number | null): void {
+    this.maxHeight = maxHeight; this.fixedHeight = fixedHeight; this.applyQuality();
+  }
+  private levelIndexFor(height: number): number {
+    if (!this.hls) return -1;
+    let best = -1;
+    this.hls.levels.forEach((level, index) => { if (level.height <= height && (best < 0 || level.height >= this.hls!.levels[best]!.height)) best = index; });
+    if (best >= 0) return best;
+    return this.hls.levels.reduce((low, level, index) => (level.height < this.hls!.levels[low]!.height ? index : low), 0);
+  }
+  private applyQuality(): void {
+    const hls = this.hls;
+    if (!hls || hls.levels.length === 0) return;
+    if (this.fixedHeight !== null) { hls.autoLevelCapping = -1; hls.nextLevel = this.levelIndexFor(Math.min(this.fixedHeight, this.maxHeight)); return; }
+    if (hls.manualLevel !== -1) hls.nextLevel = -1;
+    hls.autoLevelCapping = Number.isFinite(this.maxHeight) ? this.levelIndexFor(this.maxHeight) : -1;
   }
   get isRestoring() { return this.restoring; }
   stop(): void { this.video.pause(); this.hls?.stopLoad(); }

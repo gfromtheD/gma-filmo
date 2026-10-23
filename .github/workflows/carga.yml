@@ -27,6 +27,9 @@ on:
       titulos:
         description: "Slugs de obras del motor para «ver» (separados por comas)"
         default: ""
+      gobernador:
+        description: "«ver»: 1 = el espectador obedece el semáforo de calidad (/carga), como el reproductor real"
+        default: "0"
       colchon:
         description: "«ver»: segundos de vídeo que se bajan sin esperar (100000 = sin pausa, mide la red al máximo)"
         default: "30"
@@ -39,39 +42,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  reparto:
+    runs-on: ubuntu-latest
+    outputs:
+      maquinas: ${{ steps.lista.outputs.maquinas }}
+      usuarios: ${{ steps.lista.outputs.usuarios }}
+      inicio: ${{ steps.lista.outputs.inicio }}
+    steps:
+      - id: lista
+        run: |
+          n=$(( ${{ inputs.maquinas }} < 1 ? 1 : (${{ inputs.maquinas }} > 20 ? 20 : ${{ inputs.maquinas }}) ))
+          echo "maquinas=[$(seq -s, 1 $n)]" >> "$GITHUB_OUTPUT"
+          echo "usuarios=$(( (${{ inputs.usuarios }} + n - 1) / n ))" >> "$GITHUB_OUTPUT"
+          # Hora de salida común (dentro de 3 min) para que todas las máquinas carguen a la vez aunque arranquen escalonadas.
+          echo "inicio=$(( $(date +%s) + 180 ))" >> "$GITHUB_OUTPUT"
+
   carga:
+    needs: reparto
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        maquina: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        maquina: ${{ fromJSON(needs.reparto.outputs.maquinas) }}
     steps:
-      - name: ¿Participa esta máquina?
-        id: turno
-        run: |
-          if [ "${{ matrix.maquina }}" -le "${{ inputs.maquinas }}" ]; then
-            echo "activa=true" >> "$GITHUB_OUTPUT"
-            echo "usuarios=$(( (${{ inputs.usuarios }} + ${{ inputs.maquinas }} - 1) / ${{ inputs.maquinas }} ))" >> "$GITHUB_OUTPUT"
-          else
-            echo "activa=false" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/checkout@v4
-        if: steps.turno.outputs.activa == 'true'
       - uses: grafana/setup-k6-action@v1
-        if: steps.turno.outputs.activa == 'true'
       - name: k6 ${{ inputs.escenario }} (${{ inputs.forma }})
-        if: steps.turno.outputs.activa == 'true'
         continue-on-error: true
         env:
-          USUARIOS: ${{ steps.turno.outputs.usuarios }}
+          USUARIOS: ${{ needs.reparto.outputs.usuarios }}
           FORMA: ${{ inputs.forma }}
           MESETA: ${{ inputs.meseta }}
           TITULOS: ${{ inputs.titulos }}
           COLCHON: ${{ inputs.colchon }}
+          INICIO: ${{ needs.reparto.outputs.inicio }}
+          GOBERNADOR: ${{ inputs.gobernador }}
         run: k6 run --quiet --summary-export "resumen-${{ matrix.maquina }}.json" "loadtest/${{ inputs.escenario }}.js"
       - uses: actions/upload-artifact@v4
-        if: steps.turno.outputs.activa == 'true'
         with:
           name: resumen-${{ matrix.maquina }}
           path: resumen-${{ matrix.maquina }}.json
