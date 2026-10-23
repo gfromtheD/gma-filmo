@@ -4,13 +4,16 @@ import { useRef, useState } from "react";
 import { CARD_CLASS } from "./fields";
 import type { StepProps } from "./step-props";
 import { VideoDropzone } from "./video-dropzone";
-import { LIMITS } from "@/lib/studio/catalogs";
-import type { ExtraItem, ExtraKind } from "@/lib/studio/upload-draft";
+import { IMAGE_MIME_TYPES, LIMITS } from "@/lib/studio/catalogs";
+import { extraSlot, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
 
 const KIND_LABEL: Record<ExtraKind, string> = { fotograma: "Fotograma", poster: "Póster", video: "Vídeo" };
 const VIDEO_EXTENSIONS = /\.(mp4|mov|mkv|avi|webm|m4v|mpg|mpeg|mxf|wmv)$/i;
 
-const isVideoFile = (file: File) => file.type.startsWith("video/") || (file.type === "" && VIDEO_EXTENSIONS.test(file.name));
+/** Lo que el selector deja elegir: las mismas imágenes que admite el servidor (sin GIF) y cualquier vídeo. */
+const ACCEPT = [...IMAGE_MIME_TYPES, "video/*", ".mkv", ".mxf"].join(",");
+
+const isVideoFile =(file: File) => file.type.startsWith("video/") || (file.type === "" && VIDEO_EXTENSIONS.test(file.name));
 
 /** El tipo del extra se deduce del archivo: vídeo, imagen vertical (póster) o imagen apaisada (fotograma). */
 async function kindOf(file: File): Promise<ExtraKind> {
@@ -100,25 +103,33 @@ export function ExtrasSection({ draft, update, files, showErrors }: StepProps) {
   const { extras } = draft;
   const input = useRef<HTMLInputElement>(null);
   const [isOver, setIsOver] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const isFull = extras.length >= LIMITS.extras;
   // tres sugerencias a la vista (fotograma, póster y vídeo) hasta que se añade uno de cada tipo; la casilla «+» siempre queda para añadir más
   const pending = isFull ? [] : SUGGESTIONS.filter((suggestion) => !extras.some((e) => e.kind === suggestion.kind));
 
   async function addFiles(list: FileList | null) {
-    const picked = Array.from(list ?? []).slice(0, LIMITS.extras - extras.length);
+    const all = Array.from(list ?? []);
+    const picked = all.slice(0, LIMITS.extras - extras.length);
     if (input.current) input.current.value = "";
+    const left = all.length - picked.length;
+    setNotice(left > 0 ? `Caben ${LIMITS.extras} extras por obra: ${left === 1 ? "1 archivo se ha quedado fuera" : `${left} archivos se han quedado fuera`}.` : null);
     if (picked.length === 0) return;
     const kinds = await Promise.all(picked.map(kindOf));
-    const base = extras.length;
-    update({ extras: [...extras, ...kinds.map((kind): ExtraItem => ({ kind, file: null }))] });
-    picked.forEach((file, i) => files.upload(`extra:${base + i}`, kinds[i] === "video" ? "video" : "image", file));
+    // Cada extra tiene su hueco propio (`extra:<id>`): varios a la vez se suben en paralelo y quitar uno no toca a los demás.
+    const added = kinds.map((kind): ExtraItem => ({ id: crypto.randomUUID(), kind, file: null }));
+    update({ extras: [...extras, ...added] });
+    added.forEach((extra, i) => files.upload(extraSlot(extra, 0), kinds[i] === "video" ? "video" : "image", picked[i]!));
   }
 
   const removeExtra = (index: number) => {
-    // si algo se está subiendo, se cancela antes de renumerar los huecos
+    // Los extras sin id (borradores antiguos) se identifican por posición: quitar uno movería a los siguientes, así que las
+    // subidas en curso de esos se cancelan. Los que tienen id no se ven afectados.
     const isBusy = (e: ExtraItem) => e.file?.status === "uploading" || e.file?.status === "processing";
-    extras.forEach((e, j) => { if (j >= index && isBusy(e)) files.remove(`extra:${j}`); });
-    update({ extras: extras.filter((_, j) => j !== index).map((e, j) => (j >= index && isBusy(e) ? { ...e, file: null } : e)) });
+    const shifts = (e: ExtraItem, j: number) => !e.id && j > index && isBusy(e);
+    files.remove(extraSlot(extras[index]!, index));
+    extras.forEach((e, j) => { if (shifts(e, j)) files.remove(extraSlot(e, j)); });
+    update({ extras: extras.flatMap((e, j) => (j === index ? [] : [shifts(e, j) ? { ...e, file: null } : e])) });
   };
 
   return (
@@ -137,11 +148,11 @@ export function ExtrasSection({ draft, update, files, showErrors }: StepProps) {
           <p className="mt-1 text-[14px] text-[#A8A8A8]">Enseña más de tu obra: fotogramas, pósters o vídeos como entrevistas y making of. Pulsa un hueco o arrastra varios archivos a la vez.</p>
         </div>
         <input
-          ref={input} type="file" multiple accept="image/jpeg,image/png,image/gif,video/*,.mkv,.mxf" data-extras-input
+          ref={input} type="file" multiple accept={ACCEPT} data-extras-input
           onChange={(e) => void addFiles(e.target.files)} className="sr-only" tabIndex={-1} aria-hidden="true"
         />
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 [--extra-h:132px] sm:[--extra-h:150px] lg:[--extra-h:170px]">
-          {extras.map((extra, i) => <ExtraTile key={i} index={i} extra={extra} onRemove={() => removeExtra(i)} />)}
+          {extras.map((extra, i) => <ExtraTile key={extra.id ?? i} index={i} extra={extra} onRemove={() => removeExtra(i)} />)}
           {pending.map((suggestion) => (
             <li key={suggestion.kind} data-extras-suggestion={suggestion.kind} className={TILE_SIZE}>
               <button
@@ -174,6 +185,7 @@ export function ExtrasSection({ draft, update, files, showErrors }: StepProps) {
             </li>
           )}
         </ul>
+        {notice && <p role="status" className="text-[13px] text-[#E8B84B]">{notice}</p>}
         {showErrors && extras.some((e) => !e.file) && <p role="alert" className="text-[13px] text-[#ff7b7b]">Hay un extra sin archivo: quítalo o súbelo de nuevo.</p>}
       </div>
     </>

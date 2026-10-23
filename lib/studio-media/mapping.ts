@@ -3,13 +3,13 @@
  * Módulo puro, sin red ni navegador: lo usan el adaptador `mediaEngine` y sus pruebas.
  *
  * Reglas (ver docs/handoff/INTEGRACION-MOTOR-REGISTRO.md, «Mapeo de huecos»):
- *  video → main · trailer → trailer · poster → poster_v · banner → poster_h · extra:N (vídeo) → extras · extra:N (imagen) → extra_image
- *  srt:N → subtitles con el idioma de ese SRT · extra:N de imagen → NO soportado (decisión de producto pendiente).
+ *  video → main · trailer → trailer · poster → poster_v · banner → poster_h · extra:<id> (vídeo) → extras · extra:<id> (imagen) → extra_image
+ *  srt:N → subtitles con el idioma de ese SRT. `extra:<id>` lleva el id estable del extra (`extraSlot`); los borradores antiguos, la posición.
  */
 import type { AssetRole } from '@/types/media-engine';
 import { UPLOAD_LIMITS, durationLimit } from '@/lib/uploads/policy';
 import { CREATOR_GENRES } from '@/lib/genres';
-import type { UploadDraft } from '@/lib/studio/upload-draft';
+import { extraIndexOf, extraSlot, type UploadDraft } from '@/lib/studio/upload-draft';
 import { FICHA_SCHEMA_VERSION, type Ficha } from '@/lib/media/ficha';
 
 export type SlotMapping =
@@ -21,9 +21,8 @@ export function mapSlot(draft: UploadDraft, slot: string): SlotMapping {
   if (slot === 'trailer') return { supported: true, role: 'trailer' };
   if (slot === 'poster') return { supported: true, role: 'poster_v' };
   if (slot === 'banner') return { supported: true, role: 'poster_h' };
-  const extra = /^extra:(\d+)$/.exec(slot);
-  if (extra) {
-    const item = draft.extras[Number(extra[1])];
+  if (slot.startsWith('extra:')) {
+    const item = draft.extras[extraIndexOf(draft, slot)];
     if (!item) return { supported: false, reason: 'El extra no existe en el borrador.' };
     return { supported: true, role: item.kind === 'video' ? 'extras' : 'extra_image' };
   }
@@ -89,7 +88,7 @@ export function fichaFromDraft(draft: UploadDraft, mediaIdForSlot: (slot: string
       ai: { used: draft.ai.used, note: draft.ai.note },
       allowComments: draft.allowComments,
       subtitleLanguages: draft.srtSubtitles.map(s => s.language).filter(Boolean),
-      extras: draft.extras.map((e, i) => ({ kind: e.kind, mediaId: mediaIdForSlot(`extra:${i}`) })),
+      extras: draft.extras.map((e, i) => ({ kind: e.kind, mediaId: mediaIdForSlot(extraSlot(e, i)) })),
       acceptedTerms: draft.acceptedTerms,
     },
   };
