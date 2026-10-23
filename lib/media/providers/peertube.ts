@@ -155,12 +155,11 @@ export class PeerTubeMediaProvider implements MediaProvider {
 
   async getPlayback(context: ProviderPlaybackContext): Promise<PlaybackSource> {
     if (!context.asset.provider_ref || context.asset.state !== 'ready') throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-    // El vídeo en PeerTube y el recibo de la subida (base de datos) no dependen entre sí: se piden a la vez.
-    const [video, receipt] = await Promise.all([this.client.getVideo(context.asset.provider_ref), this.receipts.get(context)]);
-    if (!video || mapPeerTubeState(video.stateId).status !== 'published' || video.duration <= 0 || video.streamingPlaylists.length === 0) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-    this.client.validatePlaylistReference(video.streamingPlaylists[0]!.playlistUrl);
+    // Sin consultar PeerTube en cada «play» (~1 s en frío, con su token): `ready` solo lo pone el ejecutor tras comprobar el vídeo
+    // publicado, su HLS y el recibo (inspectAsset), y la pasarela vuelve a pedir el vídeo a PeerTube al servir el manifiesto.
+    const receipt = await this.receipts.get(context);
     const proof = receipt ? proofSchema.safeParse(receipt.proof) : null;
-    if (!receipt?.complete || !proof?.success || proof.data.videoUUID !== video.uuid) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
+    if (!receipt?.complete || !proof?.success || proof.data.videoUUID !== context.asset.provider_ref) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     const namespace = `asset/${context.asset.id}/${context.processingGeneration}/`;
     const capability = this.issuer.issue({ sessionId: context.session.id, assetId: context.asset.id, generation: context.processingGeneration,
       scope: 'playback', method: 'GET', namespace, expectedBytes: context.asset.expected_input_bytes, ttlSeconds: 300 });

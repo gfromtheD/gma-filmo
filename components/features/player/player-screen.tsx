@@ -11,7 +11,7 @@ import { GmaIcon } from "@/components/ui/gma-icon";
 import { useProgress } from "@/hooks/use-progress";
 import { useSettingsPrefs, type SubtitleBackground, type SubtitleSize } from "@/hooks/use-settings-prefs";
 import { useCastSupport } from "@/hooks/use-cast-support";
-import { useMediaPlayback } from "@/hooks/use-media-playback";
+import { prefetchPlaybackSource, useMediaPlayback } from "@/hooks/use-media-playback";
 import { playbackEndpointFor } from "@/lib/media/player-adapter";
 import { DonationPanel } from "@/components/features/player/donation-panel";
 import { supportMethods } from "@/lib/creator-support";
@@ -288,6 +288,8 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     setVideoElement(element);
   }, []);
   const managed = useMediaPlayback(videoElement, managedEndpoint, managedEndpoint !== null && videoElement !== null);
+  // Mientras dura la intro se pide ya el origen firmado (sin montar ni cargar el vídeo): al terminar, arranca sin esperar al servidor.
+  useEffect(() => { if (managedEndpoint) prefetchPlaybackSource(managedEndpoint); }, [managedEndpoint]);
   const hideTimer         = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulseTimer        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bufferTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
