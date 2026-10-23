@@ -28,6 +28,52 @@ async function kindOf(file: File): Promise<ExtraKind> {
   }
 }
 
+const THUMB_WIDTH = 320;
+/** Si el navegador no saca el fotograma en este tiempo (códec que no lee, archivo enorme…), la casilla sale con el icono. */
+const THUMB_TIMEOUT_MS = 2500;
+
+/**
+ * Miniatura de un vídeo sacada en el navegador: un fotograma cercano al principio (no el primero, que suele ser negro),
+ * reducido a 320 px y en JPEG, para que la casilla del extra se vea como las de imagen. `null` si el navegador no lo lee.
+ */
+function videoThumbnail(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    let settled = false;
+    const done = (value: string | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(url);
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), THUMB_TIMEOUT_MS);
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.onerror = () => done(null);
+    video.onloadedmetadata = () => {
+      video.currentTime = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(1, video.duration / 10) : 0;
+    };
+    video.onseeked = () => {
+      try {
+        const scale = Math.min(1, THUMB_WIDTH / (video.videoWidth || THUMB_WIDTH));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round((video.videoWidth || THUMB_WIDTH) * scale);
+        canvas.height = Math.round((video.videoHeight || THUMB_WIDTH * 0.5625) * scale);
+        canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        done(canvas.toDataURL("image/jpeg", 0.7));
+      } catch {
+        done(null);
+      }
+    };
+    video.src = url;
+  });
+}
+
 /** Los tres extras que se sugieren. Cada uno desaparece al añadir uno de su tipo; después queda solo la casilla «+». */
 const SUGGESTIONS = [
   { kind: "fotograma", title: "Fotograma", hint: "Una escena", icon: "frame" },
@@ -65,7 +111,16 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
           // eslint-disable-next-line @next/next/no-img-element
           <img src={file!.url!} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
         )}
-        {extra.kind === "video" && status !== "error" && (
+        {extra.kind === "video" && status !== "error" && extra.thumb && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={extra.thumb} alt={`Vista previa: ${label}`} className="absolute inset-0 h-full w-full object-cover" />
+            <span aria-hidden="true" className="absolute left-1/2 top-1/2 grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white">
+              <svg viewBox="0 0 24 24" className="ml-0.5 size-4" fill="currentColor"><path d="M8 5.5v13l10.5-6.5L8 5.5Z" /></svg>
+            </span>
+          </>
+        )}
+        {extra.kind === "video" && status !== "error" && !extra.thumb && (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-white/10 to-white/[0.02] p-2 text-center">
             <div className="min-w-0">
               <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-auto size-7 text-white/70" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m10.5 9.5 4 2.5-4 2.5v-5Z" /></svg>
@@ -116,8 +171,9 @@ export function ExtrasSection({ draft, update, files, showErrors }: StepProps) {
     setNotice(left > 0 ? `Caben ${LIMITS.extras} extras por obra: ${left === 1 ? "1 archivo se ha quedado fuera" : `${left} archivos se han quedado fuera`}.` : null);
     if (picked.length === 0) return;
     const kinds = await Promise.all(picked.map(kindOf));
+    const thumbs = await Promise.all(picked.map((file, i) => (kinds[i] === "video" ? videoThumbnail(file) : Promise.resolve(null))));
     // Cada extra tiene su hueco propio (`extra:<id>`): varios a la vez se suben en paralelo y quitar uno no toca a los demás.
-    const added = kinds.map((kind): ExtraItem => ({ id: crypto.randomUUID(), kind, file: null }));
+    const added = kinds.map((kind, i): ExtraItem => ({ id: crypto.randomUUID(), kind, file: null, ...(thumbs[i] ? { thumb: thumbs[i]! } : {}) }));
     update({ extras: [...extras, ...added] });
     added.forEach((extra, i) => files.upload(extraSlot(extra, 0), kinds[i] === "video" ? "video" : "image", picked[i]!));
   }

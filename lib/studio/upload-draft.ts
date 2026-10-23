@@ -63,6 +63,8 @@ export interface ExtraItem {
   readonly id?: string;
   readonly kind: ExtraKind;
   readonly file: UploadedAsset | null;
+  /** Miniatura de un extra de vídeo (JPEG pequeño en data URL, sacado en el navegador al elegirlo). */
+  readonly thumb?: string;
 }
 
 /** Hueco de un extra: `extra:<id>`, o `extra:<posición>` en borradores guardados antes de que los extras tuvieran id. */
