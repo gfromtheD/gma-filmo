@@ -4,6 +4,7 @@ import { PlaybackEngine, type AudioOption, type PlaybackFailure } from '@/lib/me
 import { PlaybackRecovery } from '@/lib/media/playback-client';
 import { playbackSourceSchema } from '@/lib/media/contracts';
 import type { PlaybackSource } from '@/types/playback';
+import { useQualityGovernor } from './use-quality-governor';
 import type { MediaItem } from '@/types/catalog';
 import { playbackEndpointFor } from '@/lib/media/player-adapter';
 
@@ -53,6 +54,7 @@ export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: strin
   const sourceRef = useRef(source); sourceRef.current = source;
   const intentRef = useRef(intent); intentRef.current = intent;
   const engineRef = useRef<PlaybackEngine | null>(null);
+  const [engine, setEngine] = useState<PlaybackEngine | null>(null);
   const audioRef = useRef<string | null>(null);
   const loadRef = useRef<() => void>(() => {});
   const failRef = useRef<(error: PlaybackFailure) => void>(() => {});
@@ -117,8 +119,8 @@ export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: strin
       const selected = audioRef.current;
       if (selected !== null && tracks.some(track => track.id === selected && !track.selected)) engine.selectAudio(selected);
     });
-    engineRef.current = engine;
-    return () => { engine.destroy(); if (engineRef.current === engine) engineRef.current = null; };
+    engineRef.current = engine; setEngine(engine);
+    return () => { engine.destroy(); if (engineRef.current === engine) engineRef.current = null; setEngine(null); };
   }, [video, enabled]);
 
   useEffect(() => {
@@ -132,5 +134,6 @@ export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: strin
   const selectAudio = useCallback((id: string) => { if (engineRef.current?.selectAudio(id)) audioRef.current = id; }, []);
   const retry = useCallback(() => retryRef.current(), []);
   const refresh = useCallback(() => loadRef.current(), []);
-  return { source, error, revoked, audioTracks, selectAudio, retry, refresh };
+  const calidad = useQualityGovernor(engine, source);
+  return { source, error, revoked, audioTracks, selectAudio, retry, refresh, calidad };
 }

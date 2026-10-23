@@ -5,6 +5,8 @@
 //   MESETA     segundos manteniendo USUARIOS       (por defecto 180)
 //   FORMA      carga | estres | pico               (por defecto carga)
 
+import { sleep } from "k6";
+
 export const BASE_URL = __ENV.BASE_URL || "https://gma-filmo.vercel.app";
 
 const usuarios = Number(__ENV.USUARIOS || 5);
@@ -53,6 +55,13 @@ export const SLO = {
   erroresMax: 0.01,      // menos del 1 % de peticiones fallidas
   atascosMax: 0.02,      // menos del 2 % de trozos de vídeo que llegan más tarde de lo que duran (el vídeo se pararía)
 };
+
+/** Espera a la hora de salida común (INICIO, segundos epoch) para que todas las máquinas carguen a la vez. */
+export function esperarInicio() {
+  const inicio = Number(__ENV.INICIO || 0) * 1000;
+  const falta = inicio - Date.now();
+  if (falta > 0) sleep(falta / 1000);
+}
 
 export function pick(list) {
   return list[Math.floor(Math.random() * list.length)];

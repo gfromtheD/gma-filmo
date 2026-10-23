@@ -1076,6 +1076,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
           onAutoplayNext={setAutoplayNext}
           hasNext={Boolean(nextItem)}
           hasSubtitle={Boolean(subtitleProxyUrl)}
+          calidad={managed.calidad}
         />
       )}
 
@@ -2025,7 +2026,7 @@ function SettingsPanel({
   speed, onSpeed,
   brightness, onBrightness,
   autoplayNext, onAutoplayNext,
-  hasNext, hasSubtitle,
+  hasNext, hasSubtitle, calidad,
 }: {
   ccTrack: string | null;
   onCcTrack: (t: string | null) => void;
@@ -2039,6 +2040,8 @@ function SettingsPanel({
   onAutoplayNext: (v: boolean) => void;
   hasNext: boolean;
   hasSubtitle: boolean;
+  /** Calidades del vídeo del motor y la elección del espectador (reparto por carga, ver use-quality-governor). */
+  calidad: { niveles: number[]; preferencia: "auto" | number; setPreferencia: (v: "auto" | number) => void; esperando: boolean };
 }) {
   const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -2083,6 +2086,34 @@ function SettingsPanel({
         <p className="mb-2 text-[10px] font-bold tracking-widest uppercase text-white/30">Brillo</p>
         <BrightnessSlider brightness={brightness} onBrightness={onBrightness} />
       </div>
+
+      {/* Quality (solo vídeos del motor con varias calidades) */}
+      {calidad.niveles.length > 1 && (
+        <div className="border-b border-white/8 px-4 py-3">
+          <p className="mb-1 text-[10px] font-bold tracking-widest uppercase text-white/30">Calidad</p>
+          {(["auto", ...[...calidad.niveles].reverse()] as const).map((opt) => (
+            <button
+              key={String(opt)}
+              type="button"
+              onClick={() => calidad.setPreferencia(opt)}
+              className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors ${
+                calidad.preferencia === opt ? "text-[#22B16B]" : "text-white/55 hover:text-white/80"
+              }`}
+            >
+              <span className="flex w-3 shrink-0 items-center justify-center">
+                {calidad.preferencia === opt && <GmaIcon name="check" size={11} />}
+              </span>
+              {opt === "auto" ? "Automática" : `${opt}p`}
+            </button>
+          ))}
+          {calidad.esperando && (
+            <p role="status" className="mt-1.5 flex items-center gap-2 px-2 text-[11.5px] leading-snug text-[#E8B84B]">
+              <span aria-hidden="true" className="size-1.5 shrink-0 animate-pulse rounded-full bg-[#E8B84B]" />
+              Alta calidad ocupada: te subimos en cuanto haya hueco.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Subtitles */}
       <div className="border-b border-white/8 px-4 py-3">

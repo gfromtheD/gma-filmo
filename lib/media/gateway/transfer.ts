@@ -12,6 +12,8 @@ import { parseContentRange,readChunk,requireDisk } from './spool';
 export interface GatewayDependencies {
   repository:MediaRepository;storage:MockMediaStorage;publicKeys:Readonly<Record<string,string|KeyObject>>;
   origins:readonly string[];peerTube?:PeerTubeClient;diskCheck?:(root:string,bytes:number)=>Promise<void>;
+  /** Semáforo de la red de salida (ver egress.ts); sin él, `/carga` no existe. */
+  carga?:()=>Promise<{nivel:string;ocupacion:number}>;
 }
 export async function transfer(request:IncomingMessage,response:ServerResponse,id:string,auxiliary:boolean,deps:GatewayDependencies):Promise<void> {
   // Tiempos por fase de cada trozo (ms desde que llega la petición): sirven para saber dónde se va el tiempo de una subida lenta.
