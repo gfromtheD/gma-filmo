@@ -4,10 +4,7 @@ import { C, row, useStudioDialog } from "./studio-ui";
 import { ProgressRing } from "./upload/progress-ring";
 import type { StudioTitle } from "./studio-types";
 
-/**
- * Velo sobre la portada mientras el servidor borra los archivos de la obra. El borrado no informa de un porcentaje,
- * así que el anillo gira (indeterminado) en vez de inventar uno; termina cuando la obra desaparece de la lista.
- */
+/** Velo breve sobre la portada mientras la tarjeta de una obra borrada sale de la lista. */
 export function DeletingVeil({ size = 52, compact = false }: { readonly size?: number; readonly compact?: boolean }) {
   return (
     <div role="status" aria-label="Eliminando del servidor" style={{
@@ -34,7 +31,7 @@ export function DeleteTitleDialog({ title, busy, onCancel, onConfirm }: {
         <h2 id="delete-title-heading" style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>¿Eliminar «{title.title}»?</h2>
         <p id="delete-title-text" style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.5, color: C.textSec }}>
           Se borrarán la ficha y todos sus archivos del servidor: vídeo, tráiler, imágenes y extras. No se puede deshacer.
-          El borrado de los archivos puede tardar unos minutos y verás su avance sobre la portada.
+          La obra desaparece al momento; el espacio se libera solo, en segundo plano.
         </p>
         <div style={{ ...row(10), justifyContent: "flex-end", marginTop: 22 }}>
           <button type="button" className="st-btn st-btn-ghost" onClick={onCancel} disabled={busy}>Cancelar</button>

@@ -29,6 +29,9 @@ interface StudioTitleRow {
   media_delete_state: string | null;
 }
 
+/** Lo que dura la salida animada de una obra borrada (igual que `.leaving` en studio-responsive.module.css). */
+const LEAVE_ANIMATION_MS = 400;
+
 /** Cada cuánto se pregunta si el servidor ya terminó de borrar los archivos de una obra. */
 const DELETE_POLL_MS = 4000;
 
@@ -177,8 +180,10 @@ export function StudioScreen() {
         showToast((typeof err === "string" ? err : err?.message) ?? "Error al eliminar", { error: true });
         return;
       }
-      setData((d) => (res.status === 202 ? startFreeing(d, t) : withoutTitles(d, [t.id])));
+      // La tarjeta se va con una animación corta y después sale de la lista; lo que quede por limpiar sigue por detrás.
+      setData((d) => ({ ...d, titles: d.titles.map((x) => (x.id === t.id ? { ...x, deleting: true } : x)) }));
       showToast(`«${t.title}» eliminado`);
+      window.setTimeout(() => setData((d) => (res.status === 202 ? startFreeing(d, t) : withoutTitles(d, [t.id]))), LEAVE_ANIMATION_MS);
     } catch {
       showToast("Error de red al eliminar", { error: true });
     } finally {

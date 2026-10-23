@@ -22,7 +22,7 @@ export interface StudioTitle {
   subtitles: string[];
   poster: PosterData;
   r2PosterUrl?: string;
-  /** El servidor está borrando sus archivos (borrado asíncrono): se enseña el progreso hasta que desaparece. */
+  /** Recién borrada: la tarjeta está saliendo de la lista con una animación corta. */
   deleting?: boolean;
   /** Lo que ocupa en el almacenamiento (`peliculas.file_size_bytes`). El panel suma esto de las obras que siguen existiendo. */
   sizeBytes?: number;
