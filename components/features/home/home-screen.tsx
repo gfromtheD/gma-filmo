@@ -13,6 +13,7 @@ import { TopTenRow } from "@/components/features/home/top-ten-row";
 import { PosterCard } from "@/components/ui/poster-card";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useProgress } from "@/hooks/use-progress";
+import { prefetchPlaybackFor } from "@/hooks/use-media-playback";
 import { useRecommendedHero } from "@/hooks/use-recommended-hero";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { parseDuration } from "@/lib/utils";
@@ -163,7 +164,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           detailHref={hrefFor(featured)}
           canNavigate={featuredItems.length > 1}
           isTransition={slideChanges > 0}
-          onPlay={() => router.push(`/ver/${featured.id}`)}
+          onPlay={() => { prefetchPlaybackFor(featured); router.push(`/ver/${featured.id}`); }}
           onPrev={() => goTo(featuredIdx - 1)}
           onNext={goNext}
           onTrailerActiveChange={setIsTrailerActive}

@@ -14,6 +14,7 @@ import { RatingsBlock } from "@/components/features/ratings/ratings-block";
 import { CommentsBlock } from "@/components/features/comments/comments-block";
 import { ExtrasPanel } from "@/components/features/detail/extras-panel";
 import { useExtras } from "@/hooks/use-extras";
+import { prefetchPlaybackFor } from "@/hooks/use-media-playback";
 import { parseRuntimeSeconds, type WorkType } from "@/lib/comments/timestamp";
 import { parseCommentHash } from "@/lib/comments/presentation";
 import { useWatchlist, watchlistErrorMessage } from "@/hooks/use-watchlist";
@@ -121,7 +122,7 @@ export function MovieDetail({ movie, related, creator, extras: initialExtras = [
         avgScore={avgScore}
         voteCount={voteCount}
         inList={inList}
-        onPlay={() => router.push(`/ver/${movie.id}`)}
+        onPlay={() => { prefetchPlaybackFor(movie); router.push(`/ver/${movie.id}`); }}
         onToggleList={() => void toggleList()}
         onRate={handleRate}
         onShare={() => void handleShare()}

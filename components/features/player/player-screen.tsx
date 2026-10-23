@@ -214,6 +214,11 @@ function DonationBanner({ visible, onClose, onOpenPanel }: {
 
 // ─── Splash intro (pre-playback "tudum" animation, GMA colours) ────────────────
 
+/** Lo que dura la intro de GMA. */
+const INTRO_MS = 4500;
+/** Si el origen tarda más que esto, la intro empieza igual (el reproductor sigue cargando y avisa si falla). */
+const MAX_LOADER_MS = 10_000;
+
 function SplashIntro() {
   return (
     <div className="gsp-loader">
@@ -243,11 +248,16 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const router   = useRouter();
   const duration = parseDuration(item);
 
-  const [showSplash, setShowSplash]         = useState(true);
+  // Arranque como en las plataformas grandes: primero el cargador (se prepara lo pesado: el origen firmado del motor), luego la
+  // intro de GMA (debajo se descargan en pausa y sin sonido los primeros segundos) y al terminar el vídeo empieza sin esperas.
+  // Los títulos históricos (MP4/YouTube) no tienen nada que preparar y van directos a la intro.
+  const [phase, setPhase] = useState<"loading" | "intro" | "ready">(() => (playbackEndpointFor(item) ? "loading" : "intro"));
+  const showSplash = phase !== "ready";
   useEffect(() => {
-    const t = setTimeout(() => setShowSplash(false), 4500);
+    if (phase !== "intro") return;
+    const t = setTimeout(() => setPhase("ready"), INTRO_MS);
     return () => clearTimeout(t);
-  }, []);
+  }, [phase]);
 
   const [currentTime, setCurrentTime]       = useState(0);
   const [playing, setPlaying]               = useState(true);
@@ -287,9 +297,16 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
     videoRef.current = element;
     setVideoElement(element);
   }, []);
-  const managed = useMediaPlayback(videoElement, managedEndpoint, managedEndpoint !== null && videoElement !== null);
-  // Mientras dura la intro se pide ya el origen firmado (sin montar ni cargar el vídeo): al terminar, arranca sin esperar al servidor.
-  useEffect(() => { if (managedEndpoint) prefetchPlaybackSource(managedEndpoint); }, [managedEndpoint]);
+  const managed = useMediaPlayback(videoElement, managedEndpoint, managedEndpoint !== null && videoElement !== null, null,
+    { playing: playing && !showSplash, volume, muted: muted || showSplash, rate: playbackSpeed });
+  // Cargador: en cuanto el origen está preparado (o falla, y entonces el reproductor muestra su error) empieza la intro.
+  useEffect(() => {
+    if (!managedEndpoint) return;
+    let alive = true;
+    const fallback = setTimeout(() => { if (alive) setPhase((p) => (p === "loading" ? "intro" : p)); }, MAX_LOADER_MS);
+    void prefetchPlaybackSource(managedEndpoint).finally(() => { if (alive) setPhase((p) => (p === "loading" ? "intro" : p)); });
+    return () => { alive = false; clearTimeout(fallback); };
+  }, [managedEndpoint]);
   const hideTimer         = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulseTimer        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bufferTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -302,6 +319,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   const countdownDismissRef = useRef(false);
   const navigatedRef        = useRef(false);
   useEffect(() => { playingRef.current = playing; }, [playing]);
+  const splashRef = useRef(showSplash); splashRef.current = showSplash;
   useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
 
   // ── Progress persistence ──────────────────────────────────────────────────
@@ -479,9 +497,9 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
-    vid.muted  = muted;
+    vid.muted  = muted || showSplash;
     vid.volume = muted ? 0 : volume;
-  }, [muted, volume]);
+  }, [muted, volume, showSplash]);
 
   // Sync CC selector with the actual TextTrack on the video element
   useEffect(() => {
@@ -741,21 +759,21 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
       style={{ cursor: isYT || showControls ? "default" : "none" }}
     >
       {/* ── Video layer ─────────────────────────────────────────────────────
-          The media element is not mounted until the intro splash finishes, so
-          nothing can buffer, play or emit audio behind it — regardless of
-          source type (mp4 / YouTube). */}
+          Durante el cargador solo se ve el póster. Durante la intro el vídeo
+          (MP4 o motor) ya está montado pero en pausa y sin sonido, para que
+          descargue los primeros segundos; YouTube no se monta hasta el final. */}
       <div className="absolute inset-0">
-        {showSplash ? (
+        {phase === "loading" || (showSplash && !(mp4Url || managedEndpoint)) ? (
           <PosterArt style={item.style} title="" kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         ) : mp4Url || managedEndpoint ? (
           <video
             ref={attachVideo} src={mp4Url ?? undefined}
             className={`h-full w-full object-contain ${SUBTITLE_SIZE_CLASS[subtitlePrefs.subtitleSize]} ${SUBTITLE_BACKGROUND_CLASS[subtitlePrefs.subtitleBackground]}`}
             style={{ filter: `brightness(${brightness})` }}
-            playsInline autoPlay
+            playsInline autoPlay={!showSplash} muted={muted || showSplash}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
-            onCanPlay={() => { if (playingRef.current) void videoRef.current?.play().catch(() => undefined); }}
+            onCanPlay={() => { if (playingRef.current && !splashRef.current) void videoRef.current?.play().catch(() => undefined); }}
             onWaiting={handleWaiting}
             onPlaying={handlePlaying}
             onError={handleVideoError}
@@ -782,8 +800,8 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
         )}
       </div>
 
-      {/* Buffering spinner */}
-      {buffering && !videoError && !isYT && <GmaBufferingSpinner />}
+      {/* Buffering spinner (y cargador inicial mientras se prepara el origen) */}
+      {(phase === "loading" || (buffering && !showSplash)) && !videoError && !isYT && <GmaBufferingSpinner />}
 
       {/* Offline / error overlay */}
       {(videoError || managed.error) && !isYT && (
@@ -1222,7 +1240,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
 
       {/* ── Pre-playback splash intro ────────────────────────────────────── */}
       <AnimatePresence>
-        {showSplash && (
+        {phase === "intro" && (
           <motion.div
             key="splash-intro"
             className="absolute inset-0 flex items-center justify-center bg-black"

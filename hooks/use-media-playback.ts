@@ -4,25 +4,36 @@ import { PlaybackEngine, type AudioOption, type PlaybackFailure } from '@/lib/me
 import { PlaybackRecovery } from '@/lib/media/playback-client';
 import { playbackSourceSchema } from '@/lib/media/contracts';
 import type { PlaybackSource } from '@/types/playback';
+import type { MediaItem } from '@/types/catalog';
+import { playbackEndpointFor } from '@/lib/media/player-adapter';
 
 /** Un origen pedido por adelantado vale este tiempo (la capacidad que trae dura 5 min). */
 const PREFETCH_TTL_MS = 60_000;
 const prefetched = new Map<string, { at: number; response: Promise<Response> }>();
 
 /**
- * Pide el origen de reproducción antes de montar el vídeo (p. ej. durante la intro del reproductor), sin cargar ni sonar
- * nada: el «play» ya no espera a que el servidor lo prepare. También abre la conexión con la pasarela pidiendo el manifiesto.
+ * Pide el origen de reproducción antes de montar el vídeo (al pulsar «Reproducir» o con el cargador del reproductor), sin
+ * cargar ni sonar nada. También abre la conexión con la pasarela pidiendo el manifiesto.
  */
-export function prefetchPlaybackSource(endpoint: string): void {
+export function prefetchPlaybackSource(endpoint: string): Promise<void> {
   const current = prefetched.get(endpoint);
-  if (current && Date.now() - current.at < PREFETCH_TTL_MS) return;
+  if (current && Date.now() - current.at < PREFETCH_TTL_MS) return current.response.then(() => undefined, () => undefined);
   const response = fetch(endpoint, { cache: 'no-store', credentials: 'same-origin' });
   prefetched.set(endpoint, { at: Date.now(), response });
+  // Se resuelve cuando el origen ha llegado (bien o mal): el cargador del reproductor espera a esto.
+  const ready = response.then(() => undefined, () => undefined);
   void response.then(async (r) => {
     if (!r.ok) return;
     const source = playbackSourceSchema.safeParse(await r.clone().json());
     if (source.success && source.data.kind === 'hls') await fetch(source.data.url, { cache: 'no-store' }).catch(() => undefined);
   }).catch(() => undefined);
+  return ready;
+}
+
+/** Al pulsar «Reproducir»: empieza a preparar el origen mientras se abre el reproductor (solo títulos del motor). */
+export function prefetchPlaybackFor(item: Pick<MediaItem, 'id' | 'playbackRef' | 'playbackKind'>): void {
+  const endpoint = playbackEndpointFor(item);
+  if (endpoint) void prefetchPlaybackSource(endpoint);
 }
 
 /** Usa el origen pedido por adelantado (una sola vez) o, si no hay, lo pide ahora. */
