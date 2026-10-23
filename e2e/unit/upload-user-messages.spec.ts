@@ -52,3 +52,9 @@ test.describe("uploadUserMessage con errores de la pasarela", () => {
     expect(uploadUserMessage("UPLOADX_HTTP_422")).toMatch(/no parece un vídeo/);
   });
 });
+
+test.describe("uploadUserMessage con el tope de extras", () => {
+  test("explica el máximo de extras y subtítulos", () => {
+    expect(uploadUserMessage("UPLOAD_SLOT_LIMIT")).toMatch(/12 extras/);
+  });
+});
