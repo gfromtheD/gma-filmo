@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SoundHigh as Volume2, SoundOff as VolumeX } from "@/components/ui/icons";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { useMediaPlayback } from "@/hooks/use-media-playback";
 import { DragSlider, PlayTriangle, Skip10, formatPlayerTime } from "@/components/features/detail/extra-player-controls";
 
 const HIDE_CONTROLS_MS = 2800;
@@ -10,6 +11,8 @@ const SKIP_SECONDS = 10;
 
 interface ExtraVideoPlayerProps {
   readonly src: string;
+  /** Vídeo del motor (HLS en el VPS): se reproduce con `useMediaPlayback` en lugar de `src`. */
+  readonly managedEndpoint?: string;
   readonly poster?: string;
   /** Texto que se muestra dentro del reproductor solo en pantalla completa (fuera de ella va en la cabecera del visor). */
   readonly heading?: { readonly kind: string; readonly title: string; readonly counter?: string | null };
@@ -25,9 +28,11 @@ const TIME_BUTTON =
  * Reproductor de un extra con los controles y atajos del reproductor principal
  * (espacio, ← → ±10 s, M, F). Es independiente: no guarda progreso ni lanza donaciones.
  */
-export function ExtraVideoPlayer({ src, poster, heading }: ExtraVideoPlayerProps) {
+export function ExtraVideoPlayer({ src, managedEndpoint, poster, heading }: ExtraVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const managed = useMediaPlayback(videoElement, managedEndpoint ?? null, Boolean(managedEndpoint) && videoElement !== null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -138,8 +143,8 @@ export function ExtraVideoPlayer({ src, poster, heading }: ExtraVideoPlayerProps
       className="@container relative aspect-video w-full overflow-hidden rounded-2xl bg-black"
     >
       <video
-        ref={videoRef}
-        src={src}
+        ref={(element) => { videoRef.current = element; setVideoElement(element); }}
+        src={managedEndpoint ? undefined : src}
         poster={poster}
         autoPlay
         playsInline
@@ -156,6 +161,14 @@ export function ExtraVideoPlayer({ src, poster, heading }: ExtraVideoPlayerProps
         }}
         className="h-full w-full cursor-pointer object-contain"
       />
+      {managed.error && (
+        <div role="alert" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
+          <p className="max-w-xs text-[14px] font-semibold text-white/85">{managed.error}</p>
+          {!managed.revoked && (
+            <button type="button" onClick={managed.retry} className="rounded-full bg-[#22B16B] px-5 py-2 text-[13px] font-bold text-[#031A0E] hover:bg-[#2AC57A]">Reintentar</button>
+          )}
+        </div>
+      )}
 
       {/* En pantalla completa el título va arriba a la izquierda: en la franja negra si el vídeo es vertical,
           sobre el vídeo si es horizontal (el contenedor ocupa toda la pantalla). */}

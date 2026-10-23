@@ -30,9 +30,11 @@ test('la pasarela reescribe el HLS privado de PeerTube y no expone el token de a
     getVideo: async () => ({ uuid: VIDEO, duration: 4, stateId: 1, streamingPlaylists: [{ playlistUrl: MASTER }] }),
     getPrivateFileToken: async () => ({ token: 'SECRETO-DE-ARCHIVO', expiresAt: new Date(Date.now() + 3600_000).toISOString() }),
   });
+  let grantLookups = 0;
   const repository = {
     assetSession: async () => ({ id: SESSION }),
     peerTubeAccess: async (asset: string, generation: number) => {
+      grantLookups++;
       if (asset !== ASSET || generation !== 1) throw new Error('UPLOAD_NOT_FOUND');
       return { provider_ref: VIDEO, expected_input_bytes: 1000 };
     },
@@ -58,6 +60,7 @@ test('la pasarela reescribe el HLS privado de PeerTube y no expone el token de a
     assert.equal(segment.status, 206);
     assert.equal(segment.headers.get('content-range'), 'bytes 0-9/1000');
     assert.ok(upstreamCalls.every(u => u.includes('videoFileToken=SECRETO-DE-ARCHIVO')), 'el token solo viaja hacia PeerTube');
+    assert.equal(grantLookups, 1, 'la concesión de una misma capacidad se consulta en BD una vez, no en cada trozo');
 
     const forged = await fetch(`http://127.0.0.1:${port}/playback/${ASSET}/1/master.m3u8?cap=forjado.forjado.forjado`);
     assert.notEqual(forged.status, 200);

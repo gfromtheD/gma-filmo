@@ -46,7 +46,7 @@ function Gauge({ pct, color, usedLabel }: { readonly pct: number; readonly color
  * Almacenamiento del creador frente a los 5 GB gratis, en un anillo de carga. La calculadora de ampliación se abre
  * encima del propio panel (no debajo), así no cambia su tamaño ni descoloca el resto del Panel.
  */
-export function StorageCard({ usedBytes: rawUsedBytes }: { readonly usedBytes: number }) {
+export function StorageCard({ usedBytes: rawUsedBytes, freeingBytes = 0, freeingCount = 0 }: { readonly usedBytes: number; readonly freeingBytes?: number; readonly freeingCount?: number }) {
   // Si el dato llega vacío o mal (texto, null), se cuenta como 0 en vez de pintar «NaN».
   const usedBytes = Number.isFinite(Number(rawUsedBytes)) ? Math.max(0, Number(rawUsedBytes)) : 0;
   const sliderId = useId();
@@ -87,6 +87,12 @@ export function StorageCard({ usedBytes: rawUsedBytes }: { readonly usedBytes: n
       </div>
 
       <p className="mt-4 text-[13px] leading-5" style={{ color: level === "ok" ? "#A8A8A8" : style.color }}>{style.text()}</p>
+      {freeingCount > 0 && (
+        <p role="status" className="mt-2 flex items-center gap-2 text-[12.5px] text-[#8A8A8A]">
+          <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-white/50" />
+          Liberando {freeingBytes > 0 ? formatBytes(freeingBytes) : "espacio"} de {freeingCount === 1 ? "1 obra eliminada" : `${freeingCount} obras eliminadas`}…
+        </p>
+      )}
       <button ref={openButtonRef} type="button" aria-expanded={isCalculatorOpen} onClick={() => setIsCalculatorOpen(true)}
         className="mt-3 inline-flex min-h-10 items-center justify-center self-start rounded-full border border-white/10 bg-white/[0.06] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-white">
         Calcular ampliación

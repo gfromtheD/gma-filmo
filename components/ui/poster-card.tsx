@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { workPath } from "@/lib/catalog/work-path";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { SaveIcon } from "@/components/ui/save-icon";
@@ -57,7 +58,8 @@ export function PosterCard({
 }: PosterCardProps) {
   const preview = useHoverPreview<HTMLDivElement>(hoverPreview);
   const notice = useNoticeToast();
-  const detailHref = href ?? (item.kind === "series" ? `/series/${item.id}` : `/cortos/${item.id}`);
+  // La ficha es siempre la de la obra; `href` solo manda sobre el clic en la imagen (p. ej. «Continuar viendo» reanuda).
+  const detailHref = item.kind === "series" ? `/series/${item.id}` : workPath(item);
   const wrapProps = hoverPreview
     ? {
         ref: preview.anchorRef,
@@ -76,7 +78,7 @@ export function PosterCard({
       detailHref={detailHref}
       onPointerEnter={preview.keepOpen}
       onPointerLeave={preview.scheduleClose}
-      onClose={preview.close}
+      onClose={preview.dismiss}
       isClosing={preview.isClosing}
       onLoginRequired={notice.showLoginRequired}
       onSaveError={() => notice.showError(watchlistErrorMessage())}

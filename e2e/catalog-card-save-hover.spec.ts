@@ -110,10 +110,10 @@ test("el botón de guardar sigue visible mientras el cursor está encima y desap
   await expect.poll(() => opacityOf(save), { timeout: 2000 }).toBe(0);
 });
 
-test("en las tarjetas de «Películas» el «+» tampoco se queda visible tras pulsarlo y salir", async ({ page }) => {
+test("en las tarjetas de «Películas» (/peliculas) el «+» tampoco se queda visible tras pulsarlo y salir", async ({ page }) => {
   await openCatalogAsUser(page);
-  const section = page.locator("section").filter({ has: page.getByRole("heading", { name: "Películas" }) }).first();
-  const card = section.locator("[class*='group/card']").first();
+  await page.goto("/peliculas", { waitUntil: "load" });
+  const card = page.locator("[class*='group/card']").first();
   await card.scrollIntoViewIfNeeded();
   await card.hover();
   await card.getByRole("button", { name: "Añadir a Mi Lista" }).click(); // guarda

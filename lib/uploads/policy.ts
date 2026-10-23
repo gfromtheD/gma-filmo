@@ -4,7 +4,7 @@ export const GIB = 1024 ** 3;
 export const MIB = 1024 ** 2;
 export const UPLOAD_LIMITS: Record<AssetRole, number> = {
   main: 4 * GIB, trailer: GIB, extras: GIB, intro: 500 * MIB,
-  poster: 10 * MIB, poster_h: 10 * MIB, poster_v: 10 * MIB,
+  poster: 10 * MIB, poster_h: 10 * MIB, poster_v: 10 * MIB, extra_image: 10 * MIB,
   subtitles: 5 * MIB, avatar: 5 * MIB, banner: 10 * MIB,
 };
 export const DRAFT_BYTE_LIMIT = 6 * GIB;

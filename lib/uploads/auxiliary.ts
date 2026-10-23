@@ -75,7 +75,7 @@ export class AuxiliaryProvider {
     await this.client.send(new DeleteObjectCommand({Bucket:this.bucket,Key:this.ingestKey(session)}),{abortSignal:AbortSignal.timeout(20000)});
     if(await this.head(this.ingestKey(session)))throw new ProviderError('R2_CLEANUP_UNCONFIRMED');
   }
-  async delete(session:UploadSession) {
+  async delete(session:UploadSession,safeAfterMs:number=Date.parse(session.expires_at)) {
     // A zero-byte tombstone blocks late conditional finalization, including after a worker lease expires.
     // The original media is gone; keeping this marker prevents an in-flight writer from resurrecting it.
     await this.client.send(new PutObjectCommand({Bucket:this.bucket,Key:this.finalKey(session),Body:Buffer.alloc(0),
@@ -83,7 +83,7 @@ export class AuxiliaryProvider {
     await this.client.send(new DeleteObjectCommand({Bucket:this.bucket,Key:this.ingestKey(session)}),{abortSignal:AbortSignal.timeout(20000)});
     const final=await this.head(this.finalKey(session));
     const absent=(await this.head(this.ingestKey(session)))===null && final?.ContentLength===0 && final.Metadata?.gma_deleted==='true';
-    // A still-valid PUT can recreate ingest after deletion. Keep its reservation until expiry.
-    return absent && Date.now()>=Date.parse(session.expires_at);
+    // A still-valid PUT can recreate ingest after deletion. Keep its reservation until that signed URL has expired.
+    return absent && Date.now()>=safeAfterMs;
   }
 }

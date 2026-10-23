@@ -61,7 +61,8 @@ export class PlaybackEngine {
     }
     const noRetry = { maxNumRetry: 0, retryDelayMs: 0, maxRetryDelayMs: 0 };
     const policy = { default: { maxTimeToFirstByteMs: 10000, maxLoadTimeMs: 20000, timeoutRetry: noRetry, errorRetry: noRetry } };
-    const hls = new HlsClass({ maxBufferLength: 30, maxMaxBufferLength: 60, backBufferLength: 30,
+    // Arranque rápido: primer fragmento en la calidad más baja; el ABR sube después según el ancho de banda medido.
+    const hls = new HlsClass({ startLevel: 0, capLevelToPlayerSize: true, startFragPrefetch: true, maxBufferLength: 30, maxMaxBufferLength: 60, backBufferLength: 30,
       manifestLoadPolicy: policy, playlistLoadPolicy: policy, fragLoadPolicy: policy });
     this.hls = hls;
     hls.on(HlsClass.Events.ERROR, (_event, data) => {

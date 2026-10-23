@@ -62,7 +62,7 @@ test('mapeo explícito de huecos de Windows a roles del motor', () => {
   assert.deepEqual(mapSlot(d, 'poster'), { supported: true, role: 'poster_v' });
   assert.deepEqual(mapSlot(d, 'banner'), { supported: true, role: 'poster_h' });
   assert.deepEqual(mapSlot(d, 'extra:0'), { supported: true, role: 'extras' });
-  assert.equal(mapSlot(d, 'extra:1').supported, false, 'extras de imagen: decisión pendiente');
+  assert.deepEqual(mapSlot(d, 'extra:1'), { supported: true, role: 'extra_image' }, 'los extras de imagen van al motor con su propio rol');
   assert.equal(mapSlot(d, 'srt:0').supported, false, 'dos SRT del mismo idioma');
   assert.deepEqual(mapSlot(draftFixture(), 'srt:0'), { supported: true, role: 'subtitles', language: 'en' });
 });
@@ -97,7 +97,7 @@ test('mediaEngine sube con el rol correcto, avisa del procesado y devuelve la id
 test('mediaEngine no envía al servidor huecos sin soporte ni archivos por encima del límite real', async () => {
   const { deps, uploads } = fakeDeps();
   const engine = createMediaEngine(deps, { getDraft: () => draftFixture() });
-  assert.equal((await engine.uploadAsset({ slot: 'extra:1', rule: 'image', file: file('foto.png') }, () => undefined)).status, 'error');
+  assert.equal((await engine.uploadAsset({ slot: 'extra:7', rule: 'image', file: file('foto.png') }, () => undefined)).status, 'error', 'un extra que no existe en el borrador no se envía');
   const big = { name: 'trailer.mp4', size: 2 * 1024 ** 3, type: 'video/mp4' } as File;
   assert.equal((await engine.uploadAsset({ slot: 'trailer', rule: 'video', file: big }, () => undefined)).status, 'error');
   assert.equal(uploads.length, 0);
@@ -150,4 +150,236 @@ test('ciclo de vida de títulos: sin motor solo existe el borrado histórico; co
   assert.deepEqual(calls.at(-1), { path: '/api/titles/s/unpublish', method: 'POST', body: { revision: 3, idempotency_key: '00000000-0000-4000-8000-0000000000aa' } });
   assert.deepEqual(await on.remove('s', 4), { accepted: true, deletionState: 'pending' });
   await assert.rejects(on.remove('s'), /TITLE_REVISION_REQUIRED/);
+});
+
+// ── Hueco ocupado por una subida anterior (UPLOAD_SLOT_OCCUPIED) ─────────────────────────────────────────────────────
+
+/** Simula que el servidor libera el hueco al cancelar (la función `cancel` borra la fila del borrador al instante). */
+function withServerSlots(h: ReturnType<typeof fakeDeps>) {
+  const base = h.deps.api.bind(h.deps);
+  h.deps.api = (async (path: string, method?: string, body?: unknown) => {
+    const cancel = /\/api\/uploads\/([^/]+)\/cancel$/.exec(path);
+    if (cancel) (h.detail.uploads as ManagedEnvelope[]).splice(0, h.detail.uploads.length, ...h.detail.uploads.filter(u => u.session.sessionId !== cancel[1]));
+    return base(path, method, body);
+  }) as MediaEngineDeps['api'];
+  return h;
+}
+
+test('un hueco ocupado por una subida muerta de una sesión anterior se libera y la subida sigue', async () => {
+  const h = withServerSlots(fakeDeps());
+  const dead = envelope('poster_h', 'received', 7);
+  (h.detail.uploads as ManagedEnvelope[]).push(dead);
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(asset.status, 'done');
+  const cancel = h.calls.find(c => c.path.endsWith('/cancel'));
+  assert.ok(cancel, 'se canceló la subida que ocupaba el hueco');
+  assert.equal(cancel!.path, `/api/uploads/${dead.session.sessionId}/cancel`);
+  assert.deepEqual(cancel!.body, { revision: dead.session.revision });
+  assert.equal(h.uploads.length, 1);
+  assert.equal(h.uploads[0]!.role, 'poster_h');
+});
+
+test('otros huecos del borrador no se tocan al subir a uno concreto', async () => {
+  const h = withServerSlots(fakeDeps());
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('main', 'ready', 1), envelope('poster_h', 'received', 7));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'poster', rule: 'image', file: file('cartel.png') }, () => undefined);
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0, 'el cartel (poster_v) no ocupa nada: no se cancela ni el vídeo ni el banner');
+});
+
+test('una subida del mismo hueco que esta página puede reanudar no se cancela', async () => {
+  const h = withServerSlots(fakeDeps({}));
+  const live = { ...envelope('main', 'uploading', 3), session: { ...envelope('main', 'uploading', 3).session, state: 'uploading' } } as unknown as ManagedEnvelope;
+  h.deps.uploadAsset = async input => {
+    h.uploads.push({ role: input.role, language: input.language, sessionId: input.sessionId });
+    if (!h.detail.uploads.includes(live)) (h.detail.uploads as ManagedEnvelope[]).push(live); // el servidor crea la sesión en la primera subida
+    input.onEnvelope?.(live);
+    return live;
+  };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('a.mp4') }, () => undefined); // la primera vez la registra
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('a.mp4') }, () => undefined); // la segunda la reanuda
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+  assert.equal(h.uploads[1]!.sessionId, live.session.sessionId);
+});
+
+test('los extras tienen hueco propio por subida: nunca se cancela otro extra', async () => {
+  const h = withServerSlots(fakeDeps());
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('extras', 'ready', 5));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'extra:0', rule: 'video', file: file('extra.mp4') }, () => undefined);
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+test('si el servidor no deja liberar el hueco, el usuario ve el motivo y no se sube nada', async () => {
+  const h = fakeDeps();
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('poster_h', 'received', 7));
+  h.deps.api = (async () => { throw new Error('UPLOAD_ASSET_IN_USE'); }) as MediaEngineDeps['api'];
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(asset.status, 'error');
+  assert.match(String(asset.error), /se está usando/);
+  assert.doesNotMatch(String(asset.error), /UPLOAD_/, 'el usuario no ve el código crudo');
+  assert.equal(h.uploads.length, 0);
+});
+
+// ── Etapas de la subida (comprobar → subir → procesar) y espera del procesado ─────────────────────────────────────────
+
+test('las etapas llegan en orden y la comprobación informa de su avance', async () => {
+  const h = fakeDeps();
+  h.deps.uploadAsset = async input => {
+    input.onState?.('Comprobando identidad');
+    input.onHashProgress?.(0.5);
+    input.onState?.('Transfiriendo');
+    input.onProgress?.(40);
+    input.onState?.('Validando y procesando');
+    return envelope(input.role, 'ready', 1);
+  };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const phases: Array<[string, number | undefined]> = [];
+  let processing = 0;
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('peli.mp4') }, () => undefined, undefined, () => { processing += 1; }, (phase, percent) => phases.push([phase, percent]));
+  assert.deepEqual(phases, [['checking', 0], ['checking', 50], ['uploading', 0], ['processing', undefined]]);
+  assert.equal(processing, 1, 'el aviso antiguo de «procesando» se mantiene');
+});
+
+test('un vídeo espera horas a que el servidor lo convierta; una imagen, el plazo normal', async () => {
+  const waits: Record<string, number | undefined> = {};
+  const h = fakeDeps();
+  h.deps.uploadAsset = async input => { waits[input.role] = input.processingWaitMs; return envelope(input.role, 'ready', 1); };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('peli.mp4') }, () => undefined);
+  await engine.uploadAsset({ slot: 'trailer', rule: 'video', file: file('trailer.mp4') }, () => undefined);
+  await engine.uploadAsset({ slot: 'poster', rule: 'image', file: file('cartel.png') }, () => undefined);
+  assert.equal(waits.main, 6 * 60 * 60 * 1000);
+  assert.equal(waits.trailer, 6 * 60 * 60 * 1000);
+  assert.equal(waits.poster_v, undefined, 'las imágenes no cambian el plazo por defecto');
+});
+
+// ── Enviar con subidas canceladas o sustituidas en la lista del servidor ──────────────────────────────────────────────
+
+/** Una subida que el usuario canceló o sustituyó: el servidor la sigue listando, con su archivo ya «borrado». */
+function cancelled(role: string, n: number): ManagedEnvelope {
+  const e = envelope(role, 'ready', n);
+  return { ...e, session: { ...e.session, state: 'cancelled' }, asset: { ...e.asset, status: 'deleted', deliveryUrl: null } } as unknown as ManagedEnvelope;
+}
+
+test('enviar con subidas canceladas en la lista publica: solo cuentan las que siguen en uso', async () => {
+  const { deps, detail, calls } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('main', 8), cancelled('poster_h', 9), envelope('main', 'ready', 1), envelope('poster_h', 'ready', 2));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture(), publishMode: 'direct' });
+  const result = await engine.submit(draftFixture());
+  assert.equal(result.status, 'published', JSON.stringify(result));
+  assert.ok(calls.some(c => c.path === '/api/titles'), 'se llamó a publicar');
+});
+
+test('enviar sigue avisando si una subida en uso aún se procesa, aunque haya canceladas', async () => {
+  const { deps, detail, calls } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('main', 8), envelope('main', 'ready', 1), envelope('trailer', 'processing', 3));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture(), publishMode: 'direct' });
+  const result = await engine.submit(draftFixture());
+  assert.equal(result.status, 'error');
+  assert.match(result.message, /todavía se está procesando/);
+  assert.ok(!calls.some(c => c.path === '/api/titles'), 'no se publicó');
+});
+
+test('la subida cancelada no ocupa el hueco ni hace falta cancelarla otra vez al volver a subir', async () => {
+  const { deps, detail, calls, uploads } = fakeDeps();
+  (detail.uploads as ManagedEnvelope[]).push(cancelled('poster_h', 9));
+  const engine = createMediaEngine(deps, { getDraft: () => draftFixture() });
+  await engine.uploadAsset({ slot: 'banner', rule: 'image', file: file('banner.png') }, () => undefined);
+  assert.equal(uploads.length, 1);
+  assert.equal(calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+// ── Extras de imagen ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+test('un extra de imagen se sube con su propio rol y no cancela el vídeo ni otras imágenes', async () => {
+  const h = fakeDeps();
+  // En el servidor ya hay otro extra de imagen y uno de vídeo: cada extra tiene su hueco propio.
+  (h.detail.uploads as ManagedEnvelope[]).push(envelope('extra_image', 'ready', 5), envelope('extras', 'ready', 6), envelope('main', 'ready', 1));
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture() });
+  const asset = await engine.uploadAsset({ slot: 'extra:1', rule: 'image', file: file('fotograma.png') }, () => undefined);
+  assert.equal(asset.status, 'done');
+  assert.equal(h.uploads.at(-1)!.role, 'extra_image');
+  assert.equal(h.calls.filter(c => c.path.endsWith('/cancel')).length, 0);
+});
+
+test('los tres tipos de extra de la ficha (fotograma, póster y vídeo) tienen hueco en el motor', () => {
+  const d = draftFixture({ extras: [{ kind: 'fotograma', file: null }, { kind: 'poster', file: null }, { kind: 'video', file: null }] });
+  assert.deepEqual(['extra:0', 'extra:1', 'extra:2'].map(s => (mapSlot(d, s) as { role?: string }).role), ['extra_image', 'extra_image', 'extras']);
+});
+
+test('las imágenes de extras respetan el límite de 10 MB del servidor', () => {
+  assert.equal(serverLimitProblem('extra_image', 5 * 1024 ** 2), null);
+  assert.ok(serverLimitProblem('extra_image', 11 * 1024 ** 2));
+});
+
+test('tras recargar, quitar un archivo cancela su sesión en el servidor aunque esta página no la recuerde', async () => {
+  const h = fakeDeps();
+  const stale = envelope('extra_image', 'processing', 7);
+  Object.assign(stale.session, { fileName: 'images.jpg', expectedBytes: 47000, state: 'uploading' });
+  (h.detail.uploads as ManagedEnvelope[]).push(stale);
+  const asset = { name: 'images.jpg', sizeBytes: 47000, url: null, status: 'error' as const };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture({ extras: [{ kind: 'fotograma', file: asset }] }) });
+  await engine.cancelAsset('extra:0');
+  const cancel = h.calls.find(c => /\/cancel$/.test(c.path));
+  assert.ok(cancel, 'debe llamar a cancelar en el servidor');
+  assert.match(cancel!.path, new RegExp(stale.session.sessionId));
+});
+
+test('tras recargar, quitar un archivo que el servidor ya no tiene no falla ni cancela nada', async () => {
+  const h = fakeDeps();
+  const asset = { name: 'otro.jpg', sizeBytes: 10, url: null, status: 'error' as const };
+  const engine = createMediaEngine(h.deps, { getDraft: () => draftFixture({ extras: [{ kind: 'fotograma', file: asset }] }) });
+  await engine.cancelAsset('extra:0');
+  assert.equal(h.calls.some(c => /\/cancel$/.test(c.path)), false);
+});
+
+test('tras recargar, guardar la ficha vuelve a enlazar los extras ya subidos con su medio', async () => {
+  const h = fakeDeps();
+  const extra = envelope('extra_image', 'ready', 8);
+  Object.assign(extra.session, { fileName: 'frame.jpg', expectedBytes: 30267, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(extra);
+  const draft = draftFixture({ extras: [{ kind: 'fotograma', file: { name: 'frame.jpg', sizeBytes: 30267, url: null, status: 'done' as const } }] });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft });
+  await engine.saveFicha(draft);
+  const put = h.calls.find(c => c.method === 'PUT');
+  assert.ok(put && JSON.stringify(put.body).includes(extra.asset.mediaId), 'la ficha debe llevar el medio del extra');
+});
+
+test('enviar cancela las subidas huérfanas del servidor (descartadas tras recargar) y no toca las referenciadas ni el vídeo', async () => {
+  const h = withServerSlots(fakeDeps());
+  const video = envelope('main', 'ready', 1);
+  Object.assign(video.session, { fileName: 'ep.mp4', expectedBytes: 100, state: 'uploaded' });
+  const kept = envelope('poster_h', 'ready', 2);
+  Object.assign(kept.session, { fileName: 'frame.jpg', expectedBytes: 30, state: 'uploaded' });
+  const orphan = envelope('extra_image', 'processing', 3);
+  Object.assign(orphan.session, { fileName: 'viejo.jpg', expectedBytes: 40, state: 'uploading' });
+  (h.detail.uploads as ManagedEnvelope[]).push(video, kept, orphan);
+  const draft = draftFixture({
+    video: { file: { name: 'ep.mp4', sizeBytes: 100, url: null, status: 'done' as const } },
+    images: { poster: null, banner: { name: 'frame.jpg', sizeBytes: 30, url: null, status: 'done' as const } },
+    extras: [],
+  });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft, publishMode: 'direct' });
+  const result = await engine.submit(draft);
+  const cancelled = h.calls.filter(c => /\/cancel$/.test(c.path)).map(c => c.path);
+  assert.equal(cancelled.length, 1, 'solo la huérfana');
+  assert.match(cancelled[0]!, new RegExp(orphan.session.sessionId));
+  assert.equal(result.status, 'published');
+});
+
+test('enviar no cancela nada si no consigue emparejar el vídeo principal (protección ante datos locales incompletos)', async () => {
+  const h = withServerSlots(fakeDeps());
+  const video = envelope('main', 'ready', 1);
+  Object.assign(video.session, { fileName: 'otro.mp4', expectedBytes: 5, state: 'uploaded' });
+  const extra = envelope('extra_image', 'ready', 2);
+  Object.assign(extra.session, { fileName: 'x.jpg', expectedBytes: 6, state: 'uploaded' });
+  (h.detail.uploads as ManagedEnvelope[]).push(video, extra);
+  const draft = draftFixture({ video: { file: { name: 'ep.mp4', sizeBytes: 100, url: null, status: 'done' as const } }, extras: [] });
+  const engine = createMediaEngine(h.deps, { getDraft: () => draft, publishMode: 'direct' });
+  await engine.submit(draft);
+  assert.equal(h.calls.some(c => /\/cancel$/.test(c.path)), false);
 });

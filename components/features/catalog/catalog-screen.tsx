@@ -9,6 +9,7 @@ import { GmaIcon } from "@/components/ui/gma-icon";
 import { ColeccionCard } from "./coleccion-card";
 import { collectionsWithContent } from "@/lib/recommendation/collection-picks";
 import { FilterPills } from "./filter-pills";
+import { isFeature, workPath } from "@/lib/catalog/work-path";
 import { CATALOG_GRID_CLASS, CATALOG_PAGE_PADDING_CLASS } from "@/lib/catalog/grid";
 import {
   DEFAULT_FILTERS,
@@ -28,14 +29,19 @@ import type { Coleccion } from "@/lib/supabase/queries";
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+/** Cada sección del catálogo enseña solo lo suyo: `/cortos` los cortos (40 min o menos) y `/peliculas` las películas. */
+export type CatalogSection = "cortos" | "peliculas";
+
 interface CatalogScreenProps {
   readonly items:        readonly MovieMedia[];
+  readonly section?:     CatalogSection;
   readonly heading?:     string;
   readonly colecciones?: readonly Coleccion[];
   readonly backHref?:    string;
 }
 
-export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, backHref }: CatalogScreenProps) {
+export function CatalogScreen({ items: allItems, section = "cortos", heading = section === "peliculas" ? "Películas" : "Cortometrajes", colecciones, backHref }: CatalogScreenProps) {
+  const items = useMemo(() => allItems.filter((x) => isFeature(x) === (section === "peliculas")), [allItems, section]);
   // Las colecciones sin ningún corto no se muestran (evita tarjetas vacías).
   const withContent = collectionsWithContent(colecciones ?? [], items);
 
@@ -54,29 +60,20 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
     if (!saved) notice.showError(watchlistErrorMessage());
   }
 
-  const cortosItems    = items.filter((x) => x.genre !== "Película");
-  const peliculasItems = items.filter((x) => x.genre === "Película");
-
   // La URL es la fuente de verdad (enlaces compartibles); el estado local solo evita el retardo al elegir.
   const urlQuery = searchParams.toString();
   const [filters, setFilters] = useState<CatalogFilters>(() => parseCatalogFilters(searchParams));
   useEffect(() => { setFilters(parseCatalogFilters(new URLSearchParams(urlQuery))); }, [urlQuery]);
 
-  // Las opciones salen de todo el catálogo, así que las películas futuras aparecen solas.
+  // Las opciones salen de las obras de esta sección, así que lo que se publique aparece solo.
   const filterOptions = useMemo(() => deriveFilterOptions(items), [items]);
 
   const filtered = useMemo(
-    () => sortItems(filterItems(cortosItems, filters, hasMedia), filters.sort),
-    [cortosItems, filters, hasMedia],
+    () => sortItems(filterItems(items, filters, hasMedia), filters.sort),
+    [items, filters, hasMedia],
   );
 
-  const filteredPeliculas = useMemo(
-    () => sortItems(filterItems(peliculasItems, filters, hasMedia), filters.sort),
-    [peliculasItems, filters, hasMedia],
-  );
-
-  // Los filtros valen para cortos y películas a la vez: el total suma las dos secciones.
-  const totalResults = filtered.length + filteredPeliculas.length;
+  const totalResults = filtered.length;
   const hasActiveFilters = activeFilterCount(filters) > 0;
 
   function applyFilters(next: CatalogFilters) {
@@ -90,8 +87,8 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
   }
 
   function openRandom() {
-    const pick = pickRandomItem([...filtered, ...filteredPeliculas]);
-    if (pick) router.push(`/cortos/${pick.id}`);
+    const pick = pickRandomItem(filtered);
+    if (pick) router.push(workPath(pick));
   }
 
   return (
@@ -156,7 +153,7 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
         </p>
       </div>
 
-      {/* Grid — cortos */}
+      {/* Grid — las obras de esta sección */}
       {filtered.length > 0 && (
         <div className={CATALOG_GRID_CLASS}>
           {filtered.map((item) => (
@@ -166,50 +163,35 @@ export function CatalogScreen({ items, heading = "Cortometrajes", colecciones, b
               ratio="landscape"
               fluid
               hoverOverlay
-              href={`/cortos/${item.id}`}
+              href={workPath(item)}
               onAddList={() => void toggleInList(item.numericId)}
               inList={hasMedia(item.numericId)}
             />
           ))}
         </div>
       )}
-      {filtered.length === 0 && filteredPeliculas.length === 0 && (
-        <EmptyState onReset={clearFilters} />
-      )}
-
-      {/* Películas section */}
-      {filteredPeliculas.length > 0 && (
-        <section className="mt-16">
-          <div className="mb-6 flex flex-wrap items-center gap-3">
-            <h2 className="min-w-0 break-words text-2xl sm:text-[28px] font-extrabold tracking-[-0.02em] text-white">
-              Películas
-            </h2>
-            <div className="flex-1" />
-            <span className="text-[12.5px] text-[#7C7C7C]">
-              <span className="font-semibold text-white">{filteredPeliculas.length}</span>{" "}
-              {filteredPeliculas.length === 1 ? "película" : "películas"}
-            </span>
-          </div>
-          <div className={CATALOG_GRID_CLASS}>
-            {filteredPeliculas.map((item) => (
-              <PosterCard
-                key={item.id}
-                item={item}
-                ratio="landscape"
-                fluid
-                href={`/cortos/${item.id}`}
-                onAddList={() => void toggleInList(item.numericId)}
-                inList={hasMedia(item.numericId)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      {filtered.length === 0 && items.length === 0 && <NothingYet section={section} />}
+      {filtered.length === 0 && items.length > 0 && <EmptyState onReset={clearFilters} />}
     </motion.div>
   );
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
+
+/** La sección aún no tiene ninguna obra publicada (no es lo mismo que «los filtros no encuentran nada»). */
+function NothingYet({ section }: { section: CatalogSection }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gma-surface text-[#7C7C7C]">
+        <GmaIcon name="film" size={28} />
+      </div>
+      <p className="mb-2 text-[16px] font-bold text-white">
+        {section === "peliculas" ? "Todavía no hay películas publicadas" : "Todavía no hay cortos publicados"}
+      </p>
+      <p className="text-[13px] text-[#7C7C7C]">Vuelve pronto: se añaden títulos nuevos a menudo.</p>
+    </div>
+  );
+}
 
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (

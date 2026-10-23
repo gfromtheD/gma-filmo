@@ -17,9 +17,11 @@
  * Todas las dependencias de red se inyectan (`MediaEngineDeps`) para probarlo sin navegador.
  */
 import type { AssetRequest, SubmitResult, UploadEngine } from '@/lib/studio/engine';
-import type { UploadDraft, UploadedAsset } from '@/lib/studio/upload-draft';
+import type { UploadDraft, UploadedAsset, UploadPhase } from '@/lib/studio/upload-draft';
 import type { AssetRole } from '@/types/media-engine';
 import type { ManagedDraftDetail, ManagedEnvelope } from '@/lib/uploads/managed-browser';
+import { isLiveUpload } from '@/lib/uploads/live-upload';
+import { uploadUserMessage } from '@/lib/uploads/user-messages';
 import { engineMetadata, fichaFromDraft, mapSlot, serverLimitProblem, type EngineMetadata } from './mapping';
 
 export type MediaUploadedAsset = UploadedAsset & {
@@ -34,6 +36,7 @@ export interface MediaEngineDeps {
   uploadAsset(input: {
     file: File; role: AssetRole; language?: string; draft: ManagedDraftDetail['draft']; idempotencyKey: string; sessionId?: string;
     signal: AbortSignal; onEnvelope?: (e: ManagedEnvelope) => void; onProgress?: (p: number) => void; onState?: (s: string) => void;
+    onHashProgress?: (fraction: number) => void; processingWaitMs?: number;
   }): Promise<ManagedEnvelope>;
   saveMetadata(detail: ManagedDraftDetail, metadata: EngineMetadata): Promise<ManagedDraftDetail['draft']>;
   api<T>(path: string, method?: string, body?: unknown): Promise<T>;
@@ -55,7 +58,13 @@ export interface MediaUploadEngine extends Omit<UploadEngine, 'id'> {
   saveFicha(draft: UploadDraft): Promise<{ revision: number }>;
 }
 
+// Textos con los que el cliente de subidas (managed-browser.ts) anuncia cada etapa.
+const CHECKING = 'Comprobando identidad';
+const TRANSFERRING = 'Transfiriendo';
 const VALIDATING = 'Validando y procesando';
+/** Roles de vídeo: se convierten en el servidor y una obra larga tarda mucho más que los 90 s que se esperan por defecto. */
+const LONG_PROCESSING_ROLES: ReadonlySet<string> = new Set(['main', 'trailer', 'extras', 'intro']);
+const LONG_PROCESSING_WAIT_MS = 6 * 60 * 60 * 1000;
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
 
 function toAsset(file: { name: string; size: number }, envelope: ManagedEnvelope): MediaUploadedAsset {
@@ -76,28 +85,51 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     return deps.getDraft(await deps.ownerId());
   }
 
-  async function uploadAsset(request: AssetRequest, onProgress: (p: number) => void, signal?: AbortSignal, onProcessing?: () => void): Promise<MediaUploadedAsset> {
+  /**
+   * El servidor es quien sabe qué subida ocupa cada hueco del borrador; esta página solo lo recuerda mientras no se recarga
+   * (`sessions`). Si una subida anterior quedó atascada, fallida o es de antes de recargar, reservar de nuevo el hueco daría
+   * `UPLOAD_SLOT_OCCUPIED`. Quien vuelve a subir un archivo a un hueco quiere sustituir lo que había: se cancela esa subida
+   * (el servidor libera el hueco al instante) y se vuelve a leer el borrador. Los extras tienen hueco propio por subida.
+   */
+  async function releaseOccupiedSlot(detail: ManagedDraftDetail, role: AssetRole, language: string | undefined, keepSessionId?: string): Promise<ManagedDraftDetail> {
+    if (role === 'extras' || role === 'extra_image') return detail;
+    const serverSlot = role === 'subtitles' ? `subtitles:${language || 'und'}` : role;
+    const stale = detail.uploads.filter(u => u.session.slot === serverSlot && u.session.sessionId !== keepSessionId && !['cancelling', 'cancelled'].includes(u.session.state));
+    if (stale.length === 0) return detail;
+    for (const u of stale) await deps.api(`/api/uploads/${u.session.sessionId}/cancel`, 'POST', { revision: u.session.revision });
+    return serverDraft();
+  }
+
+  async function uploadAsset(request: AssetRequest, onProgress: (p: number) => void, signal?: AbortSignal, onProcessing?: () => void, onPhase?: (phase: UploadPhase, percent?: number) => void): Promise<MediaUploadedAsset> {
     const { file, slot } = request;
     const fail = (error: string): MediaUploadedAsset => ({ name: file.name, sizeBytes: file.size, url: null, status: 'error', error });
     const mapping = mapSlot(options.getDraft(), slot);
     if (!mapping.supported) return fail(mapping.reason);
     const limit = serverLimitProblem(mapping.role, file.size);
     if (limit) return fail(limit);
-    const detail = await serverDraft();
     const previous = sessions.get(slot);
+    // Reanudar solo si la sesión anterior de este hueco sigue viva y es del mismo rol.
+    const resumable = previous && previous.session.role === mapping.role && ['uploading', 'paused'].includes(previous.session.state) ? previous : null;
     const controller = new AbortController();
     signal?.addEventListener('abort', () => controller.abort(), { once: true });
     if (signal?.aborted) controller.abort();
     try {
+      const detail = await releaseOccupiedSlot(await serverDraft(), mapping.role, mapping.language, resumable?.session.sessionId);
       const envelope = await deps.uploadAsset({
         file, role: mapping.role, ...(mapping.language ? { language: mapping.language } : {}), draft: detail.draft,
         idempotencyKey: deps.newKey(),
-        // Reanudar solo si la sesión anterior de este hueco sigue viva y es del mismo rol.
-        ...(previous && previous.session.role === mapping.role && ['uploading', 'paused'].includes(previous.session.state) ? { sessionId: previous.session.sessionId } : {}),
+        ...(resumable ? { sessionId: resumable.session.sessionId } : {}),
         signal: controller.signal,
         onEnvelope: e => { sessions.set(slot, e); },
         onProgress,
-        onState: state => { if (state === VALIDATING) onProcessing?.(); },
+        onState: state => {
+          if (state === CHECKING) onPhase?.('checking', 0);
+          else if (state === TRANSFERRING) onPhase?.('uploading', 0);
+          else if (state === VALIDATING) { onPhase?.('processing'); onProcessing?.(); }
+        },
+        onHashProgress: fraction => onPhase?.('checking', Math.round(fraction * 100)),
+        // Un vídeo largo tarda en convertirse mucho más que los 90 s por defecto: se espera con calma y la página sigue mostrando «procesando».
+        ...(LONG_PROCESSING_ROLES.has(mapping.role) ? { processingWaitMs: LONG_PROCESSING_WAIT_MS } : {}),
       });
       sessions.set(slot, envelope);
       return toAsset(file, envelope);
@@ -105,11 +137,52 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       if (isAbort(error)) throw error;
       const envelope = (error as { envelope?: ManagedEnvelope | null }).envelope;
       if (envelope) { sessions.set(slot, envelope); return toAsset(file, envelope); }
-      return fail(error instanceof Error ? error.message : 'No se pudo subir el archivo.');
+      return fail(uploadUserMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.', (error as { fields?: string[] }).fields));
     }
   }
 
+  /** Archivo local de un hueco (lo que el borrador recuerda tras recargar la página). */
+  function localFile(draft: UploadDraft, slot: string): { name: string; sizeBytes: number } | null {
+    if (slot === 'video') return draft.video.file;
+    if (slot === 'trailer') return draft.trailer.file;
+    if (slot === 'poster') return draft.images.poster;
+    if (slot === 'banner') return draft.images.banner;
+    const extra = /^extra:(\d+)$/.exec(slot);
+    if (extra) return draft.extras[Number(extra[1])]?.file ?? null;
+    const srt = /^srt:(\d+)$/.exec(slot);
+    return srt ? draft.srtSubtitles[Number(srt[1])]?.file ?? null : null;
+  }
+
+  /**
+   * Tras recargar la página el borrador local recuerda los archivos, pero el mapa hueco → sesión se pierde y el servidor sigue
+   * teniéndolas. Sin él, quitar un archivo no cancelaba su sesión (quedaba viva y bloqueaba el envío con «algún archivo todavía
+   * se está procesando») y la ficha perdía el vínculo con el banner o el cartel. Se reconstruye emparejando rol, nombre y tamaño.
+   */
+  async function adoptServerSessions(slots: readonly string[]): Promise<void> {
+    const missing = slots.filter(slot => !sessions.has(slot));
+    if (missing.length === 0) return;
+    const draft = options.getDraft();
+    const live = (await serverDraft()).uploads.filter(isLiveUpload);
+    const taken = new Set([...sessions.values()].map(e => e.session.sessionId));
+    for (const slot of missing) {
+      const file = localFile(draft, slot);
+      const mapping = mapSlot(draft, slot);
+      if (!file || !mapping.supported) continue;
+      const match = live.find(u => !taken.has(u.session.sessionId) && u.session.role === mapping.role
+        && u.session.fileName === file.name && u.session.expectedBytes === file.sizeBytes);
+      if (!match) continue;
+      sessions.set(slot, match);
+      taken.add(match.session.sessionId);
+    }
+  }
+
+  const ALL_SLOTS = (draft: UploadDraft): string[] => [
+    'video', 'trailer', 'poster', 'banner',
+    ...draft.extras.map((_, i) => `extra:${i}`), ...draft.srtSubtitles.map((_, i) => `srt:${i}`),
+  ];
+
   async function sessionAction(slot: string, action: 'cancel' | 'pause'): Promise<void> {
+    await adoptServerSessions([slot]);
     const current = sessions.get(slot);
     if (!current) return;
     const result = await deps.api<ManagedEnvelope>(`/api/uploads/${current.session.sessionId}/${action}`, 'POST', { revision: current.session.revision });
@@ -118,6 +191,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
   }
 
   async function saveFicha(draft: UploadDraft): Promise<{ revision: number }> {
+    await adoptServerSessions(ALL_SLOTS(draft));
     const detail = await serverDraft();
     if (fichaRevision === null) {
       const current = await deps.api<{ ficha: { revision: number } | null }>(`/api/upload-drafts/${detail.draft.id}/ficha`);
@@ -130,6 +204,21 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
     return { revision: saved.ficha.revision };
   }
 
+  /**
+   * Antes de enviar: lo que el servidor guarda en este borrador y la página ya no referencia (un archivo descartado tras recargar,
+   * una subida de otra sesión) se cancela. Si no, una subida a medias bloquearía el envío y una ya terminada se publicaría con la obra
+   * sin que el usuario la viera. Solo actúa si el vídeo principal quedó emparejado (prueba de que el emparejamiento funciona) y nunca
+   * toca el vídeo principal.
+   */
+  async function cancelOrphanUploads(): Promise<void> {
+    if (!sessions.has('video')) return;
+    const tracked = new Set([...sessions.values()].map(e => e.session.sessionId));
+    const orphans = (await serverDraft()).uploads.filter(u => isLiveUpload(u) && u.session.role !== 'main' && !tracked.has(u.session.sessionId));
+    for (const u of orphans) {
+      await deps.api(`/api/uploads/${u.session.sessionId}/cancel`, 'POST', { revision: u.session.revision }).catch(() => undefined);
+    }
+  }
+
   async function submit(draft: UploadDraft): Promise<SubmitResult> {
     try {
       const detail = await serverDraft();
@@ -138,16 +227,18 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
       if ((options.publishMode ?? 'hold') === 'hold') {
         return { status: 'queued', message: 'Tu título y todos sus archivos están guardados. Se publicará cuando se active la publicación.' };
       }
+      await cancelOrphanUploads();
       const fresh = await serverDraft();
-      const main = fresh.uploads.find(u => u.session.role === 'main' && u.asset.status === 'ready');
+      const live = fresh.uploads.filter(isLiveUpload); // las canceladas o sustituidas siguen en la lista del servidor, pero ya no cuentan
+      const main = live.find(u => u.session.role === 'main' && u.asset.status === 'ready');
       if (!main) return { status: 'error', message: 'La película todavía no está lista.' };
-      if (fresh.uploads.some(u => u.asset.status !== 'ready')) return { status: 'error', message: 'Algún archivo todavía se está procesando.' };
+      if (live.some(u => u.asset.status !== 'ready')) return { status: 'error', message: 'Algún archivo todavía se está procesando.' };
       const published = await deps.api<{ title: { slug: string } }>('/api/titles', 'POST', {
         draft_id: fresh.draft.id, revision: Math.max(updated.revision, fresh.draft.revision), main_media_id: main.asset.mediaId,
       });
       return { status: 'published', slug: published.title.slug, message: 'Tu título se ha publicado.' };
     } catch (error) {
-      return { status: 'error', message: error instanceof Error ? error.message : 'No se pudo enviar el título.' };
+      return { status: 'error', message: uploadUserMessage(error instanceof Error ? error.message : 'No se pudo enviar el título.', (error as { fields?: string[] }).fields) };
     }
   }
 

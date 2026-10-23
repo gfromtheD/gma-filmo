@@ -30,6 +30,9 @@ function teamByRole(draft: UploadDraft): [string, string[]][] {
   return [...groups.entries()];
 }
 
+/** Con `NEXT_PUBLIC_STUDIO_PUBLISH=direct` el título se publica al enviarlo: el texto no debe hablar de revisión. */
+const PUBLISHES_DIRECTLY = process.env.NEXT_PUBLIC_STUDIO_PUBLISH === "direct";
+
 const CHIP = "rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[13px] text-[#E0E0E0]";
 
 /**
@@ -54,7 +57,9 @@ export function ReviewPage({ draft, update, reviews, goToStep, onBack, onSubmit,
       <header>
         <h2 id="review-title" className="text-[26px] font-extrabold leading-tight text-white">Revisar y enviar</h2>
         <p className="mt-2 max-w-[62ch] text-[15px] leading-6 text-[#BBBBBB]">
-          Así se verá tu ficha. Si todo está bien, envíala: pasará una revisión antes de publicarse.
+          {PUBLISHES_DIRECTLY
+            ? "Así se verá tu ficha. Si todo está bien, publícala: aparecerá en el catálogo en cuanto termine de enviarse."
+            : "Así se verá tu ficha. Si todo está bien, envíala: pasará una revisión antes de publicarse."}
         </p>
       </header>
 
@@ -143,7 +148,7 @@ export function ReviewPage({ draft, update, reviews, goToStep, onBack, onSubmit,
           <button type="button" onClick={onGoToTitles} className={BUTTON_PRIMARY}>Ver mis títulos</button>
         ) : (
           <button type="button" onClick={onSubmit} disabled={!ready || isSubmitting} className={BUTTON_PRIMARY}>
-            {isSubmitting ? "Enviando…" : "Enviar a revisión"}
+            {isSubmitting ? (PUBLISHES_DIRECTLY ? "Publicando…" : "Enviando…") : PUBLISHES_DIRECTLY ? "Publicar" : "Enviar a revisión"}
           </button>
         )}
       </div>

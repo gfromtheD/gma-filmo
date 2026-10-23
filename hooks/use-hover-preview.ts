@@ -22,6 +22,9 @@ interface UseHoverPreview<T extends HTMLElement> {
   readonly keepOpen: () => void;
   readonly scheduleClose: () => void;
   readonly close: () => void;
+  /** Cierra tras un clic en la tarjeta y no la reabre hasta que el cursor salga de la portada (si no, al desmontarse el panel el
+   * cursor queda sobre la portada y la tarjeta reaparecería mientras carga la página a la que se navega). */
+  readonly dismiss: () => void;
 }
 
 /**
@@ -53,6 +56,11 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
     setIsClosing(false);
     setAnchorBox(null);
   }, [clearTimers]);
+
+  const dismiss = useCallback(() => {
+    isDismissed.current = true;
+    close();
+  }, [close]);
 
   const keepOpen = useCallback(() => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -127,5 +135,5 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
     };
   }, [anchorBox, close]);
 
-  return { anchorRef, anchorBox, isClosing, onPointerEnter, onPointerLeave, keepOpen, scheduleClose, close };
+  return { anchorRef, anchorBox, isClosing, onPointerEnter, onPointerLeave, keepOpen, scheduleClose, close, dismiss };
 }

@@ -15,7 +15,7 @@ import { usePathname } from "next/navigation";
  */
 /** Páginas con su propio fondo de color: Inicio y la ficha de un título (/cortos/<id>, no las colecciones). */
 function hasOwnBackground(pathname: string): boolean {
-  return pathname === "/inicio" || /^\/cortos\/[^/]+$/.test(pathname);
+  return pathname === "/inicio" || /^\/(cortos|peliculas)\/[^/]+$/.test(pathname);
 }
 
 const BLOBS = [

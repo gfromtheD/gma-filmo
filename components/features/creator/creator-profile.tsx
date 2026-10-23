@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { workPath } from "@/lib/catalog/work-path";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
@@ -208,7 +209,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {films.map((film) => (
-                <Link key={film.id} href={`/cortos/${film.id}`} className="block min-w-0">
+                <Link key={film.id} href={workPath(film)} className="block min-w-0">
                   <PosterCard item={film} ratio="portrait" fluid />
                 </Link>
               ))}

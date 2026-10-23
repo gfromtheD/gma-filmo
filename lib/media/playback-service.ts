@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {gatewayCapToken} from './delivery-token';
 import {createHash} from 'node:crypto';
 import {MediaService} from './service';
 import {MediaRepository} from './repository';
@@ -9,6 +10,12 @@ import {legacyMediaUrl,resolveLegacyPlayback} from './legacy-playback';
 import type {ProviderPlaybackContext} from './provider';
 import {safeMediaPath} from '@/lib/uploads/video-processing';
 const notFound=()=>new MediaError('MEDIA_NOT_FOUND');
+/** Lo único auxiliar que necesita el reproductor para empezar: subtítulos y póster. */
+const PLAYER_AUXILIARY_ROLES=['subtitles','poster','poster_h','poster_v'] as const;
+// Imágenes de títulos publicados: el CDN guarda la redirección 1 h y el navegador 5 min. Debe quedar por debajo de la caducidad de la URL firmada (24 h)
+// aunque se sirva obsoleta (1 h + 10 min de gracia). Si un archivo se sustituye cambia de id, así que nunca se ve una imagen vieja bajo el mismo enlace.
+const PUBLIC_IMAGE_CACHE='public, max-age=300, s-maxage=3600, stale-while-revalidate=600';
+const CACHEABLE_IMAGE_ROLES=['poster','poster_h','poster_v','extra_image'];
 export class PlaybackService {
  readonly service:MediaService;
  constructor(readonly repo=new MediaRepository(),registry?:MediaProviderRegistry){this.service=new MediaService(repo,registry);}
@@ -18,7 +25,9 @@ export class PlaybackService {
   return row;
  }
  private async context(id:string,owner:string|null,slug:string|null=null) {
-  await this.repo.authorizePlayback(id,owner,slug);const session=await this.repo.assetSession(id);return this.service.context(session.id);
+  // Autorizar y leer la sesión no dependen entre sí (no se devuelve nada hasta que ambas acaban); y la sesión ya leída se reutiliza.
+  const [,session]=await Promise.all([this.repo.authorizePlayback(id,owner,slug),this.repo.assetSession(id)]);
+  return this.service.contextFromSession(session);
  }
  private base(context:Awaited<ReturnType<MediaService['context']>>,title:Record<string,unknown>|null):ProviderPlaybackContext {
   return {...context,authorization:title?'published-title':'owner-preview',titleSlug:title?String(title.slug):null,titleId:title?Number(title.id):null,titleRevision:title?Number(title.media_revision??0):null,subtitles:[],posterUrl:null,thumbnails:null,fallback:null};
@@ -37,7 +46,7 @@ export class PlaybackService {
   const url=await this.legacyFallback(title);if(!url)throw notFound();return url;
  }
  private async registerDelivery(url:string,expiresAt:number|null,context:Awaited<ReturnType<MediaService['context']>>,owner:string|null,titleSlug:string|null){
-  const token=new URL(url).searchParams.get('cap');if(!token)return;
+  const token=gatewayCapToken(url);if(!token)return;
   if(!expiresAt)throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
   await this.repo.registerGatewayGrant(owner,context.asset.id,context.processingGeneration,titleSlug?null:context.session.draft_id,titleSlug,
    createHash('sha256').update(token).digest('hex'),new Date(expiresAt).toISOString());
@@ -51,31 +60,56 @@ export class PlaybackService {
   if(title.playback_kind && title.playback_kind!=='legacy')throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
   return resolveLegacyPlayback(title);
  }
+ /** Tiempos por fase (ms) de una resolución de reproducción: sirven para localizar dónde se va el tiempo hasta el primer fotograma. */
+ private timed<T>(label:string,run:(mark:(name:string)=>void)=>Promise<T>):Promise<T> {
+  const startedAt=Date.now();const marks:Array<[string,number]>=[];const mark=(name:string)=>{marks.push([name,Date.now()-startedAt]);};
+  return run(mark).finally(()=>{console.log(`[playback] ${label}`,JSON.stringify({total_ms:Date.now()-startedAt,fases_ms:marks}));});
+ }
  async resolveTitle(slug:string,owner:string|null) {
-  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(z.number().int().positive().parse(title.id));
+  return this.timed('titulo',mark=>this.resolveTitleTimed(slug,owner,mark));
+ }
+ private async resolveTitleTimed(slug:string,owner:string|null,mark:(name:string)=>void) {
+  const title=await this.title(slug,owner);mark('titulo');const junction=await this.repo.titleMedia(z.number().int().positive().parse(title.id));mark('medios');
   const mains=junction.filter(m=>m.role==='main' && m.slot==='main');
   if(mains.length===0) {
     if(title.playback_kind && title.playback_kind!=='legacy')throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     return resolveLegacyPlayback(title);
   }
   if(mains.length!==1)throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-  const context=this.base(await this.context(mains[0]!.asset_id,owner,slug),title);
-  if(await this.legacyFallback(title))context.fallback={kind:'mp4',url:`/api/titles/${encodeURIComponent(slug)}/legacy-fallback`};
-  const auxiliary=await this.resolveAuxiliaries(slug,owner);
+  // Contexto del vídeo, respaldo histórico y subtítulos/póster son lecturas independientes: van a la vez (cada ida y vuelta a la base cuesta ~200 ms).
+  const [mainContext,hasLegacyFallback,auxiliary]=await Promise.all([
+   this.context(mains[0]!.asset_id,owner,slug),this.legacyFallback(title),
+   this.resolveAuxiliaries(slug,owner,PLAYER_AUXILIARY_ROLES,{title,junction}),
+  ]);
+  const context=this.base(mainContext,title);
+  if(hasLegacyFallback)context.fallback={kind:'mp4',url:`/api/titles/${encodeURIComponent(slug)}/legacy-fallback`};
+  mark('lecturas');
   context.subtitles=auxiliary.media.filter(m=>m.role==='subtitles' && m.url).map((m,i)=>({id:m.mediaId,language:m.language??'und',label:m.language??'Subtítulos',url:m.url!,default:i===0,format:'vtt' as const}));
   context.posterUrl=auxiliary.media.find(m=>['poster','poster_h','poster_v'].includes(m.role))?.url??null;
+  const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(context));mark('proveedor');
+  if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);mark('entrega');return source;
+ }
+ async resolvePreview(id:string,owner:string) {
+  return this.timed('vista_previa',async mark=>{
+   const context=await this.context(id,owner);if(context.asset.owner_id!==owner)throw notFound();mark('contexto');
+   const draft=await this.repo.draft(owner,context.session.draft_id);if(draft.state!=='draft' || !await this.repo.draftContains(draft.id,id))throw notFound();mark('borrador');
+   const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(this.base(context,null)));mark('proveedor');
+   if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,null);mark('entrega');return source;
+  });
+ }
+ /** Reproducción de UN vídeo auxiliar (tráiler, extra o intro) de un título publicado: lo que abre el visor de extras de la ficha. */
+ async resolveTitleVideo(slug:string,assetId:string,owner:string|null) {
+  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
+  const item=junction.find(m=>m.asset_id===assetId && ['trailer','extras','intro'].includes(m.role));
+  if(!item)throw notFound();
+  const context=this.base(await this.context(assetId,owner,slug),title);
   const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(context));
   if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);return source;
  }
- async resolvePreview(id:string,owner:string) {
-  const context=await this.context(id,owner);if(context.asset.owner_id!==owner)throw notFound();
-  const draft=await this.repo.draft(owner,context.session.draft_id);if(draft.state!=='draft' || !await this.repo.draftContains(draft.id,id))throw notFound();
-  const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(this.base(context,null)));
-  if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,null);return source;
- }
- async resolveAuxiliaries(slug:string,owner:string|null) {
-  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
-  const media=await Promise.all(junction.filter(m=>m.role!=='main').map(async m=>{
+ /** `only`: limita a ciertos roles. Arrancar la película solo necesita subtítulos y póster; resolver el tráiler y los extras (que ahora se piden al abrirlos) añadía llamadas y concesiones de entrega en cada reproducción. */
+ async resolveAuxiliaries(slug:string,owner:string|null,only?:readonly string[],known?:{title:Record<string,unknown>;junction:Awaited<ReturnType<MediaRepository['titleMedia']>>}) {
+  const title=known?.title??await this.title(slug,owner);const junction=known?.junction??await this.repo.titleMedia(Number(title.id));
+  const media=await Promise.all(junction.filter(m=>m.role!=='main' && (!only || only.includes(m.role))).map(async m=>{
    const context=await this.context(m.asset_id,owner,slug);const provider=this.service.registry.get(context.asset.provider);
    const common={mediaId:m.asset_id,role:m.role,slot:m.slot,language:m.language,position:m.position};
    if(['trailer','extras','intro'].includes(m.role)){const source=playbackSourceSchema.parse(await provider.getPlayback(this.base(context,title)));if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);return {...common,source,url:source.kind==='youtube'?null:source.url,expiresAt:source.expiresAt};}
@@ -83,11 +117,13 @@ export class PlaybackService {
   }));return {version:1 as const,media};
  }
  async deliverAuxiliary(id:string,owner:string|null):Promise<Response> {
-  const context=await this.context(id,owner);if(!['subtitles','poster','poster_h','poster_v','avatar','banner'].includes(context.asset.role))throw notFound();
+  const context=await this.context(id,owner);if(!['subtitles','poster','poster_h','poster_v','avatar','extra_image','banner'].includes(context.asset.role))throw notFound();
   const provider=this.service.registry.get(context.asset.provider);
+  const cacheable=CACHEABLE_IMAGE_ROLES.includes(context.asset.role) && await this.repo.isPublishedTitleAsset(id);
   if(provider.readAuxiliary){const result=await provider.readAuxiliary(context);if(result.bytes.byteLength>4*1024**2 || !['text/vtt','image/webp'].includes(result.mimeType))throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-   return new Response(Buffer.from(result.bytes),{headers:{'Content-Type':result.mimeType,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});}
-  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);return new Response(null,{status:307,headers:{Location:mediaUrlSchema.parse(delivery.url),'Cache-Control':'private, no-store'}});
+   return new Response(Buffer.from(result.bytes),{headers:{'Content-Type':result.mimeType,'Cache-Control':cacheable?PUBLIC_IMAGE_CACHE:'private, no-store','X-Content-Type-Options':'nosniff'}});}
+  const delivery=await provider.getAuxiliaryDelivery(context);await this.registerDelivery(delivery.url,delivery.expiresAt,context,owner,null);
+  return new Response(null,{status:307,headers:{'Cache-Control':cacheable?PUBLIC_IMAGE_CACHE:'private, no-store',Location:mediaUrlSchema.parse(delivery.url)}});
  }
  async deliverHls(id:string,relative:string,owner:string|null):Promise<Response> {
   safeMediaPath(relative);const output=await this.repo.authorizedOutput(id,relative,owner);

@@ -5,7 +5,7 @@ import { DropdownMenu } from "radix-ui";
 import { useState, type ReactNode } from "react";
 import { Check, NavArrowDown } from "@/components/ui/icons";
 import { Poster } from "./studio-ui";
-import type { StudioTitle } from "./studio-types";
+import type { StudioTitle, ViewsTrendPoint } from "./studio-types";
 
 type AudienceView = "espectadores" | "valoracion" | "comentarios" | "obras";
 
@@ -19,14 +19,11 @@ const VIEWS: readonly { id: AudienceView; label: string; hint: string }[] = [
 
 const number = (n: number) => n.toLocaleString("es-ES");
 
-/** Los últimos meses, para el eje del gráfico. */
-function lastMonths(count = 6): string[] {
-  const now = new Date();
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1);
-    const m = d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
-    return m.charAt(0).toUpperCase() + m.slice(1);
-  });
+/** «2026-10» → «Oct», para el eje del gráfico. */
+function monthLabel(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  const m = new Date(year!, month! - 1, 1).toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+  return m.charAt(0).toUpperCase() + m.slice(1);
 }
 
 /** Aviso de «todavía no hay datos», encima del contenido vacío. */
@@ -46,11 +43,22 @@ function BigFigure({ value, unit }: { readonly value: string; readonly unit: str
   );
 }
 
-function ViewersView({ views }: { readonly views: number }) {
-  const months = lastMonths();
+const CHART_W = 600;
+const CHART_H = 170;
+const CHART_TOP = 20;
+const CHART_BASE = 155;
+
+/** Espectadores: personas distintas que han visto alguna obra (cada persona cuenta una vez), y cuántas estuvieron activas cada mes. */
+function ViewersView({ totalViewers, trend }: { readonly totalViewers: number | null; readonly trend: readonly ViewsTrendPoint[] }) {
+  const max = Math.max(1, ...trend.map((p) => p.v));
+  const step = trend.length > 1 ? CHART_W / (trend.length - 1) : 0;
+  const points = trend.map((p, i) => `${(i * step).toFixed(1)},${(CHART_BASE - (p.v / max) * (CHART_BASE - CHART_TOP)).toFixed(1)}`);
+  const line = points.length > 0 ? `M${points.join(" L")}` : "";
+  const area = points.length > 0 ? `${line} L${CHART_W},${CHART_H} L0,${CHART_H} Z` : "";
   return (
     <div className="flex h-full flex-col">
-      <BigFigure value={number(views)} unit="espectadores" />
+      <BigFigure value={totalViewers === null ? "—" : number(totalViewers)} unit={totalViewers === 1 ? "espectador" : "espectadores"} />
+      <p className="mt-1 text-[12.5px] text-[#7C7C7C]">Personas distintas que han visto alguna de tus obras, tú incluido. Cada persona cuenta una vez.</p>
       <div className="relative mt-5 min-h-[170px] flex-1">
         <svg aria-hidden="true" className="absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 600 170">
           <defs>
@@ -60,12 +68,13 @@ function ViewersView({ views }: { readonly views: number }) {
             </linearGradient>
           </defs>
           {[0, 1, 2, 3].map((i) => <line key={i} x1="0" x2="600" y1={20 + i * 45} y2={20 + i * 45} stroke="rgba(255,255,255,0.06)" strokeDasharray="3 6" />)}
-          <path d="M0 155 H600 V170 H0 Z" fill="url(#aud-fill)" />
-          <line x1="0" x2="600" y1="155" y2="155" stroke="#22B16B" strokeOpacity="0.55" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          {area && <path d={area} fill="url(#aud-fill)" />}
+          {line && <path d={line} fill="none" stroke="#22B16B" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
         </svg>
-        <EmptyNote>Aún no hay visualizaciones: aparecerán aquí en cuanto se vean tus obras</EmptyNote>
+        {totalViewers === null && <EmptyNote>No se han podido cargar tus espectadores. Recarga la página para reintentarlo</EmptyNote>}
+        {totalViewers === 0 && <EmptyNote>Aún no hay espectadores: aparecerán aquí en cuanto alguien vea tus obras</EmptyNote>}
       </div>
-      <div aria-hidden="true" className="mt-2 flex justify-between text-[12px] text-[#7C7C7C]">{months.map((m) => <span key={m}>{m}</span>)}</div>
+      <div className="mt-2 flex justify-between text-[12px] text-[#7C7C7C]">{trend.map((p) => <span key={p.m} title={`${number(p.v)} ${p.v === 1 ? "persona activa" : "personas activas"} en el mes`}>{monthLabel(p.m)}</span>)}</div>
     </div>
   );
 }
@@ -81,6 +90,7 @@ function TitlesView({ titles }: { readonly titles: readonly StudioTitle[] }) {
   return (
     <div className="flex h-full flex-col">
       <BigFigure value={number(titles.length)} unit={titles.length === 1 ? "obra" : "obras"} />
+      <p className="mt-1 text-[12.5px] text-[#7C7C7C]">Espectadores distintos de cada obra, de más a menos.</p>
       <ol className="mt-4 flex flex-col gap-2.5">
         {ranked.map((t, i) => (
           <li key={t.id} className="flex items-center gap-3">
@@ -222,10 +232,11 @@ function OptionPicker<T extends string>({ value, options, onChange, label, small
  * Audiencia: una sola tarjeta que cambia de contenido con el desplegable (espectadores, por obra, valoración,
  * comentarios). Sin datos reales todavía, cada vista lo dice en lugar de inventar cifras.
  */
-export function AudiencePanel({ titles }: { readonly titles: readonly StudioTitle[] }) {
+export function AudiencePanel({ titles, totalViewers, trend }: {
+  readonly titles: readonly StudioTitle[]; readonly totalViewers: number | null; readonly trend: readonly ViewsTrendPoint[];
+}) {
   const reduceMotion = useReducedMotion();
   const [view, setView] = useState<AudienceView>("espectadores");
-  const views = titles.reduce((sum, t) => sum + (t.views ?? 0), 0);
 
   return (
     <div className="flex h-full min-h-[360px] flex-col p-6">
@@ -238,7 +249,7 @@ export function AudiencePanel({ titles }: { readonly titles: readonly StudioTitl
           <motion.div key={view} className="h-full"
             initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-            {view === "espectadores" && <ViewersView views={views} />}
+            {view === "espectadores" && <ViewersView totalViewers={totalViewers} trend={trend} />}
             {view === "obras" && <TitlesView titles={titles} />}
             {view === "valoracion" && <RatingView titles={titles} />}
             {view === "comentarios" && <CommentsView titles={titles} />}

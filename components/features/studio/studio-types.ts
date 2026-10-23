@@ -22,6 +22,10 @@ export interface StudioTitle {
   subtitles: string[];
   poster: PosterData;
   r2PosterUrl?: string;
+  /** Recién borrada: la tarjeta está saliendo de la lista con una animación corta. */
+  deleting?: boolean;
+  /** Lo que ocupa en el almacenamiento (`peliculas.file_size_bytes`). El panel suma esto de las obras que siguen existiendo. */
+  sizeBytes?: number;
   views?: number;
   rating?: number;
   ratingCount?: number;
@@ -77,6 +81,8 @@ export interface StudioData {
   creator: Creator;
   /** Bytes que ocupan los títulos del creador (suma de `peliculas.file_size_bytes`). */
   storageUsedBytes: number;
+  /** Obras ya borradas por el creador cuyo espacio el servidor todavía está liberando (no se listan). */
+  freeing?: readonly { id: string; sizeBytes: number }[];
   titles: StudioTitle[];
   recentComments: CreatorComment[];
   viewsTrend: ViewsTrendPoint[];

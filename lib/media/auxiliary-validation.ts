@@ -35,7 +35,9 @@ export async function normalizeImage(input: Uint8Array, role: string): Promise<N
   try {
     const image = sharp(input, { limitInputPixels: 25_000_000, animated: false });
     const metadata = await image.metadata();
-    if (!['jpeg', 'png', 'webp', 'avif'].includes(metadata.format ?? '') || !metadata.width || !metadata.height) {
+    // sharp informa de un AVIF como `heif` con compresión AV1; un HEIC (foto de iPhone, HEVC) no se admite.
+    const isAvif = metadata.format === 'heif' && metadata.compression === 'av1';
+    if (!(['jpeg', 'png', 'webp'].includes(metadata.format ?? '') || isAvif) || !metadata.width || !metadata.height) {
       throw new AuxiliaryValidationError('IMAGE_INVALID');
     }
     const normalized = await image.rotate().resize({ width: role === 'avatar' ? 512 : 2400, height: 2400, fit: 'inside', withoutEnlargement: true })

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { workPath } from "@/lib/catalog/work-path";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Undo as RotateCcw, Redo as RotateCw, SkipPrev as SkipBack, SkipNext as SkipForward, SoundHigh as Volume2, SoundOff as VolumeX, Maximize, Collapse as Minimize2, ArrowLeft, Settings, Airplay, Xmark as X } from "@/components/ui/icons";
@@ -793,7 +794,9 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke="#7C7C7C" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="max-w-xs text-center text-[15px] font-semibold leading-relaxed text-white/80">
-            {managed.error ?? "Sin conexión. Comprueba tu internet e inténtalo de nuevo."}
+            {managed.error ?? (typeof navigator !== "undefined" && !navigator.onLine
+              ? "Sin conexión. Comprueba tu internet e inténtalo de nuevo."
+              : "La reproducción se ha detenido. Pulsa Reintentar.")}
           </p>
           {!managed.revoked && <button
             type="button"
@@ -1071,7 +1074,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
             navigatedRef.current = true;
             countdownDismissRef.current = true;
             setCountdownSecs(null);
-            router.push(`/cortos/${item.id}?valorar=1`);
+            router.push(`${workPath(item)}?valorar=1`);
           }}
         />
       )}

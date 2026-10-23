@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { workPath } from "@/lib/catalog/work-path";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -33,7 +34,7 @@ const RECOMMENDED_COLLECTIONS = 6;
 const HERO_CROSSFADE_MS = 1000;
 
 function hrefFor(item: MovieMedia) {
-  return `/cortos/${item.id}`;
+  return workPath(item);
 }
 
 export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {

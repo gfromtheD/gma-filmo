@@ -24,6 +24,7 @@ export const UPLOAD_CAPS: Record<string, number> = {
   subtitles: 5   * 1024 * 1024,   // 5 MB
   avatar:    5   * 1024 * 1024,   // 5 MB
   banner:    10  * 1024 * 1024,   // 10 MB
+  extra_image: 10 * 1024 * 1024,  // 10 MB
 };
 
 export const SESSION_CAP = 6  * 1024 ** 3;  // 6 GB per upload session

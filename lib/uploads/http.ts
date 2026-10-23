@@ -20,6 +20,13 @@ export async function jsonBody(request:Request) {
  const raw=await request.text();if(Buffer.byteLength(raw,'utf8')>24000)throw new UploadError('UPLOAD_INVALID_INPUT',400);
  try{return JSON.parse(raw) as unknown;}catch{throw new UploadError('UPLOAD_INVALID_INPUT',400);}
 }
+/** Como `jsonBody`, pero un cuerpo vacío (p. ej. el DELETE histórico del panel) devuelve `undefined` en vez de fallar. En el servidor un
+ * request sin cuerpo trae igualmente un flujo vacío, así que no se puede decidir mirando `request.body`. */
+export async function optionalJsonBody(request:Request) {
+ const raw=await request.text();if(Buffer.byteLength(raw,'utf8')>24000)throw new UploadError('UPLOAD_INVALID_INPUT',400);
+ if(raw.trim()==='')return undefined;
+ try{return JSON.parse(raw) as unknown;}catch{throw new UploadError('UPLOAD_INVALID_INPUT',400);}
+}
 export async function respond(action:()=>Promise<unknown>,status=200) {
  try {const result=await action();if(result instanceof Response)return result;return NextResponse.json(result,{status,headers:{'Cache-Control':'private, no-store'}});}
   catch(e) {
@@ -27,6 +34,8 @@ export async function respond(action:()=>Promise<unknown>,status=200) {
    if(e instanceof MediaError) return NextResponse.json(mediaErrorResponse(e),{status:e.status,headers:{'Cache-Control':'no-store'}});
    if(!(e instanceof UploadError)&&!(e instanceof ZodError))console.error('[uploads] unexpected failure',describeFailure(e));
    const error=e instanceof UploadError?e:e instanceof ZodError?new UploadError('UPLOAD_INVALID_INPUT',400):new UploadError('UPLOAD_UNAVAILABLE',503);
-   return NextResponse.json({error:{code:error.code,message:error.code,retryable:error.status>=500 || error.code==='UPLOAD_NOT_COMPLETE'},requestId:randomUUID()},{status:error.status,headers:{'Cache-Control':'no-store'}});
+   // Qué campos rechazó el esquema (solo sus nombres, nunca los valores): el cliente los traduce para decirle al creador cuál corregir.
+   const fields=e instanceof ZodError?[...new Set(e.issues.map(i=>i.path.filter(p=>typeof p==='string').slice(0,2).join('.')).filter(Boolean).map(name=>name.slice(0,60)))].slice(0,10):undefined;
+   return NextResponse.json({error:{code:error.code,message:error.code,retryable:error.status>=500 || error.code==='UPLOAD_NOT_COMPLETE',...(fields&&fields.length?{fields}:{})},requestId:randomUUID()},{status:error.status,headers:{'Cache-Control':'no-store'}});
  }
 }

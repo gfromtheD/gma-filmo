@@ -13,6 +13,15 @@ export interface PeerTubeGatewayReceiptLookup {
 const proofSchema = z.object({ kind: z.literal('peertube-gateway'), uploadId: z.string().min(1), videoUUID: z.string().uuid(), totalBytes: z.number().int().positive(),
   upstreamReceivedBytes: z.number().int().nonnegative(), gmaSha256: z.string().regex(/^[a-f0-9]{64}$/), correlationName: z.string().min(1), finalizingAt: z.string().datetime() }).strict();
 
+/** Margen tras el último PUT para que PeerTube cree el vídeo; pasado, si no existe, ya no existirá. */
+export const FINALIZATION_SETTLE_MS = 15 * 60_000;
+
+/**
+ * Trozo de subida hacia la pasarela. Cada trozo paga unos trámites fijos (permiso, turno, registro en la base de datos y
+ * entrega a PeerTube, ~1,5 s); con 32 MiB se pagan la cuarta parte de veces que con 8 MiB.
+ */
+export const UPLOAD_CHUNK_BYTES = 32 * 1024 * 1024;
+
 const VIDEO_EXTENSIONS: Readonly<Record<string, string>> = { 'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/x-matroska': '.mkv', 'video/webm': '.webm' };
 
 /** PeerTube validates the extension of `filename`; the user's own file name is never forwarded. */
@@ -74,7 +83,7 @@ export class PeerTubeMediaProvider implements MediaProvider {
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > context.session.expected_input_bytes) throw new MediaError('MEDIA_PROVIDER_UNAVAILABLE');
     const grant=this.issuer.issue({sessionId:context.session.id,assetId:context.asset.id,generation:context.transferGeneration,scope:'upload',method:'PUT',namespace:`transfer/${context.session.id}/${context.transferGeneration}/`,expectedBytes:context.session.expected_input_bytes,ttlSeconds:900});
     return { protocol: 'uploadx' as const, url: `${this.gatewayOrigin.origin}/transfer/${context.session.id}`,
-      headers: {Authorization:`Bearer ${grant.token}`}, chunkSize: 8 * 1024 * 1024, offset, totalBytes: context.session.expected_input_bytes, expiresAt: new Date(grant.expiresAt).toISOString() };
+      headers: {Authorization:`Bearer ${grant.token}`}, chunkSize: UPLOAD_CHUNK_BYTES, offset, totalBytes: context.session.expected_input_bytes, expiresAt: new Date(grant.expiresAt).toISOString() };
   }
 
   private async finalReceipt(context: ProviderUploadContext): Promise<UploadReceipt> {
@@ -146,10 +155,10 @@ export class PeerTubeMediaProvider implements MediaProvider {
 
   async getPlayback(context: ProviderPlaybackContext): Promise<PlaybackSource> {
     if (!context.asset.provider_ref || context.asset.state !== 'ready') throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
-    const video = await this.client.getVideo(context.asset.provider_ref);
+    // El vídeo en PeerTube y el recibo de la subida (base de datos) no dependen entre sí: se piden a la vez.
+    const [video, receipt] = await Promise.all([this.client.getVideo(context.asset.provider_ref), this.receipts.get(context)]);
     if (!video || mapPeerTubeState(video.stateId).status !== 'published' || video.duration <= 0 || video.streamingPlaylists.length === 0) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     this.client.validatePlaylistReference(video.streamingPlaylists[0]!.playlistUrl);
-    const receipt = await this.receipts.get(context);
     const proof = receipt ? proofSchema.safeParse(receipt.proof) : null;
     if (!receipt?.complete || !proof?.success || proof.data.videoUUID !== video.uuid) throw new MediaError('MEDIA_PLAYBACK_UNSUPPORTED');
     const namespace = `asset/${context.asset.id}/${context.processingGeneration}/`;
@@ -202,7 +211,12 @@ export class PeerTubeMediaProvider implements MediaProvider {
         return {absent:false,writesRevoked:cancelled.writesRevoked,safeAfter:context.session.expires_at};
       }
       const recovered=await this.client.recoverVideoByCorrelation(checkpoint.data.correlationName);
-      if(!recovered)return {absent:false,writesRevoked:true,safeAfter:context.session.expires_at};
+      // PeerTube rechazó el último PUT (p. ej. un archivo que no es vídeo) y nunca creó el vídeo: con la subida ya cancelada
+      // y pasado el margen, ya no puede aparecer. Sin esto el borrado se reintentaba para siempre.
+      if(!recovered){
+        const settled=context.clock.now()-Date.parse(checkpoint.data.finalizingAt)>=FINALIZATION_SETTLE_MS;
+        return settled?{absent:true,writesRevoked:true,safeAfter:null}:{absent:false,writesRevoked:true,safeAfter:context.session.expires_at};
+      }
       const absent=await this.client.deleteVideo(recovered);
       return {absent,writesRevoked:absent,safeAfter:absent?null:context.session.expires_at};
     }

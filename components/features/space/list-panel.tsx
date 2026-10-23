@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { workPath } from "@/lib/catalog/work-path";
 import { DropdownMenu } from "radix-ui";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
@@ -147,7 +148,7 @@ export function ListPanel({ collection, ratingEntries, onRemove, onRename, onDel
                   initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
                   className="group relative">
-                  <Link href={`/cortos/${item.id}`} className="block rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  <Link href={workPath(item)} className="block rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                     <span className="block overflow-hidden rounded-[10px] shadow-[0_0_0_1px_rgba(255,255,255,0.06)] transition-transform duration-300 group-hover:-translate-y-1 motion-reduce:transition-none">
                       <PosterArt style={item.style} title={item.title} kind="movie" ratio="portrait" imageUrl={item.imageUrl} />
                     </span>

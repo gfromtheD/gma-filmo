@@ -4,6 +4,8 @@ import { transferAsset } from '@/lib/media/transports';
 import { uploadMutationEnvelopeSchema, transferDescriptorSchema } from '@/lib/media/contracts';
 import type { AssetRole, UploadSessionDTO, MediaAssetDTO, TransferDescriptor } from '@/types/media-engine';
 import { hashFile, uploadApi } from './browser';
+import { retryOnRevisionConflict, retryWhileBusy } from './retry-conflict';
+import { isLiveUpload } from './live-upload';
 
 export const managedDraftSchema = z.object({ id: z.string().uuid(), purpose: z.enum(['title', 'avatar', 'banner']), state: z.enum(['draft', 'published', 'abandoned']),
   revision: z.number().int().nonnegative(), titleId: z.number().nullable(), metadata: z.record(z.string(), z.unknown()), createdAt: z.string(), updatedAt: z.string() }).strict();
@@ -14,9 +16,10 @@ export type ManagedDraftDetail = z.infer<typeof managedDraftDetailSchema>;
 const managedDraftLoads = new Map<string, Promise<ManagedDraftDetail>>();
 
 export function buildMainMediaPublishPayload(detail: ManagedDraftDetail, selectedMediaId: string) {
-  const main = detail.uploads.find(item => item.session.role === 'main' && item.asset.mediaId === selectedMediaId);
+  const live = detail.uploads.filter(isLiveUpload);
+  const main = live.find(item => item.session.role === 'main' && item.asset.mediaId === selectedMediaId);
   if (!main || main.asset.status !== 'ready') throw new Error('UPLOAD_MAIN_NOT_READY');
-  if (detail.uploads.some(item => item.asset.status !== 'ready')) throw new Error('UPLOAD_ATTACHMENTS_NOT_READY');
+  if (live.some(item => item.asset.status !== 'ready')) throw new Error('UPLOAD_ATTACHMENTS_NOT_READY');
   return { draft_id: detail.draft.id, revision: detail.draft.revision, main_media_id: main.asset.mediaId } as const;
 }
 
@@ -56,11 +59,11 @@ export async function saveManagedMetadata(detail: ManagedDraftDetail, metadata: 
 
 export async function uploadManagedAsset(input: { file: File; role: AssetRole; language?: string; draft: z.infer<typeof managedDraftSchema>; idempotencyKey: string;
   sessionId?: string; signal: AbortSignal; onEnvelope?: (envelope: ManagedEnvelope) => void; onProgress?: (percent: number) => void;
-  onState?: (state: string) => void; processingWaitMs?: number }): Promise<ManagedEnvelope> {
+  onState?: (state: string) => void; onHashProgress?: (fraction: number) => void; processingWaitMs?: number }): Promise<ManagedEnvelope> {
   const { file, role, draft, signal } = input;
   if (!Number.isSafeInteger(file.size) || file.size < 1) throw new ManagedUploadFailure('El archivo está vacío o no es válido');
   input.onState?.('Comprobando identidad');
-  const sha256 = await hashFile(file, signal);
+  const sha256 = await hashFile(file, signal, input.onHashProgress);
   let envelope: ManagedEnvelope;
   if (input.sessionId) {
     const previous = managedEnvelopeSchema.parse(await uploadApi(`/api/uploads/${input.sessionId}`));
@@ -69,13 +72,16 @@ export async function uploadManagedAsset(input: { file: File; role: AssetRole; l
     });
     envelope = managedEnvelopeSchema.parse(resumed);
   } else {
-    const currentDraftResponse = await uploadApi<{ draft: unknown }>(`/api/upload-drafts/${draft.id}`);
-    const currentDraft = managedDraftSchema.parse(currentDraftResponse.draft);
-    const reserved = await uploadApi(`/api/uploads`, 'POST', {
-      draft_id: draft.id, revision: currentDraft.revision, role, bytes: file.size, sha256,
-      file_name: file.name, content_type: file.type || 'application/octet-stream',
-      ...(role === 'subtitles' ? { language: input.language ?? 'und' } : {}), idempotency_key: input.idempotencyKey,
-    });
+    // Dos subidas casi simultáneas leen la misma revisión del borrador y solo una puede reservar: la otra relee y reintenta.
+    const reserved = await retryWhileBusy(() => retryOnRevisionConflict(async () => {
+      const currentDraftResponse = await uploadApi<{ draft: unknown }>(`/api/upload-drafts/${draft.id}`);
+      const currentDraft = managedDraftSchema.parse(currentDraftResponse.draft);
+      return uploadApi(`/api/uploads`, 'POST', {
+        draft_id: draft.id, revision: currentDraft.revision, role, bytes: file.size, sha256,
+        file_name: file.name, content_type: file.type || 'application/octet-stream',
+        ...(role === 'subtitles' ? { language: input.language ?? 'und' } : {}), idempotency_key: input.idempotencyKey,
+      });
+    }));
     envelope = managedEnvelopeSchema.parse(reserved);
   }
   input.onEnvelope?.(envelope);

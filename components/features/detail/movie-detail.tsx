@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { workPath } from "@/lib/catalog/work-path";
 import { useRouter } from "next/navigation";
 import { DetailsTab } from "@/components/features/detail/details-tab";
 import { DETAIL_TERTIARY_ACTION, DetailHeader } from "@/components/features/detail/detail-header";
@@ -149,7 +150,7 @@ export function MovieDetail({ movie, related, creator, extras: initialExtras = [
         {activeTab === "extras" && extras.length > 0 && <ExtrasPanel extras={extras} />}
 
         {activeTab === "similares" && (
-          <RelatedGrid related={related} onNavigate={(id) => router.push(`/cortos/${id}`)} />
+          <RelatedGrid related={related} onNavigate={(id) => router.push(workPath(related.find((r) => r.id === id) ?? { id }))} />
         )}
 
         {activeTab === "valoraciones" && (

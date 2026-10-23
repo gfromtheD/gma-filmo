@@ -20,12 +20,18 @@ export const UPLOAD_STEPS: readonly UploadStepInfo[] = [
   { id: "datos", label: "Completa los detalles" },
 ];
 
+/** Etapa de una subida: comprobar el archivo en el navegador, enviarlo y procesarlo en el servidor. */
+export type UploadPhase = "checking" | "uploading" | "processing";
+
 /** Un archivo del borrador: lo que se sabe de él y cómo va su subida. */
 export interface UploadedAsset {
   readonly name: string;
   readonly sizeBytes: number;
   readonly url: string | null;
   readonly status: "pending" | "uploading" | "processing" | "done" | "error";
+  /** Etapa en curso mientras `status` es «uploading» o «processing». Sin dato, se entiende «uploading». */
+  readonly phase?: UploadPhase;
+  /** Avance (0–100) de la etapa en curso, no del conjunto. */
   readonly progress?: number;
   readonly error?: string;
   /** Subido en modo local: validado, pero todavía no enviado al motor de alojamiento. */
@@ -144,7 +150,11 @@ function reviewVideo(d: UploadDraft): string[] {
 
 /** El tráiler y los extras son opcionales, pero lo que se añade tiene que estar bien. */
 function reviewAwards(d: UploadDraft): string[] {
-  return d.awards.flatMap((a, i) => (filled(a.festival) ? [] : [`Premio o selección ${i + 1}: el festival`]));
+  return d.awards.flatMap((a, i) => [
+    ...(filled(a.festival) ? [] : [`Premio o selección ${i + 1}: el festival`]),
+    ...(a.festival.trim().length > LIMITS.awardChars ? [`Premio o selección ${i + 1}: el festival es demasiado largo (máximo ${LIMITS.awardChars} caracteres)`] : []),
+    ...(a.award.trim().length > LIMITS.awardChars ? [`Premio o selección ${i + 1}: el premio es demasiado largo (máximo ${LIMITS.awardChars} caracteres)`] : []),
+  ]);
 }
 
 function reviewExtras(d: UploadDraft): string[] {
@@ -164,6 +174,10 @@ function reviewFicha(d: UploadDraft): string[] {
   if (!filled(d.synopsisShort)) missing.push("Sinopsis corta");
   else if (d.synopsisShort.length > LIMITS.shortSynopsisChars) missing.push(`Sinopsis corta de ${LIMITS.shortSynopsisChars} caracteres como máximo`);
   if (!filled(d.synopsisLong)) missing.push("Sinopsis larga");
+  else if (d.synopsisLong.length > LIMITS.longSynopsisChars) missing.push(`Sinopsis larga de ${LIMITS.longSynopsisChars} caracteres como máximo`);
+  if (d.originalTitle.trim().length > LIMITS.originalTitleChars) {
+    missing.push(`Título original de ${LIMITS.originalTitleChars} caracteres como máximo (tienes ${d.originalTitle.trim().length})`);
+  }
   for (const slot of IMAGE_SLOTS) {
     const asset = d.images[slot.id];
     if (asset) missing.push(...assetProblems(slot.label, asset));
@@ -176,6 +190,7 @@ function reviewFicha(d: UploadDraft): string[] {
 /** Datos a elegir: técnicos, idioma y subtítulos, reparto y equipo, y premios. */
 function reviewData(d: UploadDraft): string[] {
   const missing: string[] = [...reviewTeam(d), ...reviewAwards(d)];
+  if (d.ai.used && d.ai.note.trim().length > LIMITS.aiNoteChars) missing.push(`Nota sobre la IA de ${LIMITS.aiNoteChars} caracteres como máximo`);
   if (!d.durationMinutes || d.durationMinutes <= 0) missing.push("Duración");
   if (!d.releaseYear) missing.push("Año de estreno");
   else if (d.releaseYear < LIMITS.firstYear || d.releaseYear > new Date().getFullYear()) missing.push("Un año de estreno válido");
@@ -196,6 +211,7 @@ function reviewTeam(d: UploadDraft): string[] {
   for (const [i, m] of d.team.entries()) {
     if (!filled(m.name)) missing.push(`Persona ${i + 1}: el nombre`);
     else if (!CREW_ROLES.includes(m.role)) missing.push(`${m.name}: su papel`);
+    if (m.name.trim().length > LIMITS.teamNameChars) missing.push(`Persona ${i + 1}: el nombre es demasiado largo (máximo ${LIMITS.teamNameChars} caracteres)`);
   }
   return missing;
 }
