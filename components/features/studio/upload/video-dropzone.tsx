@@ -9,6 +9,9 @@ import { UploadProgress } from "./upload-progress";
 import type { StepProps } from "./step-props";
 import type { UploadedAsset } from "@/lib/studio/upload-draft";
 
+/** Lo mismo que aplica el servidor (UPLOAD_LIMITS y duración máxima por rol). */
+const SIZE_HINT: Record<VideoDropzoneProps["slot"], string> = { video: "hasta 4 GB y 4 h", trailer: "hasta 1 GB y 10 min" };
+
 interface VideoDropzoneProps {
   /** Hueco del borrador: `video` o `trailer`. */
   readonly slot: "video" | "trailer";
@@ -91,7 +94,7 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
               <p className="mt-1 text-[14px] text-[#BBBBBB]">o pulsa para elegirlo desde tu equipo</p>
             </div>
             <span aria-hidden="true" className={`${BUTTON_SECONDARY} pointer-events-none`}>Elegir archivo</span>
-            <p className="text-[12.5px] text-[#7C7C7C]">MP4, MOV, MKV… hasta 4 GB</p>
+            <p className="text-[12.5px] text-[#7C7C7C]">MP4, MOV, MKV… {SIZE_HINT[slot]}</p>
           </>
         )}
 
