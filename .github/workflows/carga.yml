@@ -27,6 +27,9 @@ on:
       titulos:
         description: "Slugs de obras del motor para «ver» (separados por comas)"
         default: ""
+      colchon:
+        description: "«ver»: segundos de vídeo que se bajan sin esperar (100000 = sin pausa, mide la red al máximo)"
+        default: "30"
 
 permissions:
   contents: read
@@ -65,6 +68,7 @@ jobs:
           FORMA: ${{ inputs.forma }}
           MESETA: ${{ inputs.meseta }}
           TITULOS: ${{ inputs.titulos }}
+          COLCHON: ${{ inputs.colchon }}
         run: k6 run --quiet --summary-export "resumen-${{ matrix.maquina }}.json" "loadtest/${{ inputs.escenario }}.js"
       - uses: actions/upload-artifact@v4
         if: steps.turno.outputs.activa == 'true'
