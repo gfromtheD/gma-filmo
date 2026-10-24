@@ -70,7 +70,7 @@ export default function Fixture() {
     case "studio-profile": content = <ProfileView data={data} onToast={noop} />; break;
     case "studio-stats": content = <StatsView data={data} onToast={noop} />; break;
     case "studio-upload": content = <UploadWizard />; break;
-    case "studio-edit": content = <EditModal data={data} title={title} onClose={noop} onToast={noop} />; break;
+    case "studio-edit": content = <EditModal title={title} onClose={noop} onToast={noop} onSave={async () => false} />; break;
     case "viewer-setup": content = <ViewerSetup />; break;
     case "creator-setup": content = <CreatorSetup />; break;
     case "player-hls": return <div data-ready="player-hls"><PlayerScreen item={{...item,playbackKind:"r2_hls"}} creator={creator} /></div>;
