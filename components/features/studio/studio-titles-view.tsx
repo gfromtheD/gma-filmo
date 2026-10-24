@@ -4,7 +4,7 @@ import styles from "./studio-responsive.module.css";
 
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState } from "react";
-import { Plus, Search, Eye, EyeClosed as EyeOff, EditPencil as Pencil, Trash as Trash2, MoreHoriz as MoreHorizontal, RefreshDouble as RefreshCw, StatsReport as BarChart2, Xmark as X, Clock, WarningTriangle as AlertTriangle, Upload, ViewGrid as LayoutGrid, List, CheckCircle as CheckCircle2 } from "@/components/ui/icons";
+import { Plus, Search, Eye, EyeClosed as EyeOff, EditPencil as Pencil, Trash as Trash2, MoreHoriz as MoreHorizontal, StatsReport as BarChart2, Xmark as X, Clock, WarningTriangle as AlertTriangle, ViewGrid as LayoutGrid, List, CheckCircle as CheckCircle2 } from "@/components/ui/icons";
 import { DeletingVeil } from "./studio-deleting";
 import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
@@ -53,21 +53,19 @@ function actionsFor(t: StudioTitle, handlers: {
     { divider: true },
     { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
+  // GMA publica al momento: no hay revisión editorial, así que no se ofrece «enviar» ni «retirar» de una revisión que no existe.
   if (t.status === "borrador") return [
     { label: "Continuar edición", icon: <Pencil size={16} />, onClick: () => handlers.onEdit(t) },
-    { label: "Enviar a revisión", icon: <Upload size={16} />, onClick: () => handlers.onToast(`«${t.title}» enviado a revisión`) },
     { divider: true },
     { label: "Eliminar borrador", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
   if (t.status === "revision") return [
     ...base,
     { label: "Editar metadatos", icon: <Pencil size={16} />, onClick: () => handlers.onEdit(t) },
-    { divider: true },
-    { label: "Retirar de revisión", icon: <X size={16} />, onClick: () => handlers.onToast(`«${t.title}» retirado de revisión`) },
   ];
   return [
     ...base,
-    { label: "Editar y reenviar", icon: <RefreshCw size={16} />, onClick: () => handlers.onEdit(t) },
+    { label: "Editar metadatos", icon: <Pencil size={16} />, onClick: () => handlers.onEdit(t) },
     { divider: true },
     { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
@@ -247,7 +245,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
             )}
             <button className="st-btn st-btn-accent" style={{ flex: 1, justifyContent: "center" }}
               onClick={() => { onEdit(t); onClose(); }}>
-              {t.status === "rechazado" ? <><RefreshCw size={16} /> Editar y reenviar</> : <><Pencil size={16} /> Editar metadatos</>}
+              <Pencil size={16} /> Editar metadatos
             </button>
           </div>
         </div>

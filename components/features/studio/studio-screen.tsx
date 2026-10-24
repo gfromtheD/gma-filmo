@@ -19,6 +19,7 @@ import { useAuth } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { applyAudience, audienceSchema } from "@/lib/studio/audience";
 import { toStudioTitleStatus } from "@/lib/studio-media/title-status";
+import { editMetadata, type TitleEditForm } from "@/lib/studio/title-edit";
 import type { StudioTitle, StudioTabId, StudioData, TitleStatus } from "./studio-types";
 export type { StudioTabId };
 
@@ -73,6 +74,11 @@ function withStatus(d: StudioData, slug: string, status: TitleStatus): StudioDat
 async function titleLifecycle() {
   const [{ createTitleLifecycle }, { uploadApi }] = await Promise.all([import("@/lib/studio-media/title-lifecycle"), import("@/lib/uploads/browser")]);
   return createTitleLifecycle({ api: uploadApi, engineEnabled: process.env.NEXT_PUBLIC_UPLOAD_ENGINE_V2 === "true", newKey: () => crypto.randomUUID() });
+}
+
+/** Mensaje para el creador; los códigos internos del motor no se enseñan. */
+function actionError(error: unknown, fallback: string): string {
+  return error instanceof Error && !error.message.startsWith("TITLE_ACTION_UNAVAILABLE") ? error.message : fallback;
 }
 
 function stopFreeing(d: StudioData, slugs: readonly string[]): StudioData {
@@ -219,8 +225,24 @@ export function StudioScreen() {
       setData((d) => withStatus(d, t.id, studioStatus({ status: result.status, media_delete_state: result.deletionState })));
       showToast(publish ? `«${t.title}» vuelve a estar publicada` : `«${t.title}» se ha despublicado`);
     } catch (error) {
-      const message = error instanceof Error && !error.message.startsWith("TITLE_ACTION_UNAVAILABLE") ? error.message : "No se pudo cambiar la publicación";
-      showToast(message, { error: true });
+      showToast(actionError(error, "No se pudo cambiar la publicación"), { error: true });
+    }
+  }, []);
+
+  /** «Editar metadatos»: se guarda en el servidor y la tarjeta se actualiza con lo guardado. */
+  const saveMetadata = useCallback(async (t: StudioTitle, form: TitleEditForm): Promise<boolean> => {
+    try {
+      const lifecycle = await titleLifecycle();
+      const { mediaRevision } = await lifecycle.detail(t.id);
+      const metadata = editMetadata(form);
+      await lifecycle.editMetadata(t.id, mediaRevision, metadata);
+      setData((d) => ({ ...d, titles: d.titles.map((x) => (x.id === t.id ? { ...x, title: metadata.title, description: metadata.synopsis ?? "",
+        language: metadata.language ?? x.language, year: Number(metadata.year) || x.year } : x)) }));
+      showToast(`Cambios guardados en «${metadata.title}»`);
+      return true;
+    } catch (error) {
+      showToast(actionError(error, "No se pudieron guardar los cambios"), { error: true });
+      return false;
     }
   }, []);
 
@@ -302,7 +324,7 @@ export function StudioScreen() {
       </div>
 
       {/* Edit modal */}
-      <EditModal title={editTitle} onClose={() => setEditTitle(null)} onToast={showToast} data={data} />
+      <EditModal title={editTitle} onClose={() => setEditTitle(null)} onToast={showToast} onSave={saveMetadata} />
       <DeleteTitleDialog title={deleteTarget} busy={deleteBusy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void confirmDelete()} />
 
       {/* Toast */}
