@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect, type ReactNode, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Star, Play, NavArrowDown as ChevronDown } from "@/components/ui/icons";
+import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Star, Play, NavArrowDown as ChevronDown, EyeClosed as EyeOff } from "@/components/ui/icons";
 import type { PosterData, TitleStatus } from "./studio-types";
 import { lockPageScroll } from "@/lib/scroll-lock";
 
@@ -36,6 +36,10 @@ export const STATUS_CONFIG: Record<TitleStatus, {
   rechazado: {
     label: "Rechazado", bg: "rgba(255,82,82,0.10)", border: "rgba(255,82,82,0.30)", fg: "#ff7b7b",
     icon: <AlertTriangle size={12} strokeWidth={2} />,
+  },
+  retirado: {
+    label: "Despublicado", bg: "rgba(124, 124, 124, 0.10)", border: "rgba(124, 124, 124, 0.30)", fg: "#A8A8A8",
+    icon: <EyeOff size={12} strokeWidth={2} />,
   },
 };
 

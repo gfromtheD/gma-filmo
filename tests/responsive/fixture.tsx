@@ -66,7 +66,7 @@ export default function Fixture() {
     case "creator": content = <CreatorProfilePage creator={creator} films={items} />; break;
     case "support": content = <CreatorSupportPage creator={creator} />; break;
     case "studio-home": content = <DashboardView data={data} onNav={noop} onOpenTitle={noop} />; break;
-    case "studio-titles": content = <TitlesView data={data} onNav={noop} onEditTitle={noop} onToast={noop} onDelete={noop} openTitle={openTitle} setOpenTitle={setOpenTitle} />; break;
+    case "studio-titles": content = <TitlesView data={data} onNav={noop} onEditTitle={noop} onToast={noop} onDelete={noop} onPublication={noop} openTitle={openTitle} setOpenTitle={setOpenTitle} />; break;
     case "studio-profile": content = <ProfileView data={data} onToast={noop} />; break;
     case "studio-stats": content = <StatsView data={data} onToast={noop} />; break;
     case "studio-upload": content = <UploadWizard />; break;

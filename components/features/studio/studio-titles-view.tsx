@@ -15,6 +15,8 @@ interface Props {
   onEditTitle: (t: StudioTitle) => void;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
   onDelete: (t: StudioTitle) => void;
+  /** Despublica (`false`) o vuelve a publicar (`true`) en el servidor. */
+  onPublication: (t: StudioTitle, publish: boolean) => void;
   openTitle: StudioTitle | null;
   setOpenTitle: (t: StudioTitle | null) => void;
 }
@@ -25,6 +27,7 @@ const FILTERS = [
   { id: "revision", label: "En revisión" },
   { id: "borrador", label: "Borradores" },
   { id: "rechazado", label: "Rechazados" },
+  { id: "retirado", label: "Despublicados" },
 ];
 
 function actionsFor(t: StudioTitle, handlers: {
@@ -33,6 +36,7 @@ function actionsFor(t: StudioTitle, handlers: {
   onToast: (msg: string, opts?: { error?: boolean }) => void;
   onDelete: (t: StudioTitle) => void;
   onOpen: (t: StudioTitle) => void;
+  onPublication: (t: StudioTitle, publish: boolean) => void;
 }): MenuItem[] {
   const base: MenuItem[] = [{ label: "Ver detalles", icon: <Eye size={16} />, onClick: () => handlers.onOpen(t) }];
   if (t.status === "publicado") return [
@@ -40,7 +44,13 @@ function actionsFor(t: StudioTitle, handlers: {
     { label: "Editar metadatos", icon: <Pencil size={16} />, onClick: () => handlers.onEdit(t) },
     { label: "Ver estadísticas", icon: <BarChart2 size={16} />, onClick: () => handlers.onStats(t) },
     { divider: true },
-    { label: "Despublicar", icon: <EyeOff size={16} />, onClick: () => handlers.onToast(`«${t.title}» se ha despublicado`) },
+    { label: "Despublicar", icon: <EyeOff size={16} />, onClick: () => handlers.onPublication(t, false) },
+    { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
+  ];
+  if (t.status === "retirado") return [
+    ...base,
+    { label: "Volver a publicar", icon: <Eye size={16} />, onClick: () => handlers.onPublication(t, true) },
+    { divider: true },
     { label: "Eliminar", icon: <Trash2 size={16} />, danger: true, onClick: () => handlers.onDelete(t) },
   ];
   if (t.status === "borrador") return [
@@ -80,6 +90,7 @@ interface Handlers {
   onStats: (t: StudioTitle) => void;
   onToast: (msg: string, opts?: { error?: boolean }) => void;
   onDelete: (t: StudioTitle) => void;
+  onPublication: (t: StudioTitle, publish: boolean) => void;
 }
 
 function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
@@ -122,6 +133,10 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
           <div style={{ height: 4, borderRadius: 999, background: C.w8, overflow: "hidden" }}>
             <div style={{ width: `${t.completeness}%`, height: "100%", background: C.accent, borderRadius: 999 }} />
           </div>
+        </div>
+      ) : t.status === "retirado" ? (
+        <div style={{ ...row(6), fontSize: 12.5, fontWeight: 600, color: C.textMuted }}>
+          <EyeOff size={13} /> Fuera del catálogo
         </div>
       ) : (
         <div style={{ ...row(6), fontSize: 12.5, fontWeight: 600, color: C.errorFg }}>
@@ -241,7 +256,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
   );
 }
 
-export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTitle, setOpenTitle }: Props) {
+export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, onPublication, openTitle, setOpenTitle }: Props) {
   const [filter, setFilter] = useState("todos");
   const [q, setQ] = useState("");
   const [layout, setLayout] = useState<"grid" | "lista">("grid");
@@ -260,6 +275,7 @@ export function TitlesView({ data, onNav, onEditTitle, onToast, onDelete, openTi
     onStats: (t: StudioTitle) => onNav("inicio", t),
     onToast,
     onDelete,
+    onPublication,
   };
 
   return (
