@@ -39,6 +39,12 @@ export function installChunkRecovery(win: Window): void {
     const reason = event && (event as PromiseRejectionEvent).reason;
     if (reason && (reason.name === "ChunkLoadError" || /Loading (CSS )?chunk/.test(String(reason.message)))) recover();
   });
+  // Segunda red: Next.js coloca sus scripts antes que este en el <head>, así que un 404 rápido puede llegar antes que el
+  // guardián. `load` espera a que todos carguen o fallen; si para entonces la app no arrancó (`window.next` lo crea Next.js
+  // al arrancar), algo no llegó.
+  win.addEventListener("load", function () {
+    setTimeout(function () { if (!(win as Window & { next?: unknown }).next) recover(); }, 0);
+  });
 }
 
 /** El guardián como texto para `<script>` en línea (la CSP permite `'unsafe-inline'`, ver next.config.mjs). */

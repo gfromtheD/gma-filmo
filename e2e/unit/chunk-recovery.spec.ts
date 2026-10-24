@@ -59,6 +59,23 @@ test.describe("pestaña abierta durante un despliegue", () => {
     expect(w.replaced).toHaveLength(0);
   });
 
+  test("si el fallo llegó antes que el guardián, al terminar de cargar sin que la app arranque también recarga", async () => {
+    const w = fakeWindow("https://gma-filmo.vercel.app/mi-estudio");
+    installChunkRecovery(w.win as never);
+    w.fire("load", {});
+    await new Promise((r) => setTimeout(r, 10));
+    expect(w.replaced).toHaveLength(1);
+  });
+
+  test("con la app arrancada, terminar de cargar no recarga nada", async () => {
+    const w = fakeWindow("https://gma-filmo.vercel.app/mi-estudio");
+    installChunkRecovery(w.win as never);
+    Object.assign(w.win, { next: { version: "14.2.35" } });
+    w.fire("load", {});
+    await new Promise((r) => setTimeout(r, 10));
+    expect(w.replaced).toHaveLength(0);
+  });
+
   test("el guardián del HTML es la misma función, lista para ejecutarse", () => {
     expect(CHUNK_RECOVERY_SCRIPT).toContain("_next");
     expect(CHUNK_RECOVERY_SCRIPT.trim().endsWith("(window);")).toBe(true);
