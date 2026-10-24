@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 
 import { AppProviders } from "@/components/providers/app-providers";
 import { APP_LOCALE, APP_METADATA } from "@/lib/constants/app";
+import { CHUNK_RECOVERY_SCRIPT } from "@/lib/chunk-recovery";
 
 import "./globals.css";
 
@@ -39,6 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang={APP_LOCALE} className={`dark h-full antialiased ${satoshi.variable}`}>
+      <head>
+        {/* Primero de todo: si esta pestaña quedó en una versión anterior tras un despliegue, se recupera sola (ver lib/chunk-recovery.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: CHUNK_RECOVERY_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <AppProviders>{children}</AppProviders>
       </body>
