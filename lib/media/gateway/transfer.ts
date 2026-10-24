@@ -8,6 +8,7 @@ import { MockMediaStorage } from '../mock-storage';
 import type { MediaRepository } from '../repository';
 import type { PeerTubeClient } from '../providers/peertube-client';
 import { parseContentRange,readChunk,requireDisk } from './spool';
+import { relayAuxiliaryToR2 } from './r2-relay';
 
 export interface GatewayDependencies {
   repository:MediaRepository;storage:MockMediaStorage;publicKeys:Readonly<Record<string,string|KeyObject>>;
@@ -25,6 +26,10 @@ export async function transfer(request:IncomingMessage,response:ServerResponse,i
   await verifyMediaCapability(token,{sessionId:id,assetId:session.asset_id,generation:session.transfer_generation,scope:'upload',method:'PUT',
     resourcePath:`transfer/${id}/${session.transfer_generation}/body`,expectedBytes:session.expected_input_bytes},deps.publicKeys,async()=>{
       await deps.repository.command(session.owner_id,'authorize_transfer',{session_id:id,transfer_generation:session.transfer_generation});return true;});
+  // Imágenes y subtítulos de R2: la pasarela solo los reenvía a R2 (ver r2-relay.ts); sin trozos ni turno de escritura.
+  if(auxiliary && session.max_duration_seconds===0 && session.provider==='r2'){
+    await relayAuxiliaryToR2(request,session,context.privateState);mark('r2');response.statusCode=200;response.end();return;
+  }
   if (auxiliary !== (session.max_duration_seconds===0) || !['mock','peertube'].includes(session.provider))throw new MediaError('UPLOAD_PROTOCOL_UNSUPPORTED');
   const range=auxiliary?{query:false as const,start:0,end:session.expected_input_bytes-1,size:session.expected_input_bytes}:parseContentRange(request.headers['content-range'],session.expected_input_bytes);
   if(range.query && Number(request.headers['content-length']??0)!==0)throw new MediaError('UPLOAD_INVALID_INPUT');
