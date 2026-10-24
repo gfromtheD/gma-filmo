@@ -25,7 +25,9 @@ export function getMockStorage(): MockMediaStorage {
 export function createMediaRegistry(repository: MediaRepository, issuer?: MediaCapabilityIssuer): MediaProviderRegistry {
   const signer=issuer??{issue: (input: import('./provider').MediaCapabilityInput)=>getMediaCapabilityIssuer().issue(input)};
   return new MediaProviderRegistry({
-    r2: () => { const config = getUploadConfig(); return new R2MediaProvider(new R2VideoProvider(config.bucket), new AuxiliaryProvider(config.bucket)); },
+    // Con pasarela, imágenes y subtítulos suben por ella: las IP de R2 se bloquean en España durante los partidos de LaLiga.
+    r2: () => { const config = getUploadConfig(); const gatewayUrl = process.env.MEDIA_GATEWAY_URL;
+      return new R2MediaProvider(new R2VideoProvider(config.bucket), new AuxiliaryProvider(config.bucket), gatewayUrl ? { gatewayUrl, issuer: signer } : undefined); },
     stream: () => new StreamMediaProvider(new StreamProvider(getStreamConfig())),
     mock: () => new MockMediaProvider(getMockStorage(), repository, requiredEnv('MEDIA_GATEWAY_URL'), signer),
     peertube: () => {

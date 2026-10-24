@@ -3,7 +3,7 @@ import {safeMediaPath} from '@/lib/uploads/video-processing';
 import { createHash } from 'node:crypto';
 import type { UploadReceipt, ProviderSnapshot, JsonObject } from '@/types/media-engine';
 import type { PlaybackSource } from '@/types/playback';
-import type { MediaProvider, ProviderAssetContext, ProviderPlaybackContext, ProviderUploadContext, DeletionObservation } from '../provider';
+import type { MediaCapabilityIssuer, MediaProvider, ProviderAssetContext, ProviderPlaybackContext, ProviderUploadContext, DeletionObservation } from '../provider';
 import { R2VideoProvider } from '@/lib/uploads/r2-video';
 import { AuxiliaryProvider } from '@/lib/uploads/auxiliary';
 import { ProviderError } from '@/lib/uploads/stream';
@@ -16,7 +16,12 @@ export class R2MediaProvider implements MediaProvider {
   readonly key = 'r2' as const;
   readonly capabilities = { roles: ['main','trailer','extras','extra_image','intro','poster','poster_h','poster_v','subtitles','avatar','banner'] as const, processing: 'local' as const, retry: 'local-job' as const };
 
-  constructor(private readonly video: R2VideoProvider, private readonly auxiliary: AuxiliaryProvider) {}
+  /**
+   * `relay`: con pasarela, imágenes y subtítulos se suben a ella (ver gateway/r2-relay.ts), no directamente a R2, cuyas IP
+   * bloquean los operadores españoles durante los partidos de LaLiga. Sin ella, se sube a la URL firmada de R2 como antes.
+   */
+  constructor(private readonly video: R2VideoProvider, private readonly auxiliary: AuxiliaryProvider,
+    private readonly relay?: { gatewayUrl: string; issuer: MediaCapabilityIssuer }) {}
 
   private session(context: ProviderUploadContext) {
     const session = legacySession(context.session, 'r2'); const state = context.privateState;
@@ -56,6 +61,12 @@ export class R2MediaProvider implements MediaProvider {
       const url = context.privateState.uploadUrl;
       const expiresAt = context.privateState.expiresAt;
       if (typeof url !== 'string' || typeof expiresAt !== 'string') throw new ProviderError('UPLOAD_PROVISION_PENDING');
+      if (this.relay) {
+        const grant = this.relay.issuer.issue({ sessionId: s.id, assetId: context.asset.id, generation: context.transferGeneration, scope: 'upload', method: 'PUT',
+          namespace: `transfer/${s.id}/${context.transferGeneration}/`, expectedBytes: s.expected_input_bytes, ttlSeconds: 900 });
+        const headers: Record<string, string> = { Authorization: `Bearer ${grant.token}`, 'Content-Type': s.content_type };
+        return { protocol: 'put' as const, url: `${new URL(this.relay.gatewayUrl).origin}/auxiliary/${s.id}`, headers, expiresAt: new Date(grant.expiresAt).toISOString() };
+      }
       return { protocol: 'put' as const, url, headers: { 'Content-Type': s.content_type }, expiresAt };
     }
     return { protocol: 'multipart' as const, inspectUrl: `/api/uploads/${s.id}/parts`,
