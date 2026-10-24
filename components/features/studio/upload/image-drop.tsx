@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ReactNode } from "react";
-import { previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
+import { isQueued, previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
 
 interface ImageDropProps {
   readonly label: string;
@@ -88,7 +88,10 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
           )}
         </label>
 
-        {status === "uploading" && (
+        {isQueued(asset) && (
+          <span role="status" className="pointer-events-none absolute left-2 top-2 z-[2] rounded-full bg-black/70 px-2.5 py-0.5 text-[12px] font-bold text-white">En cola</span>
+        )}
+        {status === "uploading" && !isQueued(asset) && (
           <div role="progressbar" aria-label={`Subiendo ${label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(asset?.progress ?? 0)} className="absolute inset-x-0 bottom-0 z-[2] h-1.5 bg-white/10">
             <div className="h-full bg-[#22B16B] transition-[width]" style={{ width: `${asset?.progress ?? 0}%` }} />
           </div>

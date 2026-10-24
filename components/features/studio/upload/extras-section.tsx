@@ -6,7 +6,7 @@ import type { StepProps } from "./step-props";
 import { VideoDropzone } from "./video-dropzone";
 import { ProgressRing } from "./progress-ring";
 import { IMAGE_MIME_TYPES, LIMITS } from "@/lib/studio/catalogs";
-import { extraSlot, previewSrc, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
+import { extraSlot, isQueued, previewSrc, type ExtraItem, type ExtraKind } from "@/lib/studio/upload-draft";
 
 const KIND_LABEL: Record<ExtraKind, string> = { fotograma: "Fotograma", poster: "Póster", video: "Vídeo" };
 const VIDEO_EXTENSIONS = /\.(mp4|mov|mkv|avi|webm|m4v|mpg|mpeg|mxf|wmv)$/i;
@@ -103,6 +103,10 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
   const status = file?.status;
   const label = `Extra ${index + 1}`;
   const isBusy = status === "uploading" || status === "processing";
+  const queued = isQueued(file);
+  // En cola o procesando no hay porcentaje que enseñar: el anillo gira sin inventarlo.
+  const waiting = queued || status === "processing";
+  const doing = queued ? "En cola" : status === "processing" ? "Procesando" : "Subiendo";
   const removeVerb = isBusy ? "Cancelar" : status === "error" ? "Descartar" : "Quitar";
   const preview = extra.kind !== "video" ? previewSrc(file) : null;
 
@@ -135,10 +139,10 @@ function ExtraTile({ index, extra, onRemove }: { readonly index: number; readonl
           // Anillo en el centro (no tapa el nombre de abajo): se llena con la subida; al procesar, gira sin inventar porcentaje.
           <div className="absolute inset-0 grid place-items-center bg-black/45">
             <div className="flex flex-col items-center gap-1">
-              <ProgressRing value={status === "processing" ? null : Math.round(file?.progress ?? 0)} label={`${status === "processing" ? "Procesando" : "Subiendo"} ${label}`} size={52} stroke={4}>
-                {status !== "processing" && <span className="text-[12px] font-bold tabular-nums text-white">{Math.round(file?.progress ?? 0)}%</span>}
+              <ProgressRing value={waiting ? null : Math.round(file?.progress ?? 0)} label={`${doing} ${label}`} size={52} stroke={4}>
+                {!waiting && <span className="text-[12px] font-bold tabular-nums text-white">{Math.round(file?.progress ?? 0)}%</span>}
               </ProgressRing>
-              <span className="text-[10.5px] font-semibold text-white/85">{status === "processing" ? "Procesando…" : "Subiendo…"}</span>
+              <span className="text-[10.5px] font-semibold text-white/85">{queued ? "En cola" : `${doing}…`}</span>
             </div>
           </div>
         )}

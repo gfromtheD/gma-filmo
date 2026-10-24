@@ -20,8 +20,18 @@ export const UPLOAD_STEPS: readonly UploadStepInfo[] = [
   { id: "datos", label: "Completa los detalles" },
 ];
 
-/** Etapa de una subida: comprobar el archivo en el navegador, enviarlo y procesarlo en el servidor. */
-export type UploadPhase = "checking" | "uploading" | "processing";
+/**
+ * Etapa de una subida: comprobar el archivo en el navegador, esperar turno si ya hay el máximo de subidas a la vez («En cola»),
+ * enviarlo y procesarlo en el servidor.
+ */
+export type UploadPhase = "checking" | "queued" | "uploading" | "processing";
+
+/** Esperando turno: ya hay el máximo de subidas a la vez y esta empieza en cuanto termine otra. */
+export const isQueued = (asset: { readonly status: string; readonly phase?: UploadPhase } | null | undefined): boolean =>
+  asset?.status === "uploading" && asset.phase === "queued";
+
+/** Lo que se lee mientras un archivo espera turno. */
+export const QUEUED_NOTE = "En cola: empieza en cuanto termine otra de tus subidas.";
 
 /** Un archivo del borrador: lo que se sabe de él y cómo va su subida. */
 export interface UploadedAsset {

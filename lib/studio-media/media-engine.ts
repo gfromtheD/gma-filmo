@@ -61,6 +61,7 @@ export interface MediaUploadEngine extends Omit<UploadEngine, 'id'> {
 
 // Textos con los que el cliente de subidas (managed-browser.ts) anuncia cada etapa.
 const CHECKING = 'Comprobando identidad';
+const QUEUED = 'En cola';
 const TRANSFERRING = 'Transfiriendo';
 const VALIDATING = 'Validando y procesando';
 /** Roles de vídeo: se convierten en el servidor y una obra larga tarda mucho más que los 90 s que se esperan por defecto. */
@@ -131,6 +132,7 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
         onProgress,
         onState: state => {
           if (state === CHECKING) onPhase?.('checking', 0);
+          else if (state === QUEUED) onPhase?.('queued');
           else if (state === TRANSFERRING) onPhase?.('uploading', 0);
           else if (state === VALIDATING) { onPhase?.('processing'); onProcessing?.(); }
         },

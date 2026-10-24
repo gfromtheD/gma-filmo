@@ -30,6 +30,12 @@ const CHECKING_STAGE: Stage = {
   icon: <svg {...ICON_PROPS}><path d="M12 3 4.5 6v5.5c0 4.4 3.1 8 7.5 9.5 4.4-1.5 7.5-5.1 7.5-9.5V6L12 3Z" /><path d="m9 12 2 2 4-4" /></svg>,
 };
 
+const QUEUED_STAGE: Stage = {
+  title: "En cola",
+  description: "Empieza en cuanto termine otra de tus subidas",
+  icon: <svg {...ICON_PROPS}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>,
+};
+
 const UPLOADING_STAGE: Stage = {
   title: "Subiendo tu vídeo",
   description: "Enviándolo a nuestros servidores",
@@ -123,8 +129,9 @@ export function ProcessingBucket({ phase, progress = null, className = "" }: {
     return () => clearInterval(timer);
   }, [reduceMotion, phase]);
 
-  const stage = phase === "checking" ? CHECKING_STAGE : phase === "uploading" ? UPLOADING_STAGE : PROCESSING_STAGES[index % PROCESSING_STAGES.length]!;
-  const percent = phase === "processing" || progress === null ? null : Math.round(progress);
+  const stage = phase === "checking" ? CHECKING_STAGE : phase === "queued" ? QUEUED_STAGE : phase === "uploading" ? UPLOADING_STAGE
+    : PROCESSING_STAGES[index % PROCESSING_STAGES.length]!;
+  const percent = phase === "processing" || phase === "queued" || progress === null ? null : Math.round(progress);
   return <BucketScene stage={stage} percent={percent} className={className} />;
 }
 

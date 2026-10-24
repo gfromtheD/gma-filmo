@@ -1,7 +1,7 @@
 "use client";
 
 import { formatElapsed, formatEta, formatMegabytes, formatRate } from "@/lib/studio/transfer-stats";
-import type { UploadPhase } from "@/lib/studio/upload-draft";
+import { QUEUED_NOTE, type UploadPhase } from "@/lib/studio/upload-draft";
 import { useTransferStats } from "./use-transfer-stats";
 
 interface UploadProgressProps {
@@ -17,10 +17,14 @@ const PHASES: readonly { readonly id: UploadPhase; readonly label: string }[] = 
   { id: "processing", label: "Procesar" },
 ];
 
-/** Cuánto de la barra de una etapa está lleno: las anteriores a la actual, completas; las siguientes, vacías. */
+/**
+ * Cuánto de la barra de una etapa está lleno: las anteriores a la actual, completas; las siguientes, vacías. En cola el archivo
+ * ya está comprobado y aún no ha empezado a subir: la barra de subir, vacía.
+ */
 function segmentFill(segment: UploadPhase, current: UploadPhase, progress: number | null): number {
   const order = PHASES.findIndex((p) => p.id === segment);
-  const now = PHASES.findIndex((p) => p.id === current);
+  const now = PHASES.findIndex((p) => p.id === (current === "queued" ? "uploading" : current));
+  if (current === "queued" && order === now) return 0;
   if (order < now) return 100;
   if (order > now) return 0;
   return progress ?? 0;
@@ -32,7 +36,7 @@ function segmentFill(segment: UploadPhase, current: UploadPhase, progress: numbe
  */
 export function UploadProgress({ phase, progress, sizeBytes }: UploadProgressProps) {
   const { loaded, rate, elapsed, eta } = useTransferStats(phase, progress, sizeBytes);
-  const known = progress !== null && phase !== "processing";
+  const known = progress !== null && phase !== "processing" && phase !== "queued";
 
   return (
     <div className="w-full max-w-[420px] text-left" aria-hidden="true">
@@ -40,13 +44,13 @@ export function UploadProgress({ phase, progress, sizeBytes }: UploadProgressPro
         <span className="text-[34px] font-extrabold leading-none tabular-nums text-white">
           {known ? `${Math.round(progress)} %` : formatElapsed(elapsed)}
         </span>
-        <span className="text-[12.5px] font-semibold text-[#2AC57A]">{PHASES.find((p) => p.id === phase)?.label}</span>
+        <span className="text-[12.5px] font-semibold text-[#2AC57A]">{phase === "queued" ? "En cola" : PHASES.find((p) => p.id === phase)?.label}</span>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {PHASES.map(({ id, label }) => {
           const fill = segmentFill(id, phase, progress);
-          const active = id === phase;
+          const active = id === (phase === "queued" ? "uploading" : phase);
           const sweeping = active && phase === "processing";
           return (
             <div key={id}>
@@ -71,6 +75,7 @@ export function UploadProgress({ phase, progress, sizeBytes }: UploadProgressPro
         </p>
       )}
       {phase === "checking" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">Verificando que el archivo está entero antes de enviarlo…</p>}
+      {phase === "queued" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">{QUEUED_NOTE}</p>}
       {phase === "processing" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">El servidor lo está convirtiendo: puedes seguir rellenando la ficha.</p>}
     </div>
   );
