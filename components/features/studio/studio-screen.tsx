@@ -18,7 +18,8 @@ import { useStudioTabStore } from "@/store/use-studio-tab-store";
 import { useAuth } from "@/components/providers/supabase-auth-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { applyAudience, audienceSchema } from "@/lib/studio/audience";
-import type { StudioTitle, StudioTabId, StudioData } from "./studio-types";
+import { toStudioTitleStatus } from "@/lib/studio-media/title-status";
+import type { StudioTitle, StudioTabId, StudioData, TitleStatus } from "./studio-types";
 export type { StudioTabId };
 
 // Las columnas de la migración de subidas aún no figuran en los tipos generados.
@@ -54,6 +55,24 @@ function withoutTitles(d: StudioData, slugs: readonly string[]): StudioData {
 function startFreeing(d: StudioData, t: StudioTitle): StudioData {
   const rest = withoutTitles(d, [t.id]);
   return { ...rest, freeing: [...(d.freeing ?? []).filter((f) => f.id !== t.id), { id: t.id, sizeBytes: t.sizeBytes ?? 0 }] };
+}
+
+/** Estado de una obra que se lista (las borradas no llegan aquí). Misma regla que el motor: sin estado es una obra histórica publicada. */
+function studioStatus(row: Pick<StudioTitleRow, "status" | "media_delete_state">): TitleStatus {
+  const status = toStudioTitleStatus(row.status, row.media_delete_state);
+  return status === "borrado_pendiente" || status === "eliminado" ? "borrador" : status;
+}
+
+/** Cambia el estado de una obra y recalcula cuántas hay publicadas. */
+function withStatus(d: StudioData, slug: string, status: TitleStatus): StudioData {
+  const titles = d.titles.map((x) => (x.id === slug ? { ...x, status } : x));
+  return { ...d, titles, creator: { ...d.creator, stats: { ...d.creator.stats, published: titles.filter((x) => x.status === "publicado").length } } };
+}
+
+/** Despublicar y volver a publicar usan el ciclo de vida del motor (revisión actual + clave de idempotencia nueva). */
+async function titleLifecycle() {
+  const [{ createTitleLifecycle }, { uploadApi }] = await Promise.all([import("@/lib/studio-media/title-lifecycle"), import("@/lib/uploads/browser")]);
+  return createTitleLifecycle({ api: uploadApi, engineEnabled: process.env.NEXT_PUBLIC_UPLOAD_ENGINE_V2 === "true", newKey: () => crypto.randomUUID() });
 }
 
 function stopFreeing(d: StudioData, slugs: readonly string[]): StudioData {
@@ -120,8 +139,7 @@ export function StudioScreen() {
           genre: row.genre ?? "Cortometraje",
           year: parseInt(row.year ?? "0") || new Date().getFullYear(),
           duration: row.duration ?? "",
-          status: row.status === "published" ? "publicado" : row.status === "draft" ? "borrador"
-            : row.status === "review" ? "revision" : row.status === "rejected" ? "rechazado" : "borrador",
+          status: studioStatus(row),
           description: row.synopsis ?? "", language: row.language ?? "",
           subtitles: [], poster: STUDIO_DATA.posters["nieve"]!,
           r2PosterUrl: row.r2_poster_vertical_url ?? row.r2_poster_url ?? undefined,
@@ -192,6 +210,20 @@ export function StudioScreen() {
     }
   }, [deleteTarget]);
 
+  /** Despublicar (fuera del catálogo, reversible) o volver a publicar, en el servidor; la tarjeta cambia cuando responde. */
+  const changePublication = useCallback(async (t: StudioTitle, publish: boolean) => {
+    try {
+      const lifecycle = await titleLifecycle();
+      const { mediaRevision } = await lifecycle.detail(t.id);
+      const result = publish ? await lifecycle.republish(t.id, mediaRevision) : await lifecycle.unpublish(t.id, mediaRevision);
+      setData((d) => withStatus(d, t.id, studioStatus({ status: result.status, media_delete_state: result.deletionState })));
+      showToast(publish ? `«${t.title}» vuelve a estar publicada` : `«${t.title}» se ha despublicado`);
+    } catch (error) {
+      const message = error instanceof Error && !error.message.startsWith("TITLE_ACTION_UNAVAILABLE") ? error.message : "No se pudo cambiar la publicación";
+      showToast(message, { error: true });
+    }
+  }, []);
+
   // Mientras se libera el espacio de alguna obra borrada, se pregunta cada pocos segundos hasta que el servidor confirma que terminó.
   const deletingKey = (data.freeing ?? []).map((f) => f.id).join("|");
   useEffect(() => {
@@ -257,7 +289,8 @@ export function StudioScreen() {
         )}
         {active === "titulos" && (
           <TitlesView data={data} onNav={nav} onEditTitle={setEditTitle}
-            onToast={showToast} onDelete={setDeleteTarget} openTitle={openTitle} setOpenTitle={setOpenTitle} />
+            onToast={showToast} onDelete={setDeleteTarget} onPublication={(t, publish) => void changePublication(t, publish)}
+            openTitle={openTitle} setOpenTitle={setOpenTitle} />
         )}
         {active === "subir" && (
           <UploadWizard onGoToTitles={() => { handlePublished(); nav("titulos"); }} />

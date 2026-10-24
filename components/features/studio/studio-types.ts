@@ -1,4 +1,5 @@
-export type TitleStatus = "publicado" | "revision" | "borrador" | "rechazado";
+/** `retirado`: despublicada por el creador (fuera del catálogo, se puede volver a publicar). */
+export type TitleStatus = "publicado" | "revision" | "borrador" | "rechazado" | "retirado";
 
 export type StudioTabId = "inicio" | "titulos" | "subir" | "perfil";
 
