@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { previewSrc, type UploadedAsset } from "@/lib/studio/upload-draft";
+import { isQueued, previewSrc, QUEUED_NOTE, type UploadedAsset } from "@/lib/studio/upload-draft";
 import { BUTTON_SECONDARY } from "./fields";
 
 interface FileSlotProps {
@@ -69,7 +69,8 @@ export function FileSlot({ label, required, rules, hint, accept, asset, advice, 
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] text-white">{asset.name} <span className="text-[#7C7C7C]">· {fmtBytes(asset.sizeBytes)}</span></p>
-            {status === "uploading" && (
+            {isQueued(asset) && <p role="status" className="mt-1 text-[12.5px] text-[#BBBBBB]">{QUEUED_NOTE}</p>}
+            {status === "uploading" && !isQueued(asset) && (
               <div role="progressbar" aria-label={`Subiendo ${label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(asset.progress ?? 0)} className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-[#22B16B] transition-[width]" style={{ width: `${asset.progress ?? 0}%` }} />
               </div>

@@ -7,7 +7,7 @@ import { HaloSurface, type HaloTone } from "./halo-surface";
 import { ProcessingBucket } from "./processing-bucket";
 import { UploadProgress } from "./upload-progress";
 import type { StepProps } from "./step-props";
-import type { UploadedAsset } from "@/lib/studio/upload-draft";
+import { isQueued, QUEUED_NOTE, type UploadedAsset } from "@/lib/studio/upload-draft";
 
 /** Lo mismo que aplica el servidor (UPLOAD_LIMITS y duración máxima por rol). */
 const SIZE_HINT: Record<VideoDropzoneProps["slot"], string> = { video: "hasta 4 GB y 4 h", trailer: "hasta 1 GB y 10 min" };
@@ -104,7 +104,8 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
             <UploadProgress phase={phase} progress={stageProgress} sizeBytes={file.sizeBytes} />
             <div className="min-w-0 max-w-full">
               <p className="text-[17px] font-extrabold text-white">
-                {phase === "processing" ? `Procesando tu ${noun}` : phase === "checking" ? `Comprobando tu ${noun}` : `Subiendo tu ${noun}`}
+                {phase === "processing" ? `Procesando tu ${noun}` : phase === "checking" ? `Comprobando tu ${noun}`
+                  : phase === "queued" ? `Tu ${noun}, en cola` : `Subiendo tu ${noun}`}
               </p>
               <p className="mx-auto mt-1 max-w-[46ch] text-[14px] text-[#BBBBBB]">
                 {phase === "processing"
@@ -129,7 +130,8 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
                 {status === "done" && <span className="ml-2 font-bold text-[#2AC57A]">Subido</span>}
               </p>
             </div>
-            {status === "uploading" && (
+            {isQueued(file) && <p role="status" className="max-w-[48ch] text-[13px] text-[#BBBBBB]">{QUEUED_NOTE}</p>}
+            {status === "uploading" && !isQueued(file) && (
               <div className="w-full max-w-[420px]">
                 <div role="progressbar" aria-label={`Subiendo ${label.toLowerCase()}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(file.progress ?? 0)} className="h-2 overflow-hidden rounded-full bg-white/10">
                   <div className="h-full rounded-full bg-[#22B16B] transition-[width]" style={{ width: `${file.progress ?? 0}%` }} />

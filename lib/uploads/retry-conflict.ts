@@ -40,26 +40,41 @@ const WAIT_CODES: ReadonlySet<string> = new Set([CONCURRENCY_LIMIT, RATE_LIMITED
 
 const BUSY_INTERVAL_MS = 4000;
 const BUSY_MAX_WAIT_MS = 3 * 60 * 1000;
+/** En cola se espera mientras la página siga abierta: una película de varios GB puede tener ocupado un hueco mucho rato. */
+const QUEUE_MAX_WAIT_MS = 6 * 60 * 60 * 1000;
+
+const aborted = () => new DOMException("Cancelado", "AbortError");
 
 /**
- * Si el usuario ya tiene el máximo de subidas activas, la nueva espera su turno (se reintenta cada pocos segundos, hasta unos
- * minutos) en vez de fallar: así puede soltar película, tráiler y varios extras de una vez y se van subiendo según quedan huecos.
- * Lo mismo si salta el freno de reservas por minuto, o si el servidor aún está preparando la subida: solo se espera un poco.
+ * Si el usuario ya tiene el máximo de subidas activas, la nueva espera su turno (se reintenta cada pocos segundos) en vez de
+ * fallar: así puede soltar película, tráiler y varios extras de una vez y se van subiendo según quedan huecos (`onWait` avisa
+ * para enseñar «En cola»). Lo mismo si salta el freno de reservas por minuto, o si el servidor aún está preparando la subida:
+ * entonces solo se espera unos minutos. Cancelar (`signal`) deja de esperar sin reservar nada.
  */
 export async function retryWhileBusy<T>(
   operation: () => Promise<T>,
-  options: { readonly maxWaitMs?: number; readonly intervalMs?: number; readonly sleep?: (ms: number) => Promise<void> } = {},
+  options: {
+    readonly maxWaitMs?: number; readonly queueMaxWaitMs?: number; readonly intervalMs?: number;
+    readonly sleep?: (ms: number) => Promise<void>; readonly signal?: AbortSignal; readonly onWait?: (code: string) => void;
+  } = {},
 ): Promise<T> {
   const maxWait = options.maxWaitMs ?? BUSY_MAX_WAIT_MS;
+  const queueMaxWait = options.queueMaxWaitMs ?? QUEUE_MAX_WAIT_MS;
   const interval = options.intervalMs ?? BUSY_INTERVAL_MS;
   const sleep = options.sleep ?? wait;
+  const { signal } = options;
   let waited = 0;
+  let notified: string | null = null;
   for (;;) {
+    if (signal?.aborted) throw aborted();
     try {
       return await operation();
     } catch (error) {
-      if (!(error instanceof Error) || !WAIT_CODES.has(error.message) || waited >= maxWait) throw error;
+      if (!(error instanceof Error) || !WAIT_CODES.has(error.message)) throw error;
+      if (waited >= (error.message === CONCURRENCY_LIMIT ? queueMaxWait : maxWait)) throw error;
+      if (notified !== error.message) { notified = error.message; options.onWait?.(error.message); }
       await sleep(interval);
+      if (signal?.aborted) throw aborted();
       waited += interval;
     }
   }

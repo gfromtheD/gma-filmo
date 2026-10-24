@@ -231,6 +231,7 @@ test('las etapas llegan en orden y la comprobación informa de su avance', async
   h.deps.uploadAsset = async input => {
     input.onState?.('Comprobando identidad');
     input.onHashProgress?.(0.5);
+    input.onState?.('En cola');
     input.onState?.('Transfiriendo');
     input.onProgress?.(40);
     input.onState?.('Validando y procesando');
@@ -240,7 +241,7 @@ test('las etapas llegan en orden y la comprobación informa de su avance', async
   const phases: Array<[string, number | undefined]> = [];
   let processing = 0;
   await engine.uploadAsset({ slot: 'video', rule: 'video', file: file('peli.mp4') }, () => undefined, undefined, () => { processing += 1; }, (phase, percent) => phases.push([phase, percent]));
-  assert.deepEqual(phases, [['checking', 0], ['checking', 50], ['uploading', 0], ['processing', undefined]]);
+  assert.deepEqual(phases, [['checking', 0], ['checking', 50], ['queued', undefined], ['uploading', 0], ['processing', undefined]]);
   assert.equal(processing, 1, 'el aviso antiguo de «procesando» se mantiene');
 });
 

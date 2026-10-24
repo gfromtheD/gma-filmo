@@ -48,11 +48,39 @@ test.describe("retryWhileBusy", () => {
     expect(waits).toHaveLength(3);
   });
 
-  test("se rinde si el turno no llega en el tiempo máximo", async () => {
+  test("se rinde si el turno no llega en el tiempo máximo de la cola", async () => {
     let calls = 0;
-    await expect(retryWhileBusy(async () => { calls++; throw new Error(CONCURRENCY_LIMIT); }, { maxWaitMs: 30, intervalMs: 10, sleep: async () => undefined }))
+    await expect(retryWhileBusy(async () => { calls++; throw new Error(CONCURRENCY_LIMIT); }, { queueMaxWaitMs: 30, intervalMs: 10, sleep: async () => undefined }))
       .rejects.toThrow(CONCURRENCY_LIMIT);
     expect(calls).toBe(4);
+  });
+
+  test("la cola espera más que las demás esperas: una película grande puede tener ocupados los huecos mucho rato", async () => {
+    let calls = 0;
+    const result = await retryWhileBusy(async () => { calls++; if (calls < 20) throw new Error(CONCURRENCY_LIMIT); return "dentro"; },
+      { maxWaitMs: 30, intervalMs: 10, sleep: async () => undefined });
+    expect(result).toBe("dentro");
+  });
+
+  test("avisa de que está en cola, una vez, mientras espera turno", async () => {
+    const waits: string[] = [];
+    let calls = 0;
+    await retryWhileBusy(async () => { calls++; if (calls < 3) throw new Error(CONCURRENCY_LIMIT); return "dentro"; },
+      { intervalMs: 10, sleep: async () => undefined, onWait: (code) => waits.push(code) });
+    expect(waits).toEqual([CONCURRENCY_LIMIT]);
+  });
+
+  test("cancelar mientras espera turno deja de esperar y no reserva nada", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    const pending = retryWhileBusy(async () => { calls++; throw new Error(CONCURRENCY_LIMIT); },
+      { intervalMs: 10, signal: controller.signal, sleep: (ms) => new Promise((r) => setTimeout(r, ms)) });
+    await new Promise((r) => setTimeout(r, 25));
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    const after = calls;
+    await new Promise((r) => setTimeout(r, 40));
+    expect(calls).toBe(after);
   });
 
   test("otros errores no esperan", async () => {
