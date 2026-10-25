@@ -66,18 +66,16 @@ export function ProfileAvatar({ name, url, iconId, color, size = 45 }: ProfileAv
     );
   }
 
+  // `cqw` se mide contra el contenedor de un antepasado, nunca contra el propio elemento: el marco es el contenedor y la
+  // inicial va dentro (si no, en tamaño «fill» la letra salía gigante y recortada).
   return (
-    <div
-      aria-hidden="true"
-      className={`${frame} flex items-center justify-center font-extrabold`}
-      style={{
-        ...frameStyle,
-        background: hex,
-        color: readableOn(hex, INITIAL_TEXT_DARK, INITIAL_TEXT_LIGHT),
-        fontSize: fill ? "42cqw" : size * 0.42,
-      }}
-    >
-      {name[0]?.toUpperCase() ?? "U"}
+    <div aria-hidden="true" className={frame} style={{ ...frameStyle, background: hex }}>
+      <div
+        className="flex h-full w-full items-center justify-center font-extrabold leading-none"
+        style={{ color: readableOn(hex, INITIAL_TEXT_DARK, INITIAL_TEXT_LIGHT), fontSize: fill ? "42cqw" : size * 0.42 }}
+      >
+        {name[0]?.toUpperCase() ?? "U"}
+      </div>
     </div>
   );
 }
