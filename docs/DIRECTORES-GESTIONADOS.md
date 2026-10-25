@@ -33,14 +33,15 @@ Primer caso: **Pablo Parés** (`/creadores/pablo-pares`).
 
 ## Espacio
 
-- Los creadores normales tienen **5 GB gratis** () y gastan del tope de creadores ().
-- Las cuentas gestionadas tienen **su propio cupo** en  y gastan de la **bolsa del equipo**
-  (, 60 GB), separada de la de los creadores. Nadie puede leer ni cambiar esa tabla desde la web.
+- Los creadores normales tienen **5 GB gratis** (`gma_upload_policy.user_bytes`) y gastan del tope de creadores (`global_bytes`).
+- Las cuentas gestionadas tienen **su propio cupo** en `gma_upload_quota_overrides` y gastan de la **bolsa del equipo**
+  (`staff_bytes`, 60 GB), separada de la de los creadores. Nadie puede leer ni cambiar esa tabla desde la web.
 - Al dar de alta a un director, asignarle cupo (lo que suman sus obras, con margen):
-  - El panel de Mi Estudio enseña ese cupo («N GB del cupo del equipo»), leído con .
+  `INSERT INTO gma_upload_quota_overrides (owner_id, user_bytes, nota) VALUES ('<id>', <bytes>, '<quién y por qué>');`
+- El panel de Mi Estudio enseña ese cupo («N GB del cupo del equipo»), leído con `gma_my_storage_limit()`.
 - Al traspasar, el director conserva su cupo (sus obras no dejan de caber). Para subir más, ampliación.
 - La cuota mide lo **subido**; lo que ocupa de verdad en el VPS son las tres calidades HLS: entre 1,2× y 2,6× el máster
-  (medido el 2026-10-23/24). Vigilar el disco del VPS (), no solo la cuota.
+  (medido el 2026-10-23/24). Vigilar el disco del VPS (`df -h`), no solo la cuota.
 
 ## Traspasar el perfil al director
 
