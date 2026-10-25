@@ -117,7 +117,7 @@ export function DashboardView({ data, onNav }: Props) {
         </motion.section>
 
         <motion.section variants={rise} aria-label="Almacenamiento" className={`${GLASS} lg:col-start-2`}>
-          <StorageCard usedBytes={data.storageUsedBytes} freeingBytes={(data.freeing ?? []).reduce((sum, f) => sum + f.sizeBytes, 0)} freeingCount={data.freeing?.length ?? 0} />
+          <StorageCard usedBytes={data.storageUsedBytes} limitBytes={data.storageLimitBytes} freeingBytes={(data.freeing ?? []).reduce((sum, f) => sum + f.sizeBytes, 0)} freeingCount={data.freeing?.length ?? 0} />
         </motion.section>
       </div>
     </motion.div>
