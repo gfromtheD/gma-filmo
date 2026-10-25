@@ -17,4 +17,6 @@ export interface CreatorProfile {
   readonly donacion_patreon: string | null;
   readonly donacion_bitcoin: string | null;
   readonly titulos: readonly string[];
+  /** Perfil llevado por el equipo de GMA en nombre del autor: la página invita a reclamarlo. */
+  readonly gestionado?: boolean;
 }

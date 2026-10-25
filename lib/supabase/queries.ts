@@ -6,10 +6,10 @@ import { cachedFilmRowBySlug } from "@/lib/supabase/film-by-slug";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
-import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorShorts, creditNameKey } from "@/lib/catalog-creators";
+import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorWorks, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
-import { getStudioBanner } from "@/lib/supabase/studio-banner";
-import { CREATOR_PROFILES_TAG } from "@/lib/studio-creator-banner";
+import { getStudioProfile } from "@/lib/supabase/studio-banner";
+import { applyStudioProfile, CREATOR_PROFILES_TAG } from "@/lib/studio-creator-banner";
 import { FILM_LONG_SYNOPSES } from "@/lib/data/film-long-synopses";
 import { cachedImageUrl } from "@/lib/r2/public-image";
 
@@ -456,18 +456,17 @@ export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | n
     async () => {
       const profile = await resolveCreatorBySlug(slug);
       if (!profile) return null;
-      // El banner que el creador sube en Mi Estudio manda sobre la portada del catálogo.
-      const banner = await getStudioBanner(profile.nombre, profile.titulos);
-      return banner ? { ...profile, imagen_portada: banner } : profile;
+      // La ficha de Mi Estudio (banner, foto, bio, redes; y si la gestiona el equipo) manda sobre lo del catálogo.
+      return applyStudioProfile(profile, await getStudioProfile(profile.nombre, profile.titulos));
     },
-    [`creator-with-short-v4-${slug}`],
+    [`creator-with-works-v5-${slug}`],
     { revalidate: 3600, tags: [CREATOR_PROFILES_TAG] },
   )();
 }
 
 async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
       const films = await getPeliculas();
-      const associated = creatorShorts(slug, films);
+      const associated = creatorWorks(slug, films);
       if (!associated.length) return null;
       const supabase = getSupabasePublicClient() as AnyClient;
 

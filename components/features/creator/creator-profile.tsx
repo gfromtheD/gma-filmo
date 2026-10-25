@@ -10,6 +10,7 @@ import type { CreatorProfile } from "@/types/creator";
 import type { MovieMedia } from "@/types/catalog";
 import { supportMethods, supportPath } from "@/lib/creator-support";
 import { externalUrl, socialUrl } from "@/lib/social-links";
+import { claimHref } from "@/lib/creator-claim";
 
 function slugToHue(slug: string): number {
   let h = 0;
@@ -127,7 +128,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             <h1 className="break-words text-[24px] font-extrabold leading-tight sm:text-[28px] tracking-[-0.02em] text-white">
               {creator.nombre}
             </h1>
-            {creator.editorial && <p className="break-words text-[12px] text-[#7C7C7C]">Ficha del catálogo · No requiere una cuenta del creador</p>}
+            {creator.editorial && !creator.gestionado && <p className="break-words text-[12px] text-[#7C7C7C]">Ficha del catálogo · No requiere una cuenta del creador</p>}
             {creator.nacionalidad && (
               <p className="break-words text-[13px] text-[#7C7C7C]">{creator.nacionalidad}</p>
             )}
@@ -156,6 +157,22 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             })}
           </div>
         </div>
+
+        {creator.gestionado && (
+          // Perfil que lleva el equipo de GMA en nombre del autor: cuando él quiera, se le traspasa entero.
+          <aside aria-label="Perfil gestionado por GMA Filmo" className="mt-6 flex max-w-xl flex-col gap-3 rounded-2xl border border-[#22B16B]/30 bg-[#22B16B]/[0.06] p-5 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1 break-words">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2AC57A]">Perfil gestionado por el equipo de GMA Filmo</p>
+              <p className="mt-1.5 text-sm leading-6 text-[#C4C4C4]">
+                ¿Eres {creator.nombre}? Reclama tu perfil y te traspasamos todo: tus obras, tu ficha y tu panel de Mi Estudio.
+              </p>
+            </div>
+            <a href={claimHref(creator.nombre)} target="_blank" rel="noopener noreferrer"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-[#22B16B]/50 px-5 text-sm font-semibold text-[#2AC57A] transition-colors hover:bg-[#22B16B] hover:text-[#031A0E] focus-visible:outline-2 focus-visible:outline-[#22B16B]">
+              Reclamar mi perfil
+            </a>
+          </aside>
+        )}
 
         {availableSupport.length > 0 && (
           <section aria-label="Apoyar al creador" className="mt-6 flex max-w-xl flex-col items-start gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:flex-row sm:items-center">

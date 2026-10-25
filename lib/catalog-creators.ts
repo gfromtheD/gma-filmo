@@ -26,12 +26,13 @@ export function catalogCredit(name: string, role: string): ArtistCredit {
   return { name, role, slug: creator?.slug ?? catalogCreditSlug(name), photoUrl: cachedImageUrl(creator?.r2_photo_url ?? null) };
 }
 
-export function creatorShorts(slug: string, films: readonly MovieMedia[]): MovieMedia[] {
-  return films.filter(film => film.genre === "Cortometraje" && film.artistas?.some(artist => artist.slug === slug));
+/** Obras acreditadas a un creador: cortos y largometrajes (antes solo cortos; los directores también publican películas). */
+export function creatorWorks(slug: string, films: readonly MovieMedia[]): MovieMedia[] {
+  return films.filter(film => film.artistas?.some(artist => artist.slug === slug));
 }
 
 export function catalogProfile(slug: string, films: readonly MovieMedia[]): CreatorProfile | null {
-  const associated = creatorShorts(slug, films);
+  const associated = creatorWorks(slug, films);
   if (!associated.length) return null;
   const record = catalogCreators.find(creator => creator.slug === slug);
   const credit = associated.flatMap(film => film.artistas ?? []).find(artist => artist.slug === slug);
