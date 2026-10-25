@@ -12,7 +12,7 @@ interface NetworkInformationLike {
 }
 
 interface HeroTrailer {
-  readonly videoRef: React.RefObject<HTMLVideoElement>;
+  readonly videoRef: React.MutableRefObject<HTMLVideoElement | null>;
   /** Hay tráiler que mostrar (existe y no ha fallado). */
   readonly hasTrailer: boolean;
   /** El elemento <video> está en pantalla (arrancó solo o a petición). */
@@ -44,7 +44,7 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
   const { prefs } = useSettingsPrefs();
   const reduceMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [isMounted, setIsMounted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);

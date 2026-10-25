@@ -6,6 +6,8 @@ import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { getDirectorName } from "@/lib/credits";
 import { useHeroTrailer } from "@/hooks/use-hero-trailer";
+import { TrailerVideo } from "@/components/ui/trailer-video";
+import { trailerEndpointFor } from "@/lib/media/player-adapter";
 import type { MovieMedia } from "@/types/catalog";
 
 interface HomeHeroProps {
@@ -45,7 +47,8 @@ export function HomeHero({
   isTransition = false,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
-  const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl);
+  const trailerEndpoint = trailerEndpointFor(item);
+  const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl ?? trailerEndpoint ?? undefined);
 
   useEffect(() => {
     onTrailerActiveChange?.(trailer.isActive);
@@ -72,12 +75,11 @@ export function HomeHero({
         <PosterArt fill anchor="top" priority style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         {/* Tráiler opcional: se funde sobre la portada cuando empieza a reproducirse */}
         {trailer.hasTrailer && trailer.isMounted && (
-          <video
-            ref={trailer.videoRef}
+          <TrailerVideo
+            videoRef={trailer.videoRef}
             src={item.trailerUrl}
+            endpoint={trailerEndpoint}
             autoPlay
-            muted
-            playsInline
             preload="auto"
             aria-hidden="true"
             tabIndex={-1}

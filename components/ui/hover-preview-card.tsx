@@ -10,6 +10,8 @@ import { useCommunityScore } from "@/hooks/use-community-score";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { formatCommunityScore } from "@/lib/ratings/summary";
 import { computePreviewLayout, previewWidth, type PreviewLayout } from "@/lib/hover-preview-layout";
+import { TrailerVideo } from "@/components/ui/trailer-video";
+import { trailerEndpointFor } from "@/lib/media/player-adapter";
 import type { MediaItem } from "@/types/catalog";
 
 interface HoverPreviewCardProps {
@@ -41,18 +43,17 @@ const SHADOW_ROOM = 60;
 const TRAILER_DELAY_MS = 1500;
 
 /** Tráiler mudo que se funde sobre la portada; si falla o termina, queda la portada. */
-function PanelTrailer({ src }: { readonly src: string }) {
+function PanelTrailer({ src, endpoint }: { readonly src?: string; readonly endpoint: string | null }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
   if (hasFailed) return null;
   return (
     <>
-      <video
+      <TrailerVideo
         src={src}
+        endpoint={endpoint}
         autoPlay
-        muted
         loop
-        playsInline
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
@@ -90,6 +91,8 @@ export function HoverPreviewCard({
   const [panelHeight, setPanelHeight] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const trailerEndpoint = trailerEndpointFor(item);
+  const hasTrailer = Boolean(item.trailerUrl || trailerEndpoint);
   const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
   const inList = hasMedia(item.numericId);
@@ -119,11 +122,11 @@ export function HoverPreviewCard({
 
   // 3) con tráiler asociado, pasada la espera se reproduce en el mismo recuadro (no con movimiento reducido)
   useEffect(() => {
-    if (!item.trailerUrl || !hasEntered) return;
+    if (!hasTrailer || !hasEntered) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = setTimeout(() => setShowTrailer(true), TRAILER_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [item.trailerUrl, hasEntered]);
+  }, [hasTrailer, hasEntered]);
 
   async function toggleList() {
     if (!canSave) {
@@ -182,7 +185,7 @@ export function HoverPreviewCard({
     >
       <div data-preview-image className="relative aspect-video w-full overflow-hidden">
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
-        {showTrailer && item.trailerUrl && <PanelTrailer src={item.trailerUrl} />}
+        {showTrailer && hasTrailer && <PanelTrailer src={item.trailerUrl} endpoint={trailerEndpoint} />}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mapEngineExtras } from "../../lib/media/engine-extras";
+import { refreshExtras } from "../../hooks/use-extras";
 
 const row = (role: string, position: number, state = "ready", duration: number | null = null) => ({
   asset_id: `${role}-${position}`, role, position, gma_media_assets: { state, duration_seconds: duration },
@@ -34,5 +35,18 @@ test.describe("mapEngineExtras", () => {
 
   test("sin filas no hay extras", () => {
     expect(mapEngineExtras("x", [])).toEqual([]);
+  });
+});
+
+test.describe("refreshExtras", () => {
+  test("al refrescar los extras históricos se conservan los del motor (tráiler incluido)", () => {
+    const engine = mapEngineExtras("mi-obra", [row("trailer", 3)]);
+    expect(refreshExtras(engine, []).map((e) => e.kindLabel)).toEqual(["Tráiler"]);
+  });
+  test("los históricos recién leídos sustituyen a los anteriores y van detrás de los del motor", () => {
+    const engine = mapEngineExtras("mi-obra", [row("trailer", 3)]);
+    const legacy = { ...engine[0]!, id: 7, title: "Making of", kindLabel: "Making of" };
+    const stale = { ...legacy, id: 5, title: "Viejo" };
+    expect(refreshExtras([...engine, stale], [legacy]).map((e) => e.title)).toEqual(["Tráiler", "Making of"]);
   });
 });
