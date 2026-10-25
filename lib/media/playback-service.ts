@@ -106,6 +106,13 @@ export class PlaybackService {
   const source=playbackSourceSchema.parse(await this.service.registry.get(context.asset.provider).getPlayback(context));
   if(source.kind!=='youtube')await this.registerDelivery(source.url,source.expiresAt,context,owner,slug);return source;
  }
+ /** El tráiler de un título publicado (el primero si hubiera varios): lo que reproduce el hero de portada y la tarjeta flotante. */
+ async resolveTitleTrailer(slug:string,owner:string|null) {
+  const title=await this.title(slug,owner);const junction=await this.repo.titleMedia(Number(title.id));
+  const trailer=[...junction].filter(m=>m.role==='trailer').sort((a,b)=>a.position-b.position)[0];
+  if(!trailer)throw notFound();
+  return this.resolveTitleVideo(slug,trailer.asset_id,owner);
+ }
  /** `only`: limita a ciertos roles. Arrancar la película solo necesita subtítulos y póster; resolver el tráiler y los extras (que ahora se piden al abrirlos) añadía llamadas y concesiones de entrega en cada reproducción. */
  async resolveAuxiliaries(slug:string,owner:string|null,only?:readonly string[],known?:{title:Record<string,unknown>;junction:Awaited<ReturnType<MediaRepository['titleMedia']>>}) {
   const title=known?.title??await this.title(slug,owner);const junction=known?.junction??await this.repo.titleMedia(Number(title.id));
