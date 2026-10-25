@@ -82,6 +82,8 @@ export interface StudioData {
   creator: Creator;
   /** Bytes que ocupan los títulos del creador (suma de `peliculas.file_size_bytes`). */
   storageUsedBytes: number;
+  /** Cupo de la cuenta en bytes (gma_my_storage_limit); sin dato, los 5 GB gratis. */
+  storageLimitBytes?: number;
   /** Obras ya borradas por el creador cuyo espacio el servidor todavía está liberando (no se listan). */
   freeing?: readonly { id: string; sizeBytes: number }[];
   titles: StudioTitle[];

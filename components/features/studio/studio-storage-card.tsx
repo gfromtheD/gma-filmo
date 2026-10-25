@@ -11,7 +11,7 @@ const LEVEL = {
   ok:       { color: C.accentH, text: () => "Tienes espacio de sobra." },
   warning:  { color: C.gold, text: () => "Estás cerca del límite." },
   critical: { color: C.error, text: () => "Casi no te queda espacio." },
-  over:     { color: C.error, text: () => `Has superado los ${FREE_STORAGE_GB} GB gratis: amplía el espacio para seguir subiendo.` },
+  over:     { color: C.error, text: (limit: string) => `Has superado tus ${limit}: amplía el espacio para seguir subiendo.` },
 } as const;
 
 const euros = (value: number) => value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
@@ -43,18 +43,23 @@ function Gauge({ pct, color, usedLabel }: { readonly pct: number; readonly color
 }
 
 /**
- * Almacenamiento del creador frente a los 5 GB gratis, en un anillo de carga. La calculadora de ampliación se abre
- * encima del propio panel (no debajo), así no cambia su tamaño ni descoloca el resto del Panel.
+ * Almacenamiento del creador frente a su cupo (los 5 GB gratis, o el que el equipo asigna a una cuenta gestionada, ver
+ * docs/DIRECTORES-GESTIONADOS.md), en un anillo de carga. La calculadora de ampliación se abre encima del propio panel
+ * (no debajo), así no cambia su tamaño ni descoloca el resto del Panel.
  */
-export function StorageCard({ usedBytes: rawUsedBytes, freeingBytes = 0, freeingCount = 0 }: { readonly usedBytes: number; readonly freeingBytes?: number; readonly freeingCount?: number }) {
+export function StorageCard({ usedBytes: rawUsedBytes, limitBytes = FREE_STORAGE_BYTES, freeingBytes = 0, freeingCount = 0 }: {
+  readonly usedBytes: number; readonly limitBytes?: number; readonly freeingBytes?: number; readonly freeingCount?: number;
+}) {
   // Si el dato llega vacío o mal (texto, null), se cuenta como 0 en vez de pintar «NaN».
   const usedBytes = Number.isFinite(Number(rawUsedBytes)) ? Math.max(0, Number(rawUsedBytes)) : 0;
   const sliderId = useId();
   const openButtonRef = useRef<HTMLButtonElement>(null);
-  const level = storageLevel(usedBytes);
+  const level = storageLevel(usedBytes, limitBytes);
   const style = LEVEL[level];
-  const pct = Math.min(100, Math.round((usedBytes / FREE_STORAGE_BYTES) * 100));
-  const free = formatBytes(Math.max(0, FREE_STORAGE_BYTES - usedBytes));
+  const limitGB = Math.round((limitBytes / FREE_STORAGE_BYTES) * FREE_STORAGE_GB);
+  const limitLabel = limitBytes === FREE_STORAGE_BYTES ? `${FREE_STORAGE_GB} GB gratis` : `${limitGB} GB del cupo del equipo`;
+  const pct = Math.min(100, Math.round((usedBytes / limitBytes) * 100));
+  const free = formatBytes(Math.max(0, limitBytes - usedBytes));
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [planGB, setPlanGB] = useState(() => Math.max(suggestedPlanGB(usedBytes), level === "ok" ? 50 : PLAN_MIN_GB + PLAN_STEP_GB));
   const plan = estimatePlan(planGB);
@@ -68,12 +73,12 @@ export function StorageCard({ usedBytes: rawUsedBytes, freeingBytes = 0, freeing
     <div className="relative flex h-full flex-col p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[17px] font-semibold text-white">Almacenamiento</h2>
-        <span className="text-[13px] text-[#8A8A8A]">{FREE_STORAGE_GB} GB gratis</span>
+        <span className="text-[13px] text-[#8A8A8A]">{limitLabel}</span>
       </div>
 
-      <div role="meter" aria-label="Espacio usado" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-valuetext={`${formatBytes(usedBytes)} de ${FREE_STORAGE_GB} GB`}
+      <div role="meter" aria-label="Espacio usado" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-valuetext={`${formatBytes(usedBytes)} de ${limitGB} GB`}
         className="mt-5 flex flex-1 items-center gap-6">
-        <Gauge pct={pct} color={style.color} usedLabel={`de ${FREE_STORAGE_GB} GB`} />
+        <Gauge pct={pct} color={style.color} usedLabel={`de ${limitGB} GB`} />
         <dl className="flex min-w-0 flex-col gap-3 text-[13.5px]">
           <div>
             <dt className="flex items-center gap-2 text-[#8A8A8A]"><span aria-hidden="true" className="size-2 rounded-full" style={{ background: style.color }} />Usado</dt>
@@ -86,7 +91,7 @@ export function StorageCard({ usedBytes: rawUsedBytes, freeingBytes = 0, freeing
         </dl>
       </div>
 
-      <p className="mt-4 text-[13px] leading-5" style={{ color: level === "ok" ? "#A8A8A8" : style.color }}>{style.text()}</p>
+      <p className="mt-4 text-[13px] leading-5" style={{ color: level === "ok" ? "#A8A8A8" : style.color }}>{style.text(limitLabel)}</p>
       {freeingCount > 0 && (
         <p role="status" className="mt-2 flex items-center gap-2 text-[12.5px] text-[#8A8A8A]">
           <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-white/50" />

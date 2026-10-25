@@ -31,7 +31,16 @@ Primer caso: **Pablo Parés** (`/creadores/pablo-pares`).
    `UPDATE creator_profiles SET gestionado = true WHERE user_id = (SELECT id FROM auth.users WHERE email = '<email>');`
 5. **Subir sus obras** desde Mi Estudio con esa cuenta, como cualquier creador.
 
-Cuota: 10 GB por cuenta y 6 GB por obra (`gma_upload_policy`). Si un director necesita más, se sube su cuota antes.
+## Espacio
+
+- Los creadores normales tienen **5 GB gratis** () y gastan del tope de creadores ().
+- Las cuentas gestionadas tienen **su propio cupo** en  y gastan de la **bolsa del equipo**
+  (, 60 GB), separada de la de los creadores. Nadie puede leer ni cambiar esa tabla desde la web.
+- Al dar de alta a un director, asignarle cupo (lo que suman sus obras, con margen):
+  - El panel de Mi Estudio enseña ese cupo («N GB del cupo del equipo»), leído con .
+- Al traspasar, el director conserva su cupo (sus obras no dejan de caber). Para subir más, ampliación.
+- La cuota mide lo **subido**; lo que ocupa de verdad en el VPS son las tres calidades HLS: entre 1,2× y 2,6× el máster
+  (medido el 2026-10-23/24). Vigilar el disco del VPS (), no solo la cuota.
 
 ## Traspasar el perfil al director
 
