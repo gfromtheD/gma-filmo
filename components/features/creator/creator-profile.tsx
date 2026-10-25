@@ -11,6 +11,7 @@ import type { MovieMedia } from "@/types/catalog";
 import { supportMethods, supportPath } from "@/lib/creator-support";
 import { externalUrl, socialUrl } from "@/lib/social-links";
 import { claimHref } from "@/lib/creator-claim";
+import { getSocialPlatform } from "@/components/ui/social-links-panel";
 
 function slugToHue(slug: string): number {
   let h = 0;
@@ -193,7 +194,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
               const href = socialUrl(platform.toLowerCase(), url);
               return href ? <a key={`${platform}-${index}`} href={href} target="_blank" rel="noopener noreferrer"
                 className="flex min-h-11 max-w-full items-center break-words rounded-full border border-white/15 px-4 py-2 text-sm text-[#C4C4C4] transition-colors hover:text-[#22B16B]">
-                {platform === "website" ? "Web" : platform}
+                {getSocialPlatform(platform.toLowerCase())?.label ?? platform}
               </a> : null;
             })}
           </nav>
