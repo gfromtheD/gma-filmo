@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Globe } from "@/components/ui/icons";
-import { siInstagram, siTiktok, siYoutube, siX, siFacebook, siThreads, siVimeo, siLetterboxd } from "simple-icons";
+import { siInstagram, siTiktok, siYoutube, siX, siFacebook, siThreads, siVimeo, siLetterboxd, siImdb } from "simple-icons";
 
 export interface SocialPlatform {
   key: string;
@@ -25,6 +25,7 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   { key: "facebook",  label: "Facebook",  prefix: "facebook.com/",   placeholder: "página",  path: siFacebook.path,  hex: `#${siFacebook.hex}` },
   { key: "vimeo",     label: "Vimeo",     prefix: "vimeo.com/",      placeholder: "estudio", path: siVimeo.path,     hex: `#${siVimeo.hex}` },
   { key: "letterboxd", label: "Letterboxd", prefix: "letterboxd.com/", placeholder: "usuario",   path: siLetterboxd.path, hex: `#${siLetterboxd.hex}`, iconScale: 1.35 },
+  { key: "imdb",      label: "IMDb",      prefix: "imdb.com/name/",  placeholder: "nm0000000", path: siImdb.path, hex: `#${siImdb.hex}` },
   { key: "website",   label: "Web",       prefix: "https://",        placeholder: "tu-web.com" },
 ];
 
