@@ -59,10 +59,13 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
     setIsReady(true);
   }, []);
 
-  // Guardado automático con un pequeño retraso.
+  // Guardado automático con un pequeño retraso. Mientras sube un vídeo la barra de progreso cambia el borrador sin parar y
+  // el retraso se reiniciaría siempre: por eso se guarda igualmente si ya ha pasado SAVE_DELAY_MS desde el último guardado.
+  const lastSaveRef = useRef(0);
   useEffect(() => {
     if (!isReady) return;
-    const timer = setTimeout(() => { saveDraft(window.localStorage, draft); setSavedAt(Date.now()); }, SAVE_DELAY_MS);
+    const save = () => { saveDraft(window.localStorage, draft); lastSaveRef.current = Date.now(); setSavedAt(lastSaveRef.current); };
+    const timer = setTimeout(save, Math.max(0, SAVE_DELAY_MS - (Date.now() - lastSaveRef.current)));
     return () => clearTimeout(timer);
   }, [draft, isReady]);
 
