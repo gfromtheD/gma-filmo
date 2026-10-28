@@ -11,14 +11,16 @@ interface TrailerVideoProps extends Omit<VideoHTMLAttributes<HTMLVideoElement>, 
   /** Tráiler del motor (HLS desde el VPS): se pide a este punto y lo reproduce `useMediaPlayback`. */
   readonly endpoint?: string | null;
   readonly videoRef?: MutableRefObject<HTMLVideoElement | null>;
+  /** Techo de calidad del HLS: en un recuadro pequeño basta 480p y arranca antes. */
+  readonly maxHeight?: number;
   /** Sin tráiler (404) o sin poder reproducirlo: quien lo muestra vuelve a la portada. */
   readonly onError?: () => void;
 }
 
 /** Tráiler silenciado del hero y de la tarjeta flotante: mp4 directo o, para títulos del motor, HLS por la pasarela. */
-export function TrailerVideo({ src, endpoint = null, videoRef, onError, ...videoProps }: TrailerVideoProps) {
+export function TrailerVideo({ src, endpoint = null, videoRef, maxHeight, onError, ...videoProps }: TrailerVideoProps) {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
-  const managed = useMediaPlayback(video, endpoint, Boolean(endpoint) && video !== null, null, MUTED_AUTOPLAY);
+  const managed = useMediaPlayback(video, endpoint, Boolean(endpoint) && video !== null, null, MUTED_AUTOPLAY, maxHeight);
 
   useEffect(() => {
     if (endpoint && managed.error) onError?.();
