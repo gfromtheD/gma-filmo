@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useHeroSuspended } from "@/hooks/use-hero-suspended";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
@@ -53,7 +54,9 @@ export function HomeHero({
   const director = getDirectorName(item);
   const reduceMotion = useReducedMotion();
   const trailerEndpoint = trailerEndpointFor(item);
-  const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl ?? trailerEndpoint ?? undefined);
+  const sectionRef = useRef<HTMLElement>(null);
+  const isSuspended = useHeroSuspended(sectionRef);
+  const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl ?? trailerEndpoint ?? undefined, isSuspended);
 
   useEffect(() => {
     onTrailerActiveChange?.(trailer.isActive);
@@ -63,6 +66,7 @@ export function HomeHero({
 
   return (
     <section
+      ref={sectionRef}
       aria-roledescription="carousel"
       aria-label="Destacados"
       className={isOverlay ? "absolute inset-0" : "relative -mt-14 h-[clamp(520px,85vh,900px)] w-full lg:-mt-16"}

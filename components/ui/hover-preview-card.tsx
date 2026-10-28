@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -13,6 +13,7 @@ import { computePreviewLayout, previewWidth, type PreviewLayout } from "@/lib/ho
 import { TrailerVideo } from "@/components/ui/trailer-video";
 import { trailerEndpointFor } from "@/lib/media/player-adapter";
 import { prefetchPlaybackSource } from "@/hooks/use-media-playback";
+import { usePreviewTurnStore } from "@/store/use-preview-turn-store";
 import type { MediaItem } from "@/types/catalog";
 
 interface HoverPreviewCardProps {
@@ -111,6 +112,15 @@ export function HoverPreviewCard({
   const [showTrailer, setShowTrailer] = useState(false);
   const trailerEndpoint = trailerEndpointFor(item);
   const hasTrailer = Boolean(item.trailerUrl || trailerEndpoint);
+  const turnId = useId();
+  const claimTurn = usePreviewTurnStore((state) => state.claim);
+  const releaseTurn = usePreviewTurnStore((state) => state.release);
+
+  // Abierta, la tarjeta tiene el turno: el tráiler del hero se pausa (con su sonido intacto) hasta que se cierre.
+  useEffect(() => {
+    claimTurn(turnId);
+    return () => releaseTurn(turnId);
+  }, [claimTurn, releaseTurn, turnId]);
   const reduceMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // El origen del tráiler (y su lista HLS) se pide al abrir la tarjeta: cuando toca reproducirlo ya está aquí.

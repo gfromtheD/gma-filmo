@@ -1,5 +1,6 @@
 "use client";
 
+import { usePreviewTurnStore } from "@/store/use-preview-turn-store";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { workPath } from "@/lib/catalog/work-path";
 import Link from "next/link";
@@ -47,6 +48,8 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
   const featuredItems = useRecommendedHero(items, progressEntries);
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [isTrailerActive, setIsTrailerActive] = useState(false);
+  // Con una tarjeta flotante abierta el carrusel no avanza: el usuario está mirando otra obra.
+  const isPreviewOpen = usePreviewTurnStore((state) => state.holder !== null);
   /** Cuántas veces se ha cambiado de portada: la primera no lleva entrada de texto, las siguientes sí. */
   const [slideChanges, setSlideChanges] = useState(0);
   const latestChange = useRef(0);
@@ -175,7 +178,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           count={featuredItems.length}
           activeIndex={featuredIdx}
           onSelect={goTo}
-          isPaused={isTrailerActive}
+          isPaused={isTrailerActive || isPreviewOpen}
           onComplete={goNext}
         />
       </div>
