@@ -219,7 +219,7 @@ export function ProfileView({ data, onToast }: Props) {
           <motion.div role="region" aria-label="Cambios sin guardar"
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-4 bottom-[calc(var(--gma-tabbar-h,0px)+env(safe-area-inset-bottom)+12px)] z-[41] mx-auto lg:bottom-6 flex max-w-[560px] flex-wrap items-center justify-between gap-3 rounded-full border border-white/10 bg-[#0C1611]/90 py-2 pl-5 pr-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+            className="fixed inset-x-4 bottom-[calc(var(--gma-tabbar-h,0px)+env(safe-area-inset-bottom)+24px)] z-[41] mx-auto flex max-w-[560px] flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-[22px] border border-white/10 bg-[#0C1611]/95 py-2.5 pl-4 pr-2.5 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:rounded-full sm:py-2 sm:pl-5 sm:pr-2 lg:bottom-6">
             <span className="text-[13.5px] font-semibold text-white">Tienes cambios sin guardar</span>
             <span className="flex gap-2">
               <button type="button" onClick={handleDiscard} disabled={isSaving}
