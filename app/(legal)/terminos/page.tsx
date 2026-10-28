@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Condiciones de uso" };
@@ -11,7 +10,8 @@ export default function TerminosPage() {
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 64 }}>
         <Link href="/" style={{ display: "inline-block", marginBottom: 24, opacity: 0.9 }}>
-          <Image src="/images/logo-gma.png" alt="GMA Filmo" width={140} height={44} style={{ height: 44, width: "auto" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo-gma.png" alt="GMA Filmo" width={140} height={44} style={{ height: 44, width: "auto" }} />
         </Link>
         <h1 style={{ fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05, margin: 0 }}>
           Condiciones de uso
