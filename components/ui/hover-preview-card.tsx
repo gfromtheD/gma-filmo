@@ -39,6 +39,14 @@ const BODY_DELAY_MS = 100;
 const BODY_MS = 240;
 /** Cierre: se desvanece (el hook la desmonta justo después). */
 const EXIT_MS = 130;
+/**
+ * Fondo de la tarjeta: el violeta del fondo de la web (`SiteAurora`, 91,63,209) oscurecido para que el texto se lea, con un
+ * resplandor suave abajo. La imagen se funde en `PREVIEW_BG`, el tono de arriba.
+ */
+const PREVIEW_BG = "#1C1633";
+const PREVIEW_BACKGROUND =
+  "radial-gradient(120% 70% at 50% 110%, rgba(91,63,209,0.32) 0%, rgba(91,63,209,0) 70%), linear-gradient(180deg, #1C1633 0%, #17122B 100%)";
+
 /** Margen del recorte para no cortar la sombra de la tarjeta una vez abierta. */
 const SHADOW_ROOM = 60;
 /** Espera con el panel abierto antes de sustituir la portada por el tráiler (el origen ya se pidió al abrir). */
@@ -198,12 +206,14 @@ export function HoverPreviewCard({
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-[6px] bg-gma-surface text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-t-[8px] rounded-b-[28px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,
         width,
         "--preview-image-h": `${imageHeight}px`,
+        "--preview-bg": PREVIEW_BG,
+        background: PREVIEW_BACKGROUND,
         visibility: layout ? "visible" : "hidden",
         opacity: isClosing || (layout && !hasEntered) ? 0 : 1,
         transform,
@@ -224,7 +234,7 @@ export function HoverPreviewCard({
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--gma-surface) 0%, transparent) 55%, var(--gma-surface) 100%)" }}
+          style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--preview-bg) 0%, transparent) 55%, var(--preview-bg) 100%)" }}
         />
       </div>
 
