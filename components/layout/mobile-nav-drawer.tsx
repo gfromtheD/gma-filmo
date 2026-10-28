@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "motion/react";
 import { Dialog } from "radix-ui";
 import { Home, LogIn, MediaVideo, Menu, Movie, Search, User, Xmark, Dashboard, type IconProps } from "@/components/ui/icons";
@@ -51,6 +51,7 @@ function isActive(item: DrawerItem, pathname: string): boolean {
  */
 export function MobileNavDrawer() {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const isGuest = useIsGuest();
@@ -125,8 +126,13 @@ export function MobileNavDrawer() {
                 transition={{ duration: reduceMotion ? 0.12 : 0.25 }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild forceMount aria-describedby={undefined}>
+            {/* Al abrir, el foco va al panel (no al botón de cerrar): así no aparece su aro de foco al tocar con el dedo y
+                el teclado y el lector de pantalla siguen dentro del panel. */}
+            <Dialog.Content asChild forceMount aria-describedby={undefined}
+              onOpenAutoFocus={(event) => { event.preventDefault(); panelRef.current?.focus({ preventScroll: true }); }}>
               <motion.div
+                ref={panelRef}
+                tabIndex={-1}
                 className="fixed inset-y-0 left-0 z-[61] flex w-[min(86vw,380px)] flex-col overflow-y-auto rounded-r-[28px] bg-[var(--gma-preview)] pb-[calc(20px+env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] shadow-[24px_0_60px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/10 outline-none lg:hidden"
                 style={{ backgroundImage: "radial-gradient(140% 60% at 0% 100%, rgba(91,63,209,0.28) 0%, rgba(91,63,209,0) 70%), radial-gradient(120% 50% at 0% 0%, rgba(34,177,107,0.16) 0%, rgba(34,177,107,0) 70%)" }}
                 initial={reduceMotion ? { opacity: 0 } : { x: "-100%" }}
