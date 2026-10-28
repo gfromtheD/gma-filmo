@@ -43,7 +43,9 @@ export function LandingHero() {
     <MotionConfig reducedMotion="user">
       <section className="relative isolate flex min-h-svh w-full flex-col overflow-hidden bg-gma-surface-2 text-white">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20">
-          <ThreeDMarquee className="h-full w-full" columns={6} largePostersOnDesktop itemsPerGroup={10} />
+          {/* columns=4 es la base del móvil (el mínimo que admite el componente); el escritorio siempre
+              enseña 6 porque .largePosters lo fuerza por CSS, así que esto no cambia cómo se ve ahí. */}
+          <ThreeDMarquee className="h-full w-full" columns={4} largePostersOnDesktop itemsPerGroup={10} />
         </div>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gma-surface-2/35" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10"
