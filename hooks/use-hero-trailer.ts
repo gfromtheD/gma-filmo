@@ -43,7 +43,11 @@ interface HeroTrailer {
  * no lo desactivó en Ajustes ("Reproducir vistas previas"), no pidió menos movimiento
  * y no ahorra datos. En esos casos el tráiler queda disponible a petición.
  */
-export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
+/**
+ * `isSuspended`: otra vista previa tiene el turno, el hero no se ve o la pestaña está oculta. Se pausa sin perder el
+ * punto ni el sonido y, al volver, sigue solo si estaba sonando.
+ */
+export function useHeroTrailer(trailerUrl: string | undefined, isSuspended = false): HeroTrailer {
   const { prefs } = useSettingsPrefs();
   const reduceMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
@@ -57,6 +61,7 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
   /** El usuario lo pausó: vuelve la portada y el carrusel sigue con el tiempo normal de cada diapositiva. */
   const [isDismissed, setIsDismissed] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const resumeOnReturn = useRef(false);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
@@ -68,10 +73,25 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
 
   // Arranque automático tras la portada
   useEffect(() => {
-    if (!trailerUrl || !canAutoplay) return;
+    if (!trailerUrl || !canAutoplay || isSuspended) return;
     const id = setTimeout(() => setIsMounted(true), TRAILER_DELAY_MS);
     return () => clearTimeout(id);
-  }, [trailerUrl, canAutoplay]);
+  }, [trailerUrl, canAutoplay, isSuspended]);
+
+  // Ceder el turno: pausa sin marcarlo como pausado por el usuario; al recuperarlo sigue donde estaba.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isSuspended) {
+      if (!video.paused && !video.ended) {
+        resumeOnReturn.current = true;
+        video.pause();
+      }
+    } else if (resumeOnReturn.current) {
+      resumeOnReturn.current = false;
+      void video.play().catch(() => setIsPlaying(false));
+    }
+  }, [isSuspended]);
 
   const toggle = useCallback(() => {
     if (!isMounted) {
