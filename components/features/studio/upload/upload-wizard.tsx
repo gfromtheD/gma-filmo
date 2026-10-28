@@ -12,7 +12,7 @@ import { DataStep } from "./steps/data-step";
 import { useFooterHiddenStore } from "@/store/use-footer-hidden-store";
 import { getUploadEngine, type SubmitResult } from "@/lib/studio/engine";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/studio/draft-storage";
-import { UPLOAD_STEPS, emptyDraft, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
+import { UPLOAD_STEPS, emptyDraft, isTransferring, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
 
 const SAVE_DELAY_MS = 500;
 
@@ -27,6 +27,11 @@ const STATUS_CLASS: Record<StepMark, string> = {
 interface UploadWizardProps {
   /** Se llama al terminar o al querer ver los títulos. */
   readonly onGoToTitles?: () => void;
+  /**
+   * Mi Estudio mantiene la pasarela montada (oculta) al cambiar de pestaña para que las subidas sigan: oculta no mueve el
+   * foco, no hace scroll ni esconde el pie.
+   */
+  readonly isActive?: boolean;
 }
 
 /**
@@ -34,7 +39,9 @@ interface UploadWizardProps {
  * para revisar la ficha y enviarla. El borrador se guarda solo y el motor se maneja únicamente a través
  * de `UploadEngine` (ver `lib/studio/engine.ts`).
  */
-export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
+export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProps) {
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
   // El motor multimedia necesita leer el borrador actual (tipo de cada extra, idioma de cada SRT) sin recrearse.
   const draftRef = useRef<UploadDraft | null>(null);
   const engine = useMemo(() => getUploadEngine(() => draftRef.current ?? emptyDraft()), []);
@@ -72,6 +79,7 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
   // Al cambiar de paso o de pantalla, el foco pasa al contenido (accesibilidad) y se sube al principio.
   useEffect(() => {
     if (skipFocus.current) { skipFocus.current = false; return; }
+    if (!isActiveRef.current) return;
     panel.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [stepIndex, isReviewing]);
@@ -79,9 +87,18 @@ export function UploadWizard({ onGoToTitles }: UploadWizardProps) {
   // El pie de la web solo aparece en la revisión final; durante la edición estorba.
   const setFooterHidden = useFooterHiddenStore((state) => state.setHidden);
   useEffect(() => {
-    setFooterHidden(!isReviewing);
+    setFooterHidden(isActive && !isReviewing);
     return () => setFooterHidden(false);
-  }, [isReviewing, setFooterHidden]);
+  }, [isActive, isReviewing, setFooterHidden]);
+
+  // Mientras un archivo sale del navegador, cerrar o recargar la página lo cortaría: el navegador pide confirmación.
+  const transferring = isTransferring(draft);
+  useEffect(() => {
+    if (!transferring) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [transferring]);
 
   const update = useCallback((patch: Partial<UploadDraft>) => setDraft((d) => ({ ...d, ...patch })), []);
   const setAssetInDraft = useCallback((slot: string, asset: Parameters<typeof setAsset>[2]) => setDraft((d) => setAsset(d, slot, asset)), []);

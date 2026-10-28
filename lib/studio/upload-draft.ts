@@ -284,14 +284,22 @@ export function getAsset(draft: UploadDraft, slot: string): UploadedAsset | null
   return null;
 }
 
-/** Huecos cuyo archivo ya se envió y el servidor sigue convirtiendo: al recargar la página se vuelven a vigilar. */
-export function processingAssets(draft: UploadDraft): Array<[string, UploadedAsset]> {
-  const slots: Array<[string, UploadedAsset | null]> = [
+function draftSlots(draft: UploadDraft): Array<[string, UploadedAsset | null]> {
+  return [
     ["video", draft.video.file], ["trailer", draft.trailer.file], ...Object.entries(draft.images),
     ...draft.extras.map((e, i): [string, UploadedAsset | null] => [extraSlot(e, i), e.file]),
     ...draft.srtSubtitles.map((s, i): [string, UploadedAsset | null] => [`srt:${i}`, s.file]),
   ];
-  return slots.filter((entry): entry is [string, UploadedAsset] => entry[1]?.status === "processing");
+}
+
+/** Huecos cuyo archivo ya se envió y el servidor sigue convirtiendo: al recargar la página se vuelven a vigilar. */
+export function processingAssets(draft: UploadDraft): Array<[string, UploadedAsset]> {
+  return draftSlots(draft).filter((entry): entry is [string, UploadedAsset] => entry[1]?.status === "processing");
+}
+
+/** Algún archivo está saliendo del navegador (comprobándose, en cola o subiéndose): cerrar la página lo cortaría. */
+export function isTransferring(draft: UploadDraft): boolean {
+  return draftSlots(draft).some(([, asset]) => asset?.status === "uploading");
 }
 
 /** Devuelve un borrador nuevo con el archivo colocado (o quitado, con `null`) en su hueco. */
