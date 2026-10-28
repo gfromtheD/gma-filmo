@@ -12,6 +12,7 @@ import { formatCommunityScore } from "@/lib/ratings/summary";
 import { computePreviewLayout, previewWidth, type PreviewLayout } from "@/lib/hover-preview-layout";
 import { TrailerVideo } from "@/components/ui/trailer-video";
 import { trailerEndpointFor } from "@/lib/media/player-adapter";
+import { prefetchPlaybackSource } from "@/hooks/use-media-playback";
 import type { MediaItem } from "@/types/catalog";
 
 interface HoverPreviewCardProps {
@@ -39,11 +40,15 @@ const BODY_MS = 240;
 const EXIT_MS = 130;
 /** Margen del recorte para no cortar la sombra de la tarjeta una vez abierta. */
 const SHADOW_ROOM = 60;
-/** Espera con el panel abierto antes de sustituir la portada por el tráiler. */
-const TRAILER_DELAY_MS = 1500;
+/** Espera con el panel abierto antes de sustituir la portada por el tráiler (el origen ya se pidió al abrir). */
+const TRAILER_DELAY_MS = 600;
+/** El recuadro mide unos 350 px: 480p se ve bien y su primer trozo llega mucho antes que el de 1080p. */
+const TRAILER_MAX_HEIGHT = 480;
 
 /** Tráiler mudo que se funde sobre la portada; si falla o termina, queda la portada. */
-function PanelTrailer({ src, endpoint }: { readonly src?: string; readonly endpoint: string | null }) {
+function PanelTrailer({ src, endpoint, onPlaying, onFailed }: {
+  readonly src?: string; readonly endpoint: string | null; readonly onPlaying: () => void; readonly onFailed: () => void;
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
   if (hasFailed) return null;
@@ -52,13 +57,14 @@ function PanelTrailer({ src, endpoint }: { readonly src?: string; readonly endpo
       <TrailerVideo
         src={src}
         endpoint={endpoint}
+        maxHeight={TRAILER_MAX_HEIGHT}
         autoPlay
         loop
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        onPlaying={() => setIsPlaying(true)}
-        onError={() => setHasFailed(true)}
+        onPlaying={() => { setIsPlaying(true); onPlaying(); }}
+        onError={() => { setHasFailed(true); onFailed(); }}
         className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 motion-reduce:transition-none ${isPlaying ? "opacity-100" : "opacity-0"}`}
       />
       {isPlaying && (
@@ -91,8 +97,15 @@ export function HoverPreviewCard({
   const [panelHeight, setPanelHeight] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [trailerState, setTrailerState] = useState<"loading" | "playing" | "failed">("loading");
   const trailerEndpoint = trailerEndpointFor(item);
   const hasTrailer = Boolean(item.trailerUrl || trailerEndpoint);
+  const reduceMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // El origen del tráiler (y su lista HLS) se pide al abrir la tarjeta: cuando toca reproducirlo ya está aquí.
+  useEffect(() => {
+    if (trailerEndpoint && !reduceMotion) void prefetchPlaybackSource(trailerEndpoint);
+  }, [trailerEndpoint, reduceMotion]);
   const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
   const inList = hasMedia(item.numericId);
@@ -122,11 +135,10 @@ export function HoverPreviewCard({
 
   // 3) con tráiler asociado, pasada la espera se reproduce en el mismo recuadro (no con movimiento reducido)
   useEffect(() => {
-    if (!hasTrailer || !hasEntered) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!hasTrailer || !hasEntered || reduceMotion) return;
     const timer = setTimeout(() => setShowTrailer(true), TRAILER_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hasTrailer, hasEntered]);
+  }, [hasTrailer, hasEntered, reduceMotion]);
 
   async function toggleList() {
     if (!canSave) {
@@ -185,7 +197,17 @@ export function HoverPreviewCard({
     >
       <div data-preview-image className="relative aspect-video w-full overflow-hidden">
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
-        {showTrailer && hasTrailer && <PanelTrailer src={item.trailerUrl} endpoint={trailerEndpoint} />}
+        {showTrailer && hasTrailer && (
+          <PanelTrailer src={item.trailerUrl} endpoint={trailerEndpoint}
+            onPlaying={() => setTrailerState("playing")} onFailed={() => setTrailerState("failed")} />
+        )}
+        {/* Aviso de que hay tráiler y está llegando, para que nadie se vaya pensando que no existe. */}
+        {hasTrailer && !reduceMotion && trailerState === "loading" && (
+          <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 z-[1] flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="size-1.5 animate-pulse rounded-full bg-[#22B16B]" />
+            Tráiler
+          </span>
+        )}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"

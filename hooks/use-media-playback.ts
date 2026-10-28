@@ -45,8 +45,9 @@ function fetchPlaybackSource(endpoint: string, signal: AbortSignal): Promise<Res
   return fetch(endpoint, { cache: 'no-store', credentials: 'same-origin', signal });
 }
 
+/** `maxHeight`: techo fijo de calidad (vistas previas pequeñas); sin él manda el reparto por carga de la pasarela. */
 export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: string | null, enabled: boolean,
-  legacy: PlaybackSource | null = null, intent = { playing: true, volume: 1, muted: false, rate: 1 }) {
+  legacy: PlaybackSource | null = null, intent = { playing: true, volume: 1, muted: false, rate: 1 }, maxHeight?: number) {
   const [source, setSource] = useState<PlaybackSource | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revoked, setRevoked] = useState(false);
@@ -119,9 +120,10 @@ export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: strin
       const selected = audioRef.current;
       if (selected !== null && tracks.some(track => track.id === selected && !track.selected)) engine.selectAudio(selected);
     });
+    if (maxHeight) engine.setQuality(maxHeight, null);
     engineRef.current = engine; setEngine(engine);
     return () => { engine.destroy(); if (engineRef.current === engine) engineRef.current = null; setEngine(null); };
-  }, [video, enabled]);
+  }, [video, enabled, maxHeight]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -134,6 +136,6 @@ export function useMediaPlayback(video: HTMLVideoElement | null, endpoint: strin
   const selectAudio = useCallback((id: string) => { if (engineRef.current?.selectAudio(id)) audioRef.current = id; }, []);
   const retry = useCallback(() => retryRef.current(), []);
   const refresh = useCallback(() => loadRef.current(), []);
-  const calidad = useQualityGovernor(engine, source);
+  const calidad = useQualityGovernor(maxHeight ? null : engine, source);
   return { source, error, revoked, audioTracks, selectAudio, retry, refresh, calidad };
 }
