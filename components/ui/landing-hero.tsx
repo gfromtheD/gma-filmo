@@ -14,6 +14,8 @@ import { LandingPreviewRow } from "@/components/ui/landing-preview-row";
 import { LandingMessageBand } from "@/components/ui/landing-message-band";
 import { LandingFaq } from "@/components/ui/landing-faq";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteAurora } from "@/components/layout/site-aurora";
+import { enterAsGuest } from "@/lib/auth/guest-access";
 import type { MovieMedia } from "@/types/catalog";
 
 type WelcomeView = "hero" | "access" | "login" | "register" | "creator-register";
@@ -27,6 +29,7 @@ interface LandingHeroProps {
 
 export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
   const [view, setView] = useState<WelcomeView>("hero");
+  const [headerGuestLoading, setHeaderGuestLoading] = useState(false);
   const reducedMotion = useReducedMotion();
   const contentRef = useRef<HTMLDivElement>(null);
   const enterRef = useRef<HTMLButtonElement>(null);
@@ -51,13 +54,24 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
   }
 
   const openAccess = () => changeView("access");
+
+  async function handleHeaderGuest() {
+    setHeaderGuestLoading(true);
+    try {
+      await enterAsGuest("/inicio");
+    } catch {
+      setHeaderGuestLoading(false);
+    }
+  }
+
   // Cada franja con mensaje usa de fondo una imagen real del catálogo que ya se está enseñando en las filas.
   const filmBandImage = peliculas[0]?.imageUrl ?? cortos[0]?.imageUrl;
   const creatorsBandImage = cortos[0]?.imageUrl ?? peliculas[1]?.imageUrl ?? peliculas[0]?.imageUrl;
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="bg-gma-surface-2 text-white">
+      <div className="text-white">
+        <SiteAurora />
         <section className="relative isolate flex min-h-[88svh] w-full flex-col overflow-hidden">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20">
             {/* columns=4 es la base del móvil (el mínimo que admite el componente); el escritorio siempre
@@ -74,24 +88,29 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo-gma.png" alt="GMA Filmo" width={200} height={64} fetchPriority="high" className="h-10 w-auto sm:h-12" />
             {view === "hero" && (
-              <button type="button" onClick={openAccess}
-                className="min-h-10 rounded-full border border-white/25 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B]">
-                Iniciar sesión
-              </button>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button type="button" onClick={() => void handleHeaderGuest()} disabled={headerGuestLoading}
+                  className="min-h-10 rounded-full bg-[#22B16B] px-5 text-[14px] font-semibold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60">
+                  {headerGuestLoading ? "Entrando…" : "Continuar como invitado"}
+                </button>
+                <button type="button" onClick={openAccess}
+                  className="min-h-10 rounded-full bg-white px-5 text-[14px] font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B]">
+                  Iniciar sesión
+                </button>
+              </div>
             )}
           </header>
 
           <div ref={contentRef} className="relative flex w-full flex-1 items-center justify-center px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
             <AnimatePresence mode="wait">
-              <motion.div key={view} className={view === "hero" ? "w-full max-w-2xl" : "w-full max-w-md"}
+              <motion.div key={view} className={view === "hero" ? "w-full max-w-4xl" : "w-full max-w-md"}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }} transition={{ duration: reducedMotion ? 0 : 0.25 }}
                 onAnimationComplete={focusCurrentView}>
                 {view === "hero" && <div className="text-center">
-                  <p className="mb-5 text-xs font-semibold uppercase tracking-[.22em] text-[#58D99B] sm:text-sm">Cine independiente. Miradas libres.</p>
-                  <h1 aria-label="El lugar para descubrir, compartir, sentir y disfrutar cine." className="text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.05] tracking-[-.045em]">
+                  <h1 aria-label="El lugar para descubrir, compartir, sentir y disfrutar cine." className="text-[clamp(3rem,8.5vw,8rem)] font-extrabold leading-[1.15] tracking-[-.045em]">
                     <span className="block">El lugar para</span>
-                    <span aria-hidden="true" className="mx-auto block h-[1.25em] text-[#58D99B]">
+                    <span aria-hidden="true" className="mx-auto block h-[1.35em] text-[#58D99B]">
                       <TextRotate texts={["descubrir", "compartir", "sentir", "disfrutar"]}
                         rotationInterval={3000} auto={!reducedMotion}
                         mainClassName="h-full w-full flex-nowrap items-center justify-center overflow-hidden whitespace-nowrap"

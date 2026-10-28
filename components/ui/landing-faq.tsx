@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+
 const FAQ_ITEMS: readonly { readonly q: string; readonly a: string }[] = [
   {
     q: "¿Qué es GMA Filmo?",
@@ -21,20 +26,61 @@ const FAQ_ITEMS: readonly { readonly q: string; readonly a: string }[] = [
   },
 ];
 
-/** Preguntas frecuentes de la bienvenida: un acordeón nativo (<details>), sin JavaScript. */
-export function LandingFaq() {
+interface FaqItemProps {
+  readonly q: string;
+  readonly a: string;
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+}
+
+/** Una pregunta: el signo gira al abrir y la respuesta se despliega con un muelle, no con un corte seco. */
+function FaqItem({ q, a, isOpen, onToggle }: FaqItemProps) {
   return (
-    <section aria-label="Preguntas frecuentes" className="px-6 py-16 sm:px-10 sm:py-20 lg:px-16">
+    <div className="py-6">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="flex min-h-11 w-full items-center justify-between gap-4 text-left text-[18px] font-semibold text-white outline-none transition-colors focus-visible:text-[#58D99B] sm:text-[20px]"
+      >
+        {q}
+        <motion.span
+          aria-hidden="true"
+          animate={{ rotate: isOpen ? 45 : 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          className="shrink-0 text-2xl text-[#C4C4C4]"
+        >
+          +
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ height: { type: "spring", stiffness: 280, damping: 30 }, opacity: { duration: 0.2 } }}
+            className="overflow-hidden"
+          >
+            <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-[#C4C4C4] sm:text-[17px]">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Preguntas frecuentes de la bienvenida: un acordeón con despliegue animado (un solo abierto a la vez). El fondo
+ *  verde-morado (aurora) lo pone la página entera, no esta sección. */
+export function LandingFaq() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  return (
+    <section aria-label="Preguntas frecuentes" className="px-6 py-16 text-center sm:px-10 sm:py-20 lg:px-16">
       <h2 className="text-[clamp(1.5rem,3.5vw,2.25rem)] font-extrabold tracking-[-.02em] text-white">Preguntas frecuentes</h2>
-      <div className="mt-8 max-w-2xl divide-y divide-white/10 border-y border-white/10">
-        {FAQ_ITEMS.map(({ q, a }) => (
-          <details key={q} className="group py-5">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-semibold text-white outline-none focus-visible:text-[#58D99B] sm:text-[17px]">
-              {q}
-              <span aria-hidden="true" className="shrink-0 text-xl text-[#C4C4C4] transition-transform duration-200 group-open:rotate-45">+</span>
-            </summary>
-            <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-[#C4C4C4]">{a}</p>
-          </details>
+      <div className="mx-auto mt-8 max-w-2xl divide-y divide-white/10 border-y border-white/10 text-left">
+        {FAQ_ITEMS.map(({ q, a }, i) => (
+          <FaqItem key={q} q={q} a={a} isOpen={openIndex === i} onToggle={() => setOpenIndex(openIndex === i ? null : i)} />
         ))}
       </div>
     </section>
