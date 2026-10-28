@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { AssetRequest, UploadEngine } from "@/lib/studio/engine";
 import {
   IMAGE_SNIFF_BYTES, imageContentProblem, imageSizeAdvice, sniffImageType, validateFile, type PixelSize,
@@ -8,6 +8,7 @@ import {
 import { readImageSize } from "@/lib/studio/image-size";
 import { readVideoSeconds } from "@/lib/studio/processing-estimate";
 import type { UploadedAsset, UploadPhase } from "@/lib/studio/upload-draft";
+import { uploadControllers } from "./shared-uploads";
 
 type SetAsset = (slot: string, asset: UploadedAsset | null) => void;
 
@@ -16,13 +17,9 @@ type SetAsset = (slot: string, asset: UploadedAsset | null) => void;
  * en «hecho» o «error». Permite cancelar y quitar, y calcula el consejo de tamaño de las imágenes.
  */
 export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
-  const controllers = useRef(new Map<string, AbortController>());
+  // Compartidas con toda la pestaña: salir de la pantalla (o de Mi Estudio) no corta las subidas en curso.
+  const controllers = useRef(uploadControllers);
   const [advice, setAdvice] = useState<Record<string, string | null>>({});
-
-  useEffect(() => {
-    const active = controllers.current;
-    return () => active.forEach((c) => c.abort());
-  }, []);
 
   const upload = useCallback(
     async (request: AssetRequest, suggested?: PixelSize) => {
