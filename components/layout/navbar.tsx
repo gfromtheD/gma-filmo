@@ -7,6 +7,7 @@ import { motion, useAnimation, AnimatePresence, useReducedMotion } from "motion/
 import { DropdownMenu } from "radix-ui";
 import { UserAvatar, GuestAvatarIcon } from "@/components/layout/navbar-parts/avatars";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
+import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { AccountMenuContent } from "@/components/layout/navbar-parts/account-menu-content";
 import { StudioTabsRow } from "@/components/layout/navbar-parts/studio-tabs-row";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -118,6 +119,7 @@ export function Navbar() {
       <div className="relative grid h-14 grid-cols-[1fr_auto] items-center gap-2 px-4 lg:h-16 lg:grid-cols-[auto_auto_1fr] lg:gap-5 lg:px-16">
         {/* ── Left: menú móvil + marca ──────────────────────────────── */}
         <div className="flex items-center gap-1 lg:gap-0">
+          <MobileNavDrawer />
           <NavbarBrand />
         </div>
 

@@ -32,7 +32,10 @@ async function clickUntil(trigger: Locator, expected: Locator) {
   }).toPass({ timeout: 20_000 });
 }
 
+/** Navegación del móvil: vive dentro del panel lateral, que solo existe abierto. */
 const tabBar = (page: Page) => page.getByRole("navigation", { name: "Navegación principal" });
+const menuButton = (page: Page) => page.getByRole("button", { name: "Abrir el menú" });
+const drawer = (page: Page) => page.getByRole("dialog", { name: "Menú" });
 
 for (const width of WIDTHS) {
   const isDesktop = width >= DESKTOP_MIN;
@@ -195,30 +198,30 @@ for (const width of WIDTHS) {
         await expect.poll(() => color("Películas"), { timeout: 5000 }).toBe("rgb(255, 255, 255)");
       });
     } else {
-      test("móvil: píldora flotante con cuatro accesos, el activo marcado y sin menú lateral", async ({ page }) => {
+      test("móvil: el menú junto a la marca abre un panel lateral con accesos grandes y el activo marcado", async ({ page }) => {
         await openHome(page);
-        const bar = tabBar(page);
-        await expect(bar).toBeVisible();
-        for (const name of ["Inicio", "Películas", "Cortos", "Entrar"]) {
-          const link = bar.getByRole("link", { name });
-          await expect(link).toBeVisible();
-          const box = await link.boundingBox();
-          expect(box?.height ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
-        }
-        await expect(bar.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
-        await expect(page.getByRole("button", { name: "Abrir menú principal" })).toHaveCount(0);
-        await expect(bar.getByRole("link", { name: "Buscar" })).toHaveCount(0); // la lupa vive en la cabecera
+        await expect(tabBar(page)).toHaveCount(0); // ya no hay barra inferior
+        const header = page.locator("header");
+        const button = (await menuButton(page).boundingBox())!;
+        const logo = (await header.getByRole("link", { name: "GMA" }).first().boundingBox())!;
+        expect(button.x + button.width).toBeLessThanOrEqual(logo.x + 1); // a la izquierda de la marca
+        expect(button.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
 
-        // Es una píldora flotante: redondeada, separada del borde inferior y de los laterales, centrada.
-        const pill = bar.locator("ul");
-        const box = await pill.boundingBox();
-        expect(box).not.toBeNull();
-        const gapBottom = 800 - ((box?.y ?? 0) + (box?.height ?? 0));
-        expect(gapBottom).toBeGreaterThanOrEqual(10);
-        expect(gapBottom).toBeLessThanOrEqual(30);
-        expect(box?.x ?? 0).toBeGreaterThanOrEqual(12);
-        expect(Math.abs((box?.x ?? 0) + (box?.width ?? 0) / 2 - width / 2)).toBeLessThanOrEqual(1);
-        expect(parseFloat(await pill.evaluate((el) => getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThanOrEqual(30);
+        await menuButton(page).click();
+        await expect(drawer(page)).toBeVisible();
+        for (const name of ["Inicio", "Películas", "Cortos", "Entrar", "Buscar"]) {
+          const link = drawer(page).getByRole("link", { name });
+          await expect(link).toBeVisible();
+          expect((await link.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
+        }
+        await expect(drawer(page).getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+        // Entra desde la izquierda y ocupa la mayor parte del ancho, sin taparlo entero.
+        const panel = (await drawer(page).boundingBox())!;
+        expect(panel.x).toBeLessThanOrEqual(1);
+        expect(panel.width).toBeLessThan(width);
+
+        await page.keyboard.press("Escape");
+        await expect(drawer(page)).toBeHidden();
       });
     }
   });
@@ -249,40 +252,46 @@ test.describe("navbar: comportamiento", () => {
   });
 });
 
-test.describe("barra inferior móvil: navegación", () => {
+test.describe("menú lateral móvil: navegación", () => {
   test.use({ viewport: { width: 390, height: 800 }, hasTouch: true });
 
-  test("elegir una sección navega y marca la nueva como activa", async ({ page }) => {
+  test("elegir una sección navega, cierra el panel y la marca como activa", async ({ page }) => {
     await openHome(page);
-    const bar = tabBar(page);
-    await expect(bar.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
     await expect(async () => {
-      await bar.getByRole("link", { name: "Películas" }).click();
+      if (!(await drawer(page).isVisible())) await menuButton(page).click();
+      await drawer(page).getByRole("link", { name: "Películas" }).click();
       await expect(page).toHaveURL(/peliculas/, { timeout: 2_000 });
     }).toPass({ timeout: 20_000 });
-    await expect(tabBar(page).getByRole("link", { name: "Películas" })).toHaveAttribute("aria-current", "page");
-    await expect(tabBar(page).getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
+    await expect(drawer(page)).toBeHidden();
+    await menuButton(page).click();
+    await expect(drawer(page).getByRole("link", { name: "Películas" })).toHaveAttribute("aria-current", "page");
+    await expect(drawer(page).getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current", "page");
   });
 
   test("el visitante ve «Entrar» (login) y la lupa de la cabecera lleva al buscador", async ({ page }) => {
     await openHome(page);
-    await expect(tabBar(page).getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/?login=1");
     await expect(page.locator("header").getByRole("link", { name: "Buscador" })).toHaveAttribute("href", "/buscador");
+    await menuButton(page).click();
+    await expect(drawer(page).getByRole("link", { name: "Entrar" })).toHaveAttribute("href", "/?login=1");
   });
 
-  test("no tapa el final de la página y no desborda en horizontal", async ({ page }) => {
+  test("tocar fuera del panel lo cierra y la página no reserva hueco abajo ni desborda", async ({ page }) => {
     await openHome(page);
-    // La página reserva el alto de la barra (56 px + zona segura) bajo el pie de página para que no tape lo último.
+    await menuButton(page).click();
+    await expect(drawer(page)).toBeVisible();
+    await page.mouse.click(385, 400); // el fondo oscurecido, a la derecha del panel
+    await expect(drawer(page)).toBeHidden();
     const reserved = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("footer")!.parentElement!).paddingBottom));
-    expect(reserved).toBeGreaterThanOrEqual(56);
+    expect(reserved).toBeLessThan(56);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
   });
 
-  test("al ensanchar a escritorio la barra inferior desaparece y aparece la superior", async ({ page }) => {
+  test("al ensanchar a escritorio el panel se cierra y aparece la cabecera de escritorio", async ({ page }) => {
     await openHome(page);
-    await expect(tabBar(page)).toBeVisible();
+    await menuButton(page).click();
+    await expect(drawer(page)).toBeVisible();
     await page.setViewportSize({ width: 1280, height: 800 });
-    await expect(tabBar(page)).toBeHidden();
+    await expect(drawer(page)).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Principal" })).toBeVisible();
   });
 });
