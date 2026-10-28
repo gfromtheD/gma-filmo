@@ -39,7 +39,7 @@ export function UploadGuard() {
       href="/mi-estudio?tab=subir"
       role="status"
       aria-label={`${label}. Ir a la subida`}
-      className="fixed bottom-[calc(var(--gma-tabbar-h,0px)+env(safe-area-inset-bottom)+20px)] left-4 z-[41] flex items-center gap-2.5 rounded-full border border-white/10 bg-[#0C1611]/95 py-2 pl-3 pr-4 text-[13px] font-semibold text-white shadow-[0_18px_44px_-14px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-colors hover:bg-[#12201A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:bottom-6 lg:left-6"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom)+20px)] left-4 z-[41] flex items-center gap-2.5 rounded-full border border-white/10 bg-[#0C1611]/95 py-2 pl-3 pr-4 text-[13px] font-semibold text-white shadow-[0_18px_44px_-14px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-colors hover:bg-[#12201A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:bottom-6 lg:left-6"
     >
       <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-[#22B16B] motion-reduce:animate-none" />
       {label}
