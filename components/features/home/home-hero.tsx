@@ -28,6 +28,9 @@ interface HomeHeroProps {
   readonly isTransition?: boolean;
 }
 
+/** El volumen sale desde el centro del botón de pausa (su alto, 40 px, más la separación de 8 px). */
+const VOLUME_OFFSET_PX = 48;
+
 const ROUND_BUTTON =
   "flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
@@ -139,14 +142,15 @@ export function HomeHero({
       </div>
 
       {trailer.showControl && (
-        // Pausa/reproducir arriba; el volumen nace debajo solo mientras el tráiler suena y se recoge al pausarlo.
-        <div className="absolute bottom-6 right-4 z-[3] flex flex-col items-center gap-2 lg:bottom-16 lg:right-16">
+        // El botón de pausa/reproducir no se mueve: el de volumen nace de él hacia arriba mientras el tráiler suena y vuelve a
+        // él al pausarlo. Va encima (no debajo) porque abajo en el móvil queda pegado al borde.
+        <div className="absolute bottom-6 right-4 z-[3] lg:bottom-16 lg:right-16">
           <button
             type="button"
             onClick={trailer.toggle}
             aria-label={trailer.isPlaying ? "Pausar tráiler" : "Reproducir tráiler"}
             aria-pressed={trailer.isPlaying}
-            className={ROUND_BUTTON}
+            className={`${ROUND_BUTTON} relative z-[1]`}
           >
             <GmaIcon name={trailer.isPlaying ? "pause" : "play"} size={18} />
           </button>
@@ -158,11 +162,11 @@ export function HomeHero({
                 onClick={trailer.toggleMute}
                 aria-label={trailer.isMuted ? "Activar el sonido del tráiler" : "Silenciar el tráiler"}
                 aria-pressed={!trailer.isMuted}
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.7 }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: VOLUME_OFFSET_PX, scale: 0.6 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.7 }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className={ROUND_BUTTON}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: VOLUME_OFFSET_PX, scale: 0.6 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className={`${ROUND_BUTTON} absolute bottom-full left-0 mb-2`}
               >
                 <GmaIcon name={trailer.isMuted ? "mute" : "volume"} size={18} />
               </motion.button>
