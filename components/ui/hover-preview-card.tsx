@@ -206,7 +206,7 @@ export function HoverPreviewCard({
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-t-[18px] rounded-b-[28px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-[6px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,

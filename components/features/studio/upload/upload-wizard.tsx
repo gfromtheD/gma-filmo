@@ -10,11 +10,11 @@ import { VideoStep } from "./steps/video-step";
 import { FichaStep } from "./steps/ficha-step";
 import { DataStep } from "./steps/data-step";
 import { useFooterHiddenStore } from "@/store/use-footer-hidden-store";
-import { getUploadEngine, type SubmitResult } from "@/lib/studio/engine";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/studio/draft-storage";
-import { UPLOAD_STEPS, emptyDraft, isTransferring, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
+import type { SubmitResult } from "@/lib/studio/engine";
+import { useUploadDraftStore } from "@/store/use-upload-draft-store";
+import { processingResume, sharedUploadEngine, uploadControllers } from "./shared-uploads";
+import { UPLOAD_STEPS, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
 
-const SAVE_DELAY_MS = 500;
 
 /** Estado visible de un paso: neutro al principio (se le da el beneficio de la duda al usuario) y aviso solo si salió sin completarlo. */
 type StepMark = "complete" | "warning" | "pending";
@@ -42,16 +42,16 @@ interface UploadWizardProps {
 export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProps) {
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
-  // El motor multimedia necesita leer el borrador actual (tipo de cada extra, idioma de cada SRT) sin recrearse.
-  const draftRef = useRef<UploadDraft | null>(null);
-  const engine = useMemo(() => getUploadEngine(() => draftRef.current ?? emptyDraft()), []);
-  const [draft, setDraft] = useState<UploadDraft>(emptyDraft);
-  draftRef.current = draft;
-  const [isReady, setIsReady] = useState(false);
+  // Borrador y motor viven fuera de la pantalla (ver store/use-upload-draft-store.ts): salir no corta las subidas.
+  const engine = sharedUploadEngine();
+  const draft = useUploadDraftStore((state) => state.draft);
+  const setDraft = useUploadDraftStore((state) => state.setDraft);
+  const isReady = useUploadDraftStore((state) => state.isReady);
+  const savedAt = useUploadDraftStore((state) => state.savedAt);
+  const resetDraft = useUploadDraftStore((state) => state.reset);
   const [stepIndex, setStepIndex] = useState(0);
   const [isReviewing, setIsReviewing] = useState(false);
   const [attempted, setAttempted] = useState<ReadonlySet<UploadStepId>>(new Set());
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   /** Obra recién enviada: se enseña la confirmación en vez de volver al formulario (que ya está vacío). */
@@ -60,21 +60,8 @@ export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProp
   const panel = useRef<HTMLDivElement>(null);
   const skipFocus = useRef(true);
 
-  // El borrador se lee en el navegador al montar (en el servidor no existe `localStorage`).
-  useEffect(() => {
-    setDraft(loadDraft(window.localStorage));
-    setIsReady(true);
-  }, []);
-
-  // Guardado automático con un pequeño retraso. Mientras sube un vídeo la barra de progreso cambia el borrador sin parar y
-  // el retraso se reiniciaría siempre: por eso se guarda igualmente si ya ha pasado SAVE_DELAY_MS desde el último guardado.
-  const lastSaveRef = useRef(0);
-  useEffect(() => {
-    if (!isReady) return;
-    const save = () => { saveDraft(window.localStorage, draft); lastSaveRef.current = Date.now(); setSavedAt(lastSaveRef.current); };
-    const timer = setTimeout(save, Math.max(0, SAVE_DELAY_MS - (Date.now() - lastSaveRef.current)));
-    return () => clearTimeout(timer);
-  }, [draft, isReady]);
+  // El borrador se lee en el navegador la primera vez (en el servidor no existe `localStorage`); se guarda solo al cambiar.
+  useEffect(() => { useUploadDraftStore.getState().load(); }, []);
 
   // Al cambiar de paso o de pantalla, el foco pasa al contenido (accesibilidad) y se sube al principio.
   useEffect(() => {
@@ -91,26 +78,18 @@ export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProp
     return () => setFooterHidden(false);
   }, [isActive, isReviewing, setFooterHidden]);
 
-  // Mientras un archivo sale del navegador, cerrar o recargar la página lo cortaría: el navegador pide confirmación.
-  const transferring = isTransferring(draft);
-  useEffect(() => {
-    if (!transferring) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [transferring]);
-
-  const update = useCallback((patch: Partial<UploadDraft>) => setDraft((d) => ({ ...d, ...patch })), []);
-  const setAssetInDraft = useCallback((slot: string, asset: Parameters<typeof setAsset>[2]) => setDraft((d) => setAsset(d, slot, asset)), []);
+  const update = useCallback((patch: Partial<UploadDraft>) => setDraft((d) => ({ ...d, ...patch })), [setDraft]);
+  const setAssetInDraft = useCallback((slot: string, asset: Parameters<typeof setAsset>[2]) => setDraft((d) => setAsset(d, slot, asset)), [setDraft]);
   const uploader = useAssetUploader(engine, setAssetInDraft);
 
   // Al volver a la página, lo que el servidor seguía convirtiendo se vuelve a vigilar (una sola vez, con el borrador recién leído).
-  const resumed = useRef(false);
   const { resume } = uploader;
   useEffect(() => {
-    if (!isReady || resumed.current) return;
-    resumed.current = true;
-    for (const [slot, asset] of processingAssets(draftRef.current ?? emptyDraft())) void resume(slot, asset);
+    if (!isReady || processingResume.done) return;
+    processingResume.done = true;
+    for (const [slot, asset] of processingAssets(useUploadDraftStore.getState().draft)) {
+      if (!uploadControllers.has(slot)) void resume(slot, asset);
+    }
   }, [isReady, resume]);
 
   const reviews = useMemo(() => reviewDraft(draft), [draft]);
@@ -145,12 +124,11 @@ export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProp
     if (outcome.status === "error") return;
     // Enviada: la confirmación sustituye a la revisión y el borrador empieza de cero para la siguiente obra.
     setSent({ title, slug: outcome.status === "published" ? outcome.slug || null : null, published: outcome.status === "published" });
-    if (outcome.status === "published") { clearDraft(window.localStorage); setDraft(emptyDraft()); }
+    if (outcome.status === "published") resetDraft();
   }
 
   function startOver() {
-    clearDraft(window.localStorage);
-    setDraft(emptyDraft());
+    resetDraft();
     setAttempted(new Set());
     setResult(null);
     setSent(null);
