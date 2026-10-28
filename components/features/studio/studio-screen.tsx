@@ -105,6 +105,9 @@ export function StudioScreen() {
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState("");
   const { activeTab: active, setActiveTab } = useStudioTabStore();
+  // La pasarela de subida se monta la primera vez que se abre «Subir» y ya no se desmonta (ver más abajo).
+  const [wizardOpened, setWizardOpened] = useState(active === "subir");
+  useEffect(() => { if (active === "subir") setWizardOpened(true); }, [active]);
   const [editTitle,  setEditTitle]  = useState<StudioTitle | null>(null);
   const [openTitle,  setOpenTitle]  = useState<StudioTitle | null>(null);
   const [focusTitle, setFocusTitle] = useState<StudioTitle | null>(null);
@@ -317,8 +320,11 @@ export function StudioScreen() {
             onToast={showToast} onDelete={setDeleteTarget} onPublication={(t, publish) => void changePublication(t, publish)}
             openTitle={openTitle} setOpenTitle={setOpenTitle} />
         )}
-        {active === "subir" && (
-          <UploadWizard onGoToTitles={() => { handlePublished(); nav("titulos"); }} />
+        {/* Una vez abierta, la pasarela sigue montada (oculta) en las otras pestañas: cambiar de pestaña no corta la subida. */}
+        {wizardOpened && (
+          <div hidden={active !== "subir"}>
+            <UploadWizard isActive={active === "subir"} onGoToTitles={() => { handlePublished(); nav("titulos"); }} />
+          </div>
         )}
         {active === "perfil" && (
           <ProfileView data={data} onToast={showToast} />
