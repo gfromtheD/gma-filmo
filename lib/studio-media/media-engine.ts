@@ -87,7 +87,9 @@ function toAsset(file: { name: string; size: number }, envelope: ManagedEnvelope
 
 export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: () => UploadDraft; publishMode?: PublishMode }): MediaUploadEngine {
   const sessions = new Map<string, ManagedEnvelope>();
-  let fichaRevision: number | null = null;
+  // Revisión de la ficha del borrador en curso. Va con su borrador: tras publicar y pulsar «Subir otra obra» el motor sigue
+  // vivo, y la revisión de la obra anterior hacía que el servidor rechazara siempre la ficha nueva (409).
+  let fichaRevision: { readonly draftId: string; readonly revision: number } | null = null;
 
   async function serverDraft(): Promise<ManagedDraftDetail> {
     return deps.getDraft(await deps.ownerId());
@@ -223,14 +225,14 @@ export function createMediaEngine(deps: MediaEngineDeps, options: { getDraft: ()
   async function saveFicha(draft: UploadDraft): Promise<{ revision: number }> {
     await adoptServerSessions(ALL_SLOTS(draft));
     const detail = await serverDraft();
-    if (fichaRevision === null) {
+    if (fichaRevision?.draftId !== detail.draft.id) {
       const current = await deps.api<{ ficha: { revision: number } | null }>(`/api/upload-drafts/${detail.draft.id}/ficha`);
-      fichaRevision = current.ficha?.revision ?? 0;
+      fichaRevision = { draftId: detail.draft.id, revision: current.ficha?.revision ?? 0 };
     }
     const mediaIdForSlot = (slot: string) => sessions.get(slot)?.asset.mediaId ?? null;
-    const body = { revision: fichaRevision, ...fichaFromDraft(draft, mediaIdForSlot) };
+    const body = { revision: fichaRevision.revision, ...fichaFromDraft(draft, mediaIdForSlot) };
     const saved = await deps.api<{ ficha: { revision: number } }>(`/api/upload-drafts/${detail.draft.id}/ficha`, 'PUT', body);
-    fichaRevision = saved.ficha.revision;
+    fichaRevision = { draftId: detail.draft.id, revision: saved.ficha.revision };
     return { revision: saved.ficha.revision };
   }
 
