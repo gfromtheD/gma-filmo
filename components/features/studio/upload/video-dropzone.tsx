@@ -8,6 +8,8 @@ import { ProcessingBucket } from "./processing-bucket";
 import { UploadProgress } from "./upload-progress";
 import type { StepProps } from "./step-props";
 import { isQueued, QUEUED_NOTE, type UploadedAsset } from "@/lib/studio/upload-draft";
+import { processingEstimate } from "@/lib/studio/processing-estimate";
+import { useNow } from "@/hooks/use-now";
 
 /** Lo mismo que aplica el servidor (UPLOAD_LIMITS y duración máxima por rol). */
 const SIZE_HINT: Record<VideoDropzoneProps["slot"], string> = { video: "hasta 4 GB y 4 h", trailer: "hasta 1 GB y 10 min" };
@@ -46,6 +48,8 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
   // Etapa en curso (comprobar → subir → procesar) y su avance; sin dato de etapa (motor local o antiguo) se entiende «subiendo».
   const phase = file?.phase ?? (status === "processing" ? "processing" : "uploading");
   const stageProgress = phase === "processing" ? null : (file?.progress ?? 0);
+  const now = useNow(phase === "processing" ? 5000 : null);
+  const estimate = phase === "processing" ? processingEstimate(file?.mediaSeconds, file?.processingSince, now) : null;
 
   function pick(list: FileList | null) {
     const picked = list?.[0];
@@ -101,7 +105,7 @@ export function VideoDropzone({ slot, noun, file, files, showErrors, required = 
         {file && showsBucket && (
           <>
             <ProcessingBucket phase={phase} progress={stageProgress} className="mt-20 mb-8" />
-            <UploadProgress phase={phase} progress={stageProgress} sizeBytes={file.sizeBytes} />
+            <UploadProgress phase={phase} progress={stageProgress} sizeBytes={file.sizeBytes} estimate={estimate} />
             <div className="min-w-0 max-w-full">
               <p className="text-[17px] font-extrabold text-white">
                 {phase === "processing" ? `Procesando tu ${noun}` : phase === "checking" ? `Comprobando tu ${noun}`

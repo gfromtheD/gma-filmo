@@ -2,6 +2,7 @@
 
 import { formatElapsed, formatEta, formatMegabytes, formatRate } from "@/lib/studio/transfer-stats";
 import { QUEUED_NOTE, type UploadPhase } from "@/lib/studio/upload-draft";
+import type { ProcessingEstimate } from "@/lib/studio/processing-estimate";
 import { useTransferStats } from "./use-transfer-stats";
 
 interface UploadProgressProps {
@@ -9,6 +10,8 @@ interface UploadProgressProps {
   /** Avance (0–100) de la etapa en curso; `null` si esa etapa no lo informa. */
   readonly progress: number | null;
   readonly sizeBytes: number;
+  /** Al procesar: avance y tiempo restante estimados con la duración del vídeo; sin ella, se enseña el tiempo transcurrido. */
+  readonly estimate?: ProcessingEstimate | null;
 }
 
 const PHASES: readonly { readonly id: UploadPhase; readonly label: string }[] = [
@@ -21,37 +24,38 @@ const PHASES: readonly { readonly id: UploadPhase; readonly label: string }[] = 
  * Cuánto de la barra de una etapa está lleno: las anteriores a la actual, completas; las siguientes, vacías. En cola el archivo
  * ya está comprobado y aún no ha empezado a subir: la barra de subir, vacía.
  */
-function segmentFill(segment: UploadPhase, current: UploadPhase, progress: number | null): number {
+function segmentFill(segment: UploadPhase, current: UploadPhase, progress: number | null, estimated: number | null): number {
   const order = PHASES.findIndex((p) => p.id === segment);
   const now = PHASES.findIndex((p) => p.id === (current === "queued" ? "uploading" : current));
   if (current === "queued" && order === now) return 0;
   if (order < now) return 100;
   if (order > now) return 0;
-  return progress ?? 0;
+  return current === "processing" ? estimated ?? 0 : progress ?? 0;
 }
 
 /**
  * El paso 1 de un vistazo: el porcentaje de la etapa en curso en grande, las tres etapas (comprobar el archivo, subirlo,
  * procesarlo) cada una con su propia barra, y al subir, cuántos MB van, a qué velocidad y cuánto falta.
  */
-export function UploadProgress({ phase, progress, sizeBytes }: UploadProgressProps) {
+export function UploadProgress({ phase, progress, sizeBytes, estimate = null }: UploadProgressProps) {
   const { loaded, rate, elapsed, eta } = useTransferStats(phase, progress, sizeBytes);
   const known = progress !== null && phase !== "processing" && phase !== "queued";
+  const estimated = phase === "processing" && estimate ? estimate.percent : null;
 
   return (
     <div className="w-full max-w-[420px] text-left" aria-hidden="true">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[34px] font-extrabold leading-none tabular-nums text-white">
-          {known ? `${Math.round(progress)} %` : formatElapsed(elapsed)}
+          {known ? `${Math.round(progress)} %` : estimated !== null ? `${estimated} %` : formatElapsed(elapsed)}
         </span>
         <span className="text-[12.5px] font-semibold text-[#2AC57A]">{phase === "queued" ? "En cola" : PHASES.find((p) => p.id === phase)?.label}</span>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {PHASES.map(({ id, label }) => {
-          const fill = segmentFill(id, phase, progress);
+          const fill = segmentFill(id, phase, progress, estimated);
           const active = id === (phase === "queued" ? "uploading" : phase);
-          const sweeping = active && phase === "processing";
+          const sweeping = active && phase === "processing" && estimated === null;
           return (
             <div key={id}>
               <div className="relative h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -76,7 +80,14 @@ export function UploadProgress({ phase, progress, sizeBytes }: UploadProgressPro
       )}
       {phase === "checking" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">Verificando que el archivo está entero antes de enviarlo…</p>}
       {phase === "queued" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">{QUEUED_NOTE}</p>}
-      {phase === "processing" && <p className="mt-2 text-[12.5px] text-[#BBBBBB]">El servidor lo está convirtiendo: puedes seguir rellenando la ficha.</p>}
+      {phase === "processing" && (
+        <p className="mt-2 text-[12.5px] tabular-nums text-[#BBBBBB]">
+          {estimate
+            ? estimate.remainingSeconds > 0 ? `Quedan ${formatEta(estimate.remainingSeconds).replace("≈ ", "unos ")} · ` : "Ya casi está · "
+            : null}
+          El servidor lo está convirtiendo: puedes seguir rellenando la ficha.
+        </p>
+      )}
     </div>
   );
 }

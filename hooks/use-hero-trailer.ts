@@ -51,6 +51,8 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
   const [isVisible, setIsVisible] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
   const [hasFailed, setHasFailed] = useState(false);
+  /** El usuario lo pausó: vuelve la portada y el carrusel sigue con el tiempo normal de cada diapositiva. */
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
@@ -79,18 +81,23 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
       video.currentTime = 0;
       setHasEnded(false);
     }
-    if (video.paused || video.ended) void video.play().catch(() => setIsPlaying(false));
-    else video.pause();
+    if (video.paused || video.ended) {
+      setIsDismissed(false);
+      void video.play().catch(() => setIsPlaying(false));
+    } else {
+      video.pause();
+      setIsDismissed(true);
+    }
   }, [isMounted, hasEnded]);
 
   return {
     videoRef,
     hasTrailer,
     isMounted,
-    isVisible: isVisible && !hasEnded,
+    isVisible: isVisible && !hasEnded && !isDismissed,
     isPlaying,
     showControl: hasTrailer && (isMounted || !canAutoplay),
-    isActive: hasTrailer && isMounted && !hasEnded,
+    isActive: hasTrailer && isMounted && !hasEnded && !isDismissed,
     hasEnded,
     toggle,
     handlers: {

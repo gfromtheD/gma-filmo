@@ -6,6 +6,7 @@ import {
   IMAGE_SNIFF_BYTES, imageContentProblem, imageSizeAdvice, sniffImageType, validateFile, type PixelSize,
 } from "@/lib/studio/file-rules";
 import { readImageSize } from "@/lib/studio/image-size";
+import { readVideoSeconds } from "@/lib/studio/processing-estimate";
 import type { UploadedAsset, UploadPhase } from "@/lib/studio/upload-draft";
 
 type SetAsset = (slot: string, asset: UploadedAsset | null) => void;
@@ -46,7 +47,9 @@ export function useAssetUploader(engine: UploadEngine, setAsset: SetAsset) {
       controllers.current.set(slot, controller);
       // Las imágenes se ven al instante desde el propio archivo; la del servidor llega al terminar sin que cambie nada.
       const previewUrl = request.rule === "image" ? URL.createObjectURL(file) : undefined;
-      const base = { name: file.name, sizeBytes: file.size, url: null, ...(previewUrl ? { previewUrl } : {}) } as const;
+      // La duración del vídeo sirve luego para estimar cuánto falta de conversión en el servidor.
+      const mediaSeconds = request.rule === "video" ? await readVideoSeconds(file) : undefined;
+      const base = { name: file.name, sizeBytes: file.size, url: null, ...(previewUrl ? { previewUrl } : {}), ...(mediaSeconds ? { mediaSeconds } : {}) } as const;
       let phase: UploadPhase = "uploading";
       setAsset(slot, { ...base, status: "uploading", phase, progress: 0 });
       try {

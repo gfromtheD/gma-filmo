@@ -1,3 +1,4 @@
+import { keepProcessingClock } from "@/lib/studio/processing-estimate";
 import {
   DIRECTOR_ROLE, CREW_ROLES, IMAGE_SLOTS, LIMITS, type ImageSlotId,
 } from "@/lib/studio/catalogs";
@@ -48,6 +49,10 @@ export interface UploadedAsset {
   readonly localOnly?: boolean;
   /** Imagen elegida, vista desde el propio navegador (`blob:`) mientras se sube: no espera al servidor. No se guarda. */
   readonly previewUrl?: string;
+  /** Duración del vídeo (s), leída en el navegador al elegirlo: con ella se estima cuánto falta de conversión. */
+  readonly mediaSeconds?: number;
+  /** Cuándo empezó el servidor a convertirlo (ms desde 1970); se guarda para que una recarga no reinicie la cuenta. */
+  readonly processingSince?: number;
 }
 
 /** Lo que se pinta como vista previa de una imagen: la local en cuanto se elige; si no hay, la del servidor al terminar. */
@@ -290,7 +295,8 @@ export function processingAssets(draft: UploadDraft): Array<[string, UploadedAss
 }
 
 /** Devuelve un borrador nuevo con el archivo colocado (o quitado, con `null`) en su hueco. */
-export function setAsset(draft: UploadDraft, slot: string, asset: UploadedAsset | null): UploadDraft {
+export function setAsset(draft: UploadDraft, slot: string, incoming: UploadedAsset | null): UploadDraft {
+  const asset = incoming && keepProcessingClock(getAsset(draft, slot), incoming, Date.now());
   if (slot === "video") {
     return { ...draft, video: { file: asset } };
   }
