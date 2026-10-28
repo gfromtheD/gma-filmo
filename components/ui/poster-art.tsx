@@ -283,8 +283,8 @@ interface PosterArtProps {
 }
 
 export function PosterArt({ style, title, kind, genre, ratio = "portrait", imageUrl, fill = false, anchor = "center", priority = false, blurTitleOnHover = false }: PosterArtProps) {
-  // Los cortos no llevan etiqueta (todos lo son); se conservan "Película", "Serie" y los géneros propios.
-  const label = genre === "Cortometraje" || (genre === undefined && kind === "movie") ? null : (genre ?? "Serie");
+  // Ni los cortos ni las películas llevan etiqueta (cada una ya está en su sección); se conservan "Serie" y los géneros propios.
+  const label = genre === "Cortometraje" || genre === "Película" || (genre === undefined && kind === "movie") ? null : (genre ?? "Serie");
   const [c1, c2] = style.tone;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const motifFn: MotifFn = (MOTIFS as Record<string, MotifFn | undefined>)[style.motif] ?? (() => null);
