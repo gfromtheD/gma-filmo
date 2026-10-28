@@ -26,6 +26,9 @@ interface HeroTrailer {
   readonly isActive: boolean;
   readonly hasEnded: boolean;
   readonly toggle: () => void;
+  /** Sin sonido (arranca así); el botón de volumen solo existe mientras el tráiler se reproduce. */
+  readonly isMuted: boolean;
+  readonly toggleMute: () => void;
   readonly handlers: {
     readonly onPlaying: () => void;
     readonly onPause: () => void;
@@ -53,6 +56,7 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
   const [hasFailed, setHasFailed] = useState(false);
   /** El usuario lo pausó: vuelve la portada y el carrusel sigue con el tiempo normal de cada diapositiva. */
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
@@ -90,8 +94,17 @@ export function useHeroTrailer(trailerUrl: string | undefined): HeroTrailer {
     }
   }, [isMounted, hasEnded]);
 
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  }, []);
+
   return {
     videoRef,
+    isMuted,
+    toggleMute,
     hasTrailer,
     isMounted,
     isVisible: isVisible && !hasEnded && !isDismissed,
