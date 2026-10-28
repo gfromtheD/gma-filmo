@@ -81,27 +81,27 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
             )}
           </header>
 
-          <div ref={contentRef} className={`relative flex w-full flex-1 items-center px-6 py-12 sm:px-10 sm:py-16 lg:px-16 ${view === "hero" ? "justify-start" : "justify-center"}`}>
+          <div ref={contentRef} className="relative flex w-full flex-1 items-center justify-center px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
             <AnimatePresence mode="wait">
               <motion.div key={view} className={view === "hero" ? "w-full max-w-2xl" : "w-full max-w-md"}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }} transition={{ duration: reducedMotion ? 0 : 0.25 }}
                 onAnimationComplete={focusCurrentView}>
-                {view === "hero" && <div>
+                {view === "hero" && <div className="text-center">
                   <p className="mb-5 text-xs font-semibold uppercase tracking-[.22em] text-[#58D99B] sm:text-sm">Cine independiente. Miradas libres.</p>
                   <h1 aria-label="El lugar para descubrir, compartir, sentir y disfrutar cine." className="text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.05] tracking-[-.045em]">
                     <span className="block">El lugar para</span>
-                    <span aria-hidden="true" className="block h-[1.25em] text-[#58D99B]">
+                    <span aria-hidden="true" className="mx-auto block h-[1.25em] text-[#58D99B]">
                       <TextRotate texts={["descubrir", "compartir", "sentir", "disfrutar"]}
                         rotationInterval={3000} auto={!reducedMotion}
-                        mainClassName="h-full w-full flex-nowrap overflow-hidden whitespace-nowrap"
+                        mainClassName="h-full w-full flex-nowrap items-center justify-center overflow-hidden whitespace-nowrap"
                         splitLevelClassName="whitespace-nowrap"
                         staggerDuration={0.025} staggerFrom="last"
                         transition={{ type: "spring", damping: 30, stiffness: 400 }} />
                     </span>
                     <span className="block">cine.</span>
                   </h1>
-                  <p className="mt-7 max-w-lg text-base leading-relaxed text-[#DEE3E0] sm:text-lg">
+                  <p className="mx-auto mt-7 max-w-lg text-base leading-relaxed text-[#DEE3E0] sm:text-lg">
                     Descubre cortos, animación y nuevas voces del cine independiente. Un espacio de Generación Maldita para ver, compartir y apoyar a sus creadores.
                   </p>
                   <button ref={enterRef} type="button" onClick={openAccess}
