@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -47,6 +48,7 @@ export function HomeHero({
   isTransition = false,
 }: HomeHeroProps) {
   const director = getDirectorName(item);
+  const reduceMotion = useReducedMotion();
   const trailerEndpoint = trailerEndpointFor(item);
   const trailer = useHeroTrailer(isOverlay ? undefined : item.trailerUrl ?? trailerEndpoint ?? undefined);
 
@@ -137,15 +139,36 @@ export function HomeHero({
       </div>
 
       {trailer.showControl && (
-        <button
-          type="button"
-          onClick={trailer.toggle}
-          aria-label={trailer.isPlaying ? "Pausar tráiler" : "Reproducir tráiler"}
-          aria-pressed={trailer.isPlaying}
-          className={`${ROUND_BUTTON} absolute bottom-6 right-4 z-[3] lg:bottom-16 lg:right-16`}
-        >
-          <GmaIcon name={trailer.isPlaying ? "pause" : "play"} size={18} />
-        </button>
+        // Pausa/reproducir arriba; el volumen nace debajo solo mientras el tráiler suena y se recoge al pausarlo.
+        <div className="absolute bottom-6 right-4 z-[3] flex flex-col items-center gap-2 lg:bottom-16 lg:right-16">
+          <button
+            type="button"
+            onClick={trailer.toggle}
+            aria-label={trailer.isPlaying ? "Pausar tráiler" : "Reproducir tráiler"}
+            aria-pressed={trailer.isPlaying}
+            className={ROUND_BUTTON}
+          >
+            <GmaIcon name={trailer.isPlaying ? "pause" : "play"} size={18} />
+          </button>
+          <AnimatePresence initial={false}>
+            {trailer.isPlaying && (
+              <motion.button
+                key="volumen"
+                type="button"
+                onClick={trailer.toggleMute}
+                aria-label={trailer.isMuted ? "Activar el sonido del tráiler" : "Silenciar el tráiler"}
+                aria-pressed={!trailer.isMuted}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.7 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.7 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className={ROUND_BUTTON}
+              >
+                <GmaIcon name={trailer.isMuted ? "mute" : "volume"} size={18} />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       {canNavigate && !isOverlay && (
