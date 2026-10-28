@@ -82,6 +82,9 @@
   --gma-bg-secondary:   #070709;
   --gma-surface:        #1C1C21;
   --gma-surface-2:      #0E0E11;
+  /* Tarjeta flotante: el violeta del fondo (SiteAurora) oscurecido, de arriba a abajo. */
+  --gma-preview:        #1C1633;
+  --gma-preview-end:    #17122B;
   --gma-panel:          #141417;
   --gma-line-strong:    #33333A;
   --gma-accent:         #22B16B;

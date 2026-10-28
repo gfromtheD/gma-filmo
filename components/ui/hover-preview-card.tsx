@@ -43,9 +43,9 @@ const EXIT_MS = 130;
  * Fondo de la tarjeta: el violeta del fondo de la web (`SiteAurora`, 91,63,209) oscurecido para que el texto se lea, con un
  * resplandor suave abajo. La imagen se funde en `PREVIEW_BG`, el tono de arriba.
  */
-const PREVIEW_BG = "#1C1633";
+const PREVIEW_BG = "var(--gma-preview)";
 const PREVIEW_BACKGROUND =
-  "radial-gradient(120% 70% at 50% 110%, rgba(91,63,209,0.32) 0%, rgba(91,63,209,0) 70%), linear-gradient(180deg, #1C1633 0%, #17122B 100%)";
+  "radial-gradient(120% 70% at 50% 110%, rgba(91,63,209,0.32) 0%, rgba(91,63,209,0) 70%), linear-gradient(180deg, var(--gma-preview) 0%, var(--gma-preview-end) 100%)";
 
 /** Margen del recorte para no cortar la sombra de la tarjeta una vez abierta. */
 const SHADOW_ROOM = 60;
