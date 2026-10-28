@@ -45,32 +45,44 @@ const TRAILER_DELAY_MS = 600;
 /** El recuadro mide unos 350 px: 480p se ve bien y su primer trozo llega mucho antes que el de 1080p. */
 const TRAILER_MAX_HEIGHT = 480;
 
-/** Tráiler mudo que se funde sobre la portada; si falla o termina, queda la portada. */
-function PanelTrailer({ src, endpoint, onPlaying, onFailed }: {
-  readonly src?: string; readonly endpoint: string | null; readonly onPlaying: () => void; readonly onFailed: () => void;
-}) {
+/** Tráiler que se funde sobre la portada, sin sonido hasta que se pulse el altavoz; si falla, queda la portada. */
+function PanelTrailer({ src, endpoint }: { readonly src?: string; readonly endpoint: string | null }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [hasFailed, setHasFailed] = useState(false);
   if (hasFailed) return null;
+
+  function toggleSound() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  }
+
   return (
     <>
       <TrailerVideo
         src={src}
         endpoint={endpoint}
+        videoRef={videoRef}
         maxHeight={TRAILER_MAX_HEIGHT}
         autoPlay
         loop
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        onPlaying={() => { setIsPlaying(true); onPlaying(); }}
-        onError={() => { setHasFailed(true); onFailed(); }}
+        onPlaying={() => setIsPlaying(true)}
+        onVolumeChange={(event) => setIsMuted(event.currentTarget.muted)}
+        onError={() => setHasFailed(true)}
         className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 motion-reduce:transition-none ${isPlaying ? "opacity-100" : "opacity-0"}`}
       />
       {isPlaying && (
-        <span aria-hidden="true" className="pointer-events-none absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
-          <GmaIcon name="mute" size={14} />
-        </span>
+        <button type="button" onClick={toggleSound} aria-label={isMuted ? "Activar el sonido del tráiler" : "Silenciar el tráiler"}
+          aria-pressed={!isMuted}
+          className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+          <GmaIcon name={isMuted ? "mute" : "volume"} size={15} />
+        </button>
       )}
     </>
   );
@@ -97,7 +109,6 @@ export function HoverPreviewCard({
   const [panelHeight, setPanelHeight] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
-  const [trailerState, setTrailerState] = useState<"loading" | "playing" | "failed">("loading");
   const trailerEndpoint = trailerEndpointFor(item);
   const hasTrailer = Boolean(item.trailerUrl || trailerEndpoint);
   const reduceMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -198,15 +209,7 @@ export function HoverPreviewCard({
       <div data-preview-image className="relative aspect-video w-full overflow-hidden">
         <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
         {showTrailer && hasTrailer && (
-          <PanelTrailer src={item.trailerUrl} endpoint={trailerEndpoint}
-            onPlaying={() => setTrailerState("playing")} onFailed={() => setTrailerState("failed")} />
-        )}
-        {/* Aviso de que hay tráiler y está llegando, para que nadie se vaya pensando que no existe. */}
-        {hasTrailer && !reduceMotion && trailerState === "loading" && (
-          <span aria-hidden="true" className="pointer-events-none absolute bottom-2 left-2 z-[1] flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white">
-            <span className="size-1.5 animate-pulse rounded-full bg-[#22B16B]" />
-            Tráiler
-          </span>
+          <PanelTrailer src={item.trailerUrl} endpoint={trailerEndpoint} />
         )}
         <div
           aria-hidden="true"
