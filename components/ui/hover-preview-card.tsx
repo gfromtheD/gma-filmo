@@ -135,7 +135,7 @@ export function HoverPreviewCard({
   useEffect(() => {
     if (trailerEndpoint && !reduceMotion) void prefetchPlaybackSource(trailerEndpoint);
   }, [trailerEndpoint, reduceMotion]);
-  const { avgScore, voteCount, isLoading } = useCommunityScore(item.numericId);
+  const { avgScore, voteCount } = useCommunityScore(item.numericId);
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
   const inList = hasMedia(item.numericId);
 
@@ -206,7 +206,7 @@ export function HoverPreviewCard({
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-t-[8px] rounded-b-[28px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-t-[18px] rounded-b-[28px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,
@@ -260,17 +260,6 @@ export function HoverPreviewCard({
             : "none",
         }}
       >
-        {(isLoading || avgScore !== null) && (
-          // Mismo formato que en el catálogo: «★ 7.5 · 2 valoraciones». Mientras carga se reserva la línea.
-          <div className="flex min-h-5 items-center">
-            {avgScore !== null && (
-              <p data-preview-score className="text-[13px] font-semibold leading-5 text-white">
-                <span className="text-[#22B16B]">★</span> {formatCommunityScore(avgScore)}
-                <span className="font-medium text-[#969696]"> · {voteCount} {voteCount === 1 ? "valoración" : "valoraciones"}</span>
-              </p>
-            )}
-          </div>
-        )}
 
         <div className="relative z-10 flex gap-2">
           <Link
@@ -304,6 +293,15 @@ export function HoverPreviewCard({
 
         <div className="flex flex-wrap items-center gap-2 text-[14px] font-medium">
           <span>{meta.join(" · ")}</span>
+          {/* La nota va en esta línea (que existe siempre): al llegar no empuja nada hacia abajo. Antes tenía una línea
+              propia que se reservaba mientras cargaba y desaparecía si la obra no tenía votos: la tarjeta daba un salto. */}
+          {avgScore !== null && (
+            // Mismo formato que en el catálogo: «★ 7.5 · 2 valoraciones».
+            <span data-preview-score className="whitespace-nowrap font-semibold motion-safe:animate-[fadeIn_200ms_ease-out]">
+              <span className="text-[#22B16B]">★</span> {formatCommunityScore(avgScore)}
+              <span className="font-medium text-[#969696]"> · {voteCount} {voteCount === 1 ? "valoración" : "valoraciones"}</span>
+            </span>
+          )}
           {(item.tags ?? []).slice(0, 3).map((t) => (
             <span key={t} className="rounded-[3px] bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase">
               {t}
