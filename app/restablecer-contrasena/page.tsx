@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PasswordInput } from "@/components/features/settings/password-fields";
@@ -30,7 +29,8 @@ export default function RestablecerContrasenaPage() {
   return (
     <main className="grid min-h-dvh place-items-center bg-black px-4 py-10">
       <div className="flex w-full max-w-[400px] flex-col items-center gap-6">
-        <Image src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-14 w-auto" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-14 w-auto" />
         <div className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-md">
           {isDone ? (
             <>

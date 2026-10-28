@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { siInstagram, siTiktok, siX, siYoutube } from "simple-icons";
 import { RevealFooter } from "@/components/layout/reveal-footer";
@@ -89,7 +88,8 @@ export function SiteFooter({ insetClassName }: SiteFooterProps) {
                 aria-label="GMA Filmo, ir al inicio"
                 className="inline-block rounded-[3px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
-                <Image src="/images/logo-gma.png" alt="" width={112} height={36} loading="eager" style={{ height: 32, width: "auto" }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/logo-gma.png" alt="" width={112} height={36} loading="eager" style={{ height: 32, width: "auto" }} />
               </Link>
               <p className="mt-3 text-[13px] leading-[1.6] text-[#949494]">
                 Cortos, animación y nuevas voces del cine independiente. Una plataforma gratuita y sin publicidad del

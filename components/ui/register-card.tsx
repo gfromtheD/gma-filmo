@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -100,7 +99,8 @@ export function RegisterCard({ onBack, onLogin }: RegisterCardProps) {
   return (
     <div className="flex w-full flex-col items-center gap-5">
       <button type="button" onClick={onBack} className="mb-2 transition-opacity hover:opacity-75">
-        <Image src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-16 w-auto" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo-gma.png" alt="GMA Filmo" height={64} width={200} className="h-16 w-auto" />
       </button>
 
       <div className="text-center">

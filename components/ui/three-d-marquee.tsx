@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import type { CSSProperties } from "react";
 import styles from "./three-d-marquee.module.css";
 import { cn } from "@/lib/utils";
@@ -107,12 +106,11 @@ export const GMA_POSTERS = [
 const COLUMN_DURATIONS = [112, 138, 124, 146, 118, 132, 128, 142, 122, 136];
 const DEFAULT_ITEMS_PER_GROUP = 16;
 
-function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop, itemsPerGroup }: {
+function MarqueeColumn({ images, index, paused, className, itemsPerGroup }: {
   images: string[];
   index: number;
   paused: boolean;
   className?: string;
-  largePostersOnDesktop: boolean;
   itemsPerGroup: number;
 }) {
   const repeats = Math.ceil(itemsPerGroup / images.length);
@@ -140,17 +138,18 @@ function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop
                 className={styles.poster}
                 style={{ "--poster-depth": `${[16, 0, 8, -6][imageIndex % 4]}px` } as CSSProperties}
               >
-                <Image
+                {/* Img normal, no next/image: el optimizador de Vercel tiene un tope mensual de imágenes de origen
+                    distintas y, agotado, devuelve 402 para TODA la web (confirmado en producción el 28-10-2026,
+                    incluido el logo) hasta el mes siguiente o una mejora de plan. src ya va por /r2/… (el proxy
+                    cacheado en el borde de Vercel, sin pasar por ese optimizador: ver next.config.mjs). */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={src}
                   alt=""
                   width={480}
                   height={270}
-                  // Ancho fijo, no `vw`: la columna no pasa de ~480-500 px en ningún tamaño de pantalla habitual, pero
-                  // un `vw` sin tope pedía hasta 3840 px en monitores grandes para una miniatura decorativa (el motivo
-                  // de que la bienvenida tardase mucho o no cargase: cientos de imágenes así a la vez al entrar).
-                  sizes={largePostersOnDesktop ? "500px" : "(min-width: 1280px) 300px, (min-width: 768px) 260px, 220px"}
-                  quality={55}
                   loading="lazy"
+                  decoding="async"
                   fetchPriority="low"
                   draggable={false}
                   className={styles.image}
@@ -202,7 +201,6 @@ export function ThreeDMarquee({
             images={chunk}
             index={index}
             paused={paused}
-            largePostersOnDesktop={largePostersOnDesktop}
             itemsPerGroup={itemsPerGroup}
             className={index >= tabletColumns ? styles.desktopBuffer : index >= mobileColumns ? styles.tabletBuffer : undefined}
           />

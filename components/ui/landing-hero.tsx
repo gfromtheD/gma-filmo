@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight } from "@/components/ui/icons";
 
@@ -53,7 +52,8 @@ export function LandingHero() {
             : "color-mix(in srgb, var(--gma-surface-2) 55%, transparent)" }} />
 
         <header className="relative flex min-h-[68px] items-center gap-4 px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
-          <Image src="/images/logo-gma.png" alt="GMA Filmo" width={200} height={64} priority className="h-10 w-auto sm:h-12" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo-gma.png" alt="GMA Filmo" width={200} height={64} fetchPriority="high" className="h-10 w-auto sm:h-12" />
         </header>
 
         <div ref={contentRef} className={`relative flex w-full flex-1 items-center px-6 py-12 sm:px-10 sm:py-16 lg:px-16 ${view === "hero" ? "justify-start" : "justify-center"}`}>
