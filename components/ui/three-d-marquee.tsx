@@ -12,6 +12,12 @@ interface ThreeDMarqueeProps {
   extraColumns?: number;
   paused?: boolean;
   largePostersOnDesktop?: boolean;
+  /**
+   * Cuántas portadas distintas hay por columna antes de repetir (×2 para el bucle continuo): a más alto, más
+   * variedad, pero más peticiones de imagen a la vez al montar. 16 por defecto; la pantalla de bienvenida, la más
+   * pesada (6-10 columnas, primera vez que entra cualquiera), usa menos para no saturar la red del visitante.
+   */
+  itemsPerGroup?: number;
 }
 
 // Las 80 portadas del catalogo (generado desde GMA_CONTENT/catalog_r2.json)
@@ -99,18 +105,19 @@ export const GMA_POSTERS = [
 ];
 
 const COLUMN_DURATIONS = [112, 138, 124, 146, 118, 132, 128, 142, 122, 136];
-const MIN_ITEMS_PER_GROUP = 16;
+const DEFAULT_ITEMS_PER_GROUP = 16;
 
-function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop }: {
+function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop, itemsPerGroup }: {
   images: string[];
   index: number;
   paused: boolean;
   className?: string;
   largePostersOnDesktop: boolean;
+  itemsPerGroup: number;
 }) {
-  const repeats = Math.ceil(MIN_ITEMS_PER_GROUP / images.length);
+  const repeats = Math.ceil(itemsPerGroup / images.length);
   const group = Array.from({ length: repeats }, () => images).flat();
-  const duration = (COLUMN_DURATIONS[index % COLUMN_DURATIONS.length] ?? 112) * group.length / MIN_ITEMS_PER_GROUP;
+  const duration = (COLUMN_DURATIONS[index % COLUMN_DURATIONS.length] ?? 112) * group.length / itemsPerGroup;
 
   return (
     <div className={cn(styles.column, className)}>
@@ -138,9 +145,13 @@ function MarqueeColumn({ images, index, paused, className, largePostersOnDesktop
                   alt=""
                   width={480}
                   height={270}
-                  sizes={largePostersOnDesktop ? "(min-width: 768px) 28vw, 220px" : "(min-width: 1280px) 300px, (min-width: 768px) 260px, 220px"}
-                  quality={65}
+                  // Ancho fijo, no `vw`: la columna no pasa de ~480-500 px en ningún tamaño de pantalla habitual, pero
+                  // un `vw` sin tope pedía hasta 3840 px en monitores grandes para una miniatura decorativa (el motivo
+                  // de que la bienvenida tardase mucho o no cargase: cientos de imágenes así a la vez al entrar).
+                  sizes={largePostersOnDesktop ? "500px" : "(min-width: 1280px) 300px, (min-width: 768px) 260px, 220px"}
+                  quality={55}
                   loading="lazy"
+                  fetchPriority="low"
                   draggable={false}
                   className={styles.image}
                 />
@@ -160,6 +171,7 @@ export function ThreeDMarquee({
   extraColumns = 0,
   paused = false,
   largePostersOnDesktop = false,
+  itemsPerGroup = DEFAULT_ITEMS_PER_GROUP,
 }: ThreeDMarqueeProps) {
   const posters = images.filter(Boolean);
   if (!posters.length) return null;
@@ -191,6 +203,7 @@ export function ThreeDMarquee({
             index={index}
             paused={paused}
             largePostersOnDesktop={largePostersOnDesktop}
+            itemsPerGroup={itemsPerGroup}
             className={index >= tabletColumns ? styles.desktopBuffer : index >= mobileColumns ? styles.tabletBuffer : undefined}
           />
         ))}

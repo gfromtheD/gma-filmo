@@ -392,7 +392,8 @@ const getColeccionesCached = unstable_cache(
       .from("colecciones")
       .select("id, slug, name, description, r2_cover_url")
       .order("name");
-    return [ESTRENOS_COLECCION, ...(data ?? [])] as Coleccion[];
+    const rows = (data ?? []) as Coleccion[];
+    return [ESTRENOS_COLECCION, ...rows.map((c) => ({ ...c, r2_cover_url: cachedImageUrl(c.r2_cover_url) }))];
   },
   ["colecciones-all"],
   { revalidate: 3600, tags: ["colecciones"] },
@@ -408,7 +409,8 @@ export async function getColeccionBySlug(slug: string): Promise<Coleccion | null
     .select("id, slug, name, description, r2_cover_url")
     .eq("slug", slug)
     .single();
-  return (data as Coleccion | null) ?? null;
+  const row = data as Coleccion | null;
+  return row ? { ...row, r2_cover_url: cachedImageUrl(row.r2_cover_url) } : null;
 }
 
 export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[]> {
