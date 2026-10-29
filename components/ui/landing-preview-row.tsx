@@ -122,7 +122,7 @@ export function LandingPreviewRow({ title, items, onRequestLogin }: LandingPrevi
 
   return (
     <section aria-label={title} className="py-8 sm:py-10">
-      <div className="flex items-center justify-between gap-4 px-6 sm:px-10 lg:px-16">
+      <div className="relative z-10 flex items-center justify-between gap-4 px-6 sm:px-10 lg:px-16">
         <h2 className="text-[20px] font-bold text-white">{title}</h2>
         <div className="flex gap-2">
           <button type="button" onClick={scrollPrev} aria-label={`${title}: anterior`} className={SMALL_ARROW_CLASS}>
@@ -133,7 +133,10 @@ export function LandingPreviewRow({ title, items, onRequestLogin }: LandingPrevi
           </button>
         </div>
       </div>
-      <div ref={scrollRef} className="mt-4 flex gap-3 overflow-x-auto scroll-smooth px-6 pb-2 [scrollbar-width:none] snap-x snap-mandatory sm:gap-4 sm:px-10 lg:px-16 [&::-webkit-scrollbar]:hidden">
+      {/* Sin scroll-smooth por CSS a propósito: con esa clase, el navegador también anima la recolocación
+          «instantánea» (el.scrollLeft = …) de la rueda infinita, y se nota el salto. El avance de las flechas
+          sigue siendo suave porque scrollBy ya pide behavior: "smooth" explícitamente por su cuenta. */}
+      <div ref={scrollRef} className="mt-4 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] snap-x snap-mandatory sm:gap-4 sm:px-10 lg:px-16 [&::-webkit-scrollbar]:hidden">
         {loopItems.map((item, i) => (
           <PreviewTile key={`${item.id}-${i}`} item={item} onRequestLogin={onRequestLogin} />
         ))}
