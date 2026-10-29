@@ -15,6 +15,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useActiveProfileDisplay } from "@/hooks/use-active-profile-display";
 import { useIsGuest } from "@/hooks/use-is-guest";
+import { useIsKnownDevice } from "@/hooks/use-is-known-device";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useTransitionStore } from "@/store/use-transition-store";
 import { useStudioTabStore } from "@/store/use-studio-tab-store";
@@ -36,6 +37,7 @@ export function Navbar() {
   const { displayName, avatarColor, avatarImageUrl, avatarIconId } = useActiveProfileDisplay();
 
   const isGuest      = useIsGuest();
+  const isKnownDevice = useIsKnownDevice();
   const { isCreator } = useIsCreator();
   const notifications = useNotifications(isCreator && !isGuest);
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
@@ -157,12 +159,12 @@ export function Navbar() {
         <div className="flex items-center justify-end gap-1 lg:gap-2 lg:justify-self-end">
           {isGuest && (
             <Link
-              href="/?register=1"
-              aria-label="Registrarse"
+              href={isKnownDevice ? "/?login=1" : "/?register=1"}
+              aria-label={isKnownDevice ? "Iniciar sesión" : "Registrarse"}
               className="mr-1 inline-flex h-8 shrink-0 max-sm:order-last items-center justify-center rounded-[4px] bg-[#22B16B] px-3 text-[13px] font-extrabold uppercase text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:text-[14px] lg:mr-2"
             >
-              <span className="sm:hidden">Registro</span>
-              <span className="hidden sm:inline">Registrarse</span>
+              <span className="sm:hidden">{isKnownDevice ? "Entrar" : "Registro"}</span>
+              <span className="hidden sm:inline">{isKnownDevice ? "Iniciar sesión" : "Registrarse"}</span>
             </Link>
           )}
           <Link

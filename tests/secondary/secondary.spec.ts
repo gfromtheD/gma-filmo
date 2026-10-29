@@ -101,7 +101,7 @@ test("la página de apoyo muestra identidad, destinos válidos y Bitcoin sin exi
 });
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
-  test(`bienvenida abre opciones y permite invitado sin datos (${viewport.width}px)`, async ({ page, context }) => {
+  test(`bienvenida entra directo como invitado sin datos (${viewport.width}px)`, async ({ page, context }) => {
     await page.setViewportSize(viewport);
     await page.route("**/*", route => {
       const url = new URL(route.request().url());
@@ -113,13 +113,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 
     await expect(page.getByRole("heading", { name: "El lugar para descubrir, compartir, sentir y disfrutar cine." })).toBeVisible();
     // LandingHero is server-rendered. Wait for its client hydration before the first interaction.
     await page.waitForTimeout(800);
-    await page.getByRole("button", { name: "Entrar a GMA Filmo" }).click();
-    const button = page.getByRole("button", { name: "Continuar como invitado", exact: true });
-    await expect(button).toBeVisible();
-    await expect(button).toBeInViewport();
-    await expect(page.getByRole("button", { name: "Iniciar sesión", exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Tu email")).toHaveCount(0);
-    await button.click();
+    await page.getByRole("button", { name: "Entrar a GMA Filmo" }).click();
     await expect(page).toHaveURL(/\/inicio$/);
     const cookies = await context.cookies();
     expect(cookies.some(cookie => cookie.name === "gma_guest" && cookie.value === "1")).toBeTruthy();

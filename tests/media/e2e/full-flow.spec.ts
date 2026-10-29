@@ -71,9 +71,8 @@ test('E01 real creator login → Studio upload → READY → publish → catalog
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'El lugar para descubrir, compartir, sentir y disfrutar cine.' })).toBeVisible();
   await page.waitForTimeout(800); // The landing hero is server-rendered; allow React to hydrate before clicking.
-  await page.getByRole('button', { name: 'Entrar a GMA Filmo' }).click();
-  await expect(page.getByRole('heading', { name: 'Elige cómo entrar' })).toBeVisible();
-  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Bienvenido de nuevo' })).toBeVisible();
   await page.getByRole('button', { name: 'Continuar con tu correo' }).click();
   await page.getByPlaceholder('Correo electrónico').fill(email);
   await page.getByPlaceholder('Contraseña').fill(credentials.password);

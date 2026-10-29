@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { GuestAccessButton } from "@/components/ui/guest-access-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 interface LoginCardProps {
@@ -193,8 +192,6 @@ function LoginCardInner({ onBack, onRegister }: LoginCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <GuestAccessButton className={pillClass} />
 
       <p className="text-center text-[13px] text-[#7C7C7C]">
         ¿Aún no tienes cuenta?{" "}

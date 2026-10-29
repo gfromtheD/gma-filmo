@@ -39,6 +39,14 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     return () => subscription.unsubscribe();
   }, []);
 
+  // Marca este navegador como «ya ha tenido cuenta aquí» (cookie propia, sin datos ni huella digital, un año de
+  // validez) en cuanto hay una sesión real, sea cual sea la forma en que entró. No distingue entre cuentas ni
+  // dispositivos: solo sirve para no ofrecerle «Registrarse» a quien ya se registró en este mismo navegador.
+  useEffect(() => {
+    if (!user) return;
+    document.cookie = "gma_known_device=1; path=/; max-age=31536000; SameSite=Lax";
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{ user, isLoading }}>
       {children}
