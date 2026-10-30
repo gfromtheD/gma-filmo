@@ -19,6 +19,8 @@ interface UseHoverPreview<T extends HTMLElement> {
   readonly isClosing: boolean;
   readonly onPointerEnter: (event: PointerEvent) => void;
   readonly onPointerLeave: (event: PointerEvent) => void;
+  /** Abre ya, sin esperar: es lo que hace el primer toque en pantallas táctiles. */
+  readonly openNow: () => void;
   readonly keepOpen: () => void;
   readonly scheduleClose: () => void;
   readonly close: () => void;
@@ -86,6 +88,14 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
     }, CLOSE_DELAY_MS);
   }, []);
 
+  const openNow = useCallback(() => {
+    if (!isEnabled) return;
+    clearTimers();
+    setIsClosing(false);
+    const el = anchorRef.current;
+    if (el) setAnchorBox(el.getBoundingClientRect());
+  }, [isEnabled, clearTimers]);
+
   const onPointerEnter = useCallback(
     (event: PointerEvent) => {
       if (!isEnabled || event.pointerType !== "mouse" || isDismissed.current) return;
@@ -125,15 +135,23 @@ export function useHoverPreview<T extends HTMLElement>(isEnabled: boolean): UseH
       isDismissed.current = true;
       close();
     };
+    // Un toque fuera de la portada y de la tarjeta la cierra (en táctil no hay «salir con el cursor»).
+    const handlePointerDown = (event: globalThis.PointerEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest("[data-hover-preview]") || anchorRef.current?.contains(target)) return;
+      close();
+    };
     window.addEventListener("keydown", handleKey);
+    window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("scroll", closeIfAnchorMoved, { passive: true, capture: true });
     window.addEventListener("resize", close);
     return () => {
       window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("scroll", closeIfAnchorMoved, { capture: true });
       window.removeEventListener("resize", close);
     };
   }, [anchorBox, close]);
 
-  return { anchorRef, anchorBox, isClosing, onPointerEnter, onPointerLeave, keepOpen, scheduleClose, close, dismiss };
+  return { anchorRef, anchorBox, isClosing, onPointerEnter, onPointerLeave, openNow, keepOpen, scheduleClose, close, dismiss };
 }
