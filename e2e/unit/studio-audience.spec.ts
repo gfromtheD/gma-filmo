@@ -12,7 +12,7 @@ test.describe("applyAudience", () => {
       titles: [{ slug: "a", viewers: 3, ratingAvg: 4, ratingCount: 2, comments: 5 }],
       totalViewers: 3, monthly: [{ month: "2026-10", viewers: 3 }],
     });
-    expect(data.titles[0]).toMatchObject({ views: 3, rating: 4, ratingCount: 2, comments: 5 });
+    expect(data.titles[0]).toMatchObject({ views: 3, rating: 8, ratingCount: 2, comments: 5 });
     expect(data.titles[1]).toMatchObject({ views: 0, ratingCount: 0, comments: 0 });
     expect(data.titles[1]!.rating).toBeUndefined();
   });
@@ -30,7 +30,7 @@ test.describe("applyAudience", () => {
       titles: [{ slug: "a", viewers: 1, ratingAvg: 5, ratingCount: 1, comments: 0 }, { slug: "b", viewers: 1, ratingAvg: 3, ratingCount: 3, comments: 0 }],
       totalViewers: 2, monthly: [],
     });
-    expect(data.creator.stats.avgRating).toBeCloseTo(3.5);
+    expect(data.creator.stats.avgRating).toBeCloseTo(7);
   });
 
   test("no muta los datos de entrada", () => {

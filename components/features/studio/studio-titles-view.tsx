@@ -6,7 +6,7 @@ import { useVisibleViewport } from "@/hooks/use-visible-viewport";
 import { useState } from "react";
 import { Plus, Search, Eye, EyeClosed as EyeOff, EditPencil as Pencil, Trash as Trash2, MoreHoriz as MoreHorizontal, StatsReport as BarChart2, Xmark as X, Clock, WarningTriangle as AlertTriangle, ViewGrid as LayoutGrid, List, CheckCircle as CheckCircle2 } from "@/components/ui/icons";
 import { DeletingVeil } from "./studio-deleting";
-import { fmt, fmtFull, C, card, row, col, StatusBadge, Stars, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
+import { fmt, fmtFull, C, card, row, col, StatusBadge, Score, Poster, Menu, useStudioDialog, type MenuItem } from "./studio-ui";
 import type { StudioData, StudioTitle, StudioTabId } from "./studio-types";
 
 interface Props {
@@ -116,7 +116,7 @@ function GridCard({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
           <span style={{ ...row(5), fontSize: 12.5, fontWeight: 700, color: C.textSec }}>
             <Eye size={14} /> {fmt(t.views)}
           </span>
-          <Stars value={t.rating ?? 0} size={12} showNum />
+          <Score value={t.rating ?? 0} size={12} showNum />
         </div>
       ) : t.status === "revision" ? (
         <div style={{ ...row(6), fontSize: 12.5, fontWeight: 600, color: "#E8B84B" }}>
@@ -163,7 +163,7 @@ function ListRow({ t, handlers }: { t: StudioTitle; handlers: Handlers }) {
           ? <span style={{ ...row(5), fontSize: 13.5, fontWeight: 700 }}><Eye size={14} color={C.textMuted} /> {fmtFull(t.views)}</span>
           : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}
       </div>
-      <div data-label="Valoración">{t.status === "publicado" ? <Stars value={t.rating ?? 0} size={12} showNum /> : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}</div>
+      <div data-label="Valoración">{t.status === "publicado" ? <Score value={t.rating ?? 0} size={12} showNum /> : <span style={{ fontSize: 13, color: C.textMuted }}>—</span>}</div>
       {t.deleting ? <span style={{ width: 34 }} /> : <Menu align="right" trigger={
         <button aria-label={`Opciones de ${t.title}`} className="st-btn st-btn-ghost st-btn-icon" style={{ width: 34, height: 34 }}>
           <MoreHorizontal size={18} />
@@ -214,7 +214,7 @@ function Drawer({ t, onClose, onEdit, onStats }: {
           {t.status === "publicado" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 18 }}>
               {([["Espectadores", fmtFull(t.views), <Eye size={15} key="e" color={C.accentH} />],
-                ["Valoración", (t.rating ?? 0).toFixed(1), <CheckCircle2 size={15} key="s" color={C.accentH} />],
+                ["Valoración (de 10)", (t.rating ?? 0).toFixed(1), <CheckCircle2 size={15} key="s" color={C.accentH} />],
                 ["Comentarios", t.comments ?? 0, <X size={15} key="m" color={C.accentH} />]] as [string, string | number, React.ReactNode][]).map(([l, v, ic]) => (
                 <div key={l} style={card({ padding: "13px 12px" })}>
                   {ic}

@@ -132,7 +132,7 @@ function RatingView({ titles }: { readonly titles: readonly StudioTitle[] }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <BigFigure value={average ? fmtRating(average) : "Sin votos"} unit={average ? `de 5, con ${number(votes)} votos` : ""} />
+        <BigFigure value={average ? fmtRating(average) : "Sin votos"} unit={average ? `de 10, con ${number(votes)} votos` : ""} />
         {titles.length > 0 && <OptionPicker small label="Obra" value={selectedId} options={options} onChange={setSelectedId} />}
       </div>
 
@@ -152,9 +152,9 @@ function RatingView({ titles }: { readonly titles: readonly StudioTitle[] }) {
         ) : (
           <>
             <ul aria-hidden={rated.length === 0} className="flex flex-col gap-2.5">
-              {[5, 4, 3, 2, 1].map((stars) => (
-                <li key={stars} className="flex items-center gap-3 text-[12.5px] text-[#7C7C7C]">
-                  <span className="w-20">{stars} {stars === 1 ? "estrella" : "estrellas"}</span>
+              {["9–10", "7–8", "5–6", "3–4", "1–2"].map((range) => (
+                <li key={range} className="flex items-center gap-3 text-[12.5px] text-[#7C7C7C]">
+                  <span className="w-20">{range} puntos</span>
                   <span className="h-1.5 flex-1 rounded-full bg-white/[0.06]" />
                 </li>
               ))}

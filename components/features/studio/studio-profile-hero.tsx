@@ -115,7 +115,7 @@ export function ProfileHero(props: Props) {
           </div>
           <div>
             <dd className="text-[24px] font-semibold tabular-nums text-white">{props.avgRating ? props.avgRating.toLocaleString("es-ES", { maximumFractionDigits: 1 }) : "—"}</dd>
-            <dt className="text-[12.5px] text-[#8A8A8A]">Valoración</dt>
+            <dt className="text-[12.5px] text-[#8A8A8A]">Valoración (sobre 10)</dt>
           </div>
         </dl>
       </div>
