@@ -196,6 +196,23 @@
   input, textarea {
     caret-color: #22B16B;
   }
+
+  /* Tailwind 4 dejó de poner cursor:pointer a los botones: sin esto, ningún elemento clicable enseña la mano. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  input[type="file"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* Scrollbar — outside @layer so specificity is never overridden */
@@ -228,6 +245,25 @@ body::-webkit-scrollbar {
 }
 
 /* Barra de una etapa sin porcentaje (p. ej. «Procesar»): un tramo que va y viene. */
+/* Puntos de espera «Entrando…»: ondulan en cascada. Ver components/ui/loading-label.tsx */
+.loading-dots { display: inline-flex; align-items: flex-end; gap: 0.24em; margin-left: 0.4em; padding-bottom: 0.04em; }
+.loading-dots i {
+  display: block; width: 0.38em; height: 0.38em; border-radius: 999px; background: currentColor;
+  animation: gma-dot-wave 1.2s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  will-change: transform, opacity;
+}
+.loading-dots i:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes gma-dot-wave {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0) scale(0.78); }
+  25% { opacity: 1; transform: translateY(-0.42em) scale(1.12); }
+  40% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes gma-dot-fade { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i { animation-name: gma-dot-fade; }
+}
+
 @keyframes gma-sweep {
   0%   { left: -40%; }
   100% { left: 100%; }
@@ -372,7 +408,7 @@ body::-webkit-scrollbar {
 /* === Mi Estudio utility classes === */
 .st-btn {
   display: inline-flex; align-items: center; gap: 7px;
-  border-radius: 999px; cursor: pointer; font-size: 13.5px;
+  border-radius: 4px; cursor: pointer; font-size: 13.5px;
   font-weight: 700; height: 36px; padding: 0 16px;
   border: none; font-family: inherit;
   transition: background 0.16s, color 0.16s, opacity 0.16s;

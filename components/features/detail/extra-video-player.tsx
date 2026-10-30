@@ -165,7 +165,7 @@ export function ExtraVideoPlayer({ src, managedEndpoint, poster, heading }: Extr
         <div role="alert" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
           <p className="max-w-xs text-[14px] font-semibold text-white/85">{managed.error}</p>
           {!managed.revoked && (
-            <button type="button" onClick={managed.retry} className="rounded-full bg-[#22B16B] px-5 py-2 text-[13px] font-bold text-[#031A0E] hover:bg-[#2AC57A]">Reintentar</button>
+            <button type="button" onClick={managed.retry} className="rounded-[4px] bg-[#22B16B] px-5 py-2 text-[13px] font-bold text-[#031A0E] hover:bg-[#2AC57A]">Reintentar</button>
           )}
         </div>
       )}

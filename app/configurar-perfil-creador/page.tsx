@@ -290,7 +290,7 @@ export default function ConfigurarPerfilCreadorPage() {
                 await getSupabaseBrowserClient().auth.signOut();
                 router.push("/");
               }}
-              className="rounded-full border border-white/10 py-3 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:bg-white/[0.05] sm:w-[38%]"
+              className="rounded-[4px] border border-white/10 py-3 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:bg-white/[0.05] sm:w-[38%]"
             >
               No, cancelar
             </button>
@@ -300,7 +300,7 @@ export default function ConfigurarPerfilCreadorPage() {
                 document.cookie = "gma_creator_setup=confirmed; path=/; max-age=600; SameSite=Lax";
                 setConversionConfirmed(true);
               }}
-              className="flex-1 rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
+              className="flex-1 rounded-[4px] bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
             >
               Sí, añadir acceso de creador
             </button>
@@ -504,7 +504,7 @@ export default function ConfigurarPerfilCreadorPage() {
                     type="button"
                     disabled={avatarUploading}
                     onClick={() => avatarInputRef.current?.click()}
-                    className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-[4px] border border-white/15 px-3 py-1.5 text-[11.5px] font-semibold text-white/80 transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Upload size={11} /> {avatarUploading ? "Subiendo…" : avatarUrl ? "Cambiar foto" : "Subir foto"}
                   </button>
@@ -659,7 +659,7 @@ export default function ConfigurarPerfilCreadorPage() {
                   type="button"
                   disabled={!canContinue}
                   onClick={() => setStep((s) => s + 1)}
-                  className="rounded-full bg-[#22B16B] px-7 py-2.5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-[4px] bg-[#22B16B] px-7 py-2.5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Guardar y continuar →
                 </button>
@@ -671,7 +671,7 @@ export default function ConfigurarPerfilCreadorPage() {
                     const rect = e.currentTarget.getBoundingClientRect();
                     void handleSave({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
                   }}
-                  className="rounded-full bg-[#22B16B] px-7 py-2.5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-[4px] bg-[#22B16B] px-7 py-2.5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? "Guardando…" : "Empezar a crear →"}
                 </button>

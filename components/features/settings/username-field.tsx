@@ -7,7 +7,7 @@ import {
 } from "@/lib/profiles/username";
 
 const BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-white/[0.07] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.13] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
+  "inline-flex min-h-11 items-center justify-center rounded-[4px] bg-white/[0.07] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.13] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
 
 type RuleState = "idle" | "ok" | "bad";
 
@@ -98,7 +98,7 @@ export function UsernameField() {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="submit" disabled={!canSave}
-                className="min-h-11 rounded-full bg-[#22B16B] px-6 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40">
+                className="min-h-11 rounded-[4px] bg-[#22B16B] px-6 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40">
                 {isSaving ? "Guardando…" : "Guardar @"}
               </button>
               {canSave && (

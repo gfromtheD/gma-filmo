@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PosterArt } from "@/components/ui/poster-art";
 import { LandingHoverPreview } from "@/components/ui/landing-hover-preview";
 import { useHoverPreview } from "@/hooks/use-hover-preview";
+import { LandingSaveDialog } from "@/components/ui/landing-save-dialog";
 import { ArrowLeft, ArrowRight } from "@/components/ui/icons";
 import type { MovieMedia } from "@/types/catalog";
 
@@ -16,7 +17,7 @@ const SETTLE_MS = 150;
 
 /** Una portada de la fila: en el móvil, tocarla pide acceso; en el ordenador, al pasar el cursor (con la misma
  *  espera y animación que en Inicio) se despliega la vista previa con la sinopsis y las dos formas de entrar. */
-function PreviewTile({ item, onRequestLogin }: { readonly item: MovieMedia; readonly onRequestLogin: () => void }) {
+function PreviewTile({ item, onRequestLogin, onSaveRequest }: { readonly item: MovieMedia; readonly onRequestLogin: () => void; readonly onSaveRequest: (item: MovieMedia) => void }) {
   const preview = useHoverPreview<HTMLDivElement>(true);
 
   return (
@@ -44,6 +45,7 @@ function PreviewTile({ item, onRequestLogin }: { readonly item: MovieMedia; read
           onClose={preview.dismiss}
           isClosing={preview.isClosing}
           onRequestLogin={onRequestLogin}
+          onSaveRequest={() => onSaveRequest(item)}
         />
       )}
     </div>
@@ -69,6 +71,7 @@ interface LandingPreviewRowProps {
  *  la copia del medio, se recoloca al instante (sin animación) a la copia equivalente — como las copias son
  *  idénticas, no se nota el salto y da la sensación de que el carrusel no se acaba nunca. */
 export function LandingPreviewRow({ name, title, subtitle, items, onRequestLogin }: LandingPreviewRowProps) {
+  const [saveItem, setSaveItem] = useState<MovieMedia | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const setWidthRef = useRef(0);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,7 +80,12 @@ export function LandingPreviewRow({ name, title, subtitle, items, onRequestLogin
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el || !isLoop) return;
-    const setWidth = el.scrollWidth / 3;
+    // Ancho real de una tanda: de la primera portada de la copia 1 a la primera de la copia 2 (incluye los huecos).
+    // scrollWidth/3 no sirve: cuenta también los márgenes laterales y dejaba la primera portada pegada al borde.
+    const first = el.children[0] as HTMLElement | undefined;
+    const second = el.children[items.length] as HTMLElement | undefined;
+    if (!first || !second) return;
+    const setWidth = second.offsetLeft - first.offsetLeft;
     setWidthRef.current = setWidth;
     el.scrollLeft = setWidth;
   }, [isLoop, items.length]);
@@ -147,11 +155,16 @@ export function LandingPreviewRow({ name, title, subtitle, items, onRequestLogin
       {/* Sin scroll-smooth por CSS a propósito: con esa clase, el navegador también anima la recolocación
           «instantánea» (el.scrollLeft = …) de la rueda infinita, y se nota el salto. El avance de las flechas
           sigue siendo suave porque scrollBy ya pide behavior: "smooth" explícitamente por su cuenta. */}
-      <div ref={scrollRef} className="mt-4 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] snap-x snap-mandatory sm:gap-4 sm:px-10 lg:px-16 [&::-webkit-scrollbar]:hidden">
+      <div ref={scrollRef} className="mt-4 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] snap-x snap-mandatory scroll-pl-6 sm:scroll-pl-10 sm:gap-4 sm:px-10 lg:scroll-pl-16 lg:px-16 [&::-webkit-scrollbar]:hidden">
         {loopItems.map((item, i) => (
-          <PreviewTile key={`${item.id}-${i}`} item={item} onRequestLogin={onRequestLogin} />
+          <PreviewTile key={`${item.id}-${i}`} item={item} onRequestLogin={onRequestLogin} onSaveRequest={setSaveItem} />
         ))}
       </div>
+      <LandingSaveDialog
+        item={saveItem}
+        onClose={() => setSaveItem(null)}
+        onLogin={() => { setSaveItem(null); onRequestLogin(); }}
+      />
     </section>
   );
 }

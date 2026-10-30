@@ -223,9 +223,9 @@ export function ProfileView({ data, onToast }: Props) {
             <span className="text-[13.5px] font-semibold text-white">Tienes cambios sin guardar</span>
             <span className="flex gap-2">
               <button type="button" onClick={handleDiscard} disabled={isSaving}
-                className="min-h-10 rounded-full px-4 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:text-white disabled:opacity-50">Descartar</button>
+                className="min-h-10 rounded-[4px] px-4 text-[13.5px] font-semibold text-[#C4C4C4] transition-colors hover:text-white disabled:opacity-50">Descartar</button>
               <button type="button" onClick={() => void handleSave()} disabled={isSaving}
-                className="min-h-10 rounded-full bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] shadow-[0_8px_24px_-8px_rgba(34,177,107,0.7)] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
+                className="min-h-10 rounded-[4px] bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] shadow-[0_8px_24px_-8px_rgba(34,177,107,0.7)] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
                 {isSaving ? "Guardando…" : "Guardar cambios"}
               </button>
             </span>

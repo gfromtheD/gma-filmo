@@ -37,7 +37,7 @@ export default function RestablecerContrasenaPage() {
               <h1 className="text-[22px] font-extrabold text-white">Contraseña cambiada</h1>
               <p className="mt-2 text-[14px] text-[#C4C4C4]">Ya puedes usar tu nueva contraseña para entrar.</p>
               <button type="button" onClick={() => { router.push("/perfiles"); router.refresh(); }}
-                className="mt-6 min-h-11 w-full rounded-full bg-[#22B16B] text-[14px] font-bold text-[#031A0E] hover:bg-[#2AC57A]">
+                className="mt-6 min-h-11 w-full rounded-[4px] bg-[#22B16B] text-[14px] font-bold text-[#031A0E] hover:bg-[#2AC57A]">
                 Continuar
               </button>
             </>
@@ -51,7 +51,7 @@ export default function RestablecerContrasenaPage() {
               <PasswordInput label="Repite la nueva contraseña" value={confirmation} onChange={setConfirmation} autoComplete="new-password" />
               {error && <p role="alert" className="text-[12.5px] text-[#ff5252]">{error}</p>}
               <button type="submit" disabled={isSaving}
-                className="min-h-11 rounded-full bg-[#22B16B] text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
+                className="min-h-11 rounded-[4px] bg-[#22B16B] text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
                 {isSaving ? "Guardando…" : "Guardar contraseña"}
               </button>
             </form>

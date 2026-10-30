@@ -109,7 +109,7 @@ export function ChangePasswordForm({ email }: { readonly email: string | null })
       <div>
         <div className="flex justify-end">
           <button type="button" onClick={() => { setIsOpen(true); setFeedback(null); }}
-            className="min-h-11 rounded-full bg-gma-surface px-4 py-1.5 text-[13px] font-bold text-[#C4C4C4] transition-colors duration-150 hover:bg-gma-border hover:text-white">
+            className="min-h-11 rounded-[4px] bg-gma-surface px-4 py-1.5 text-[13px] font-bold text-[#C4C4C4] transition-colors duration-150 hover:bg-gma-border hover:text-white">
             {hasPassword ? "Cambiar" : "Crear contraseña"}
           </button>
         </div>
@@ -126,9 +126,9 @@ export function ChangePasswordForm({ email }: { readonly email: string | null })
       <p className="text-[12px] text-[#7C7C7C]">Mínimo {MIN_PASSWORD_LENGTH} caracteres.</p>
       <div className="flex flex-wrap items-center justify-end gap-2">
         <button type="button" onClick={() => { reset(); setIsOpen(false); setFeedback(null); }}
-          className="min-h-11 rounded-full px-4 text-[13px] font-semibold text-[#A8A8A8] hover:text-white">Cancelar</button>
+          className="min-h-11 rounded-[4px] px-4 text-[13px] font-semibold text-[#A8A8A8] hover:text-white">Cancelar</button>
         <button type="submit" disabled={isSaving}
-          className="min-h-11 rounded-full bg-[#22B16B] px-5 text-[13px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
+          className="min-h-11 rounded-[4px] bg-[#22B16B] px-5 text-[13px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:opacity-50">
           {isSaving ? "Guardando…" : "Guardar contraseña"}
         </button>
       </div>

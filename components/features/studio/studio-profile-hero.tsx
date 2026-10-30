@@ -28,7 +28,7 @@ interface Props {
 }
 
 const OVERLAY_BUTTON =
-  "inline-flex min-h-9 items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3.5 text-[12.5px] font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/75 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white";
+  "inline-flex min-h-9 items-center gap-2 rounded-[4px] border border-white/15 bg-black/55 px-3.5 text-[12.5px] font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/75 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white";
 
 /**
  * Cabecera de la ficha de creador: es a la vez la vista previa de la ficha pública y el sitio donde se cambian el banner y la foto

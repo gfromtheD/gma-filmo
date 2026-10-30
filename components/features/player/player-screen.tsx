@@ -829,7 +829,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
               const vid = videoRef.current;
               if (vid) { vid.load(); void vid.play().catch(() => undefined); setPlaying(true); }
             }}
-            className="rounded-full bg-[#22B16B] px-7 py-2.5 text-[14px] font-bold text-gma-accent-fg transition-colors duration-150 hover:bg-[#2AC57A] active:scale-[0.97]"
+            className="rounded-[4px] bg-[#22B16B] px-7 py-2.5 text-[14px] font-bold text-gma-accent-fg transition-colors duration-150 hover:bg-[#2AC57A] active:scale-[0.97]"
           >
             Reintentar
           </button>}
@@ -1327,7 +1327,7 @@ function AutoplayCountdown({
         <button
           type="button"
           onClick={onPlayNow}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white py-2.75 text-[13px] font-bold text-gma-surface-2 transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[4px] bg-white py-2.75 text-[13px] font-bold text-gma-surface-2 transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97]"
         >
           <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M6 4l14 8-14 8V4z" />
@@ -1337,7 +1337,7 @@ function AutoplayCountdown({
         <button
           type="button"
           onClick={onRate}
-          className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-[12px] font-medium text-white/60 transition-[background-color,color] duration-150 hover:bg-[#22B16B] hover:text-gma-accent-fg"
+          className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[4px] py-2.5 text-[12px] font-medium text-white/60 transition-[background-color,color] duration-150 hover:bg-[#22B16B] hover:text-gma-accent-fg"
         >
           <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />

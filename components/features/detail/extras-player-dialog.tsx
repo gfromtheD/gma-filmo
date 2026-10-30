@@ -29,7 +29,7 @@ const ARROW_COMMON =
   "group items-center justify-center rounded-xl transition-colors duration-150 hover:text-white focus-visible:text-white focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#22B16B]";
 
 const SIDE_ARROW = `${ARROW_COMMON} ${styles.sideArrow} absolute top-1/2 z-10 flex h-[min(220px,100%)] w-12 -translate-y-1/2 text-white/35`;
-const ROW_ARROW = `${ARROW_COMMON} flex h-11 w-14 shrink-0 rounded-full text-white/85 hover:bg-white/10 disabled:pointer-events-none disabled:opacity-25 ${styles.chipItem}`;
+const ROW_ARROW = `${ARROW_COMMON} flex h-11 w-14 shrink-0 rounded-[4px] text-white/85 hover:bg-white/10 disabled:pointer-events-none disabled:opacity-25 ${styles.chipItem}`;
 
 function TallChevron({ direction, size, strokeWidth = 4.5 }: { readonly direction: "left" | "right"; readonly size: string; readonly strokeWidth?: number }) {
   return (
@@ -178,7 +178,7 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
                 aria-controls="extra-info"
                 aria-label={infoOpen ? "Ocultar información" : "Mostrar más información"}
                 onClick={() => setInfoOpen((open) => !open)}
-                className={`${styles.moreButton} mx-auto mb-1 mt-7 min-h-11 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 text-[13px] font-semibold text-white/70 backdrop-blur-md transition-[color,background-color,border-color] duration-300 hover:border-[#22B16B]/45 hover:bg-[#22B16B]/12 hover:text-[#22B16B] motion-reduce:transition-none [@media(hover:none)_and_(pointer:coarse)]:!mt-1 [@media(hover:none)_and_(pointer:coarse)]:!border-transparent [@media(hover:none)_and_(pointer:coarse)]:!bg-transparent [@media(hover:none)_and_(pointer:coarse)]:!backdrop-blur-none ${infoOpen ? "[@media(hover:none)_and_(pointer:coarse)]:!text-white/55" : "[@media(hover:none)_and_(pointer:coarse)]:!text-[#22B16B]"} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]`}
+                className={`${styles.moreButton} mx-auto mb-1 mt-7 min-h-11 items-center gap-1.5 rounded-[4px] border border-white/15 bg-white/5 px-4 text-[13px] font-semibold text-white/70 backdrop-blur-md transition-[color,background-color,border-color] duration-300 hover:border-[#22B16B]/45 hover:bg-[#22B16B]/12 hover:text-[#22B16B] motion-reduce:transition-none [@media(hover:none)_and_(pointer:coarse)]:!mt-1 [@media(hover:none)_and_(pointer:coarse)]:!border-transparent [@media(hover:none)_and_(pointer:coarse)]:!bg-transparent [@media(hover:none)_and_(pointer:coarse)]:!backdrop-blur-none ${infoOpen ? "[@media(hover:none)_and_(pointer:coarse)]:!text-white/55" : "[@media(hover:none)_and_(pointer:coarse)]:!text-[#22B16B]"} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]`}
               >
                 <span className={`flex transition-transform duration-300 motion-reduce:transition-none ${infoOpen ? "rotate-45" : ""}`}>
                   <GmaIcon name="plus" size={24} strokeWidth={2.6} />

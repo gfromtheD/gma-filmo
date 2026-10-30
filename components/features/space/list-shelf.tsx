@@ -119,9 +119,9 @@ export function ListShelf({ collections, selectedId, onSelect, canCreate, isCrea
                 className="w-full rounded-[10px] border border-white/10 bg-black/50 px-2.5 py-2 text-[13.5px] text-white placeholder-[#6A6A6A] outline-none focus:border-[#22B16B]" />
               <div className="flex gap-1.5">
                 <button type="button" onClick={() => { setName(""); setError(null); onCancelCreate(); }}
-                  className="min-h-9 flex-1 rounded-full text-[12.5px] font-semibold text-[#A8A8A8] hover:text-white">Cancelar</button>
+                  className="min-h-9 flex-1 rounded-[4px] text-[12.5px] font-semibold text-[#A8A8A8] hover:text-white">Cancelar</button>
                 <button type="submit" disabled={isSaving || !name.trim()}
-                  className="min-h-9 flex-1 rounded-full bg-[#22B16B] text-[12.5px] font-bold text-[#031A0E] hover:bg-[#2AC57A] disabled:opacity-40">Crear</button>
+                  className="min-h-9 flex-1 rounded-[4px] bg-[#22B16B] text-[12.5px] font-bold text-[#031A0E] hover:bg-[#2AC57A] disabled:opacity-40">Crear</button>
               </div>
               {error && <p role="alert" className="text-[11.5px] leading-4 text-[#ff7b7b]">{error}</p>}
             </form>

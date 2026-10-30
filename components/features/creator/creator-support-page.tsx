@@ -25,7 +25,7 @@ export function CreatorSupportPage({ creator }: { creator: CreatorProfile }) {
         <div className="mt-6 space-y-3">
           {methods.map(method => <div key={method.key}>
             <a href={method.href} target={method.key === "bitcoin" ? undefined : "_blank"} rel="noopener noreferrer"
-              className="flex min-h-12 items-center justify-center rounded-xl bg-[#22B16B] px-4 py-3 text-center font-semibold text-[#031A0E]">{method.label} ↗</a>
+              className="flex min-h-12 items-center justify-center rounded-[4px] bg-[#22B16B] px-4 py-3 text-center font-semibold text-[#031A0E]">{method.label} ↗</a>
             {method.address && <div className="mt-3 rounded-xl border border-white/10 p-3">
               <p className="text-xs text-[#C4C4C4]">Dirección Bitcoin</p>
               <code className="mt-2 block select-all break-all text-xs">{method.address}</code>

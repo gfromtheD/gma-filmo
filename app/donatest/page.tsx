@@ -159,7 +159,7 @@ function LoginGate({
           type="button"
           onClick={() => void onGoogleLogin()}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-3 rounded-full border border-white/12 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-3 rounded-[4px] border border-white/12 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.07] disabled:opacity-50"
           style={{ background: "rgba(255,255,255,0.04)" }}
         >
           <GoogleIcon />

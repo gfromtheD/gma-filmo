@@ -3,7 +3,9 @@
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Lock, User } from "iconoir-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { LoginRequiredDialog } from "@/components/ui/login-required-dialog";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
@@ -25,24 +27,51 @@ type Feedback = { readonly text: string; readonly danger?: boolean } | null;
 const GLASS =
   "rounded-[22px] border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.012))] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl";
 const BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-white/[0.07] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.13] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
+  "inline-flex min-h-11 items-center justify-center rounded-[4px] bg-white/[0.07] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.13] focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
 const DANGER_BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-[#ff5252]/12 px-4 text-[13.5px] font-semibold text-[#ff7b7b] transition-colors hover:bg-[#ff5252]/22 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
+  "inline-flex min-h-11 items-center justify-center rounded-[4px] bg-[#ff5252]/12 px-4 text-[13.5px] font-semibold text-[#ff7b7b] transition-colors hover:bg-[#ff5252]/22 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
 
 function formatMemberSince(date: Date | null): string {
   return date ? date.toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : "";
 }
 
 /** Una fila del pliego de ajustes: qué es a la izquierda, el control a la derecha (apilado en móvil). */
-function Row({ title, description, children }: { readonly title: string; readonly description: string; readonly children: ReactNode }) {
+function Row({ title, description, centered = false, children }: { readonly title: string; readonly description: string; readonly centered?: boolean; readonly children: ReactNode }) {
   return (
-    <div className="grid gap-4 px-5 py-6 sm:px-7 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8">
+    <div className={`grid gap-4 px-5 py-6 sm:px-7 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 ${centered ? "md:items-center" : ""}`}>
       <div>
         <h3 className="text-[15.5px] font-semibold text-white">{title}</h3>
         <p className="mt-1 text-[13px] leading-5 text-[#8A8A8A]">{description}</p>
       </div>
       <div className="min-w-0 md:pt-0.5">{children}</div>
     </div>
+  );
+}
+
+/** Qué se le cuenta al invitado cuando pulsa algo que necesita cuenta. */
+interface LockInfo { readonly title: string; readonly description: string }
+type OnLocked = (lock: LockInfo) => void;
+
+const ACCOUNT_PERKS = [
+  "Tu perfil y tu @ en todos tus dispositivos",
+  "Tu lista, tu historial y tus valoraciones guardados",
+  "Tus datos bajo tu control: descárgalos o bórralos cuando quieras",
+] as const;
+
+/** Fila que un invitado ve con candado: misma fila, y al pulsarla explica qué necesita en vez de dejarle editar. */
+function LockedRow({ title, description, buttonLabel, lock, onLocked }: {
+  readonly title: string; readonly description: string; readonly buttonLabel: string; readonly lock: LockInfo; readonly onLocked: OnLocked;
+}) {
+  return (
+    <Row title={title} description={description} centered>
+      {/* Un solo candado, grande, en el hueco de la derecha; el botón no repite el icono. */}
+      <div className="flex items-center justify-between gap-4 md:justify-end md:gap-5">
+        <button type="button" onClick={() => onLocked(lock)} className={`${BUTTON} min-w-44`}>{buttonLabel}</button>
+        <span aria-label="Requiere cuenta" role="img" className="flex size-11 shrink-0 items-center justify-center rounded-[4px] bg-white/[0.06] text-[#9AA39E]">
+          <Lock width={22} height={22} strokeWidth={1.8} aria-hidden="true" />
+        </span>
+      </div>
+    </Row>
   );
 }
 
@@ -89,7 +118,7 @@ function EmailRow({ email }: { readonly email: string | null }) {
             transition={{ duration: 0.2 }} className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input type="email" autoFocus required value={value} onChange={(e) => setValue(e.target.value)} placeholder="nuevo@correo.com" aria-label="Nuevo correo"
               className="min-w-0 flex-1 rounded-[10px] border border-white/15 bg-black/40 px-3.5 py-2.5 text-base text-white placeholder-[#7C7C7C] outline-none focus:border-[#22B16B] sm:text-[14px]" />
-            <button type="submit" className="min-h-11 rounded-full bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]">
+            <button type="submit" className="min-h-11 rounded-[4px] bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]">
               Enviar enlace
             </button>
           </motion.form>
@@ -166,9 +195,9 @@ function DeleteAccountCard() {
                 className="w-full rounded-[10px] border border-white/15 bg-black/40 px-3.5 py-2.5 text-base text-white placeholder-[#5A5A5A] outline-none focus:border-[#ff5252] sm:text-[14px]" />
               <div className="flex flex-wrap justify-end gap-2">
                 <button type="button" disabled={isDeleting} onClick={() => { setIsConfirming(false); setInput(""); setFeedback(null); }}
-                  className="min-h-11 rounded-full px-4 text-[13.5px] font-semibold text-[#C4C4C4] hover:text-white disabled:opacity-40">Cancelar</button>
+                  className="min-h-11 rounded-[4px] px-4 text-[13.5px] font-semibold text-[#C4C4C4] hover:text-white disabled:opacity-40">Cancelar</button>
                 <button type="button" disabled={isDeleting || !canDelete} onClick={() => void handleDelete()}
-                  className="min-h-11 rounded-full bg-[#ff5252] px-5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#ff6b6b] disabled:opacity-40">
+                  className="min-h-11 rounded-[4px] bg-[#ff5252] px-5 text-[13.5px] font-bold text-white transition-colors hover:bg-[#ff6b6b] disabled:opacity-40">
                   {isDeleting ? "Eliminando…" : "Eliminar para siempre"}
                 </button>
               </div>
@@ -244,8 +273,8 @@ function HistoryRow() {
         ) : (
           <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-2 text-[13.5px] text-[#D0D0D0]">
             ¿Borrar todo lo visto de este perfil?
-            <button type="button" onClick={() => setIsConfirming(false)} className="min-h-10 rounded-full px-3 font-semibold text-[#A8A8A8] hover:text-white">No</button>
-            <button type="button" onClick={() => void handleClear()} className="min-h-10 rounded-full bg-white px-4 font-bold text-[#06170E] hover:bg-white/90">Borrar</button>
+            <button type="button" onClick={() => setIsConfirming(false)} className="min-h-10 rounded-[4px] px-3 font-semibold text-[#A8A8A8] hover:text-white">No</button>
+            <button type="button" onClick={() => void handleClear()} className="min-h-10 rounded-[4px] bg-white px-4 font-bold text-[#06170E] hover:bg-white/90">Borrar</button>
           </motion.div>
         )}
         <FeedbackText feedback={feedback} />
@@ -308,7 +337,7 @@ function DataExportRow() {
               ))}
             </div>
             <button type="button" disabled={exporting !== null} onClick={() => setIsChoosing(false)}
-              className="mt-2 min-h-10 rounded-full px-3 text-[13px] font-semibold text-[#A8A8A8] hover:text-white disabled:opacity-50">Cancelar</button>
+              className="mt-2 min-h-10 rounded-[4px] px-3 text-[13px] font-semibold text-[#A8A8A8] hover:text-white disabled:opacity-50">Cancelar</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -408,13 +437,44 @@ function ProfileCard() {
   );
 }
 
+/** Cabecera del invitado: sin perfil que editar, con los dos caminos para tener cuenta. */
+function GuestProfileCard({ onLocked }: { readonly onLocked: OnLocked }) {
+  return (
+    <section aria-label="Tu perfil" className={`${GLASS} relative overflow-clip p-5 sm:p-7`}>
+      <div aria-hidden="true" className="pointer-events-none absolute -left-20 -top-24 size-64 rounded-full bg-[#5B3FD1] opacity-30 blur-3xl" />
+      <div className="relative flex flex-wrap items-center gap-5">
+        <div className="flex size-[72px] shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[#C4C4C4] ring-2 ring-white/10">
+          <User width={32} height={32} strokeWidth={1.6} aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[22px] font-semibold leading-tight text-white">Invitado</p>
+          <p className="mt-1 max-w-md text-[13.5px] leading-5 text-[#8A8A8A]">
+            Estás explorando sin cuenta. Crea una, gratis, para tener tu perfil, tu lista y tu historial.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => onLocked({ title: "Inicia sesión para editar tu perfil", description: "Tu perfil, tu foto y tu @ pertenecen a tu cuenta: sin cuenta no hay nada que editar todavía." })} className={`${BUTTON} gap-2`}>
+            <Lock width={15} height={15} strokeWidth={2} aria-hidden="true" />
+            Editar perfil
+          </button>
+          <Link href="/?login=1" className="inline-flex min-h-11 items-center justify-center rounded-[4px] bg-[#22B16B] px-5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-white">
+            Iniciar sesión
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /**
  * Configuración: solo lo que de verdad funciona. El perfil activo; la cuenta (correo, contraseña y, para creadores,
  * avisos de valoraciones); la reproducción (subtítulos y vistas previas); privacidad (historial, descarga de datos y
  * sesiones) y, aparte, eliminar la cuenta.
  */
-export function SettingsScreen() {
+export function SettingsScreen({ isGuest = false }: { readonly isGuest?: boolean }) {
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const [lock, setLock] = useState<LockInfo | null>(null);
   const profile = useUserProfile();
   const { prefs, set } = useSettingsPrefs();
   const { isCreator } = useIsCreator();
@@ -431,18 +491,34 @@ export function SettingsScreen() {
         <p className="mt-1.5 text-[15px] text-[#A8A8A8]">Tu perfil, tu cuenta y cómo se comporta GMA Filmo contigo.</p>
       </motion.header>
 
-      <motion.div variants={rise}><ProfileCard /></motion.div>
+      <motion.div variants={rise}>{isGuest ? <GuestProfileCard onLocked={setLock} /> : <ProfileCard />}</motion.div>
 
       <motion.div variants={rise}><SectionTitle>Cuenta</SectionTitle></motion.div>
       <motion.section variants={rise} aria-label="Cuenta" className={`${GLASS} divide-y divide-white/[0.06]`}>
-        <Row title="Nombre de usuario" description="Tu @ es público: es como te ven los demás en comentarios y valoraciones. Tu nombre personal solo lo ves tú.">
-          <UsernameField />
-        </Row>
-        <EmailRow email={profile.email ?? null} />
-        <Row title="Contraseña" description="Cámbiala aquí mismo, sin esperar ningún correo.">
-          <ChangePasswordForm email={profile.email ?? null} />
-        </Row>
-        {isCreator && <CreatorNotificationsRow />}
+        {isGuest ? (
+          <>
+            <LockedRow title="Nombre de usuario" buttonLabel="Elegir mi @" onLocked={setLock}
+              description="Tu @ es público: es como te ven los demás en comentarios y valoraciones. Tu nombre personal solo lo ves tú."
+              lock={{ title: "Inicia sesión para elegir tu @", description: "Tu @ es lo que ven los demás en tus comentarios y valoraciones. Para tenerlo necesitas una cuenta." }} />
+            <LockedRow title="Correo electrónico" buttonLabel="Añadir correo" onLocked={setLock}
+              description="Con el que entras en GMA Filmo y recibes los avisos de tu cuenta."
+              lock={{ title: "Inicia sesión para gestionar tu correo", description: "El correo es el de tu cuenta: sin cuenta, todavía no hay ninguno que cambiar." }} />
+            <LockedRow title="Contraseña" buttonLabel="Crear contraseña" onLocked={setLock}
+              description="Cámbiala aquí mismo, sin esperar ningún correo."
+              lock={{ title: "Inicia sesión para cambiar tu contraseña", description: "La contraseña protege tu cuenta. Cuando tengas una, podrás cambiarla desde aquí mismo." }} />
+          </>
+        ) : (
+          <>
+            <Row title="Nombre de usuario" description="Tu @ es público: es como te ven los demás en comentarios y valoraciones. Tu nombre personal solo lo ves tú.">
+              <UsernameField />
+            </Row>
+            <EmailRow email={profile.email ?? null} />
+            <Row title="Contraseña" description="Cámbiala aquí mismo, sin esperar ningún correo.">
+              <ChangePasswordForm email={profile.email ?? null} />
+            </Row>
+          </>
+        )}
+        {!isGuest && isCreator && <CreatorNotificationsRow />}
       </motion.section>
 
       <motion.div variants={rise}><SectionTitle>Reproducción</SectionTitle></motion.div>
@@ -458,12 +534,38 @@ export function SettingsScreen() {
 
       <motion.div variants={rise}><SectionTitle>Privacidad y seguridad</SectionTitle></motion.div>
       <motion.section variants={rise} aria-label="Privacidad y seguridad" className={`${GLASS} divide-y divide-white/[0.06]`}>
-        <HistoryRow />
-        <DataExportRow />
-        <SessionsRow />
+        {isGuest ? (
+          <>
+            <LockedRow title="Historial" buttonLabel="Guardar mi historial" onLocked={setLock}
+              description="Lo que ves se guarda para que puedas seguir donde lo dejaste. Es de este perfil."
+              lock={{ title: "Inicia sesión para guardar tu historial", description: "Como invitado no guardamos lo que ves. Con cuenta, «Seguir viendo» te lleva justo donde lo dejaste." }} />
+            <LockedRow title="Tus datos" buttonLabel="Descargar mis datos" onLocked={setLock}
+              description="Una copia de todo lo que guardamos de ti: perfil, listas, valoraciones, comentarios e historial."
+              lock={{ title: "Inicia sesión para descargar tus datos", description: "Sin cuenta no guardamos nada tuyo que descargar. Con cuenta podrás llevártelo todo cuando quieras." }} />
+            <LockedRow title="Sesiones" buttonLabel="Gestionar sesiones" onLocked={setLock}
+              description="Si has entrado en un dispositivo que ya no usas, cierra la sesión en todos a la vez."
+              lock={{ title: "Inicia sesión para gestionar tus sesiones", description: "Las sesiones son los dispositivos donde has entrado con tu cuenta. Como invitado no hay ninguna." }} />
+          </>
+        ) : (
+          <>
+            <HistoryRow />
+            <DataExportRow />
+            <SessionsRow />
+          </>
+        )}
       </motion.section>
 
-      <motion.div variants={rise}><DeleteAccountCard /></motion.div>
+      {!isGuest && <motion.div variants={rise}><DeleteAccountCard /></motion.div>}
+
+      <LoginRequiredDialog
+        open={lock !== null}
+        onClose={() => setLock(null)}
+        onLogin={() => router.push("/?login=1")}
+        title={lock?.title ?? ""}
+        description={lock?.description ?? ""}
+        perks={ACCOUNT_PERKS}
+        badge={<Lock width={28} height={28} strokeWidth={2} aria-hidden="true" />}
+      />
     </motion.div>
   );
 }

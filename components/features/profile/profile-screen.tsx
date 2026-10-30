@@ -185,7 +185,7 @@ export function ProfileScreen() {
         type="button"
         onClick={() => void handleSignOut()}
         disabled={signingOut}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-full border border-gma-border py-3 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:border-[#ff5252]/40 hover:text-[#ff5252] disabled:opacity-50"
+        className="mt-8 flex w-full items-center justify-center gap-2 rounded-[4px] border border-gma-border py-3 text-[13px] font-semibold text-[#7C7C7C] transition-colors hover:border-[#ff5252]/40 hover:text-[#ff5252] disabled:opacity-50"
       >
         {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
       </button>

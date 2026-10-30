@@ -25,7 +25,7 @@ interface FilterPillsProps {
 const SHORT_SORT_LABEL: Record<SortKey, string> = { recent: "Orden", alpha: "A → Z", "year-desc": "Año ↓", "year-asc": "Año ↑" };
 
 const PILL_BASE =
-  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B] sm:min-h-10";
+  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[4px] border px-4 text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B] sm:min-h-10";
 const PILL_IDLE = "border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=open]:bg-white/10";
 const PILL_ACTIVE = "border-[#22B16B]/50 bg-[#22B16B]/10 text-[#22B16B] hover:bg-[#22B16B]/15";
 const MENU =
@@ -148,7 +148,7 @@ export function FilterPills({ filters, options, showListFilter, onChange, onClea
         <button
           type="button"
           onClick={onClear}
-          className="min-h-11 shrink-0 rounded-full px-3 text-[13px] font-semibold text-[#999999] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]"
+          className="min-h-11 shrink-0 rounded-[4px] px-3 text-[13px] font-semibold text-[#999999] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]"
         >
           Limpiar
         </button>

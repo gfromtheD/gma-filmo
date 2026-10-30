@@ -18,7 +18,7 @@ const GLASS =
   "relative overflow-clip rounded-[22px] border border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl";
 
 const PILL_GREEN =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#22B16B] px-4 text-[13.5px] font-bold text-[#031A0E] shadow-[0_8px_24px_-8px_rgba(34,177,107,0.7)] transition-[background-color,transform] hover:bg-[#2AC57A] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white";
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-[4px] bg-[#22B16B] px-4 text-[13.5px] font-bold text-[#031A0E] shadow-[0_8px_24px_-8px_rgba(34,177,107,0.7)] transition-[background-color,transform] hover:bg-[#2AC57A] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -73,7 +73,7 @@ function ProfilePanel({ creator, onNav, reduceMotion }: { readonly creator: Crea
       {/* Separación mínima con la lista; si la tarjeta es más alta, empuja el botón al fondo. */}
       <div aria-hidden="true" className="min-h-6 flex-1" />
       <button type="button" onClick={() => onNav("perfil")}
-        className="w-full rounded-full bg-white px-5 py-3 text-[14.5px] font-bold text-[#06170E] transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:max-w-[240px]">
+        className="w-full rounded-[4px] bg-white px-5 py-3 text-[14.5px] font-bold text-[#06170E] transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:max-w-[240px]">
         {isComplete ? "Ver mi ficha" : "Completar ficha"}
       </button>
     </div>

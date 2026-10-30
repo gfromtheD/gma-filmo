@@ -121,8 +121,8 @@ export function ListPanel({ collection, ratingEntries, onRemove, onRename, onDel
             {isCustom && isConfirmingDelete && (
               <div role="alert" className="flex flex-wrap items-center gap-2 rounded-full border border-[#ff5252]/30 bg-[#ff5252]/[0.07] py-1 pl-4 pr-1 text-[13px] text-[#ffb3b3]">
                 ¿Borrar la lista? Las obras no se borran.
-                <button type="button" onClick={() => setIsConfirmingDelete(false)} className="min-h-8 rounded-full px-3 font-semibold text-[#C4C4C4] hover:text-white">No</button>
-                <button type="button" onClick={onDelete} className="min-h-8 rounded-full bg-[#ff5252] px-3 font-bold text-white hover:bg-[#ff6b6b]">Borrar</button>
+                <button type="button" onClick={() => setIsConfirmingDelete(false)} className="min-h-8 rounded-[4px] px-3 font-semibold text-[#C4C4C4] hover:text-white">No</button>
+                <button type="button" onClick={onDelete} className="min-h-8 rounded-[4px] bg-[#ff5252] px-3 font-bold text-white hover:bg-[#ff6b6b]">Borrar</button>
               </div>
             )}
           </div>
@@ -134,7 +134,7 @@ export function ListPanel({ collection, ratingEntries, onRemove, onRename, onDel
           <div className="flex flex-col items-center rounded-[16px] border border-dashed border-white/10 px-6 py-14 text-center">
             <p className="text-[16px] font-semibold text-white">{empty.title}</p>
             <p className="mt-1.5 max-w-[42ch] text-[14px] leading-6 text-[#A8A8A8]">{empty.body}</p>
-            <Link href="/cortos" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-[#22B16B] px-5 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]">
+            <Link href="/cortos" className="mt-5 inline-flex min-h-11 items-center rounded-[4px] bg-[#22B16B] px-5 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]">
               Explorar cortos
             </Link>
           </div>

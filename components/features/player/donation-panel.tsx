@@ -46,7 +46,7 @@ export function DonationPanel({ creator, appUrl, onClose, onContinue }: Donation
       {url && <div className="mt-6 hidden justify-center sm:flex">
         <div className="rounded-xl bg-white p-4"><QRCodeSVG value={url} size={192} bgColor="#ffffff" fgColor="#000000" level="M" marginSize={4} title={`Apoyar a ${creator.nombre}`} /></div>
       </div>}
-      <a href={url ?? path} target="_blank" rel="noopener noreferrer" className="mt-6 flex min-h-12 items-center justify-center rounded-xl bg-[#22B16B] p-3 font-semibold text-[#031A0E]">Abrir página de apoyo</a>
+      <a href={url ?? path} target="_blank" rel="noopener noreferrer" className="mt-6 flex min-h-12 items-center justify-center rounded-[4px] bg-[#22B16B] p-3 font-semibold text-[#031A0E]">Abrir página de apoyo</a>
       <p className="mt-3 text-center text-xs text-[#7C7C7C]">{methods.map(method => method.key === "bitcoin" ? "Bitcoin" : method.key === "paypal" ? "PayPal" : "Patreon").join(" · ")}</p>
       {onContinue && <button type="button" onClick={onContinue} className="mt-4 min-h-11 w-full text-sm text-[#C4C4C4] underline">Siguiente corto</button>}
     </div>
