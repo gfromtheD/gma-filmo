@@ -56,6 +56,8 @@
   .listRow > :last-child { grid-column: 3; grid-row: 1; }
 }
 @media (max-width: 639px) {
+  /* Dos portadas por fila: a una sola, cada ficha ocupaba casi una pantalla entera. */
+  .titleGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
   .content { padding: 36px 16px calc(40px + env(safe-area-inset-bottom)) !important; }
   .dashboardHeader h1 { font-size: 30px !important; line-height: 1.12 !important; }
   .dashboard { grid-template-columns: minmax(0, 1fr) !important;
@@ -98,7 +100,8 @@
   .orbitalFile > :nth-child(4) button, .orbitalFile > :last-child { min-width: 44px; min-height: 44px; }
 }
 @media (pointer: coarse) {
-  .studio button, .modal button { min-height: 44px; }
-  .studio :global(.st-btn-icon), .modal :global(.st-btn-icon) { min-width: 44px; }
+  /* `.content` es la caja de Mi Estudio (`.studio` no se usa en ninguna pantalla): sin ella, esta regla nunca se aplicaba. */
+  .content button, .studio button, .modal button { min-height: 44px; }
+  .content :global(.st-btn-icon), .studio :global(.st-btn-icon), .modal :global(.st-btn-icon) { min-width: 44px; }
   .orbitalFile button { min-height: 44px; }
 }
