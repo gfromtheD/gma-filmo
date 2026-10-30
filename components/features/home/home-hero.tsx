@@ -39,6 +39,9 @@ const ROUND_BUTTON =
  * Hero de portada a pantalla completa, bajo la cabecera transparente.
  * Contenido alineado a la izquierda en escritorio y centrado en móvil.
  */
+/** Lo mínimo que hay que arrastrar el dedo para que cuente como deslizamiento. */
+const SWIPE_MIN_PX = 48;
+
 export function HomeHero({
   item,
   detailHref,
@@ -64,12 +67,31 @@ export function HomeHero({
   }, [trailer.isActive, onTrailerActiveChange]);
 
 
+  // En móvil se pasa de portada deslizando el dedo hacia los lados (sin flechas). Cuenta como deslizamiento un gesto
+  // claramente horizontal; uno vertical sigue siendo el scroll de la página.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const swipeEnabled = canNavigate && !isOverlay;
+
   return (
     <section
       ref={sectionRef}
       aria-roledescription="carousel"
       aria-label="Destacados"
-      className={isOverlay ? "absolute inset-0" : "relative -mt-14 h-[clamp(520px,85vh,900px)] w-full lg:-mt-16"}
+      onTouchStart={swipeEnabled ? (event) => {
+        const touch = event.touches[0];
+        touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+      } : undefined}
+      onTouchEnd={swipeEnabled ? (event) => {
+        const start = touchStart.current;
+        const end = event.changedTouches[0];
+        touchStart.current = null;
+        if (!start || !end) return;
+        const dx = end.clientX - start.x;
+        const dy = end.clientY - start.y;
+        if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        if (dx < 0) onNext(); else onPrev();
+      } : undefined}
+      className={isOverlay ? "absolute inset-0" : "relative -mt-14 h-[clamp(520px,85vh,900px)] w-full touch-pan-y lg:-mt-16"}
     >
       {/* Imagen más alta que el hero (+20vh) con máscara: se desvanece hacia el resplandor ambiental */}
       <div
@@ -179,26 +201,6 @@ export function HomeHero({
         </div>
       )}
 
-      {canNavigate && !isOverlay && (
-        <>
-          <button
-            type="button"
-            aria-label="Anterior"
-            onClick={onPrev}
-            className={`${ROUND_BUTTON} absolute left-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:hidden`}
-          >
-            <GmaIcon name="chevronLeft" size={22} />
-          </button>
-          <button
-            type="button"
-            aria-label="Siguiente"
-            onClick={onNext}
-            className={`${ROUND_BUTTON} absolute right-3 top-1/2 z-[3] -translate-y-1/2 opacity-70 hover:opacity-100 lg:hidden`}
-          >
-            <GmaIcon name="chevronRight" size={22} />
-          </button>
-        </>
-      )}
     </section>
   );
 }

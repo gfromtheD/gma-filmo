@@ -19,7 +19,7 @@ type CardSize = "sm" | "md" | "lg";
 const WIDTH: Record<CardSize, number> = { sm: 140, md: 180, lg: 340 };
 
 const CARD_CLASS =
-  `relative block w-full overflow-hidden rounded-[6px] border border-transparent bg-transparent transition-[transform,border-color,box-shadow] duration-[220ms] active:scale-[0.97] ${styles.card}`;
+  `relative block w-full overflow-hidden rounded-[6px] border border-transparent bg-transparent transition-[transform,border-color,box-shadow] duration-[500ms] ease-[cubic-bezier(0.34,1.36,0.5,1)] active:scale-[0.97] ${styles.card}`;
 
 const CAPTION_LINK_CLASS =
   "block w-full rounded-[8px] text-left outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#22B16B]";
@@ -103,7 +103,7 @@ export function PosterCard({
     <>
       {caption ? (
         <div className="relative aspect-video w-full overflow-hidden rounded-[8px]">
-          <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none">
+          <div className="absolute inset-0 transition-transform duration-[550ms] ease-[cubic-bezier(0.34,1.36,0.5,1)] group-hover/card:scale-[1.08] motion-reduce:transition-none">
             <PosterArt fill style={item.style} title={item.title} kind={item.kind} ratio="landscape" imageUrl={item.imageUrl} />
           </div>
           {progressBar}

@@ -39,3 +39,17 @@ de un servicio de streaming público.
 `hero-indicator.tsx` (puntos + llenado de 8 s que dispara el avance), fundido cruzado con copia saliente,
 segunda capa ambiental, imagen anclada arriba, título/espaciado de filas y máscara de bordes en `Carousel`.
 Se mantienen: tarjetas apaisadas con tarjeta desplegable al pasar el ratón, textos y botones del hero.
+
+## Segunda revisión (2026-10-31): por qué se notaba demasiado
+Medido otra vez en la referencia con el DOM vivo. Lo que se había copiado mal:
+- **La franja superior no va a plena opacidad.** En la referencia vive dentro de un contenedor `.ambient-bleed` con
+  `mix-blend-mode: screen` y `opacity: .2` (solo en escritorio, `lg`), no al 100 %. Nosotros la poníamos entera, y era justo la
+  capa que más teñía el hero y la cabecera. Ahora entra al 20 % con mezcla «screen».
+- **El cambio es un cruce de capas, no una entrada sobre una capa fija.** En la referencia cada portada es su propia capa y las
+  dos se cruzan por `opacity` (la que sale baja a la vez que la que entra sube, `1 s cubic-bezier(.4,0,.2,1)`); a mitad del
+  cambio el color pasa por un tono intermedio más oscuro. Nosotros dejábamos la vieja al 100 % debajo y fundíamos la nueva
+  encima, lo que se leía como un salto de color. Ahora son dos capas que se cruzan, y el fundido dura 1,6 s para que el
+  cambio sea más tranquilo que el del hero (que sigue en 1 s).
+- Los 80 px de desenfoque, el ×1,2 y el 50 % de opacidad de la capa grande ya coincidían y no se tocan.
+- La capa nueva se enciende con un temporizador de 40 ms (no con `requestAnimationFrame`) para que el fundido también ocurra
+  en pestañas en segundo plano; la capa actual nunca se retira.

@@ -30,13 +30,22 @@ interface HoverPreviewCardProps {
   readonly onSaveError: () => void;
 }
 
-/** Apertura: la tarjeta sube desde la portada y se despliega hacia abajo (medido en Filmin: 250 ms). */
-const ENTER_MS = 280;
-const REVEAL_MS = 300;
-const FADE_IN_MS = 140;
+/**
+ * Apertura: la tarjeta sube desde la portada con un muelle (pasa un poco de largo y se asienta, el mismo de las carpetas de
+ * Mi lista) y se despliega hacia abajo. Una vez abierta se inclina en 3D hacia donde apuntas el cursor.
+ */
+const ENTER_MS = 560;
+const REVEAL_MS = 420;
+const FADE_IN_MS = 160;
+const SPRING = "cubic-bezier(0.34, 1.36, 0.5, 1)";
+/** Inclinación máxima (grados) de la tarjeta abierta. */
+const TILT_X_DEG = 2.4;
+const TILT_Y_DEG = 3;
 /** El texto espera un instante a que la tarjeta empiece a abrirse y entonces aparece y sube un poco. */
 const BODY_DELAY_MS = 100;
-const BODY_MS = 240;
+/** Lo que se escalona la entrada de cada bloque del texto (botones, título, datos, géneros, sinopsis). */
+const ITEM_STAGGER_MS = 55;
+const STAGGER = [1, 2, 3, 4, 5].map((n) => `[&>*:nth-child(${n})]:[transition-delay:${BODY_DELAY_MS + (n - 1) * ITEM_STAGGER_MS}ms]`).join(" ");
 /** Cierre: se desvanece (el hook la desmonta justo después). */
 const EXIT_MS = 130;
 /**
@@ -169,6 +178,15 @@ export function HoverPreviewCard({
     return () => clearTimeout(timer);
   }, [hasTrailer, hasEntered, reduceMotion]);
 
+  function tiltTowards(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== "mouse" || !hasEntered || isClosing) return;
+    const el = panelRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--hx", (((event.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+    el.style.setProperty("--hy", (((event.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+  }
+
   async function toggleList() {
     if (!canSave) {
       onLoginRequired();
@@ -182,9 +200,11 @@ export function HoverPreviewCard({
   const from = layout?.from;
   const transform = isClosing
     ? "translateY(-4px) scale(0.985)"
-    : !layout || hasEntered || !from
+    : !layout || !from
       ? "none"
-      : `translate(${from.dx}px, ${from.dy}px) scale(${from.scale})`;
+      : hasEntered
+        ? `perspective(1400px) rotateX(calc(var(--hx, 0) * -${TILT_X_DEG}deg)) rotateY(calc(var(--hy, 0) * ${TILT_Y_DEG}deg))`
+        : `translate(${from.dx}px, ${from.dy}px) scale(${from.scale})`;
 
   // Al empezar solo se ve la imagen (justo sobre la portada); el recorte se abre hacia abajo y descubre el resto.
   const imageHeight = Math.round((width * 9) / 16);
@@ -205,8 +225,13 @@ export function HoverPreviewCard({
       aria-label={`Vista previa: ${item.title}`}
       data-hover-preview=""
       onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-[6px] text-white shadow-[0_18px_48px_rgba(0,0,0,0.7)] ring-1 ring-white/10 motion-reduce:!transition-none"
+      onPointerLeave={() => {
+        panelRef.current?.style.setProperty("--hx", "0");
+        panelRef.current?.style.setProperty("--hy", "0");
+        onPointerLeave();
+      }}
+      onPointerMove={tiltTowards}
+      className="fixed z-[45] cursor-default select-none overflow-hidden rounded-[6px] text-white shadow-[0_34px_80px_-18px_rgba(0,0,0,0.92)] ring-1 ring-white/15 motion-reduce:!transition-none"
       style={{
         left: layout?.left ?? 0,
         top: layout?.top ?? 0,
@@ -222,7 +247,7 @@ export function HoverPreviewCard({
         transition: isClosing
           ? `opacity ${EXIT_MS}ms ease-in, transform ${EXIT_MS}ms ease-in`
           : hasEntered
-            ? `transform ${ENTER_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${FADE_IN_MS}ms ease-out, clip-path ${REVEAL_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+            ? `transform ${ENTER_MS}ms ${SPRING}, opacity ${FADE_IN_MS}ms ease-out, clip-path ${REVEAL_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
             : "none",
       } as CSSProperties}
     >
@@ -251,14 +276,8 @@ export function HoverPreviewCard({
 
       <div
         data-preview-body
-        className="flex flex-col gap-3 px-4 pb-4 motion-reduce:!transition-none"
-        style={{
-          opacity: hasEntered ? 1 : 0,
-          transform: hasEntered ? "none" : "translateY(8px)",
-          transition: hasEntered
-            ? `opacity ${BODY_MS}ms ease-out ${BODY_DELAY_MS}ms, transform ${BODY_MS + 40}ms cubic-bezier(0.2, 0.8, 0.2, 1) ${BODY_DELAY_MS}ms`
-            : "none",
-        }}
+        data-entered={hasEntered || undefined}
+        className={`flex flex-col gap-3 px-4 pb-4 *:translate-y-3 *:opacity-0 *:transition-[opacity,translate] *:duration-[460ms] *:ease-[cubic-bezier(0.34,1.36,0.5,1)] data-[entered]:*:translate-y-0 data-[entered]:*:opacity-100 motion-reduce:*:translate-y-0 motion-reduce:*:opacity-100 motion-reduce:*:transition-none ${STAGGER}`}
       >
 
         <div className="relative z-10 flex gap-2">
