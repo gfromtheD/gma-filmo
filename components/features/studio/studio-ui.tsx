@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useLayoutEffect, type ReactNode, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Star, Play, NavArrowDown as ChevronDown, EyeClosed as EyeOff } from "@/components/ui/icons";
+import { CheckCircle as CheckCircle2, Clock, EditPencil as Pencil, WarningTriangle as AlertTriangle, Play, NavArrowDown as ChevronDown, EyeClosed as EyeOff } from "@/components/ui/icons";
 import type { PosterData, TitleStatus } from "./studio-types";
 import { lockPageScroll } from "@/lib/scroll-lock";
 
@@ -90,26 +90,18 @@ export function StatusBadge({ status, size = "md" }: { status: TitleStatus; size
   );
 }
 
-// ── Stars ─────────────────────────────────────────────────────────────────────
-export function Stars({ value = 0, size = 14, showNum = false, count }: {
+// ── Nota (escala de GMA, 1–10) ────────────────────────────────────────────────
+/** Diez segmentos rellenos hasta la nota (la misma escala y el mismo aspecto que las valoraciones de Mi lista) y el número. */
+export function Score({ value = 0, size = 14, showNum = false, count }: {
   value?: number; size?: number; showNum?: boolean; count?: number;
 }) {
+  const filled = Math.round(Math.max(0, Math.min(10, value)));
   return (
-    <span style={row(5)}>
-      <span style={row(2)}>
-        {[0, 1, 2, 3, 4].map((i) => {
-          const pct = Math.max(0, Math.min(1, value - i)) * 100;
-          return (
-            <span key={i} style={{ position: "relative", width: size, height: size, display: "inline-block" }}>
-              <span style={{ position: "absolute", inset: 0, display: "flex" }}>
-                <Star size={size} fill="#2C4334" strokeWidth={0} color="var(--gma-line-strong)" />
-              </span>
-              <span style={{ position: "absolute", inset: 0, width: `${pct}%`, overflow: "hidden", display: "flex" }}>
-                <Star size={size} fill={C.gold} strokeWidth={0} color={C.gold} />
-              </span>
-            </span>
-          );
-        })}
+    <span style={row(6)} aria-label={value > 0 ? `Nota ${value.toFixed(1)} sobre 10` : "Sin nota"}>
+      <span style={row(2)} aria-hidden="true">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span key={i} style={{ width: Math.max(4, Math.round(size * 0.36)), height: Math.max(8, Math.round(size * 0.8)), borderRadius: 2, display: "inline-block", background: i < filled ? C.gold : "var(--gma-line-strong)" }} />
+        ))}
       </span>
       {showNum && value > 0 && (
         <span style={{ fontSize: size - 1, fontWeight: 700, color: C.gold }}>{value.toFixed(1)}</span>

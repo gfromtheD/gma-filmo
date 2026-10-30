@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_SCORE } from "@/lib/ratings/score-format";
 import type { StudioData } from "@/components/features/studio/studio-types";
 
 /**
@@ -19,6 +20,10 @@ export const audienceSchema = z.object({
 
 export type Audience = z.infer<typeof audienceSchema>;
 
+/** La base guarda las notas en estrellas (0,5–5); GMA las muestra en su escala de 1 a 10 (nota = estrellas × 2). */
+const STARS_MAX = 5;
+const toScore = (stars: number) => stars * (MAX_SCORE / STARS_MAX);
+
 /** Mezcla la audiencia real en los datos del estudio sin mutarlos. Las obras sin fila de audiencia se quedan a cero. */
 export function applyAudience(data: StudioData, audience: Audience): StudioData {
   const bySlug = new Map(audience.titles.map((t) => [t.slug, t]));
@@ -27,7 +32,7 @@ export function applyAudience(data: StudioData, audience: Audience): StudioData 
     return {
       ...t,
       views: a?.viewers ?? 0,
-      rating: a?.ratingAvg ?? undefined,
+      rating: a?.ratingAvg == null ? undefined : toScore(a.ratingAvg),
       ratingCount: a?.ratingCount ?? 0,
       comments: a?.comments ?? 0,
     };
