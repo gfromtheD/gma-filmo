@@ -16,7 +16,7 @@ const BOX_INDICES = [0, 1, 2, 3, 4, 5, 6, 7] as const;
  * staggered cascade, squash on impact, and rise back up in an infinite loop.
  * Matching CSS/keyframes live in app/globals.css (`.boxes-loader` block),
  * following this repo's convention of namespaced global classes for bespoke
- * component animations (see `.gsp-*` / `.studio-spin`).
+ * component animations (see `.studio-spin`).
  */
 export function BoxesLoader({ size = 16, color = "#22B16B", className }: BoxesLoaderProps) {
   return (
