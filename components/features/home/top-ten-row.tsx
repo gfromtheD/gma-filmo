@@ -20,6 +20,9 @@ interface TopTenRowProps {
 /** Espera al entrar en una tarjeta antes de expandirla (evita saltos al cruzar la fila con el cursor). */
 const EXPAND_DELAY_MS = 90;
 
+/** Cada bloque del texto de la tarjeta ancha entra con un muelle, uno tras otro (el mismo movimiento que las carpetas de Mi lista). */
+const reveal = (index: number): CSSProperties => ({ animation: `top-ten-rise 620ms cubic-bezier(0.34, 1.36, 0.5, 1) ${220 + index * 70}ms both` });
+
 const ARROW_CLASS =
   "absolute top-[calc(150px*var(--s))] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 hover:bg-black/90 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white group-hover/row:opacity-100 disabled:pointer-events-none disabled:!opacity-0 lg:flex motion-reduce:transition-none";
 
@@ -96,7 +99,7 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
             return (
               <article
                 key={item.id}
-                className={`group/slot shrink-0 snap-start transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${
+                className={`group/slot shrink-0 snap-start transition-[width] duration-[700ms] ease-[cubic-bezier(0.34,1.2,0.5,1)] motion-reduce:transition-none ${
                   isActive ? "w-[140px] lg:w-[calc(616px*var(--s))]" : "w-[140px] lg:w-[calc(200px*var(--s))]"
                 }`}
                 onPointerEnter={(event) => { if (event.pointerType === "mouse") activate(index); }}
@@ -127,14 +130,15 @@ export function TopTenRow({ title, subtitle, items, hrefFor }: TopTenRowProps) {
                   </span>
 
                   {isActive && (
-                    <div className="pointer-events-none absolute inset-0 z-[2] hidden flex-col justify-center gap-2 p-4 pl-5 lg:flex" style={{ animation: "fadeIn 400ms ease 150ms both" }}>
-                      <h3 className="line-clamp-2 max-w-[calc(474px*var(--s))] text-[34px] font-extrabold uppercase leading-[1] text-white">{item.title}</h3>
-                      {director && <p className="text-[14px] text-[#949494]">{director}</p>}
+                    <div className="pointer-events-none absolute inset-0 z-[2] hidden flex-col justify-center gap-2 p-4 pl-5 lg:flex">
+                      <h3 style={reveal(0)} className="line-clamp-2 max-w-[calc(474px*var(--s))] text-[34px] font-extrabold uppercase leading-[1] text-white">{item.title}</h3>
+                      {director && <p style={reveal(1)} className="text-[14px] text-[#949494]">{director}</p>}
                       {item.synopsis && (
-                        <p className="line-clamp-4 max-w-[calc(474px*var(--s))] text-[15px] leading-[1.5] text-[#EEF1F6]/75">{item.synopsis}</p>
+                        <p style={reveal(2)} className="line-clamp-4 max-w-[calc(474px*var(--s))] text-[15px] leading-[1.5] text-[#EEF1F6]/75">{item.synopsis}</p>
                       )}
                       <Link
                         href={`/ver/${item.id}`}
+                        style={reveal(3)}
                         className="pointer-events-auto mt-2 inline-flex h-8 w-fit items-center gap-2 rounded-[4px] bg-[#22B16B] px-3 text-[14px] font-semibold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <GmaIcon name="play" size={12} />

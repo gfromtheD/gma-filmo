@@ -20,6 +20,7 @@ import { useRecommendations } from "@/hooks/use-recommendations";
 import { parseDuration } from "@/lib/utils";
 import { preloadImage, whenImageReady } from "@/lib/home/image-ready";
 import { ColeccionCard } from "@/components/features/catalog/coleccion-card";
+import { collectionAppearance } from "@/lib/collections/appearance";
 import { collectionsWithContent, pickRecommendedCollections } from "@/lib/recommendation/collection-picks";
 import type { Coleccion } from "@/lib/supabase/queries";
 import type { MovieMedia } from "@/types/catalog";
@@ -109,6 +110,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
       ),
     [colecciones, items, categoryWeights, sessionSeed],
   );
+  const appearance = useMemo(() => collectionAppearance(colecciones, items), [colecciones, items]);
   const watchlistItems = items.filter((x) => mediaIds.includes(x.numericId));
   // «Mi Lista» solo aparece si ya tenías algo guardado al cargar la página. Si apareciera al guardar el primer título,
   // empujaría las filas de abajo justo bajo el cursor y la tarjeta parecería desaparecer; se verá en la próxima visita.
@@ -258,7 +260,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
             }
           >
             {recommendedCollections.map(({ col, filmCount }) => (
-              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} accent={appearance.get(col.slug)?.accent ?? "#1c4d5e"} coverUrl={appearance.get(col.slug)?.coverUrl ?? null} />
             ))}
           </Carousel>
         )}

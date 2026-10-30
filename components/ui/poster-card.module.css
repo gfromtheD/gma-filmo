@@ -14,9 +14,9 @@
 
 @media (hover: hover) and (pointer: fine) {
   .wrap:hover .card {
-    transform: translateY(-3px);
+    transform: translateY(-6px);
     border-color: rgba(34, 177, 107, 0.3);
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 26px 50px -14px rgba(0, 0, 0, 0.85);
   }
 
   .listButton {

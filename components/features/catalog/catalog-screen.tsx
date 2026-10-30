@@ -6,6 +6,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { collectionAppearance } from "@/lib/collections/appearance";
 import { ColeccionCard } from "./coleccion-card";
 import { collectionsWithContent } from "@/lib/recommendation/collection-picks";
 import { FilterPills } from "./filter-pills";
@@ -44,6 +45,8 @@ export function CatalogScreen({ items: allItems, section = "cortos", heading = s
   const items = useMemo(() => allItems.filter((x) => isFeature(x) === (section === "peliculas")), [allItems, section]);
   // Las colecciones sin ningún corto no se muestran (evita tarjetas vacías).
   const withContent = collectionsWithContent(colecciones ?? [], items);
+  // Color y portada salen de TODAS las colecciones y obras (no solo de la sección), para ser los mismos que en Inicio.
+  const appearance = useMemo(() => collectionAppearance(colecciones ?? [], allItems), [colecciones, allItems]);
 
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -108,7 +111,7 @@ export function CatalogScreen({ items: allItems, section = "cortos", heading = s
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {withContent.map(({ col, filmCount }) => (
-              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} />
+              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} accent={appearance.get(col.slug)?.accent ?? "#1c4d5e"} coverUrl={appearance.get(col.slug)?.coverUrl ?? null} />
             ))}
           </div>
         </section>
