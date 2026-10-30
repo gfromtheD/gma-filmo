@@ -8,6 +8,7 @@ import { Undo as RotateCcw, Redo as RotateCw, SkipPrev as SkipBack, SkipNext as 
 import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
+import { GlassIconReveal } from "@/components/ui/liquid-glass-logo-reveal";
 import { useProgress } from "@/hooks/use-progress";
 import { useSettingsPrefs, type SubtitleBackground, type SubtitleSize } from "@/hooks/use-settings-prefs";
 import { useCastSupport } from "@/hooks/use-cast-support";
@@ -214,33 +215,33 @@ function DonationBanner({ visible, onClose, onOpenPanel }: {
 
 // ─── Splash intro (pre-playback "tudum" animation, GMA colours) ────────────────
 
-/** Lo que dura la intro de GMA. */
-const INTRO_MS = 4500;
+/** Lo que dura la intro de GMA: el cristal suelta la marca hacia los 2,2 s y el audio se apaga hacia los 4 s. */
+const INTRO_MS = 4600;
 /** Si el origen tarda más que esto, la intro empieza igual (el reproductor sigue cargando y avisa si falla). */
 const MAX_LOADER_MS = 10_000;
+const INTRO_AUDIO = "/audio/intro-gma.mp3";
+const INTRO_GLASS_TUNING = { present: 2.2 } as const;
 
 function SplashIntro() {
+  // El clic que abrió el reproductor ya dio permiso de sonido; si el navegador lo niega, la intro sigue muda.
+  useEffect(() => {
+    const audio = new Audio(INTRO_AUDIO);
+    audio.volume = 0.9;
+    void audio.play().catch(() => undefined);
+    return () => { audio.pause(); };
+  }, []);
+
   return (
-    <div className="gsp-loader">
-      <div className="gsp-ph1">
-        <div className="gsp-record" />
-        <div className="gsp-record-text">GMA</div>
-      </div>
-      <div className="gsp-word-b">f<span style={{ marginLeft: "0.08em" }}>ilmo</span></div>
-      <div className="gsp-ph2">
-        <div className="gsp-laptop-b" />
-        <svg className="gsp-laptop-t" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 30">
-          <path
-            d="M21 1H5C2.78 1 1 2.78 1 5V25a4 4 90 004 4H37a4 4 90 004-4V5c0-2.22-1.8-4-4-4H21"
-            pathLength={100}
-            strokeWidth={2}
-            stroke="currentColor"
-            fill="none"
-          />
-        </svg>
-      </div>
-      <div className="gsp-icon" />
-    </div>
+    <GlassIconReveal
+      logo="text:GMA"
+      look="dark"
+      background="#000000"
+      loop={false}
+      tileSize={360}
+      tuning={INTRO_GLASS_TUNING}
+      label="GMA Filmo"
+      className="h-full w-full"
+    />
   );
 }
 
@@ -1244,7 +1245,7 @@ export function PlayerScreen({ item, nextItem, nextUrl, creator, initialTime }: 
         {phase === "intro" && (
           <motion.div
             key="splash-intro"
-            className="absolute inset-0 flex items-center justify-center bg-black"
+            className="absolute inset-0 bg-black"
             style={{ zIndex: 60, pointerEvents: "none" }}
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
