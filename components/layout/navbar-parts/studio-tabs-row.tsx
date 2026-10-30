@@ -43,7 +43,7 @@ export function StudioTabsRow<T extends string>({ tabs, activeId, onSelect }: St
               type="button"
               aria-current={isActive ? "true" : undefined}
               onClick={() => onSelect(tab.id)}
-              className={`flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white ${
+              className={`flex h-11 shrink-0 items-center gap-2 rounded-[4px] px-4 text-[13px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white ${
                 isActive ? "bg-[#22B16B]/10 text-[#22B16B]" : "text-[#C4C4C4] hover:bg-gma-surface hover:text-white"
               }`}
             >

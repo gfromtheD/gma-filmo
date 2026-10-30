@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "motion/react";
-import { ArrowLeft, ArrowRight } from "@/components/ui/icons";
+import { ArrowRight } from "@/components/ui/icons";
 
 import { TextRotate } from "@/components/ui/text-rotate";
 import { ThreeDMarquee } from "@/components/ui/three-d-marquee";
@@ -12,12 +12,21 @@ import { CreatorRegisterCard } from "@/components/ui/creator-register-card";
 import { LandingPreviewRow } from "@/components/ui/landing-preview-row";
 import { LandingMessageBand } from "@/components/ui/landing-message-band";
 import { LandingFaq } from "@/components/ui/landing-faq";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteAurora } from "@/components/layout/site-aurora";
 import { enterAsGuest } from "@/lib/auth/guest-access";
 import type { MovieMedia } from "@/types/catalog";
 
 type WelcomeView = "hero" | "login" | "register" | "creator-register";
+type AuthView = Exclude<WelcomeView, "hero">;
+
+/** Cada pantalla de acceso se anuncia con su propio título (ocupa el lugar del titular de la bienvenida). */
+const AUTH_COPY: Record<AuthView, { readonly title: string; readonly subtitle: string }> = {
+  login: { title: "Bienvenido de nuevo", subtitle: "Inicia sesión para seguir donde lo dejaste." },
+  register: { title: "Bienvenido", subtitle: "Crea tu cuenta gratis y guarda tu lista." },
+  "creator-register": { title: "Únete como creador", subtitle: "Comparte tu obra con la comunidad." },
+};
 
 /**
  * El carrete no se tapa: se borra. La máscara va sobre el propio mosaico (su opacidad real), que además se
@@ -32,7 +41,25 @@ const HERO_SCRIM = [
   // radio mayor quedaba opacidad residual allí y, al terminar la capa, se veía una línea fina.
   "radial-gradient(ellipse 78% 54% at 50% 46%, rgba(14,14,17,0.92) 0%, rgba(14,14,17,0.72) 38%, rgba(14,14,17,0.26) 72%, rgba(14,14,17,0) 100%)",
 ].join(", ");
-const bandCtaClass = "inline-flex min-h-12 w-fit items-center justify-center gap-3 rounded-full bg-white px-6 text-[15px] font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60";
+/**
+ * «Entrar a GMA Filmo» (el del giro y su eco al final de la página): una sola definición para que sean idénticos.
+ * Alto 56/64 px, texto en negrita con el contenido centrado en flex y leading-none (sin interlineado que lo
+ * descentre), y ancho mínimo fijo para que al cambiar a «Entrando» el botón no salte de tamaño.
+ */
+const ENTER_CTA_CLASS =
+  "inline-flex h-14 min-w-[17.5rem] items-center justify-center gap-3 whitespace-nowrap rounded-[4px] bg-white px-8 text-[16px] font-bold leading-none tracking-[0.005em] text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60 sm:h-16 sm:min-w-[19rem] sm:text-[17px]";
+
+function EnterLabel({ loading }: { readonly loading: boolean }) {
+  if (loading) return <LoadingLabel>Entrando</LoadingLabel>;
+  return (
+    <>
+      <span>Entrar a GMA Filmo</span>
+      <ArrowRight size={20} aria-hidden="true" className="shrink-0" />
+    </>
+  );
+}
+
+const bandCtaClass = "inline-flex min-h-12 w-fit items-center justify-center gap-3 rounded-[4px] bg-white px-6 text-[15px] font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60";
 
 interface LandingHeroProps {
   readonly peliculas: readonly MovieMedia[];
@@ -52,6 +79,13 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
     if (params.has("register")) setView("register");
     else if (params.has("login") || params.has("error")) setView("login");
   }, []);
+
+  useEffect(() => {
+    if (view === "hero") return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") changeView("hero"); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view]);
 
   function focusCurrentView() {
     if (!hasNavigated.current) return;
@@ -99,14 +133,18 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
             <ThreeDMarquee className="h-full w-full" columns={4} largePostersOnDesktop itemsPerGroup={10} />
           </div>
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10"
-            style={{ background: view === "hero" ? HERO_SCRIM : "color-mix(in srgb, var(--gma-surface-2) 74%, transparent)" }} />
+            style={{ background: HERO_SCRIM }} />
 
           <header className="relative flex min-h-[68px] items-center justify-between gap-4 px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo-gma.png" alt="GMA Filmo" width={200} height={64} fetchPriority="high" className="h-10 w-auto sm:h-12" />
+            {/* El logo es también el camino de vuelta a la bienvenida cuando se está en una pantalla de acceso. */}
+            <button type="button" onClick={() => changeView("hero")} disabled={view === "hero"} aria-label={view === "hero" ? "GMA Filmo" : "Volver a la bienvenida"}
+              className="rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-default">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/logo-gma.png" alt="" width={200} height={64} fetchPriority="high" className="h-10 w-auto sm:h-12" />
+            </button>
             {view === "hero" && (
               <button type="button" onClick={openLogin}
-                className="min-h-10 rounded-full bg-white px-5 text-[14px] font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B]">
+                className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-[4px] bg-[#22B16B] px-6 text-[15px] font-bold leading-none tracking-[0.01em] text-[#021208] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:h-12 sm:px-7 sm:text-base">
                 Iniciar sesión
               </button>
             )}
@@ -117,9 +155,9 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
                 opacity:0 y no aparecía hasta que React terminaba de hidratar toda la página (~2,7 s medidos); las
                 animaciones entre vistas (login, registro…) se mantienen. */}
             <AnimatePresence mode="wait" initial={false}>
-              <motion.div key={view} className={view === "hero" ? "w-full max-w-4xl" : "w-full max-w-lg text-center"}
-                initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }} transition={{ duration: reducedMotion ? 0 : 0.25 }}
+              <motion.div key={view} className={view === "hero" ? "w-full max-w-4xl" : "w-full max-w-3xl text-center"}
+                initial={{ opacity: 0, y: reducedMotion ? 0 : 16, filter: reducedMotion ? "blur(0px)" : "blur(6px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: reducedMotion ? 0 : -12, filter: reducedMotion ? "blur(0px)" : "blur(6px)" }} transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                 onAnimationComplete={focusCurrentView}>
                 {view === "hero" && <div className="text-center">
                   <h1 aria-label="El lugar para descubrir, compartir, sentir y disfrutar cine." className="text-[clamp(3rem,8.5vw,8rem)] font-extrabold leading-[1.15] tracking-[-.045em]">
@@ -138,19 +176,20 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
                     Descubre cortos, animación y nuevas voces del cine independiente. Un espacio de Generación Maldita para ver, compartir y apoyar a sus creadores.
                   </p>
                   <button ref={enterRef} type="button" onClick={() => void enterGuest()} disabled={guestLoading}
-                    className="mt-9 inline-flex min-h-14 items-center justify-center gap-5 rounded-full bg-white px-7 text-base font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60">
-                    {guestLoading ? "Entrando…" : <>Entrar a GMA Filmo <ArrowRight size={20} aria-hidden="true" /></>}
+                    className={`mt-9 ${ENTER_CTA_CLASS}`}>
+                    <EnterLabel loading={guestLoading} />
                   </button>
                   <p className="mt-4 text-sm text-[#C4C4C4]">Acceso gratuito, sin necesidad de registrarte.</p>
                 </div>}
 
-                {(["login", "register", "creator-register"] as WelcomeView[]).includes(view) && <div>
-                  <button type="button" onClick={() => changeView("hero")} className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm text-[#C4C4C4] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58D99B]">
-                    <ArrowLeft size={16} aria-hidden="true" /> Volver a la bienvenida
-                  </button>
-                  {view === "login" && <LoginCard onBack={() => changeView("hero")} onRegister={() => changeView("register")} onCreatorRegister={() => changeView("creator-register")} />}
-                  {view === "register" && <RegisterCard onBack={() => changeView("hero")} onLogin={() => changeView("login")} onCreatorRegister={() => changeView("creator-register")} />}
-                  {view === "creator-register" && <CreatorRegisterCard onBack={() => changeView("hero")} onLogin={() => changeView("login")} />}
+                {view !== "hero" && <div>
+                  <h1 className="text-[clamp(2.5rem,7vw,4.5rem)] font-extrabold leading-[1.05] tracking-[-.04em]">{AUTH_COPY[view].title}</h1>
+                  <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-[#DEE3E0] sm:text-lg">{AUTH_COPY[view].subtitle}</p>
+                  <div className="mx-auto mt-9 w-full max-w-md">
+                    {view === "login" && <LoginCard onRegister={() => changeView("register")} onCreatorRegister={() => changeView("creator-register")} />}
+                    {view === "register" && <RegisterCard onLogin={() => changeView("login")} onCreatorRegister={() => changeView("creator-register")} />}
+                    {view === "creator-register" && <CreatorRegisterCard onLogin={() => changeView("login")} />}
+                  </div>
                 </div>}
 
               </motion.div>
@@ -172,7 +211,7 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
           title="Largometrajes independientes, sin publicidad"
           description="Películas completas de cine independiente, de principio a fin, sin anuncios de por medio."
           imageUrl={filmBandImage}
-          cta={<button type="button" onClick={() => void enterGuest()} disabled={guestLoading} className={bandCtaClass}>{guestLoading ? "Entrando…" : "Ver gratis"}</button>}
+          cta={<button type="button" onClick={() => void enterGuest()} disabled={guestLoading} className={bandCtaClass}>{guestLoading ? <LoadingLabel>Entrando</LoadingLabel> : "Ver gratis"}</button>}
         />
 
         <LandingPreviewRow
@@ -196,8 +235,8 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
           <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold tracking-[-.03em] text-white">¿List@ para entrar?</h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] text-[#C4C4C4]">Acceso gratuito, sin necesidad de registrarte.</p>
           <button type="button" onClick={() => void enterGuest()} disabled={guestLoading}
-            className="mx-auto mt-7 inline-flex min-h-14 items-center justify-center gap-5 rounded-full bg-white px-7 text-base font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60">
-            {guestLoading ? "Entrando…" : <>Entrar a GMA Filmo <ArrowRight size={20} aria-hidden="true" /></>}
+            className={`mx-auto mt-7 ${ENTER_CTA_CLASS}`}>
+            <EnterLabel loading={guestLoading} />
           </button>
         </section>
 

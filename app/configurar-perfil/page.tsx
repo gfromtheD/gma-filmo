@@ -226,7 +226,7 @@ export default function ConfigurarPerfilPage() {
           <button
             type="submit"
             disabled={loading || !name.trim() || availability === "taken" || Boolean(candidateProblem)}
-            className="mt-2 w-full rounded-full bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-2 w-full rounded-[4px] bg-[#22B16B] py-3 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Guardando…" : "Empezar a ver →"}
           </button>

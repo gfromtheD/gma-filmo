@@ -43,7 +43,7 @@ interface SheetProps {
 function DoneButton({ onDone }: { onDone: () => void }) {
   return (
     <button type="button" onClick={onDone} autoFocus
-      className="min-h-10 rounded-full px-3 text-[14px] font-bold text-[#5FD39A] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+      className="min-h-10 rounded-[4px] px-3 text-[14px] font-bold text-[#5FD39A] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white">
       Listo
     </button>
   );

@@ -274,7 +274,7 @@ function ProfileCard({
           type="button"
           onClick={onEdit}
           aria-label={`Editar ${label}`}
-          className="flex min-h-11 items-center gap-1.5 rounded-full border border-gma-line-strong bg-gma-panel px-4 py-1.5 text-[12px] font-semibold text-[#7C7C7C] opacity-100 transition-[opacity,border-color,color] md:[@media(hover:hover)]:opacity-0 duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100 group-focus-within:opacity-100"
+          className="flex min-h-11 items-center gap-1.5 rounded-[4px] border border-gma-line-strong bg-gma-panel px-4 py-1.5 text-[12px] font-semibold text-[#7C7C7C] opacity-100 transition-[opacity,border-color,color] md:[@media(hover:hover)]:opacity-0 duration-200 hover:border-[#22B16B]/40 hover:text-white group-hover:opacity-100 group-focus-within:opacity-100"
         >
           <PencilIcon size={11} />
           Editar

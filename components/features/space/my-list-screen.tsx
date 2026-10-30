@@ -142,7 +142,7 @@ export function MyListScreen({ items }: { readonly items: readonly MovieMedia[] 
         </div>
         {canUse && isAvailable && (
           <button type="button" onClick={() => setIsCreating(true)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-white">
+            className="inline-flex min-h-11 items-center gap-2 rounded-[4px] border border-white/10 bg-white/[0.06] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-white">
             <Plus className="size-4" /> Nueva lista
           </button>
         )}

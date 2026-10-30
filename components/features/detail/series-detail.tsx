@@ -80,14 +80,14 @@ function EpisodesPanel({ series, episodes }: { series: SeriesMedia; episodes: re
         {/* Season selector — only rendered when there's more than 1 season */}
         {series.seasons > 1 && (
           <div
-            className="flex max-w-full flex-wrap gap-1 rounded-2xl border border-gma-border bg-gma-surface-2 p-1"
+            className="flex max-w-full flex-wrap gap-1 rounded-[6px] border border-gma-border bg-gma-surface-2 p-1"
           >
             {seasonNumbers.map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => setActiveSeason(n)}
-                className={`min-h-11 min-w-11 rounded-full px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${
+                className={`min-h-11 min-w-11 rounded-[4px] px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${
                   activeSeason === n
                     ? "bg-[#22B16B] text-[#03200F]"
                     : "text-[#C4C4C4] hover:text-white"
@@ -186,7 +186,7 @@ function MetaCard({ series }: { series: SeriesMedia }) {
             {series.categories.map((c) => (
               <span
                 key={c}
-                className="rounded-full border border-gma-border px-3 py-1 text-[11px] font-semibold text-[#C4C4C4]"
+                className="rounded-[4px] border border-gma-border px-3 py-1 text-[11px] font-semibold text-[#C4C4C4]"
               >
                 {c}
               </span>

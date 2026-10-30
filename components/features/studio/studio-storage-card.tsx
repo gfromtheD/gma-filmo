@@ -99,7 +99,7 @@ export function StorageCard({ usedBytes: rawUsedBytes, limitBytes = FREE_STORAGE
         </p>
       )}
       <button ref={openButtonRef} type="button" aria-expanded={isCalculatorOpen} onClick={() => setIsCalculatorOpen(true)}
-        className="mt-3 inline-flex min-h-10 items-center justify-center self-start rounded-full border border-white/10 bg-white/[0.06] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-white">
+        className="mt-3 inline-flex min-h-10 items-center justify-center self-start rounded-[4px] border border-white/10 bg-white/[0.06] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-white">
         Calcular ampliación
       </button>
 

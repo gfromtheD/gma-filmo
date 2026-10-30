@@ -30,7 +30,7 @@ export function CommentSortControl({ value, onChange }: CommentSortControlProps)
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger
-        className="flex min-h-11 items-center gap-2.5 rounded-full px-3 text-[15px] font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B] data-[state=open]:bg-white/10"
+        className="flex min-h-11 items-center gap-2.5 rounded-[4px] px-3 text-[15px] font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B] data-[state=open]:bg-white/10"
       >
         <SortIcon />
         Ordenar por

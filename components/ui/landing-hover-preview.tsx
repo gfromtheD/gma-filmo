@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { PosterArt } from "@/components/ui/poster-art";
+import { SaveIcon } from "@/components/ui/save-icon";
+import { LoadingLabel } from "@/components/ui/loading-label";
 import { enterAsGuest } from "@/lib/auth/guest-access";
 import { workPath } from "@/lib/catalog/work-path";
 import { computePreviewLayout, previewWidth, type PreviewLayout } from "@/lib/hover-preview-layout";
@@ -15,7 +17,10 @@ interface LandingHoverPreviewProps {
   readonly onPointerLeave: () => void;
   readonly onClose: () => void;
   readonly isClosing?: boolean;
+  /** Pulsar el cuerpo de la tarjeta: lleva a la pasarela de inicio de sesión. */
   readonly onRequestLogin: () => void;
+  /** Pulsar el icono de guardar: el diálogo de «inicia sesión para guardar» lo abre la fila, que sigue montada. */
+  readonly onSaveRequest: () => void;
 }
 
 /** Apertura: la tarjeta sube desde la portada y se despliega hacia abajo, igual que en Inicio. */
@@ -29,8 +34,6 @@ const PREVIEW_BG = "var(--gma-preview)";
 const PREVIEW_BACKGROUND =
   "radial-gradient(120% 70% at 50% 110%, rgba(91,63,209,0.32) 0%, rgba(91,63,209,0) 70%), linear-gradient(180deg, var(--gma-preview) 0%, var(--gma-preview-end) 100%)";
 const SHADOW_ROOM = 60;
-const CTA_CLASS =
-  "inline-flex h-10 flex-1 items-center justify-center rounded-[4px] px-3 text-[13.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 /**
  * La misma vista previa flotante que en Inicio (sale de la portada, se abre hacia abajo), adaptada a quien todavía
@@ -44,6 +47,7 @@ export function LandingHoverPreview({
   onClose,
   isClosing = false,
   onRequestLogin,
+  onSaveRequest,
 }: LandingHoverPreviewProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<PreviewLayout | null>(null);
@@ -51,6 +55,10 @@ export function LandingHoverPreview({
   const [hasEntered, setHasEntered] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [guestError, setGuestError] = useState(false);
+  // Sin sesión no se guarda nada: el icono se «marca» un instante (con su saltito) y vuelve a vacío.
+  const [flashSaved, setFlashSaved] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (flashTimer.current) clearTimeout(flashTimer.current); }, []);
 
   useLayoutEffect(() => {
     const panel = panelRef.current;
@@ -75,6 +83,13 @@ export function LandingHoverPreview({
       setGuestError(true);
       setGuestLoading(false);
     }
+  }
+
+  function requestSave() {
+    setFlashSaved(true);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashSaved(false), 900);
+    onSaveRequest();
   }
 
   function requestLogin() {
@@ -145,12 +160,13 @@ export function LandingHoverPreview({
         }}
       >
         <div className="relative z-10 flex gap-2">
-          <button type="button" onClick={requestLogin} className={`${CTA_CLASS} bg-white text-gma-surface-2 hover:bg-white/90`}>
-            Iniciar sesión
-          </button>
           <button type="button" onClick={() => void watchAsGuest()} disabled={guestLoading}
-            className={`${CTA_CLASS} bg-[#22B16B] text-[#031A0E] hover:bg-[#2AC57A] disabled:opacity-60`}>
-            {guestLoading ? "Entrando…" : "Ver como invitado"}
+            className="inline-flex h-10 flex-1 items-center justify-center rounded-[4px] bg-[#22B16B] px-4 text-[14px] font-bold leading-none text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60">
+            {guestLoading ? <LoadingLabel>Entrando</LoadingLabel> : "Ver como invitado"}
+          </button>
+          <button type="button" onClick={requestSave} aria-label="Guardar en mi lista"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            <SaveIcon saved={flashSaved} size={20} />
           </button>
         </div>
         {guestError && <p role="alert" className="relative z-10 -mt-1 text-[12px] text-red-300">No se pudo entrar. Inténtalo de nuevo.</p>}

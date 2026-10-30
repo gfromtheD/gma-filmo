@@ -300,7 +300,7 @@ export function MultiSelect({ label, options, value, onChange, required, hint, e
             <li key={v}>
               <button
                 type="button" onClick={() => onChange(value.filter((x) => x !== v))} aria-label={`Quitar ${labelOf.get(v) ?? v}`}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[#22B16B]/50 bg-[#22B16B]/15 px-3 text-[13px] font-semibold text-white hover:bg-[#22B16B]/25 focus-visible:outline-2 focus-visible:outline-white"
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-[4px] border border-[#22B16B]/50 bg-[#22B16B]/15 px-3 text-[13px] font-semibold text-white hover:bg-[#22B16B]/25 focus-visible:outline-2 focus-visible:outline-white"
               >
                 {labelOf.get(v) ?? v}<span aria-hidden="true" className="text-[#A8A8A8]">×</span>
               </button>

@@ -170,7 +170,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
             <div className="mt-6 flex flex-wrap items-center gap-2 sm:mt-7 sm:gap-3">
               {onPlay && (
                 <button
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-[#22B16B] px-4 py-3 sm:px-5.5 text-[14px] font-bold text-gma-accent-fg transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#2AC57A] active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-[4px] bg-[#22B16B] px-4 py-3 sm:px-5.5 text-[14px] font-bold text-gma-accent-fg transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-[#2AC57A] active:scale-[0.96]"
                   onClick={onPlay}
                   type="button"
                 >
@@ -180,7 +180,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onTrailer && (
                 <button
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-gma-surface px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-gma-border active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-[4px] bg-gma-surface px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-gma-border active:scale-[0.96]"
                   onClick={onTrailer}
                   type="button"
                 >
@@ -190,7 +190,7 @@ export function Hero({ item, onPlay, onTrailer, onDetail, onAddList, inList, tag
               )}
               {onDetail && (
                 <button
-                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full bg-white/6 px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-gma-surface-2 active:scale-[0.96]"
+                  className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-[4px] bg-white/6 px-4 py-3 sm:px-5.5 text-[14px] font-bold text-white backdrop-blur-sm transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-white hover:text-gma-surface-2 active:scale-[0.96]"
                   onClick={onDetail}
                   type="button"
                 >

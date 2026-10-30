@@ -230,7 +230,7 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
             </div>
           ) : (
             <button type="button" ref={nameButtonRef} tabIndex={tab} onClick={startNameEdit} aria-label={`Cambiar nombre: ${shownName}`}
-              className="group flex max-w-full items-center gap-2.5 rounded-full px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              className="group flex max-w-full items-center gap-2.5 rounded-[4px] px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               <span className="min-w-0 break-words text-center text-[clamp(1.6rem,6dvh,2.1rem)] leading-tight text-white" style={{ fontFamily: "var(--font-sans)", fontWeight: 500, fontStyle: "italic" }}>
                 {shownName}
               </span>
@@ -246,21 +246,21 @@ export function ProfileEditModal({ onClose, title, initialValues, onSave, onDele
           {onDelete && (isConfirmingDelete ? (
             <div role="alert" className="flex flex-wrap items-center gap-1 text-[13px] text-[#ffb3b3]">
               ¿Eliminar este perfil?
-              <button type="button" tabIndex={tab} onClick={() => setIsConfirmingDelete(false)} className="min-h-10 rounded-full px-3 font-semibold text-white/80 hover:text-white">No</button>
-              <button type="button" tabIndex={tab} onClick={onDelete} className="min-h-10 rounded-full bg-[#ff5252] px-4 font-bold text-white hover:bg-[#ff6b6b]">Eliminar</button>
+              <button type="button" tabIndex={tab} onClick={() => setIsConfirmingDelete(false)} className="min-h-10 rounded-[4px] px-3 font-semibold text-white/80 hover:text-white">No</button>
+              <button type="button" tabIndex={tab} onClick={onDelete} className="min-h-10 rounded-[4px] bg-[#ff5252] px-4 font-bold text-white hover:bg-[#ff6b6b]">Eliminar</button>
             </div>
           ) : (
-            <button type="button" tabIndex={tab} onClick={() => setIsConfirmingDelete(true)} className="min-h-11 rounded-full px-3 text-[13px] font-semibold text-[#ff8a8a] transition-colors hover:bg-[#ff5252]/10">
+            <button type="button" tabIndex={tab} onClick={() => setIsConfirmingDelete(true)} className="min-h-11 rounded-[4px] px-3 text-[13px] font-semibold text-[#ff8a8a] transition-colors hover:bg-[#ff5252]/10">
               Eliminar perfil
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
             <button type="button" tabIndex={tab} onClick={onClose}
-              className="min-h-11 rounded-full px-4 text-[13.5px] font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+              className="min-h-11 rounded-[4px] px-4 text-[13.5px] font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white">
               Cancelar
             </button>
             <button type="button" tabIndex={tab} onClick={() => void handleSave()} disabled={saving}
-              className="min-h-11 rounded-full bg-white px-6 text-[13.5px] font-bold text-[#0A0E0C] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              className="min-h-11 rounded-[4px] bg-white px-6 text-[13.5px] font-bold text-[#0A0E0C] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               {saving ? "Guardando…" : "Guardar cambios"}
             </button>
           </div>

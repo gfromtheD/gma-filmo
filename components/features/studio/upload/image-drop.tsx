@@ -108,7 +108,7 @@ export function ImageDrop({ label, asset, onFile, onRemove, className = "", hint
         {asset && (
           <button
             type="button" onClick={onRemove} aria-label={`${removeVerb} ${label}`}
-            className="absolute right-2 top-2 z-[2] rounded-full bg-black/70 px-3 py-1 text-[12px] font-bold text-white hover:bg-black/90 focus-visible:outline-2 focus-visible:outline-white"
+            className="absolute right-2 top-2 z-[2] rounded-[4px] bg-black/70 px-3 py-1 text-[12px] font-bold text-white hover:bg-black/90 focus-visible:outline-2 focus-visible:outline-white"
           >
             {removeVerb}
           </button>

@@ -30,7 +30,7 @@ export function GuestGate({
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="rounded-full bg-[#22B16B] px-7 py-2.5 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
+          className="rounded-[4px] bg-[#22B16B] px-7 py-2.5 text-[14px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A]"
         >
           Iniciar sesión o registrarse
         </button>

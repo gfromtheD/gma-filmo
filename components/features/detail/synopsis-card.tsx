@@ -93,14 +93,14 @@ export function SynopsisCard({ movie, expanded, onToggle, targetHeight }: Synops
                   type="button"
                   onClick={() => void submit()}
                   disabled={!text.trim() || sending}
-                  className="min-h-10 rounded-full bg-[#22B16B] px-5 py-1.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="min-h-10 rounded-[4px] bg-[#22B16B] px-5 py-1.5 text-[13px] font-bold text-[#03200F] transition-colors hover:bg-[#2AC57A] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {sending ? "Enviando…" : "Enviar propuesta"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="min-h-10 rounded-full px-4 py-1.5 text-[13px] font-semibold text-[#BBBBBB] transition-colors hover:text-white"
+                  className="min-h-10 rounded-[4px] px-4 py-1.5 text-[13px] font-semibold text-[#BBBBBB] transition-colors hover:text-white"
                 >
                   Cancelar
                 </button>

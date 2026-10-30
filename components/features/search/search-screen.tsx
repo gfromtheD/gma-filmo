@@ -13,7 +13,7 @@ import type { MovieMedia } from "@/types/catalog";
 const GRID_CLASS =
   "grid grid-cols-1 gap-x-4 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-6 xl:grid-cols-4 2xl:grid-cols-5";
 const CHIP_CLASS =
-  "inline-flex min-h-11 items-center rounded-full border border-white/10 bg-white/5 px-4 text-[14px] font-medium text-[#EEF1F6] backdrop-blur-md transition-colors hover:border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]";
+  "inline-flex min-h-11 items-center rounded-[4px] border border-white/10 bg-white/5 px-4 text-[14px] font-medium text-[#EEF1F6] backdrop-blur-md transition-colors hover:border-white/25 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]";
 
 interface SearchScreenProps {
   readonly items: readonly MovieMedia[];

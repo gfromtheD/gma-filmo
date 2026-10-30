@@ -148,7 +148,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex min-h-11 max-w-full items-center gap-2 rounded-full border border-gma-line-strong px-4 py-2 text-[13px] font-semibold text-[#C4C4C4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
+                  className="flex min-h-11 max-w-full items-center gap-2 rounded-[4px] border border-gma-line-strong px-4 py-2 text-[13px] font-semibold text-[#C4C4C4] transition-colors duration-150 hover:border-[#22B16B]/40 hover:bg-[#22B16B]/10 hover:text-[#22B16B]"
                   style={{ background: "rgba(255,255,255,0.04)" }}
                 >
                   {icon}
@@ -169,7 +169,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
               </p>
             </div>
             <a href={claimHref(creator.nombre)} target="_blank" rel="noopener noreferrer"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-[#22B16B]/50 px-5 text-sm font-semibold text-[#2AC57A] transition-colors hover:bg-[#22B16B] hover:text-[#031A0E] focus-visible:outline-2 focus-visible:outline-[#22B16B]">
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-[4px] border border-[#22B16B]/50 px-5 text-sm font-semibold text-[#2AC57A] transition-colors hover:bg-[#22B16B] hover:text-[#031A0E] focus-visible:outline-2 focus-visible:outline-[#22B16B]">
               Reclamar mi perfil
             </a>
           </aside>
@@ -183,7 +183,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             <div className="min-w-0 break-words">
               <h2 className="text-lg font-bold text-white">Apoya a {creator.nombre}</h2>
               <p className="mt-2 text-sm leading-6 text-[#C4C4C4]">Escanea el QR con tu móvil para abrir sus opciones de apoyo. No necesitas iniciar sesión en GMA.</p>
-              <Link href={supportPath(creator.slug)} className="mt-4 inline-flex min-h-12 items-center rounded-full bg-[#22B16B] px-5 font-semibold text-[#031A0E]">Apoyar al creador</Link>
+              <Link href={supportPath(creator.slug)} className="mt-4 inline-flex min-h-12 items-center rounded-[4px] bg-[#22B16B] px-5 font-semibold text-[#031A0E]">Apoyar al creador</Link>
             </div>
           </section>
         )}
@@ -193,7 +193,7 @@ export function CreatorProfilePage({ creator, films }: CreatorProfileProps) {
             {creator.redes_sociales.map(({ platform, url }, index) => {
               const href = socialUrl(platform.toLowerCase(), url);
               return href ? <a key={`${platform}-${index}`} href={href} target="_blank" rel="noopener noreferrer"
-                className="flex min-h-11 max-w-full items-center break-words rounded-full border border-white/15 px-4 py-2 text-sm text-[#C4C4C4] transition-colors hover:text-[#22B16B]">
+                className="flex min-h-11 max-w-full items-center break-words rounded-[4px] border border-white/15 px-4 py-2 text-sm text-[#C4C4C4] transition-colors hover:text-[#22B16B]">
                 {getSocialPlatform(platform.toLowerCase())?.label ?? platform}
               </a> : null;
             })}
