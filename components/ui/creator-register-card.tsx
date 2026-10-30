@@ -79,10 +79,10 @@ export function CreatorRegisterCard({ onLogin }: CreatorRegisterCardProps) {
         .eq("user_id", signInData.user.id)
         .maybeSingle();
 
-      // Already a creator → selector de perfiles, que lanza la animación
-      // diferenciada (negro/verde) antes de entrar a Mi Estudio
+      // Ya es creador: entra como cualquier otra persona (selector de perfiles y, de ahí, Inicio). A Mi Estudio llega desde
+      // el menú de su cuenta cuando quiera.
       if (existingCreator) {
-        window.location.href = "/perfiles?next=/mi-estudio";
+        window.location.href = "/perfiles";
         return;
       }
 
