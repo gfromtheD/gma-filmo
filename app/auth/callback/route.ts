@@ -83,16 +83,14 @@ export async function GET(request: NextRequest) {
       // ── Routing decision ────────────────────────────────────────────────────
       //
       // Priority order:
-      //   1. Already a confirmed creator → always land on perfiles → mi-estudio
-      //   2. Creator OAuth + no studio yet → fill out creator form
-      //   3. Normal viewer → perfiles (or configurar-perfil if no name yet)
+      //   1. Creator OAuth + no studio yet → fill out creator form
+      //   2. Everyone else (viewer or creator who is already registered) → the normal flow: perfiles/inicio, or
+      //      configurar-perfil if there is no name yet. A returning creator is NOT sent to Mi Estudio: they reach it
+      //      from the account menu when they want it.
 
       let destination: string;
 
-      if (isConfirmedCreator) {
-        // Returning creator: pick profile then go to Mi Estudio
-        destination = "/perfiles?next=/mi-estudio";
-      } else if (isCreatorOAuth) {
+      if (isCreatorOAuth && !isConfirmedCreator) {
         // New creator OAuth: go set up creator profile
         destination = "/configurar-perfil-creador";
         // Mark that this session is mid-creator-onboarding so middleware can
@@ -103,7 +101,6 @@ export async function GET(request: NextRequest) {
           options: { path: "/", maxAge: 600, sameSite: "lax" as const },
         });
       } else {
-        // Normal viewer login
         const needsSetup = !hasRealName(finalName);
         destination = needsSetup ? "/configurar-perfil" : next;
       }
