@@ -18,9 +18,9 @@ interface CardInfoOverlayProps {
  */
 const RISE_BASE = "opacity-0 motion-reduce:opacity-100 motion-reduce:!animate-none";
 // Las clases se escriben enteras (Tailwind no detecta nombres montados con variables).
-const RISE_1 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_140ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_140ms_both]`;
-const RISE_2 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_210ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_210ms_both]`;
-const RISE_3 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_290ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_290ms_both]`;
+const RISE_1 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_140ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_140ms_both] group-data-[armed=true]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_140ms_both]`;
+const RISE_2 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_210ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_210ms_both] group-data-[armed=true]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_210ms_both]`;
+const RISE_3 = `${RISE_BASE} group-hover/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_290ms_both] group-has-[:focus-visible]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_290ms_both] group-data-[armed=true]/card:animate-[top-ten-rise_620ms_cubic-bezier(0.34,1.36,0.5,1)_290ms_both]`;
 
 export function CardInfoOverlay({ item }: CardInfoOverlayProps) {
   const meta =
@@ -32,7 +32,7 @@ export function CardInfoOverlay({ item }: CardInfoOverlayProps) {
     <div
       aria-hidden="true"
       data-card-overlay
-      className="pointer-events-none absolute inset-0 z-[4] flex flex-col justify-between bg-black/80 p-4 opacity-0 transition-opacity duration-[250ms] ease-out group-has-[:focus-visible]/card:opacity-100 group-hover/card:opacity-100 group-hover/card:duration-[350ms] motion-reduce:transition-none"
+      className="pointer-events-none absolute inset-0 z-[4] flex flex-col justify-between bg-black/80 p-4 opacity-0 transition-opacity duration-[250ms] ease-out group-has-[:focus-visible]/card:opacity-100 group-data-[armed=true]/card:opacity-100 group-hover/card:opacity-100 group-hover/card:duration-[350ms] motion-reduce:transition-none"
     >
       <div className="flex flex-col gap-2">
         <p className={`text-[12px] font-medium leading-[12px] text-[#969696] ${RISE_1}`}>{meta.join(" · ")}</p>

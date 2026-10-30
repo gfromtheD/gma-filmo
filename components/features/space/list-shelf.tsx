@@ -53,6 +53,16 @@ function useIsMobile(): boolean {
   );
 }
 
+const COARSE_QUERY = "(pointer: coarse)";
+/** Pantalla táctil como puntero principal: ahí no hay arrastrar con ratón ni «mantener pulsado» (el navegador lo gasta). */
+function useIsCoarse(): boolean {
+  return useSyncExternalStore(
+    (notify) => { const mq = window.matchMedia(COARSE_QUERY); mq.addEventListener("change", notify); return () => mq.removeEventListener("change", notify); },
+    () => window.matchMedia(COARSE_QUERY).matches,
+    () => false,
+  );
+}
+
 /** Las obras que asoman de la carpeta: las más recientes delante (la carpeta pone la última al frente). */
 function folderFiles(items: readonly MovieMedia[]): FolderFile[] {
   return items.slice(0, MAX_VISIBLE).reverse().map((item) => ({ name: item.title, image: item.imageUrl || undefined }));
@@ -111,11 +121,14 @@ export function ListShelf({
 }: Props) {
   const reduceMotion = useReducedMotion();
   const isMobile = useIsMobile();
+  const isCoarse = useIsCoarse();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({ left: 0, visible: 1, total: 1 });
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [isArranging, setIsArranging] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  // Colocar a mano con toques: el primer toque elige la carpeta, el segundo la pone delante de la que toques.
+  const [pickedId, setPickedId] = useState<string | null>(null);
 
   const width = WIDTHS[isMobile ? "mobile" : "desktop"][size];
   const bodyHeight = Math.round((width * 272) / 340);
@@ -178,11 +191,32 @@ export function ListShelf({
 
   const customIds = ordered.filter((c) => c.kind === "custom").map((c) => c.id);
 
+  // Salir de «Colocar a mano» (o tocar fuera de las carpetas) suelta la que estaba elegida.
+  useEffect(() => {
+    if (!pickedId) return;
+    if (!arranging) { setPickedId(null); return; }
+    const onDown = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest("[data-carpeta-propia]")) setPickedId(null);
+    };
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [pickedId, arranging]);
+
+  function handleArrangeTap(event: React.MouseEvent, collection: Collection) {
+    if (!arranging || collection.kind !== "custom") return;
+    if ((event.target as Element).closest("[data-nudge]")) return; // las flechas de mover van a lo suyo
+    event.preventDefault();
+    event.stopPropagation();
+    if (pickedId === null) setPickedId(collection.id);
+    else if (pickedId === collection.id) setPickedId(null);
+    else { moveCustom(pickedId, collection.id); setPickedId(null); }
+  }
+
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-3">
       {/* Barra: cuántas hay, «Organizar» (que despliega sus ajustes en horizontal) y «Nueva carpeta». */}
-      <div className="flex min-w-0 items-center gap-2">
-        <p className="mr-auto shrink-0 text-[13.5px] tabular-nums text-[#8A8A8A]" aria-live="polite">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <p className="w-full text-[13.5px] tabular-nums text-[#8A8A8A] sm:mr-auto sm:w-auto sm:shrink-0" aria-live="polite">
           {ordered.length} {ordered.length === 1 ? "carpeta" : "carpetas"}
           {isRow && scroll.total > scroll.visible + 8 ? ` · viendo ${firstShown}–${lastShown}` : ""}
         </p>
@@ -190,10 +224,12 @@ export function ListShelf({
         <AnimatePresence initial={false}>
           {isOrganizing && (
             <motion.div key="ajustes" id="ajustes-carpetas"
-              initial={reduceMotion ? false : { width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={reduceMotion ? undefined : { width: 0, opacity: 0 }}
+              initial={reduceMotion ? false : isMobile ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
+              animate={isMobile ? { height: "auto", opacity: 1 } : { width: "auto", opacity: 1 }}
+              exit={reduceMotion ? undefined : isMobile ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
-              className="min-w-0 overflow-x-auto overflow-y-hidden py-1 [scrollbar-width:none]">
-              <div className="flex items-center gap-2 pl-1 pr-1">
+              className="min-w-0 overflow-hidden py-1 max-sm:order-last max-sm:basis-full sm:overflow-x-auto sm:[scrollbar-width:none]">
+              <div className="flex flex-wrap items-center gap-2 pl-1 pr-1 sm:flex-nowrap">
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger className={`group ${TOOL_BUTTON}`}>
                     <span className="text-[#8A8A8A]">Orden:</span> {SORTS.find((s) => s.id === sort)!.label}
@@ -265,15 +301,22 @@ export function ListShelf({
         </AnimatePresence>
 
         <button type="button" aria-expanded={isOrganizing} aria-controls="ajustes-carpetas" onClick={() => { setIsOrganizing((v) => !v); setIsArranging(false); }}
-          className={`${TOOL_BUTTON} ${isOrganizing ? "!border-white/40 !bg-white/15 !text-white" : ""}`}>
+          className={`${TOOL_BUTTON} max-sm:flex-1 max-sm:justify-center ${isOrganizing ? "!border-white/40 !bg-white/15 !text-white" : ""}`}>
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" />
           </svg>
           Organizar
         </button>
+        {arranging && (
+          <p role="status" className="w-full text-[13.5px] font-medium text-[#C4C4C4] max-sm:order-last">
+            {isCoarse
+              ? pickedId ? "Ahora toca la carpeta que quieres que quede detrás de ella. Toca fuera para cancelar." : "Toca la carpeta que quieres mover."
+              : "Arrastra las carpetas o usa las flechas para colocarlas."}
+          </p>
+        )}
         {canCreate && (
           <button type="button" onClick={onNewFolder}
-            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] bg-[#22B16B] px-3.5 text-[13.5px] font-bold text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-white">
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] bg-[#22B16B] px-3.5 text-[13.5px] font-bold max-sm:flex-1 max-sm:justify-center text-[#031A0E] transition-colors hover:bg-[#2AC57A] focus-visible:outline-2 focus-visible:outline-white">
             <Plus className="size-4" /> Nueva carpeta
           </button>
         )}
@@ -282,23 +325,27 @@ export function ListShelf({
       <div className="relative">
         <div ref={scrollerRef} role="group" aria-label="Tus carpetas" onScroll={measure}
           className={`-mx-4 flex gap-6 px-4 pb-3 pt-14 sm:-mx-6 sm:px-6 ${
-            isRow ? "snap-x snap-mandatory items-end overflow-x-auto pl-12 [scroll-padding-inline:3rem] [scrollbar-width:none] sm:pl-14" : "flex-wrap items-end gap-y-8"
+            isRow ? "snap-x snap-mandatory items-end overflow-x-auto overflow-y-hidden pl-12 [scroll-padding-inline:3rem] [scrollbar-width:none] sm:pl-14" : "flex-wrap items-end gap-y-8"
           }`}>
           {ordered.map((collection, index) => {
             const isSelected = collection.id === selectedId;
             const [one, many] = COUNT_LABEL[collection.kind];
             const count = collection.items.length;
             const customAt = customIds.indexOf(collection.id);
-            const isDraggable = arranging && collection.kind === "custom";
+            const isCustom = collection.kind === "custom";
+            const isDraggable = arranging && isCustom && !isCoarse;
+            const isPicked = pickedId === collection.id;
             return (
               <div key={collection.id} id={`carpeta-${collection.id}`}
-                className={`relative shrink-0 snap-center transition-[opacity,transform] duration-200 ${dragId === collection.id ? "scale-95 opacity-40" : ""}`}
+                data-carpeta-propia={arranging && isCustom ? "" : undefined}
+                onClickCapture={(event) => handleArrangeTap(event, collection)}
+                className={`relative shrink-0 snap-center select-none transition-[opacity,transform,filter] duration-300 [-webkit-touch-callout:none] ease-[cubic-bezier(0.34,1.36,0.5,1)] ${dragId === collection.id ? "scale-95 opacity-40" : ""} ${isPicked ? "-translate-y-3 scale-[1.05] drop-shadow-[0_18px_28px_rgba(255,255,255,0.18)]" : ""} ${arranging && isCustom && pickedId !== null && !isPicked ? "opacity-80" : ""}`}
                 draggable={isDraggable}
                 onDragStart={isDraggable ? (e) => { setDragId(collection.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", collection.id); } : undefined}
                 onDragEnd={() => setDragId(null)}
                 onDragOver={arranging && collection.kind === "custom" && dragId ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; } : undefined}
                 onDrop={arranging && collection.kind === "custom" && dragId ? (e) => { e.preventDefault(); if (dragId !== collection.id) moveCustom(dragId, collection.id); setDragId(null); } : undefined}>
-                <div className={arranging && collection.kind !== "custom" ? "pointer-events-none opacity-60" : ""}>
+                <div className={arranging && !isCustom ? "pointer-events-none opacity-60" : arranging ? "cursor-pointer" : ""}>
                   <GlassFolder
                     // La carpeta enseña las obras que le pasas; si cambian, la clave la vuelve a montar con la entrada.
                     key={`${collection.id}:${collection.items.slice(0, MAX_VISIBLE).map((i) => i.id).join(",")}`}
@@ -314,15 +361,15 @@ export function ListShelf({
                   <span aria-hidden="true" className={`mx-auto mt-1 block h-[3px] rounded-[2px] bg-white transition-[width,opacity] duration-300 ${isSelected ? "w-10 opacity-90" : "w-0 opacity-0"}`} />
                 </div>
 
-                {isDraggable && (
-                  <div className="absolute inset-x-0 bottom-9 z-30 flex items-center justify-center gap-2" style={{ pointerEvents: "none" }}>
-                    <button type="button" aria-label={`Mover ${collection.name} hacia delante`} disabled={customAt <= 0} onClick={() => nudge(collection.id, -1)}
+                {arranging && isCustom && (
+                  <div className="absolute inset-x-0 top-[34%] z-30 flex items-center justify-center gap-2" style={{ pointerEvents: "none" }}>
+                    <button type="button" data-nudge="" aria-label={`Mover ${collection.name} hacia delante`} disabled={customAt <= 0} onClick={() => nudge(collection.id, -1)}
                       style={{ pointerEvents: "auto" }}
                       className="grid size-10 place-items-center rounded-full bg-black/75 text-white backdrop-blur-sm transition-opacity hover:bg-black focus-visible:outline-2 focus-visible:outline-white disabled:opacity-30">
                       <ArrowLeft className="size-5" />
                     </button>
-                    <span className="rounded-[4px] bg-black/75 px-2 py-1 text-[11.5px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">Arrastra</span>
-                    <button type="button" aria-label={`Mover ${collection.name} hacia atrás`} disabled={customAt === customIds.length - 1} onClick={() => nudge(collection.id, 1)}
+                    <span className="rounded-[4px] bg-black/75 px-2 py-1 text-[11.5px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">{isCoarse ? (isPicked ? "Elegida" : "Mover") : "Arrastra"}</span>
+                    <button type="button" data-nudge="" aria-label={`Mover ${collection.name} hacia atrás`} disabled={customAt === customIds.length - 1} onClick={() => nudge(collection.id, 1)}
                       style={{ pointerEvents: "auto" }}
                       className="grid size-10 place-items-center rounded-full bg-black/75 text-white backdrop-blur-sm transition-opacity hover:bg-black focus-visible:outline-2 focus-visible:outline-white disabled:opacity-30">
                       <ArrowRight className="size-5" />

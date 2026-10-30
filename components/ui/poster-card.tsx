@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { workPath } from "@/lib/catalog/work-path";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
@@ -60,9 +61,41 @@ export function PosterCard({
   const notice = useNoticeToast();
   // La ficha es siempre la de la obra; `href` solo manda sobre el clic en la imagen (p. ej. «Continuar viendo» reanuda).
   const detailHref = item.kind === "series" ? `/series/${item.id}` : workPath(item);
-  const wrapProps = hoverPreview
+  // En pantallas táctiles no hay cursor: el primer toque abre la tarjeta con la descripción (como al pasar el ratón) y el
+  // segundo, sobre la portada o en «Ver ahora», entra a la obra. Tocar fuera la cierra.
+  const lastPointerType = useRef<string>("mouse");
+  // Listados grandes (descripción sobre la portada): en táctil, el primer toque la «arma» y el segundo entra a la obra.
+  const [isArmed, setIsArmed] = useState(false);
+  useEffect(() => {
+    if (!isArmed) return;
+    const disarm = () => setIsArmed(false);
+    const onDown = (event: PointerEvent) => { if (!(event.target as Element | null)?.closest("[data-armed='true']")) disarm(); };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("scroll", disarm, { passive: true, capture: true });
+    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("scroll", disarm, { capture: true }); };
+  }, [isArmed]);
+  const wrapProps = !hoverPreview && hoverOverlay
+    ? {
+        "data-armed": isArmed ? "true" : undefined,
+        onPointerDownCapture: (event: React.PointerEvent) => { lastPointerType.current = event.pointerType; },
+        onClickCapture: (event: React.MouseEvent) => {
+          if (lastPointerType.current === "mouse" || isArmed) return;
+          event.preventDefault();
+          event.stopPropagation();
+          setIsArmed(true);
+        },
+      }
+    : hoverPreview
     ? {
         ref: preview.anchorRef,
+        onPointerDownCapture: (event: React.PointerEvent) => { lastPointerType.current = event.pointerType; },
+        onClickCapture: (event: React.MouseEvent) => {
+          if (lastPointerType.current === "mouse" || preview.anchorBox) return;
+          event.preventDefault();
+          event.stopPropagation();
+          preview.openNow();
+          void loadCommunityScore(item.numericId);
+        },
         onPointerEnter: (event: React.PointerEvent) => {
           preview.onPointerEnter(event);
           // Precarga la nota durante la espera de apertura para que el panel nazca con su altura final.

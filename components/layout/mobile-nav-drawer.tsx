@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from "motion/react";
 import { Dialog } from "radix-ui";
-import { Home, LogIn, MediaVideo, Menu, Movie, Search, User, Xmark, Dashboard, type IconProps } from "@/components/ui/icons";
+import { Menu, Xmark } from "@/components/ui/icons";
 import { NavbarBrand } from "@/components/layout/navbar-parts/brand";
 import { useIsCreator } from "@/hooks/use-is-creator";
 import { useIsGuest } from "@/hooks/use-is-guest";
@@ -16,18 +16,20 @@ interface DrawerItem {
   readonly href: string;
   /** Prefijos de ruta que dejan este acceso marcado como activo. */
   readonly match: readonly string[];
-  readonly Icon: ComponentType<IconProps>;
 }
 
 const SECTIONS: readonly DrawerItem[] = [
-  { id: "home", label: "Inicio", href: "/inicio", match: ["/inicio"], Icon: Home },
-  { id: "movies", label: "Películas", href: "/peliculas", match: ["/peliculas"], Icon: Movie },
-  { id: "shorts", label: "Cortos", href: "/cortos", match: ["/cortos"], Icon: MediaVideo },
+  { id: "home", label: "Inicio", href: "/inicio", match: ["/inicio"] },
+  { id: "movies", label: "Películas", href: "/peliculas", match: ["/peliculas"] },
+  { id: "shorts", label: "Cortos", href: "/cortos", match: ["/cortos"] },
 ];
 
-/** Entrada y salida del panel (Material 3 recomienda 250–300 ms con desaceleración marcada). */
-const PANEL_MS = 0.3;
-const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+/**
+ * Entrada del panel y de sus opciones: el mismo muelle con rebote que las carpetas de Mi lista. El panel se asienta con
+ * un pequeño pasarse de largo y cada opción llega después de la anterior, subiendo y creciendo un poco.
+ */
+const PANEL_SPRING = { type: "spring", stiffness: 320, damping: 30, mass: 0.9 } as const;
+const ITEM_SPRING = { type: "spring", stiffness: 380, damping: 22 } as const;
 /** Arrastrar el panel hacia la izquierda más de esto (o con fuerza) lo cierra, como en las apps nativas. */
 const SWIPE_CLOSE_PX = 80;
 const SWIPE_CLOSE_VELOCITY = 500;
@@ -68,10 +70,10 @@ export function MobileNavDrawer() {
 
   const personal: DrawerItem[] = [
     isGuest
-      ? { id: "login", label: "Entrar", href: "/?login=1", match: [], Icon: LogIn }
-      : { id: "space", label: "Mi Espacio", href: "/mi-espacio", match: ["/mi-espacio", "/configuracion"], Icon: User },
-    ...(isCreator ? [{ id: "studio", label: "Mi Estudio", href: "/mi-estudio", match: ["/mi-estudio"], Icon: Dashboard }] : []),
-    { id: "search", label: "Buscar", href: "/buscador", match: ["/buscador"], Icon: Search },
+      ? { id: "login", label: "Entrar", href: "/?login=1", match: [] }
+      : { id: "space", label: "Mi Espacio", href: "/mi-espacio", match: ["/mi-espacio", "/configuracion"] },
+    ...(isCreator ? [{ id: "studio", label: "Mi Estudio", href: "/mi-estudio", match: ["/mi-estudio"] }] : []),
+    { id: "search", label: "Buscar", href: "/buscador", match: ["/buscador"] },
   ];
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
@@ -80,7 +82,7 @@ export function MobileNavDrawer() {
 
   const itemMotion = (index: number) => reduceMotion
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.15 } }
-    : { initial: { opacity: 0, x: -18 }, animate: { opacity: 1, x: 0 }, transition: { duration: 0.32, ease: EASE_OUT, delay: 0.08 + index * 0.045 } };
+    : { initial: { opacity: 0, x: -34, scale: 0.94 }, animate: { opacity: 1, x: 0, scale: 1 }, transition: { ...ITEM_SPRING, delay: 0.12 + index * 0.06 } };
 
   const renderItem = (item: DrawerItem, index: number, size: "large" | "small") => {
     const active = isActive(item, pathname);
@@ -91,12 +93,11 @@ export function MobileNavDrawer() {
           aria-current={active ? "page" : undefined}
           onPointerDown={tapFeedback}
           onClick={() => setOpen(false)}
-          className={`group relative flex min-h-14 items-center gap-4 rounded-2xl px-4 transition-[background-color,color,transform] duration-150 active:scale-[0.97] active:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white motion-reduce:transition-none motion-reduce:active:scale-100 ${
+          className={`group relative flex min-h-14 items-center gap-4 rounded-[8px] px-4 transition-[background-color,color,transform] duration-150 active:scale-[0.97] active:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white motion-reduce:transition-none motion-reduce:active:scale-100 ${
             active ? "bg-[#22B16B]/[0.12] text-[#2AC57A]" : "text-white"
           } ${size === "large" ? "text-[26px] font-bold tracking-[-0.01em]" : "text-[18px] font-semibold"}`}
         >
           {active && <span aria-hidden="true" className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-[#22B16B]" />}
-          <item.Icon size={size === "large" ? 26 : 22} strokeWidth={active ? 2 : 1.7} className={active ? "" : "text-white/70"} />
           {item.label}
         </Link>
       </motion.li>
@@ -133,12 +134,12 @@ export function MobileNavDrawer() {
               <motion.div
                 ref={panelRef}
                 tabIndex={-1}
-                className="fixed inset-y-0 left-0 z-[61] flex w-[min(86vw,380px)] flex-col overflow-y-auto rounded-r-[28px] bg-[var(--gma-preview)] pb-[calc(20px+env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] shadow-[24px_0_60px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/10 outline-none lg:hidden"
+                className="fixed inset-y-0 left-0 z-[61] flex w-[min(86vw,380px)] flex-col overflow-y-auto rounded-r-[12px] bg-[var(--gma-preview)] pb-[calc(20px+env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] shadow-[24px_0_60px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/10 outline-none lg:hidden"
                 style={{ backgroundImage: "radial-gradient(140% 60% at 0% 100%, rgba(91,63,209,0.28) 0%, rgba(91,63,209,0) 70%), radial-gradient(120% 50% at 0% 0%, rgba(34,177,107,0.16) 0%, rgba(34,177,107,0) 70%)" }}
                 initial={reduceMotion ? { opacity: 0 } : { x: "-100%" }}
                 animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { x: "-100%" }}
-                transition={{ duration: reduceMotion ? 0.12 : PANEL_MS, ease: EASE_OUT }}
+                transition={reduceMotion ? { duration: 0.12 } : PANEL_SPRING}
                 drag={reduceMotion ? false : "x"}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={{ left: 0.5, right: 0 }}

@@ -192,7 +192,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
         transition={{ delay: 0.35, duration: 0.7, ease: "easeOut" }}
       >
         {continueItems.length > 0 && (
-          <Carousel title="Continuar viendo" subtitle="Retoma donde lo dejaste">
+          <Carousel title="Continuar viendo" subtitle="Retoma donde lo dejaste" mobileSize="frame">
             {continueItems.map((item) => (
               <PosterCard key={item.id} item={item} ratio="landscape" fluid hoverPreview caption showProgress href={`/ver/${item.id}`} />
             ))}
@@ -215,7 +215,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
         )}
 
         {homeRows.map((row) => (
-          <Carousel key={row.title} title={row.title} subtitle={row.subtitle}>
+          <Carousel key={row.title} title={row.title} subtitle={row.subtitle} mobileSize="wide">
             {row.items.map((item) => (
               <PosterCard
                 key={item.id}
@@ -231,6 +231,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           <Carousel
             title="Mi Lista"
             subtitle="Lo que has guardado para ver después"
+            mobileSize="wide"
             action={
               <Link
                 href="/mi-espacio"
@@ -250,6 +251,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
           <Carousel
             title="Colecciones para ti"
             subtitle="Selecciones de cortos para descubrir"
+            mobileSize="frame"
             action={
               <Link
                 href="/cortos"
