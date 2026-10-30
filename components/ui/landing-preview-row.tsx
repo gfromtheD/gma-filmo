@@ -7,8 +7,8 @@ import { useHoverPreview } from "@/hooks/use-hover-preview";
 import { ArrowLeft, ArrowRight } from "@/components/ui/icons";
 import type { MovieMedia } from "@/types/catalog";
 
-const SMALL_ARROW_CLASS =
-  "flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:border-transparent hover:bg-white hover:text-gma-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#58D99B]";
+const ARROW_CLASS =
+  "group/arrow flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/[0.06] text-white backdrop-blur-sm transition-[transform,background-color,border-color,color] duration-200 hover:scale-105 hover:border-transparent hover:bg-white hover:text-gma-surface-2 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#58D99B] motion-reduce:transition-none motion-reduce:hover:scale-100";
 /** Qué fracción del ancho visible avanza cada pulsación de flecha. */
 const PAGE_FRACTION = 0.92;
 /** Cuánto tras el último evento de scroll se considera que ya se ha asentado, para recolocar sin que se note. */
@@ -51,9 +51,13 @@ function PreviewTile({ item, onRequestLogin }: { readonly item: MovieMedia; read
 }
 
 interface LandingPreviewRowProps {
+  /** Nombre corto de la fila: el que oyen los lectores de pantalla y el de las flechas («Cortos: anterior»). */
+  readonly name: string;
+  /** Titular de la fila, en tono de bienvenida (aquí no es una categoría de la interfaz, es una invitación). */
   readonly title: string;
+  readonly subtitle?: string;
   readonly items: readonly MovieMedia[];
-  /** Abre el panel de acceso (el mismo «Elige cómo entrar» de siempre). */
+  /** Lleva a la pasarela de inicio de sesión. */
   readonly onRequestLogin: () => void;
 }
 
@@ -64,7 +68,7 @@ interface LandingPreviewRowProps {
  *  cursor) y la fila es una «rueda» infinita: la lista se triplica y, cada vez que el scroll se asienta fuera de
  *  la copia del medio, se recoloca al instante (sin animación) a la copia equivalente — como las copias son
  *  idénticas, no se nota el salto y da la sensación de que el carrusel no se acaba nunca. */
-export function LandingPreviewRow({ title, items, onRequestLogin }: LandingPreviewRowProps) {
+export function LandingPreviewRow({ name, title, subtitle, items, onRequestLogin }: LandingPreviewRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const setWidthRef = useRef(0);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,15 +125,22 @@ export function LandingPreviewRow({ title, items, onRequestLogin }: LandingPrevi
   }
 
   return (
-    <section aria-label={title} className="py-8 sm:py-10">
-      <div className="relative z-10 flex items-center justify-between gap-4 px-6 sm:px-10 lg:px-16">
-        <h2 className="text-[20px] font-bold text-white">{title}</h2>
-        <div className="flex gap-2">
-          <button type="button" onClick={scrollPrev} aria-label={`${title}: anterior`} className={SMALL_ARROW_CLASS}>
-            <ArrowLeft size={15} aria-hidden="true" />
+    <section aria-label={name} className="py-8 sm:py-10">
+      <div className="relative z-10 flex items-end justify-between gap-6 px-6 sm:px-10 lg:px-16">
+        <div className="min-w-0">
+          <h2 className="text-[clamp(1.35rem,2.6vw,1.95rem)] font-extrabold leading-tight tracking-[-.02em] text-white">{title}</h2>
+          {subtitle && <p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-[#B9C0BC] sm:text-[15px]">{subtitle}</p>}
+        </div>
+        <div className="flex shrink-0 gap-2.5">
+          <button type="button" onClick={scrollPrev} aria-label={`${name}: anterior`} className={ARROW_CLASS}>
+            <span className="transition-transform duration-200 group-hover/arrow:-translate-x-0.5 motion-reduce:transition-none">
+              <ArrowLeft size={18} aria-hidden="true" />
+            </span>
           </button>
-          <button type="button" onClick={scrollNext} aria-label={`${title}: siguiente`} className={SMALL_ARROW_CLASS}>
-            <ArrowRight size={15} aria-hidden="true" />
+          <button type="button" onClick={scrollNext} aria-label={`${name}: siguiente`} className={ARROW_CLASS}>
+            <span className="transition-transform duration-200 group-hover/arrow:translate-x-0.5 motion-reduce:transition-none">
+              <ArrowRight size={18} aria-hidden="true" />
+            </span>
           </button>
         </div>
       </div>

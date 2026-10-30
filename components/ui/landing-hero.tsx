@@ -18,6 +18,20 @@ import { enterAsGuest } from "@/lib/auth/guest-access";
 import type { MovieMedia } from "@/types/catalog";
 
 type WelcomeView = "hero" | "login" | "register" | "creator-register";
+
+/**
+ * El carrete no se tapa: se borra. La máscara va sobre el propio mosaico (su opacidad real), que además se
+ * extiende por debajo del giro para morir ya dentro de la primera fila — así no existe ninguna línea entre las
+ * dos secciones, porque la imagen cruza el borde y se apaga al otro lado.
+ */
+const MARQUEE_FADE = "linear-gradient(to bottom, #000 0%, #000 64%, rgba(0,0,0,0.5) 82%, transparent 100%)";
+/** Oscurece solo lo que hay detrás del texto (y la cabecera), no el mosaico entero: así el color no se apaga. */
+const HERO_SCRIM = [
+  "linear-gradient(to bottom, rgba(14,14,17,0.78) 0%, rgba(14,14,17,0.22) 16%, rgba(14,14,17,0) 28%)",
+  // Radio vertical de 54% desde el centro (46%): el velo llega a 0 justo en el borde inferior de la sección. Con un
+  // radio mayor quedaba opacidad residual allí y, al terminar la capa, se veía una línea fina.
+  "radial-gradient(ellipse 78% 54% at 50% 46%, rgba(14,14,17,0.92) 0%, rgba(14,14,17,0.72) 38%, rgba(14,14,17,0.26) 72%, rgba(14,14,17,0) 100%)",
+].join(", ");
 const bandCtaClass = "inline-flex min-h-12 w-fit items-center justify-center gap-3 rounded-full bg-white px-6 text-[15px] font-semibold text-gma-surface-2 transition-colors hover:bg-[#DBF7E9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#58D99B] disabled:opacity-60";
 
 interface LandingHeroProps {
@@ -72,23 +86,20 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
     <MotionConfig reducedMotion="user">
       <div className="text-white">
         <SiteAurora />
-        <section className="relative isolate flex min-h-[88svh] w-full flex-col overflow-hidden">
-          {/* El mosaico se disuelve de verdad en el último tramo (máscara de opacidad, no una capa de color
-              encima): revela el mismo fondo aurora que ya corre por toda la web, así no hay dos colores que
-              «empalmar» a ojo — es el mismo fondo a ambos lados del límite del giro, sin corte posible. */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20"
+        {/* Sin overflow-hidden a propósito: el mosaico tiene que poder salirse por abajo para morir dentro de la
+            primera fila. Lo que sobra por los lados lo recorta la propia máscara (mask-size 100% + no-repeat). */}
+        <section className="relative isolate flex min-h-[88svh] w-full flex-col">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-20 h-[calc(100%+10rem)]"
             style={{
-              maskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)",
+              maskImage: MARQUEE_FADE, maskRepeat: "no-repeat", maskSize: "100% 100%",
+              WebkitMaskImage: MARQUEE_FADE, WebkitMaskRepeat: "no-repeat", WebkitMaskSize: "100% 100%",
             }}>
             {/* columns=4 es la base del móvil (el mínimo que admite el componente); el escritorio siempre
                 enseña 6 porque .largePosters lo fuerza por CSS, así que esto no cambia cómo se ve ahí. */}
             <ThreeDMarquee className="h-full w-full" columns={4} largePostersOnDesktop itemsPerGroup={10} />
           </div>
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10"
-            style={{ background: view === "hero"
-              ? "linear-gradient(90deg, color-mix(in srgb, var(--gma-surface-2) 94%, transparent) 0%, color-mix(in srgb, var(--gma-surface-2) 84%, transparent) 28%, color-mix(in srgb, var(--gma-surface-2) 48%, transparent) 58%, color-mix(in srgb, var(--gma-surface-2) 8%, transparent) 100%)"
-              : "color-mix(in srgb, var(--gma-surface-2) 74%, transparent)" }} />
+            style={{ background: view === "hero" ? HERO_SCRIM : "color-mix(in srgb, var(--gma-surface-2) 74%, transparent)" }} />
 
           <header className="relative flex min-h-[68px] items-center justify-between gap-4 px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,7 +113,10 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
           </header>
 
           <div ref={contentRef} className="relative flex w-full flex-1 items-center justify-center px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
-            <AnimatePresence mode="wait">
+            {/* initial={false}: la primera vista llega ya visible en el HTML del servidor. Sin esto el título salía con
+                opacity:0 y no aparecía hasta que React terminaba de hidratar toda la página (~2,7 s medidos); las
+                animaciones entre vistas (login, registro…) se mantienen. */}
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div key={view} className={view === "hero" ? "w-full max-w-4xl" : "w-full max-w-lg text-center"}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: reducedMotion ? 0 : -8 }} transition={{ duration: reducedMotion ? 0 : 0.25 }}
@@ -146,7 +160,13 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
 
         {/* Avance real del catálogo, franjas con mensaje y preguntas frecuentes: todo sigue aquí debajo pase lo que
             pase arriba (también con el panel de acceso abierto), como en las plataformas de streaming de referencia. */}
-        <LandingPreviewRow title="Cortos" items={cortos} onRequestLogin={openLogin} />
+        <LandingPreviewRow
+          name="Cortos"
+          title="Descubre nuestros cortos"
+          subtitle="Animación, ficción y experimentación de creadores reales."
+          items={cortos}
+          onRequestLogin={openLogin}
+        />
 
         <LandingMessageBand
           title="Largometrajes independientes, sin publicidad"
@@ -155,7 +175,13 @@ export function LandingHero({ peliculas, cortos }: LandingHeroProps) {
           cta={<button type="button" onClick={() => void enterGuest()} disabled={guestLoading} className={bandCtaClass}>{guestLoading ? "Entrando…" : "Ver gratis"}</button>}
         />
 
-        <LandingPreviewRow title="Películas" items={peliculas} onRequestLogin={openLogin} />
+        <LandingPreviewRow
+          name="Películas"
+          title="Películas para una noche entera"
+          subtitle="Largometrajes independientes, de principio a fin."
+          items={peliculas}
+          onRequestLogin={openLogin}
+        />
 
         <LandingMessageBand
           title="Apoya a quien lo hace"
