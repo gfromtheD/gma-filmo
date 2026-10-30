@@ -28,7 +28,7 @@ interface Props {
 }
 
 const OVERLAY_BUTTON =
-  "inline-flex min-h-9 items-center gap-2 rounded-[4px] border border-white/15 bg-black/55 px-3.5 text-[12.5px] font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/75 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white";
+  "inline-flex min-h-9 [@media(pointer:coarse)]:min-h-11 items-center gap-2 rounded-[4px] border border-white/15 bg-black/55 px-3.5 text-[12.5px] font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/75 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white";
 
 /**
  * Cabecera de la ficha de creador: es a la vez la vista previa de la ficha pública y el sitio donde se cambian el banner y la foto
@@ -86,12 +86,16 @@ export function ProfileHero(props: Props) {
           <StudioLogo colors={logoColors} size={112} name={studioName || "Estudio"} rounded={56} imageUrl={avatarUrl ?? undefined} />
           <button type="button" disabled={busy === "avatar"} onClick={() => avatarInput.current?.click()}
             aria-label={avatarUrl ? "Cambiar foto o logo" : "Añadir foto o logo"}
-            className="absolute inset-0 grid place-items-center rounded-full bg-black/55 text-[12.5px] font-semibold text-white opacity-0 transition-opacity group-hover/avatar:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-100">
-            {busy === "avatar" ? "Subiendo…" : <EditPencil aria-hidden="true" className="size-6" />}
+            className="absolute inset-0 grid place-items-center rounded-full bg-black/55 text-[12.5px] font-semibold text-white opacity-0 transition-opacity group-hover/avatar:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-white disabled:opacity-100 [@media(hover:none)]:bg-transparent">
+            {busy === "avatar" ? "Subiendo…" : <EditPencil aria-hidden="true" className="size-6 [@media(hover:none)]:hidden" />}
           </button>
+          {/* Sin cursor no hay «pasar por encima»: en pantallas táctiles el lápiz se queda siempre visible en la esquina. */}
+          <span aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 hidden size-9 place-items-center rounded-full border border-white/20 bg-[#0C1611] text-white shadow-lg [@media(hover:none)]:grid">
+            <EditPencil className="size-[18px]" />
+          </span>
           {avatarUrl && busy !== "avatar" && (
             <button type="button" onClick={() => props.onRemoveImage("avatar")} aria-label="Quitar foto o logo"
-              className="absolute right-0.5 top-0.5 grid size-7 place-items-center rounded-full border border-white/15 bg-[#0C1611] text-[#C4C4C4] opacity-0 transition-opacity hover:text-[#ff7b7b] group-hover/avatar:opacity-100 focus-visible:opacity-100">
+              className="absolute right-0.5 top-0.5 grid size-7 place-items-center rounded-full border border-white/15 bg-[#0C1611] text-[#C4C4C4] opacity-0 transition-opacity hover:text-[#ff7b7b] group-hover/avatar:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:size-9 [@media(hover:none)]:opacity-100">
               <Xmark aria-hidden="true" className="size-3.5" />
             </button>
           )}
@@ -99,7 +103,7 @@ export function ProfileHero(props: Props) {
 
         <div className="min-w-0 flex-1 pt-3">
           <h2 className="flex items-center gap-2 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-white">
-            <span className="truncate">{studioName.trim() || "Nombre de tu estudio"}</span>
+            <span className="line-clamp-2 min-w-0 break-words sm:truncate">{studioName.trim() || "Nombre de tu estudio"}</span>
             {verified && <CheckCircle aria-label="Verificado" className="size-5 shrink-0 text-[#2AC57A]" />}
           </h2>
           {subtitle && <p className="mt-1 text-[14.5px] text-[#C4C4C4]">{subtitle}</p>}

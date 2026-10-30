@@ -179,7 +179,7 @@ export function ProfileView({ data, onToast }: Props) {
       className="mx-auto flex max-w-[1080px] flex-col gap-5 pb-28">
       <motion.header variants={rise}>
         <h1 className="text-[28px] font-semibold leading-tight text-white sm:text-[32px]">Tu ficha de creador</h1>
-        <p className="mt-1.5 text-[15px] text-[#A8A8A8]">Así te verán los espectadores. Cambia el banner y la foto pasando el ratón por encima.</p>
+        <p className="mt-1.5 text-[15px] text-[#A8A8A8]">Así te verán los espectadores. Cambia el banner y la foto <span className="[@media(hover:none)]:hidden">pasando el ratón por encima.</span><span className="hidden [@media(hover:none)]:inline">con sus botones.</span></p>
       </motion.header>
 
       <motion.div variants={rise}>
