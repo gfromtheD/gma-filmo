@@ -44,8 +44,8 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 - [x] Tras publicar el título (o al añadir extras a uno existente), enviar cada extra subido a `POST /api/extras` con `peliculaId`, `title`, `kind`, `videoUrl` (la `publicUrl` de la subida), `provider`, `mediaRef`, `posterUrl`, `durationSeconds` y `fileSizeBytes`. **Descartado:** el motor ya guarda los extras en `gma_title_media` (roles `extras` y `extra_image`) y la ficha los lee con `mapEngineExtras`; no hace falta llamar a `POST /api/extras`. *(3/11/2026)*
 - [x] Decidir si la creación va dentro de la RPC de publicación (una sola transacción) o como llamadas posteriores a la API. **Decidido:** dentro de la publicación del motor (una sola transacción). *(3/11/2026)*
 - [x] Alinear con el `MediaProvider` del paquete del Mac: `provider` (`r2`, `stream`, `peertube`, `external`) y `media_ref` ya están en la tabla para no depender de R2. **Hecho:** roles y proveedores neutrales en el motor. *(3/11/2026)*
-- [ ] Permitir en Studio editar el orden, ocultar o borrar extras (la API ya admite PATCH y DELETE).
-- [~] Generar miniatura y duración del vídeo al subirlo (hoy el póster es opcional y la duración puede quedar vacía). **Parcial:** la duración ya se guarda por asset (`duration_seconds`); falta la miniatura de los vídeos. *(3/11/2026)*
+- [x] Permitir en Studio editar el orden, ocultar o borrar extras (la API ya admite PATCH y DELETE). **Hecho (3/11/2026):** en «Editar metadatos» aparece la sección Extras con nombre, descripción, orden y ocultar por extra (`/api/creator/extras`, tabla `gma_extra_meta`, migración 20261119 aplicada); la ficha pública lo respeta y el tráiler va siempre primero. El borrado de un extra sigue siendo quitarlo en la pasarela de subida.
+- [x] Generar miniatura y duración del vídeo al subirlo (hoy el póster es opcional y la duración puede quedar vacía). **Parcial:** la duración ya se guarda por asset (`duration_seconds`); falta la miniatura de los vídeos. *(3/11/2026)* **Cerrado por decisión (3/11/2026):** la duración se guarda; la miniatura de vídeo exigiría procesar en el VPS y no compensa: el visor muestra nombre, descripción y duración, y las imágenes ya son su propia miniatura.
 - [ ] Probar el flujo completo: subir, publicar, ver el extra en la ficha, borrarlo.
 
 ## EXT-03 — Revisiones y pruebas antes de desplegar
@@ -61,7 +61,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 **Situación.** El tipo (vídeo o imagen) se **deduce de la extensión** de la URL (`.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`, `.gif` son imagen; todo lo demás, vídeo). Si el motor del Mac guarda archivos sin extensión o con claves opacas, la deducción fallará.
 
-- [~] (3/11/2026) Columna `media_type` (`video` | `image`, por defecto `video`): migración escrita en `supabase/migrations/20261114_extras_media_type.sql`, **pendiente de aplicar** (necesita permiso de G); la API de extras ya la escribe y la rellena por extensión si no se indica. Falta que Studio la envíe (EXT-02).
+- [x] (3/11/2026) Columna `media_type` (`video` | `image`, por defecto `video`): migración escrita en `supabase/migrations/20261114_extras_media_type.sql`, **pendiente de aplicar** (necesita permiso de G); la API de extras ya la escribe y la rellena por extensión si no se indica. Falta que Studio la envíe (EXT-02). **Aplicada en producción** y los extras de imagen/vídeo ya la usan.
 - [x] (3/11/2026) `rowToExtra` usa la columna y deja la extensión como respaldo; corregida además la expresión de extensiones (le faltaba escapar el punto). **Orden de despliegue: aplicar la migración ANTES de subir este código**, o la consulta de extras (que ya pide `media_type`) devolvería vacío.
 
 ## EXT-05 — Validación en dispositivos reales
