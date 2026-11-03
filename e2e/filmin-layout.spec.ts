@@ -90,11 +90,20 @@ test.describe("vista previa al pasar el ratón", () => {
   test("de la imagen hacia abajo el panel es clicable (lleva a la ficha); los botones no", async ({ page }) => {
     const preview = await hoverFirstCard(page);
     await expect(preview).toBeVisible({ timeout: 3_000 });
-    const box = await preview.boundingBox();
+    // El panel entra con una animación: se espera a que deje de moverse antes de medir dónde hacer clic.
+    let box = await preview.boundingBox();
+    for (let i = 0; i < 20; i += 1) {
+      await page.waitForTimeout(120);
+      const next = await preview.boundingBox();
+      const settled = Math.round(next?.y ?? 0) === Math.round(box?.y ?? 0);
+      box = next;
+      if (settled) break;
+    }
     const start = page.url();
     // Zona de texto (sinopsis): antes no hacía nada.
     await page.mouse.click((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) - 40);
-    await expect(page).toHaveURL(/\/cortos\/[^/]+$/);
+    // La ficha cuelga de /cortos o de /peliculas según la duración de la obra (desde la sección de películas).
+    await expect(page).toHaveURL(/\/(cortos|peliculas)\/[^/]+$/);
     expect(page.url()).not.toBe(start);
 
     // El botón de ver sigue yendo al reproductor, no a la ficha.
