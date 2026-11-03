@@ -48,6 +48,8 @@ export interface ExtraRow {
   readonly file_size_bytes: number | null;
   readonly sort_order: number;
   readonly status: string;
+  /** Tipo explícito del archivo (migración 20261114); si falta, se deduce de la extensión. */
+  readonly media_type?: string | null;
 }
 
 export function isExtraKind(value: string): value is ExtraKind {
@@ -81,7 +83,7 @@ function isHttpsUrl(value: string): boolean {
 export function rowToExtra(row: ExtraRow): MovieExtra | null {
   if (row.status !== "published" || !isHttpsUrl(row.video_url)) return null;
   const description = row.description?.trim() ?? "";
-  const mediaType = inferMediaType(row.video_url);
+  const mediaType = row.media_type === "image" || row.media_type === "video" ? row.media_type : inferMediaType(row.video_url);
   const poster = row.poster_url && isHttpsUrl(row.poster_url) ? row.poster_url : null;
   return {
     id: row.id,
@@ -100,7 +102,7 @@ export function sortExtras<T extends { readonly id: number; readonly sort_order:
   return [...items].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
 }
 
-const IMAGE_EXTENSIONS = /.(jpe?g|png|webp|avif|gif)$/i;
+const IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|avif|gif)$/i;
 
 /** Imagen o vídeo según la extensión de la URL (sin consulta ni fragmento); sin extensión se asume vídeo. */
 export function inferMediaType(url: string): "video" | "image" {
@@ -119,6 +121,8 @@ export const ExtraInputSchema = z.object({
   kind: z.enum(EXTRA_KINDS),
   provider: z.enum(EXTRA_PROVIDERS).default("r2"),
   videoUrl: httpsUrl,
+  /** Tipo del archivo; si no se indica, se deduce de la extensión de `videoUrl`. */
+  mediaType: z.enum(["video", "image"]).optional(),
   mediaRef: z.string().trim().max(512).nullish(),
   posterUrl: httpsUrl.nullish(),
   durationSeconds: z.number().int().min(0).max(86_400).nullish(),

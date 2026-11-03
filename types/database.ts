@@ -668,6 +668,7 @@ export type Database = {
           file_size_bytes: number | null
           id: number
           kind: string
+          media_type: string
           media_ref: string | null
           pelicula_id: number
           poster_url: string | null
@@ -686,6 +687,7 @@ export type Database = {
           file_size_bytes?: number | null
           id?: never
           kind?: string
+          media_type?: string
           media_ref?: string | null
           pelicula_id: number
           poster_url?: string | null
@@ -704,6 +706,7 @@ export type Database = {
           file_size_bytes?: number | null
           id?: never
           kind?: string
+          media_type?: string
           media_ref?: string | null
           pelicula_id?: number
           poster_url?: string | null

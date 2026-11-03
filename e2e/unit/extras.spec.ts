@@ -92,3 +92,16 @@ test("valida la entrada de un creador: título, tipo, https y límites", () => {
   expect(parseExtraInput({ title: "x".repeat(121), kind: "otro", videoUrl: "https://a.b/c.mp4" }).success).toBe(false);
   expect(parseExtraInput({ title: "x", kind: "otro", videoUrl: "https://a.b/c.mp4", durationSeconds: -1 }).success).toBe(false);
 });
+
+test("el tipo explícito manda sobre la extensión; sin él se deduce de la URL", () => {
+  const opaque = "https://media.gmafilmo.test/uploads/u/1/abc123";
+  expect(rowToExtra(row({ video_url: opaque, media_type: "image" }))?.mediaType).toBe("image");
+  expect(rowToExtra(row({ video_url: "https://media.gmafilmo.test/a.jpg", media_type: "video" }))?.mediaType).toBe("video");
+  expect(rowToExtra(row({ video_url: "https://media.gmafilmo.test/a.jpg", media_type: null }))?.mediaType).toBe("image");
+  expect(rowToExtra(row({ video_url: opaque }))?.mediaType).toBe("video");
+});
+
+test("la deducción por extensión exige el punto antes de la extensión", () => {
+  expect(inferMediaType("https://cdn.example.com/archivopng")).toBe("video");
+  expect(inferMediaType("https://cdn.example.com/foto.png")).toBe("image");
+});

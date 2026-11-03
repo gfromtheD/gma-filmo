@@ -5,7 +5,7 @@ import { getUserId } from "@/lib/api/auth";
 import { rateLimit } from "@/lib/api/rate-limit";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EXTRA_COLUMNS, fetchPublishedExtras } from "@/lib/extras/queries";
-import { ExtraInputSchema, rowToExtra, type ExtraRow } from "@/lib/extras/extras";
+import { ExtraInputSchema, inferMediaType, rowToExtra, type ExtraRow } from "@/lib/extras/extras";
 
 const PeliculaIdSchema = z.coerce.number().int().positive();
 const CreateSchema = ExtraInputSchema.extend({ peliculaId: z.number().int().positive() });
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       kind: input.kind,
       provider: input.provider,
       video_url: input.videoUrl,
+      media_type: input.mediaType ?? inferMediaType(input.videoUrl),
       media_ref: input.mediaRef || null,
       poster_url: input.posterUrl || null,
       duration_seconds: input.durationSeconds ?? null,
@@ -135,7 +136,8 @@ export async function PATCH(request: Request) {
     ...(changes.title !== undefined && { title: changes.title }),
     ...(changes.description !== undefined && { description: changes.description || null }),
     ...(changes.kind !== undefined && { kind: changes.kind }),
-    ...(changes.videoUrl !== undefined && { video_url: changes.videoUrl }),
+    ...(changes.videoUrl !== undefined && { video_url: changes.videoUrl, media_type: changes.mediaType ?? inferMediaType(changes.videoUrl) }),
+    ...(changes.videoUrl === undefined && changes.mediaType !== undefined && { media_type: changes.mediaType }),
     ...(changes.posterUrl !== undefined && { poster_url: changes.posterUrl || null }),
     ...(changes.durationSeconds !== undefined && { duration_seconds: changes.durationSeconds }),
     ...(changes.status !== undefined && { status: changes.status }),

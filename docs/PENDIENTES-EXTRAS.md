@@ -61,8 +61,8 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 **Situación.** El tipo (vídeo o imagen) se **deduce de la extensión** de la URL (`.jpg`, `.jpeg`, `.png`, `.webp`, `.avif`, `.gif` son imagen; todo lo demás, vídeo). Si el motor del Mac guarda archivos sin extensión o con claves opacas, la deducción fallará.
 
-- [ ] Añadir una columna `media_type` (`video` | `image`) a `pelicula_extras` con valor por defecto `video`, y rellenarla desde Studio.
-- [ ] Usar la columna en `rowToExtra` (`lib/extras/extras.ts`) dejando la extensión solo como respaldo.
+- [~] (3/11/2026) Columna `media_type` (`video` | `image`, por defecto `video`): migración escrita en `supabase/migrations/20261114_extras_media_type.sql`, **pendiente de aplicar** (necesita permiso de G); la API de extras ya la escribe y la rellena por extensión si no se indica. Falta que Studio la envíe (EXT-02).
+- [x] (3/11/2026) `rowToExtra` usa la columna y deja la extensión como respaldo; corregida además la expresión de extensiones (le faltaba escapar el punto). **Orden de despliegue: aplicar la migración ANTES de subir este código**, o la consulta de extras (que ya pide `media_type`) devolvería vacío.
 
 ## EXT-05 — Validación en dispositivos reales
 
