@@ -42,7 +42,7 @@ const ContentSecurityPolicy = [
   // Allow inline scripts only from this origin (Next.js hydration requirement)
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com",
   // Tailwind generates inline styles at runtime
-  "style-src 'self' 'unsafe-inline' https://api.fontshare.com",
+  "style-src 'self' 'unsafe-inline'",
   // Images: local + R2 bucket + Cloudflare + legacy thumbnails from generacionmaldita.com
   // + fotos de perfil de Google (inicio de sesión con Google; `profiles.avatar_url`)
   `img-src 'self' data: blob: *.r2.cloudflarestorage.com *.r2.dev ${r2Hostname} *.cloudflarestream.com videodelivery.net imagedelivery.net generacionmaldita.com images.unsplash.com lh3.googleusercontent.com ${localMediaEnabled ? "http://127.0.0.1:4319" : ""}`,
@@ -54,7 +54,7 @@ const ContentSecurityPolicy = [
   "frame-ancestors 'none'",
   // API + Supabase Realtime WebSocket + subida directa a R2 (URL prefirmada, PUT desde el navegador)
   `connect-src 'self' *.supabase.co *.supabase.in wss://*.supabase.co *.r2.cloudflarestorage.com https://*.cloudflarestream.com https://videodelivery.net https://*.videodelivery.net ${gatewayOrigin} ${localMediaOrigins}`,
-  "font-src 'self' https://cdn.fontshare.com",
+  "font-src 'self'",
   // Service worker and blob workers
   "worker-src 'self' blob:",
   // Block Flash, Java, and other legacy plugins
