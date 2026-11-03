@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
-/** Denunciar un comentario: envía la denuncia, se marca solo si el servidor confirma y permite reintentar. */
+/** Denunciar un comentario desde el menú «⋯»: envía la denuncia, avisa solo si el servidor confirma y permite reintentar. */
 test.use({ viewport: { width: 1440, height: 900 } });
 
 function projectRef(): string | null {
@@ -16,8 +16,6 @@ function projectRef(): string | null {
 }
 const REF = projectRef();
 test.skip(!REF, "Sin NEXT_PUBLIC_SUPABASE_URL en .env.local");
-// El botón «Denunciar» se retiró de los comentarios (pendiente de rediseñar, ver docs/PENDIENTES-EXTRAS.md). La API sigue activa.
-test.skip(true, "Botón «Denunciar» retirado de la interfaz");
 
 async function signIn(page: Page) {
   const session = {
@@ -47,7 +45,12 @@ async function openComments(page: Page) {
   await page.goto(`${href as string}#comentarios`, { waitUntil: "load" });
 }
 
-test("denunciar envía el id del comentario y queda marcado como denunciado", async ({ page }) => {
+async function reportFromMenu(page: Page) {
+  await page.getByRole("button", { name: "Más acciones del comentario" }).first().click();
+  await page.getByRole("menuitem", { name: "Denunciar" }).click();
+}
+
+test("denunciar envía el id del comentario y avisa de que la denuncia se ha enviado", async ({ page }) => {
   await signIn(page);
   const bodies: unknown[] = [];
   await page.route("**/api/comments/report", (route) => {
@@ -55,17 +58,18 @@ test("denunciar envía el id del comentario y queda marcado como denunciado", as
     return route.fulfill({ json: { ok: true } });
   });
   await openComments(page);
-  await page.getByRole("button", { name: "Denunciar" }).click();
-  await expect(page.getByRole("button", { name: "Denunciado" })).toBeDisabled();
+  await reportFromMenu(page);
+  await expect(page.getByText("Denuncia enviada")).toBeVisible();
   expect(bodies).toEqual([{ commentId: 7 }]);
 });
 
-test("si el servidor falla no se marca como denunciado y se puede reintentar", async ({ page }) => {
+test("si el servidor falla avisa del error y se puede reintentar desde el mismo menú", async ({ page }) => {
   await signIn(page);
   await page.route("**/api/comments/report", (route) => route.fulfill({ status: 500, json: { ok: false } }));
   await openComments(page);
-  await page.getByRole("button", { name: "Denunciar" }).click();
-  const retry = page.getByRole("button", { name: "Error, reintentar" });
-  await expect(retry).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Denunciado" })).toHaveCount(0);
+  await reportFromMenu(page);
+  await expect(page.getByText("No se pudo completar. Inténtalo de nuevo.")).toBeVisible();
+  await expect(page.getByText("Denuncia enviada")).toHaveCount(0);
+  await page.getByRole("button", { name: "Más acciones del comentario" }).first().click();
+  await expect(page.getByRole("menuitem", { name: "Denunciar" })).toBeVisible();
 });

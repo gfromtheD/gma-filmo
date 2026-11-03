@@ -14,6 +14,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { authHeaders, patchComment } from "@/lib/comments/client";
 import { CommentText } from "@/components/features/comments/comment-text";
 import { CommentSortControl } from "@/components/features/comments/comment-sort";
+import { CommentModerationMenu } from "@/components/features/comments/comment-moderation-menu";
 import { commentAnchorId, formatCompactCount, likeButtonLabel, parseCommentHash, sortThreads, type CommentSort } from "@/lib/comments/presentation";
 import { formatTimestamp, validateTimestamp, workNoun, type WorkType } from "@/lib/comments/timestamp";
 import { commentErrorMessage, countComments } from "@/lib/comments/validation";
@@ -586,6 +587,13 @@ function CommentCard({
               )}
             </>
           )}
+
+          <CommentModerationMenu
+            commentId={comment.id}
+            canReport={Boolean(currentUserId) && !isGuest && !isOwn}
+            canHide={viewerIsCreator && !isOwn}
+            onHidden={() => onDeleted(comment)}
+          />
 
           {isOwn && (
             isConfirmingDelete ? (
