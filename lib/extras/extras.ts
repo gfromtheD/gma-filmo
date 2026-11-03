@@ -20,6 +20,8 @@ export type ExtraKind = (typeof EXTRA_KINDS)[number];
 export const EXTRA_PROVIDERS = ["r2", "stream", "peertube", "external"] as const;
 export const EXTRA_TITLE_MAX = 120;
 export const EXTRA_DESCRIPTION_MAX = 500;
+/** Tope de extras por título (el servidor lo impone; Studio permite hasta 12). Evita que una cuenta llene la tabla. */
+export const EXTRAS_MAX_PER_TITLE = 24;
 
 const KIND_LABELS: Record<ExtraKind, string> = {
   making_of: "Making of",
