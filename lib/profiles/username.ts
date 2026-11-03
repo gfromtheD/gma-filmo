@@ -13,8 +13,8 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "admin", "administrador", "gma", "gmafilmo", "filmo", "soporte", "support",
   "moderador", "moderacion", "root", "sistema", "system", "oficial", "staff",
 ]);
-/** Cambios del @ permitidos dentro de una ventana móvil de `USERNAME_WINDOW_DAYS` días. El primero (desde el @ provisional) es libre. */
-export const USERNAME_CHANGE_LIMIT = 3;
+/** Un cambio del @ cada `USERNAME_WINDOW_DAYS` días. El primero (desde el @ provisional) es libre. */
+export const USERNAME_CHANGE_LIMIT = 1;
 export const USERNAME_WINDOW_DAYS = 7;
 
 const DAY_MS = 86_400_000;
@@ -70,7 +70,7 @@ export function usernameErrorMessage(reason: UsernameSaveError): string {
     case "chars": return "Solo letras sin tilde, números y «_».";
     case "reserved": return "Ese nombre está reservado.";
     case "taken": return "Ese @ ya lo usa otra persona.";
-    case "cooldown": return `Ya has cambiado tu @ ${USERNAME_CHANGE_LIMIT} veces en ${USERNAME_WINDOW_DAYS} días. Inténtalo más adelante.`;
+    case "cooldown": return `Solo puedes cambiar tu @ una vez cada ${USERNAME_WINDOW_DAYS} días. Inténtalo más adelante.`;
     case "unknown": return "No se pudo guardar. Inténtalo de nuevo.";
   }
 }

@@ -9,6 +9,8 @@ import type { CreatorProfile } from "@/types/creator";
 import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorWorks, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
 import { getStudioProfile } from "@/lib/supabase/studio-banner";
+import { getAccountCreatorBySlug, getOwnedFilmSlugs, fetchAccountCreators } from "@/lib/supabase/creator-identity";
+import { accountOverlay, accountProfile, linkAccountCredits, mergeCreatorWorks, type AccountCreator, type AccountCreatorRow } from "@/lib/creator-identity";
 import { applyStudioProfile, CREATOR_PROFILES_TAG } from "@/lib/studio-creator-banner";
 import { FILM_LONG_SYNOPSES } from "@/lib/data/film-long-synopses";
 import { cachedImageUrl } from "@/lib/r2/public-image";
@@ -67,6 +69,7 @@ type PeliculaRow = {
   source_page: string | null;
   created_at: string;
   genre: string | null;
+  creator_user_id?: string | null;
   language?: string | null;
   /** Frase corta del creador (máx. 180 caracteres); vacía en los títulos que aún no la tienen. */
   tagline?: string | null;
@@ -140,6 +143,7 @@ function parseAuthorCredits(author: string): Array<{ name: string; role: string 
 function toMovieMedia(
   p: PeliculaWithRelations,
   artistaMap?: Map<string, ArtistaEntry>,
+  accounts?: ReadonlyMap<string, AccountCreator>,
 ): MovieMedia {
   const categories = p.peliculas_colecciones
     .map((pc) => pc.colecciones?.name)
@@ -180,6 +184,8 @@ function toMovieMedia(
   if (p.slug !== "la-pelicula" && p.genre !== "Película") {
     artistas = addCatalogCredits(p.slug, artistas);
   }
+
+  artistas = linkAccountCredits(artistas, p.creator_user_id ? accounts?.get(p.creator_user_id) : undefined);
 
   const imageUrl    = cachedImageUrl(p.r2_poster_url ?? p.thumbnail_url ?? undefined);
   const r2VideoUrl  = p.r2_video_url ?? undefined;
@@ -255,36 +261,43 @@ async function fetchScoreMap(): Promise<Map<string, number>> {
 const getPeliculasCached = unstable_cache(
   async (): Promise<MovieMedia[]> => {
     const supabase = getSupabasePublicClient();
-    const [{ data, error }, artistaMap, scoreMap] = await Promise.all([
+    const [{ data, error }, artistaMap, scoreMap, accounts] = await Promise.all([
       supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").order("created_at", { ascending: false }),
       fetchArtistaMap(),
       fetchScoreMap(),
+      fetchAccountCreators(),
     ]);
     if (error || !data) return [];
     const films = (data as PeliculaWithRelations[]).map((p) => ({
-      ...toMovieMedia(p, artistaMap),
+      ...toMovieMedia(p, artistaMap, accounts),
       approvalScore: scoreMap.get(p.slug),
     }));
-    return keepCreatorLinks(films, films);
+    return keepCreatorLinks(films, films, accountSlugs(accounts));
   },
-  ["peliculas-all-associated-shorts-v4"],
+  ["peliculas-all-associated-shorts-v5"],
   { revalidate: 3600, tags: ["peliculas"] },
 );
+
+/** Slugs de las cuentas creadoras: siempre pueden enlazarse desde sus obras, sean cortos o largometrajes. */
+function accountSlugs(accounts: ReadonlyMap<string, AccountCreator>): Set<string> {
+  return new Set([...accounts.values()].map((account) => account.slug));
+}
 
 // React cache() deduplicates calls within the same render tree
 export const getPeliculas = cache(getPeliculasCached);
 
 export async function getPeliculaBySlug(slug: string): Promise<MovieMedia | null> {
   // La fila va en caché con la etiqueta «peliculas»: al despublicar o borrar, la ficha deja de servirse al momento.
-  const [data, artistaMap, scoreMap] = await Promise.all([
+  const [data, artistaMap, scoreMap, accounts] = await Promise.all([
     cachedFilmRowBySlug<PeliculaWithRelations>(slug, SELECT_WITH_COLS),
     fetchArtistaMap(),
     fetchScoreMap(),
+    fetchAccountCreators(),
   ]);
 
   if (!data) return null;
-  const film = { ...toMovieMedia(data as PeliculaWithRelations, artistaMap), approvalScore: scoreMap.get(slug) };
-  return keepCreatorLinks([film], await getPeliculas())[0] ?? null;
+  const film = { ...toMovieMedia(data as PeliculaWithRelations, artistaMap, accounts), approvalScore: scoreMap.get(slug) };
+  return keepCreatorLinks([film], await getPeliculas(), accountSlugs(accounts))[0] ?? null;
 }
 
 // Deterministic tie-breaker so each film gets stable but unique ordering
@@ -442,13 +455,14 @@ export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[
 
   const ids = junctions.map((j: { pelicula_id: number }) => j.pelicula_id);
 
-  const [{ data, error }, artistaMap] = await Promise.all([
+  const [{ data, error }, artistaMap, accounts] = await Promise.all([
     supabase.from("peliculas").select(SELECT_WITH_COLS).or("status.eq.published,status.is.null").in("id", ids).order("created_at", { ascending: false }),
     fetchArtistaMap(),
+    fetchAccountCreators(),
   ]);
 
   if (error || !data) return [];
-  return keepCreatorLinks((data as PeliculaWithRelations[]).map((p) => toMovieMedia(p, artistaMap)), await getPeliculas());
+  return keepCreatorLinks((data as PeliculaWithRelations[]).map((p) => toMovieMedia(p, artistaMap, accounts)), await getPeliculas(), accountSlugs(accounts));
 }
 
 // ── Creator public profiles ───────────────────────────────────────────────────
@@ -459,21 +473,28 @@ type AnyClient = ReturnType<typeof getSupabasePublicClient> & { from: (t: string
 export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
   return unstable_cache(
     async () => {
-      const profile = await resolveCreatorBySlug(slug);
+      // La cuenta dueña del slug (si la hay) manda: sus obras salen de su id y su ficha de Mi Estudio, no de coincidir nombres.
+      const account = await getAccountCreatorBySlug(slug);
+      const profile = await resolveCreatorBySlug(slug, account);
       if (!profile) return null;
       // La ficha de Mi Estudio (banner, foto, bio, redes; y si la gestiona el equipo) manda sobre lo del catálogo.
-      return applyStudioProfile(profile, await getStudioProfile(profile.nombre, profile.titulos));
+      const overlay = account ? accountOverlay(account) : await getStudioProfile(profile.nombre, profile.titulos);
+      return applyStudioProfile(profile, overlay);
     },
-    [`creator-with-works-v5-${slug}`],
-    { revalidate: 3600, tags: [CREATOR_PROFILES_TAG] },
+    [`creator-with-works-v6-${slug}`],
+    { revalidate: 3600, tags: [CREATOR_PROFILES_TAG, "peliculas"] },
   )();
 }
 
-async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
+async function resolveCreatorBySlug(slug: string, account: AccountCreatorRow | null): Promise<CreatorProfile | null> {
       const films = await getPeliculas();
-      const associated = creatorWorks(slug, films);
-      if (!associated.length) return null;
+      const owned = account ? await getOwnedFilmSlugs(account.user_id) : new Set<string>();
+      const works = mergeCreatorWorks(films, creatorWorks(slug, films), owned);
+      // Una cuenta creadora tiene página desde el primer día, aunque todavía no haya publicado nada.
+      if (!works.length && !account) return null;
       const supabase = getSupabasePublicClient() as AnyClient;
+      const titulos = works.map((film) => film.id);
+      const withWorks = (profile: CreatorProfile | null): CreatorProfile | null => (profile ? { ...profile, titulos } : null);
 
       // Primary: dedicated creator profile table
       const { data } = await supabase
@@ -484,7 +505,7 @@ async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null
       if (data) {
         const profile = mapCreatorRow(data as Record<string, unknown>);
         const catalog = catalogProfile(slug, films);
-        return completeCatalogProfile(profile, catalog);
+        return withWorks(completeCatalogProfile(profile, catalog));
       }
 
       // Fallback: artistas table (166 seeded entries with bio + photo)
@@ -493,9 +514,9 @@ async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null
         .select("id, slug, name, bio, r2_photo_url")
         .eq("slug", slug)
         .maybeSingle();
-      if (!artista) return catalogProfile(slug, films);
-
       const catalog = catalogProfile(slug, films);
+      if (!artista) return withWorks(catalog) ?? (account ? accountProfile(account, slug, titulos) : null);
+
       return {
         slug:             artista.slug as string,
         nombre:           artista.name as string,
@@ -507,7 +528,7 @@ async function resolveCreatorBySlug(slug: string): Promise<CreatorProfile | null
         donacion_paypal:  null,
         donacion_patreon: null,
         donacion_bitcoin: null,
-        titulos: associated.map(film => film.id),
+        titulos,
         editorial: true,
         source_url: catalog?.source_url ?? null,
       };
