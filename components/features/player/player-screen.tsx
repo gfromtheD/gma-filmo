@@ -9,6 +9,7 @@ import Link from "next/link";
 import { PosterArt } from "@/components/ui/poster-art";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { GlassIconReveal } from "@/components/ui/liquid-glass-logo-reveal";
+import { INTRO_AUDIO, INTRO_FREEZE_S, INTRO_GREEN, INTRO_MS, INTRO_TEXT, INTRO_TUNING, INTRO_WHITE } from "@/lib/player/intro-glass";
 import { useProgress } from "@/hooks/use-progress";
 import { useSettingsPrefs, type SubtitleBackground, type SubtitleSize } from "@/hooks/use-settings-prefs";
 import { useCastSupport } from "@/hooks/use-cast-support";
@@ -215,30 +216,43 @@ function DonationBanner({ visible, onClose, onOpenPanel }: {
 
 // ─── Splash intro (pre-playback "tudum" animation, GMA colours) ────────────────
 
-/** Lo que dura la intro de GMA: el cristal suelta la marca hacia los 2,2 s y el audio se apaga hacia los 4 s. */
-const INTRO_MS = 4600;
 /** Si el origen tarda más que esto, la intro empieza igual (el reproductor sigue cargando y avisa si falla). */
 const MAX_LOADER_MS = 10_000;
-const INTRO_AUDIO = "/audio/intro-gma.mp3";
-const INTRO_GLASS_TUNING = { present: 2.2 } as const;
 
 function SplashIntro() {
-  // El clic que abrió el reproductor ya dio permiso de sonido; si el navegador lo niega, la intro sigue muda.
+  // Un solo reloj para la imagen y el sonido, así van a la vez. El clic que abrió el reproductor ya dio permiso de sonido; si el
+  // navegador lo niega, la intro sigue muda.
+  const [clock, setClock] = useState(0);
   useEffect(() => {
     const audio = new Audio(INTRO_AUDIO);
     audio.volume = 0.9;
     void audio.play().catch(() => undefined);
-    return () => { audio.pause(); };
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const elapsed = (now - start) / 1000;
+      setClock(Math.min(elapsed, INTRO_FREEZE_S));
+      if (elapsed < INTRO_FREEZE_S) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(frame); audio.pause(); };
   }, []);
 
   return (
     <GlassIconReveal
-      logo="text:GMA"
+      logo={INTRO_TEXT}
       look="dark"
       background="#000000"
-      loop={false}
-      tileSize={360}
-      tuning={INTRO_GLASS_TUNING}
+      logoColor={INTRO_GREEN}
+      logoColorEnd={INTRO_WHITE}
+      iconPlate={false}
+      tileSize={1400}
+      fit={1.15}
+      cover
+      logoScale={0.6}
+      finalScale={0.8}
+      tuning={INTRO_TUNING}
+      time={clock}
       label="GMA Filmo"
       className="h-full w-full"
     />

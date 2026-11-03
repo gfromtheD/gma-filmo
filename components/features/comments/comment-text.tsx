@@ -1,8 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { commentAnchorId, splitLeadingMention, splitTimestamps } from "@/lib/comments/presentation";
 import { formatTimestamp } from "@/lib/comments/timestamp";
+
+/** Un comentario más largo que esto (en caracteres o en líneas) se pliega con «Leer más». */
+const LONG_TEXT_CHARS = 420;
+const LONG_TEXT_LINES = 7;
+
+function isLongText(text: string): boolean {
+  return text.length > LONG_TEXT_CHARS || text.split("\n").length > LONG_TEXT_LINES;
+}
 
 interface CommentTextProps {
   readonly text: string;
@@ -26,11 +35,14 @@ interface CommentTextProps {
  */
 export function CommentText({ text, movieSlug, durationSeconds, className = "", mentionNames = [], mention }: CommentTextProps) {
   const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
+  const isLong = isLongText(text);
   // Los comentarios antiguos llevan «@Nombre» escrito en el texto; los nuevos usan la referencia.
   const leading = mention ? null : splitLeadingMention(text, mentionNames);
   const body = leading ? leading.rest : text;
   return (
-    <p className={`whitespace-pre-line break-words ${className}`}>
+    <div>
+    <p className={`whitespace-pre-line break-words ${isLong && !expanded ? "line-clamp-6" : ""} ${className}`}>
       {mention && (
         <>
           {mention.name !== null ? (
@@ -63,5 +75,16 @@ export function CommentText({ text, movieSlug, durationSeconds, className = "", 
         ),
       )}
     </p>
+    {isLong && (
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+        className="mt-1 rounded-sm text-[13px] font-semibold text-[#C4C4C4] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
+      >
+        {expanded ? "Mostrar menos" : "Leer más"}
+      </button>
+    )}
+    </div>
   );
 }

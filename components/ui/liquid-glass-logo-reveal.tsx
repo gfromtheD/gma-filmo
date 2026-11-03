@@ -53,8 +53,15 @@ interface GlassTuning {
   startZoom: number
   /** Seconds the logo takes to glide out of the droplet's magnification: the stretch where the rim bends it */
   glide: number
+  /** Milky lift inside the young droplet (0 = none: the glass stays clear) */
+  frost: number
+  /** The faint pre-glow where the glass is about to appear (0 = none) */
+  ghost: number
   /** Seconds the logo stays in glass */
   present: number
+  /** Where the logo starts, in tile half sizes (it travels to its place as it glides): comes in from the side */
+  entryX: number
+  entryY: number
   drift: number
   swell: number
   focus: number
@@ -75,6 +82,8 @@ interface Settings extends GlassTuning {
   background: string
   plateColor: string
   logoColor: string
+  /** Colour the logo ends in once the glass lets go (defaults to `logoColor`) */
+  logoColorEnd?: string
   hold: number
 }
 
@@ -83,7 +92,7 @@ const LIGHT: Settings = {
   opticalDepth: 1.1, dispersion: 1.7, colorBleed: 1.25, doubleBevel: 1, bevelWidth: 0.14, corner: 4.8,
   cornerPull: 2.1, cornerWidth: 2.2, cornerFocus: 0.58, edgeSmear: 2.85, stretch: 0, tilt: 0.35, bulge: 1,
   specular: 1, halo: 0, shadow: 1, ripple: 1,
-  bounce: 0, response: 0.42, startSize: 0.2, startZoom: 2.6, glide: 2.3, present: 2.4, drift: 0.12, swell: 0.5, focus: 1,
+  bounce: 0, response: 0.42, startSize: 0.2, startZoom: 2.6, glide: 2.3, present: 2.4, frost: 1, ghost: 1, entryX: 0, entryY: 0, drift: 0.12, swell: 0.5, focus: 1,
   sheen: 1, lightTurn: 0.9,
   hold: 1, background: "#e9e9eb", plateColor: "#ffffff", logoColor: "#111114",
 }
@@ -128,28 +137,115 @@ const TEXT_PREFIX = "text:"
 const isText = (logo: string) => logo.startsWith(TEXT_PREFIX)
 
 // Una palabra dibujada con la tipografía de la web (la del <body>, Satoshi). Se espera a que la fuente esté cargada.
-async function loadText(word: string) {
+// Variante opcional: `text:gMA|500|italic|caps` (peso 300–900 de la variable de Satoshi, cursiva, y `caps` para que las
+// minúsculas se dibujen a la altura de las mayúsculas). Con exactamente tres letras se colocan en pirámide: la 1.ª arriba, centrada,
+// y la 2.ª y la 3.ª debajo, a izquierda y derecha, todas rectas. Con dos palabras (separadas por un espacio) van una sobre otra:
+// la primera grande y en negrita, la segunda más pequeña y ligera.
+async function loadText(spec: string) {
+  const [word = "", weight = "800", style = "", caps = ""] = spec.split("|")
   const family = getComputedStyle(document.body).fontFamily
-  const font = `800 400px ${family}`
+  const fontAt = (px: number, w = weight) => `${style === "italic" ? "italic " : ""}${w} ${px}px ${family}`
+  const SIZE = 400
   try {
-    await document.fonts.load(font, word)
+    await document.fonts.load(fontAt(SIZE), word)
     await document.fonts.ready
   } catch {
     /* sin API de fuentes: se dibuja con lo que haya */
   }
-  const measure = document.createElement("canvas").getContext("2d")!
-  measure.font = font
-  const width = Math.ceil(measure.measureText(word).width)
-  const height = 560
+  const ctx0 = document.createElement("canvas").getContext("2d")!
+  ctx0.font = fontAt(SIZE)
+  const capH = ctx0.measureText("H").actualBoundingBoxAscent
+  const xH = ctx0.measureText("x").actualBoundingBoxAscent
+  const lowerScale = caps === "caps" ? capH / xH : 1
+  const sizeOf = (ch: string) => (ch !== ch.toUpperCase() ? SIZE * lowerScale : SIZE)
+  const widths = [...word].map((ch) => {
+    ctx0.font = fontAt(sizeOf(ch))
+    return ctx0.measureText(ch).width
+  })
+  const lines = word.trim().split(/\s+/)
+  if (lines.length === 2) return stackedText(lines as [string, string], fontAt, SIZE)
+  if ([...word].length === 3) return pyramidText(word, fontAt, sizeOf, capH)
+  const width = Math.ceil(widths.reduce((a, w) => a + w, 0))
+  const height = 760
   const canvas = document.createElement("canvas")
   canvas.width = width + 160
   canvas.height = height
   const ctx = canvas.getContext("2d")!
-  ctx.font = font
   ctx.fillStyle = "#ffffff"
-  ctx.textAlign = "center"
-  ctx.textBaseline = "middle"
-  ctx.fillText(word, canvas.width / 2, height / 2)
+  ctx.textAlign = "left"
+  ctx.textBaseline = "alphabetic"
+  const baseline = height / 2 + capH / 2
+  let x = 80
+  ;[...word].forEach((ch, i) => {
+    ctx.font = fontAt(sizeOf(ch))
+    ctx.fillText(ch, x, baseline)
+    x += widths[i] ?? 0
+  })
+  return { source: canvas as CanvasImageSource, w: canvas.width, h: canvas.height }
+}
+
+// Tres letras en pirámide, rectas y con el mismo espacio entre ellas: la primera arriba y las otras dos debajo.
+function pyramidText(word: string, fontAt: (px: number) => string, sizeOf: (ch: string) => number, capH: number) {
+  const SIDE = 1500
+  const chars = [...word]
+  const gap = capH * 0.14
+  const ctx = document.createElement("canvas").getContext("2d")!
+  const canvas = ctx.canvas
+  canvas.width = canvas.height = SIDE
+  ctx.fillStyle = "#ffffff"
+  ctx.textAlign = "left"
+  ctx.textBaseline = "alphabetic"
+  const measure = (ch: string) => {
+    ctx.font = fontAt(sizeOf(ch))
+    const m = ctx.measureText(ch)
+    return { left: m.actualBoundingBoxLeft, ink: m.actualBoundingBoxLeft + m.actualBoundingBoxRight, up: m.actualBoundingBoxAscent, down: m.actualBoundingBoxDescent }
+  }
+  const [top, left, right] = chars.map(measure) as [ReturnType<typeof measure>, ReturnType<typeof measure>, ReturnType<typeof measure>]
+  const rowHeight = Math.max(left.up + left.down, right.up + right.down)
+  const topHeight = top.up + top.down
+  const total = topHeight + gap + rowHeight
+  const topBase = SIDE / 2 - total / 2 + top.up
+  const rowBase = SIDE / 2 - total / 2 + topHeight + gap + Math.max(left.up, right.up)
+  const rowWidth = left.ink + gap + right.ink
+  const rowStart = SIDE / 2 - rowWidth / 2
+  const draw = (ch: string, ink: number, inkLeft: number, x: number, base: number) => {
+    ctx.font = fontAt(sizeOf(ch))
+    ctx.fillText(ch, x + inkLeft, base)
+    return ink
+  }
+  draw(chars[0]!, top.ink, top.left, SIDE / 2 - top.ink / 2, topBase)
+  draw(chars[1]!, left.ink, left.left, rowStart, rowBase)
+  draw(chars[2]!, right.ink, right.left, rowStart + left.ink + gap, rowBase)
+  return { source: canvas as CanvasImageSource, w: SIDE, h: SIDE }
+}
+
+// Dos palabras apiladas y asimétricas: la de arriba grande y gruesa, la de abajo a la mitad de tamaño y más fina.
+function stackedText(lines: [string, string], fontAt: (px: number, weight?: string) => string, size: number) {
+  const SIDE = 2000
+  const ctx = document.createElement("canvas").getContext("2d")!
+  const canvas = ctx.canvas
+  canvas.width = SIDE
+  canvas.height = size * 2
+  ctx.fillStyle = "#ffffff"
+  ctx.textAlign = "left"
+  ctx.textBaseline = "alphabetic"
+  const specs = [
+    { text: lines[0], font: fontAt(size) },
+    { text: lines[1], font: fontAt(size * 0.5, "500") },
+  ]
+  const ink = specs.map(({ text, font }) => {
+    ctx.font = font
+    const m = ctx.measureText(text)
+    return { left: m.actualBoundingBoxLeft, width: m.actualBoundingBoxLeft + m.actualBoundingBoxRight, up: m.actualBoundingBoxAscent, down: m.actualBoundingBoxDescent }
+  }) as [{ left: number; width: number; up: number; down: number }, { left: number; width: number; up: number; down: number }]
+  const gap = size * 0.12
+  const total = ink[0].up + ink[0].down + gap + ink[1].up + ink[1].down
+  const topBase = canvas.height / 2 - total / 2 + ink[0].up
+  const bottomBase = topBase + ink[0].down + gap + ink[1].up
+  ctx.font = specs[0].font
+  ctx.fillText(specs[0].text, SIDE / 2 - ink[0].width / 2 + ink[0].left, topBase)
+  ctx.font = specs[1].font
+  ctx.fillText(specs[1].text, SIDE / 2 - ink[1].width / 2 + ink[1].left, bottomBase)
   return { source: canvas as CanvasImageSource, w: canvas.width, h: canvas.height }
 }
 
@@ -703,6 +799,7 @@ function hexToRgb(hex: string): [number, number, number] {
   const v = parseInt(h.slice(0, 6), 16) || 0
   return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]
 }
+const mixRgb = (a: [number, number, number], b: [number, number, number], t: number): [number, number, number] => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]
 const luminance = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 // Step response of a spring released at t = 0, from 0 toward 1 (damping 1 = no overshoot,
@@ -765,14 +862,14 @@ function frameAt(T: number, P: Settings, outro = 0) {
     uOptics: 1 - smooth(0.55, 1, release),
     uPlateAlpha: keep ? appear * (1 - outro) : appear * (1 - smooth(0.45, 1, release)),
     uLogoHalf: P.logoScale * view,
-    uLogoOff: [P.logoOffset[0] * view, P.logoOffset[1] * view] as [number, number],
+    uLogoOff: [(P.logoOffset[0] + P.entryX * (1 - zoomIn)) * view, (P.logoOffset[1] + P.entryY * (1 - zoomIn)) * view] as [number, number],
     uKeep: keep,
     uSheen: P.sheen,
     uSweep: mix(-1.6, 1.6, smoother(0.9, tx - 0.1, T)),
     uLightAng: P.lightTurn * smoother(0.4, tx + 0.4, T),
     uBold: P.swell * 0.03 * (1 - zoomIn),
     uBlur: P.focus * 0.05 * (1 - smooth(0.3, 0.95, grow)) + 0.03 * outro,
-    uFrost: P.focus * (1 - smooth(0.5, 0.95, grow)),
+    uFrost: P.focus * P.frost * (1 - smooth(0.5, 0.95, grow)),
     uPinch: 0.38 * P.stretch * smooth(0.1, 0.9, morph) * smooth(0.75, 0.97, zoomIn),
     uTilt: P.tilt,
     uDome: dome,
@@ -780,7 +877,7 @@ function frameAt(T: number, P: Settings, outro = 0) {
     uRim: 1 + 0.8 * drop,
     uHalo: P.halo * (0.5 + 0.5 * drop) * (1 - keep * release),
     uShadow: Math.max(P.shadow * smooth(0.45, 0.8, grow) * (1 - smooth(0, 0.6, morph)), 0.8 * P.shadow * keep * release),
-    uGhost: smooth(0, 0.03, T) * (1 - smooth(0.04, 0.08, T)),
+    uGhost: P.ghost * smooth(0, 0.03, T) * (1 - smooth(0.04, 0.08, T)),
     uRipR: 1 + 0.9 * Math.max(0, T - tl),
     uRipA: P.ripple * smooth(tl, tl + 0.06, T) * Math.exp(-Math.max(0, T - tl) / 0.6),
     uBare: (1 - keep) * smooth(tx - 0.25, tx, T) * (1 - outro),
@@ -809,7 +906,7 @@ function frameAt(T: number, P: Settings, outro = 0) {
     uLightGlass: luminance(P.iconPlate ? hexToRgb(P.plateColor) : bg) > 0.5 ? 1 : 0,
     uBg: bg,
     uPlateCol: hexToRgb(P.plateColor),
-    uLogoCol: hexToRgb(P.logoColor),
+    uLogoCol: mixRgb(hexToRgb(P.logoColor), hexToRgb(P.logoColorEnd ?? P.logoColor), release),
   }
 }
 
@@ -824,6 +921,8 @@ export interface GlassIconRevealProps extends Omit<React.HTMLAttributes<HTMLDivE
   /** Backdrop colour (hex). Match it to the page: the canvas paints it */
   background?: string
   logoColor?: string
+  /** Colour the logo ends in once the glass lets go: it shifts from `logoColor` as the glass releases */
+  logoColorEnd?: string
   /** Colour of the tile behind the logo while `iconPlate` is on */
   plateColor?: string
   iconPlate?: boolean
@@ -833,6 +932,11 @@ export interface GlassIconRevealProps extends Omit<React.HTMLAttributes<HTMLDivE
   originalColors?: boolean
   /** Largest tile size in px; it shrinks to fit the container */
   tileSize?: number
+  /** How many tiles fit across the container's short side (default 1.75: smaller = a bigger tile) */
+  fit?: number
+  /** The glass tile grows past the edges of the container, so no tile is ever seen: only the word it bends. The logo keeps
+   * the size it would have at `fit` */
+  cover?: boolean
   /** Logo half size relative to the tile's half size */
   logoScale?: number
   /** Logo size once the glass is gone, relative to `logoScale` */
@@ -858,11 +962,14 @@ export function GlassIconReveal({
   look = "light",
   background,
   logoColor,
+  logoColorEnd,
   plateColor,
   iconPlate,
   keepPlate,
   originalColors,
   tileSize,
+  fit,
+  cover,
   logoScale,
   finalScale,
   logoOffset,
@@ -885,14 +992,14 @@ export function GlassIconReveal({
   const tuningKey = JSON.stringify(tuning ?? {})
   const offsetKey = logoOffset ? logoOffset.join(",") : ""
   const settings = React.useMemo<Settings>(() => {
-    const own = { background, logoColor, plateColor, iconPlate, keepPlate, originalColors, tileSize, logoScale, finalScale, hold }
+    const own = { background, logoColor, logoColorEnd, plateColor, iconPlate, keepPlate, originalColors, tileSize, logoScale, finalScale, hold }
     const set: Partial<Settings> = Object.fromEntries(Object.entries(own).filter(([, v]) => v !== undefined))
     if (offsetKey) set.logoOffset = offsetKey.split(",").map(Number) as [number, number]
     return { ...LOOKS[look], ...set, ...(JSON.parse(tuningKey) as Partial<GlassTuning>) }
-  }, [look, background, logoColor, plateColor, iconPlate, keepPlate, originalColors, tileSize, logoScale, finalScale, hold, offsetKey, tuningKey])
+  }, [look, background, logoColor, logoColorEnd, plateColor, iconPlate, keepPlate, originalColors, tileSize, logoScale, finalScale, hold, offsetKey, tuningKey])
 
-  const live = React.useRef({ settings, loop, speed, time })
-  live.current = { settings, loop, speed, time }
+  const live = React.useRef({ settings, loop, speed, time, fit, cover })
+  live.current = { settings, loop, speed, time, fit, cover }
 
   React.useEffect(() => {
     const wrap = wrapRef.current
@@ -911,7 +1018,7 @@ export function GlassIconReveal({
 
   React.useEffect(() => {
     engineRef.current?.invalidate()
-  }, [settings, loop, speed, time])
+  }, [settings, loop, speed, time, fit, cover])
 
   React.useEffect(() => {
     let cancelled = false
@@ -948,7 +1055,7 @@ export function GlassIconReveal({
           className="absolute inset-0 grid place-items-center text-[clamp(48px,14vw,120px)] font-extrabold tracking-tight"
           style={{ color: settings.logoColor }}
         >
-          {logo.slice(TEXT_PREFIX.length)}
+          {logo.slice(TEXT_PREFIX.length).split("|")[0]}
         </span>
       )}
       {fallback && !isText(logo) && (
@@ -980,7 +1087,7 @@ export function GlassIconReveal({
 // drawn only while on screen and only when something changed.
 function startEngine(
   wrap: HTMLDivElement,
-  live: React.RefObject<{ settings: Settings; loop: boolean; speed: number; time?: number }>,
+  live: React.RefObject<{ settings: Settings; loop: boolean; speed: number; time?: number; fit?: number; cover?: boolean }>,
 ) {
   const canvas = document.createElement("canvas")
   canvas.setAttribute("aria-hidden", "true")
@@ -1014,7 +1121,7 @@ function startEngine(
     raf = 0
     const dt = Math.min(0.1, (now - last) / 1000)
     last = now
-    const { settings: P, loop, speed, time: fixed } = live.current
+    const { settings: P, loop, speed, time: fixed, fit = 1.75, cover } = live.current
     const end = endOf(P)
     if (fixed !== undefined) {
       // Past the end, the frozen time runs on through the loop pause and the blur-out.
@@ -1054,8 +1161,12 @@ function startEngine(
         canvas.width = w
         canvas.height = h
       }
-      const tile = Math.min(P.tileSize, Math.min(cw, ch) / 1.75)
-      renderer.render(frameAt(Math.min(time, end), P, outro), w, h, tile * dpr)
+      const refTile = Math.min(P.tileSize, Math.min(cw, ch) / fit)
+      // Cubriendo: la pieza es mayor que la pantalla y la palabra conserva el tamaño que tendría con `refTile`.
+      const tile = cover ? Math.hypot(cw, ch) * 1.15 : refTile
+      const k = refTile / tile
+      const Q = cover ? { ...P, logoScale: P.logoScale * k, logoOffset: [P.logoOffset[0] * k, P.logoOffset[1] * k] as [number, number], entryX: P.entryX * k, entryY: P.entryY * k } : P
+      renderer.render(frameAt(Math.min(time, end), Q, outro), w, h, tile * dpr)
       dirty = false
     }
     if (visible && playing && logo && !lost) raf = requestAnimationFrame(tick)

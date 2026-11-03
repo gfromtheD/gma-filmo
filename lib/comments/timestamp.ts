@@ -5,12 +5,20 @@
 
 export type WorkType = "cortometraje" | "pelicula";
 
-const WORK_NOUNS: Record<WorkType, { readonly name: string; readonly del: string }> = {
-  cortometraje: { name: "cortometraje", del: "del cortometraje" },
-  pelicula: { name: "película", del: "de la película" },
+export interface WorkNoun {
+  readonly name: string;
+  /** «del cortometraje» / «de la película». */
+  readonly del: string;
+  /** Artículo determinado con su género: «El cortometraje dura…» / «La película dura…». */
+  readonly article: "El" | "La";
+}
+
+const WORK_NOUNS: Record<WorkType, WorkNoun> = {
+  cortometraje: { name: "cortometraje", del: "del cortometraje", article: "El" },
+  pelicula: { name: "película", del: "de la película", article: "La" },
 };
 
-export function workNoun(type: WorkType): { readonly name: string; readonly del: string } {
+export function workNoun(type: WorkType): WorkNoun {
   return WORK_NOUNS[type];
 }
 
