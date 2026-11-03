@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useUsernameEditor } from "@/hooks/use-username-editor";
 import {
-  USERNAME_CHANGE_LIMIT, USERNAME_MAX, USERNAME_MIN, USERNAME_WINDOW_DAYS, formatHandle, usernameErrorMessage,
+  USERNAME_MAX, USERNAME_MIN, USERNAME_WINDOW_DAYS, formatHandle, usernameErrorMessage,
 } from "@/lib/profiles/username";
 
 const BUTTON =
@@ -34,7 +34,7 @@ function Rule({ state, children }: { readonly state: RuleState; readonly childre
 /** El @usuario: público y único. Se puede cambiar una vez cada 30 días (el primer cambio, desde el provisional, es libre). */
 export function UsernameField() {
   const editor = useUsernameEditor();
-  const { username, remaining, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving, saved } = editor;
+  const { username, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving, saved } = editor;
 
   const hasText = candidate !== "";
   const lengthState: RuleState = !hasText ? "idle" : candidate.length >= USERNAME_MIN && candidate.length <= USERNAME_MAX ? "ok" : "bad";
@@ -58,7 +58,7 @@ export function UsernameField() {
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5 shrink-0">
               {nextChange ? <><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5.5a2.5 2.5 0 0 1 5 0V7" /></> : <><circle cx="8" cy="8" r="5.5" /><path d="M8 5v3.2l2 1.3" /></>}
             </svg>
-            {nextChange ? `Podrás cambiarlo de nuevo el ${formatDay(nextChange)}.` : `Puedes cambiarlo ${USERNAME_CHANGE_LIMIT} veces cada ${USERNAME_WINDOW_DAYS} días (te quedan ${remaining}).`}
+            {nextChange ? `Podrás cambiarlo de nuevo el ${formatDay(nextChange)}.` : `Puedes cambiarlo una vez cada ${USERNAME_WINDOW_DAYS} días.`}
           </span>
         </div>
         <button type="button" disabled={!username || Boolean(nextChange)} onClick={() => (isEditing ? editor.cancel() : editor.start())} className={BUTTON}>
@@ -92,7 +92,7 @@ export function UsernameField() {
               {isInvalid
                 ? usernameErrorMessage(shownError!)
                 : availability === "free"
-                  ? `${formatHandle(candidate)} está libre. ${remaining > 1 ? `Después te quedarán ${remaining - 1}.` : `Será tu último cambio hasta dentro de ${USERNAME_WINDOW_DAYS} días.`}`
+                  ? `${formatHandle(candidate)} está libre. Podrás cambiarlo de nuevo dentro de ${USERNAME_WINDOW_DAYS} días.`
                   : "Es el nombre que verán los demás en tus comentarios y valoraciones."}
             </p>
 

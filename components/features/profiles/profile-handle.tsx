@@ -4,9 +4,6 @@ import { useId } from "react";
 import { useUsernameEditor } from "@/hooks/use-username-editor";
 import { USERNAME_MAX, USERNAME_WINDOW_DAYS, formatHandle, usernameErrorMessage } from "@/lib/profiles/username";
 
-const remainingText = (n: number, prefix = "te quedan") =>
-  n <= 0 ? `no te quedarán más cambios en ${USERNAME_WINDOW_DAYS} días` : `${prefix} ${n} ${n === 1 ? "cambio" : "cambios"} en ${USERNAME_WINDOW_DAYS} días`;
-const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 const formatDay = (date: Date) => date.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
 
@@ -17,7 +14,7 @@ const formatDay = (date: Date) => date.toLocaleDateString("es-ES", { day: "numer
  */
 export function ProfileHandle() {
   const editor = useUsernameEditor();
-  const { username, remaining, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving } = editor;
+  const { username, nextChange, isEditing, draft, candidate, availability, shownError, canSave, isSaving } = editor;
   const hintId = useId();
   if (!username) return null;
 
@@ -30,10 +27,10 @@ export function ProfileHandle() {
   const length = isEditing ? candidate.length : username.length;
 
   let hint: string;
-  if (!isEditing) hint = isLocked ? `Podrás cambiar el @ el ${formatDay(nextChange!)}.` : `Tu @ es lo que ven los demás. Púlsalo para cambiarlo (${remainingText(remaining)}).`;
+  if (!isEditing) hint = isLocked ? `Podrás cambiar el @ el ${formatDay(nextChange!)}.` : `Tu @ es lo que ven los demás. Púlsalo para cambiarlo (una vez cada ${USERNAME_WINDOW_DAYS} días).`;
   else if (shownError) hint = usernameErrorMessage(shownError);
   else if (availability === "checking") hint = "Comprobando…";
-  else if (availability === "free") hint = `${formatHandle(candidate)} está libre. ${capitalize(remainingText(remaining - 1, "después"))}.`;
+  else if (availability === "free") hint = `${formatHandle(candidate)} está libre. Podrás cambiarlo de nuevo dentro de ${USERNAME_WINDOW_DAYS} días.`;
   else hint = "Letras sin tilde, números y «_», de 3 a 20.";
 
   return (
