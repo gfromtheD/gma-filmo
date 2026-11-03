@@ -73,6 +73,8 @@ export interface Creator {
   joined: string;
   plan: string;
   socials: Record<string, string>;
+  /** Métodos de apoyo que el creador escribió (PayPal, Patreon, Bitcoin); los vacíos no se muestran. */
+  support?: { paypal: string; patreon: string; bitcoin: string };
   logoColors: { from: string; to: string };
   avatarUrl?: string;
   stats: { titles: number; published: number; totalViews: number | null; avgRating: number | null; followers: number | null };
@@ -80,7 +82,7 @@ export interface Creator {
 
 export interface StudioData {
   creator: Creator;
-  /** Bytes que ocupan los títulos del creador (suma de `peliculas.file_size_bytes`). */
+  /** Bytes que el motor tiene confirmados para la cuenta (`gma_my_storage_used`); sin dato, la suma de `peliculas.file_size_bytes`. */
   storageUsedBytes: number;
   /** Cupo de la cuenta en bytes (gma_my_storage_limit); sin dato, los 5 GB gratis. */
   storageLimitBytes?: number;

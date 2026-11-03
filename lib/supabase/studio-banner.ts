@@ -14,9 +14,9 @@ export async function getStudioProfile(creatorName: string, filmSlugs: readonly 
     const userIds = [...new Set((films ?? []).map((f) => f.creator_user_id).filter((id): id is string => Boolean(id)))];
     if (!userIds.length) return null;
     const { data: rows, error } = await admin.from("creator_profiles")
-      .select("creator_name, studio_name, banner_url, avatar_url, bio, location, social_links, gestionado").in("user_id", userIds);
+      .select("creator_name, studio_name, banner_url, avatar_url, bio, location, social_links, gestionado, donacion_paypal, donacion_patreon, donacion_bitcoin").in("user_id", userIds);
     if (error || !rows) return null;
-    // `gestionado` aún no está en los tipos generados de Supabase (migración 20261109).
+    // `gestionado` y `donacion_*` no están en los tipos generados de Supabase (migraciones 20261109 y 20261117).
     return pickStudioProfile(creatorName, rows as unknown as StudioCreatorRow[]);
   } catch {
     return null;

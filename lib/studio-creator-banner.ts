@@ -9,6 +9,9 @@ export interface StudioCreatorRow {
   readonly bio?: string | null;
   readonly location?: string | null;
   readonly social_links?: Record<string, string> | null;
+  readonly donacion_paypal?: string | null;
+  readonly donacion_patreon?: string | null;
+  readonly donacion_bitcoin?: string | null;
   /** Cuenta creada y llevada por el equipo de GMA en nombre del autor (ver docs/DIRECTORES-GESTIONADOS.md). */
   readonly gestionado?: boolean | null;
 }
@@ -20,6 +23,7 @@ export interface StudioProfileOverlay {
   readonly bio: string | null;
   readonly location: string | null;
   readonly socials: readonly SocialLink[];
+  readonly donations: { readonly paypal: string | null; readonly patreon: string | null; readonly bitcoin: string | null };
   readonly gestionado: boolean;
 }
 
@@ -47,7 +51,8 @@ export function pickStudioProfile(creatorName: string, rows: readonly StudioCrea
     .filter(([, url]) => typeof url === "string" && url.trim())
     .map(([platform, url]) => ({ platform, url: url.trim() }));
   return { banner: pickStudioBanner(creatorName, rows), avatar: filled(row.avatar_url), bio: filled(row.bio), location: filled(row.location),
-    socials, gestionado: row.gestionado === true };
+    socials, gestionado: row.gestionado === true,
+    donations: { paypal: filled(row.donacion_paypal), patreon: filled(row.donacion_patreon), bitcoin: filled(row.donacion_bitcoin) } };
 }
 
 /** Lo que el autor (o el equipo, en un perfil gestionado) rellenó en Mi Estudio manda; lo que dejó vacío sigue como estaba. */
@@ -60,6 +65,9 @@ export function applyStudioProfile(profile: CreatorProfile, overlay: StudioProfi
     bio: overlay.bio ?? profile.bio,
     nacionalidad: overlay.location ?? profile.nacionalidad,
     redes_sociales: overlay.socials.length ? overlay.socials : profile.redes_sociales,
+    donacion_paypal: overlay.donations.paypal ?? profile.donacion_paypal,
+    donacion_patreon: overlay.donations.patreon ?? profile.donacion_patreon,
+    donacion_bitcoin: overlay.donations.bitcoin ?? profile.donacion_bitcoin,
     gestionado: overlay.gestionado,
   };
 }

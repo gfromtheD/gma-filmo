@@ -7,6 +7,7 @@ import { uploadAvatar, uploadBanner } from "@/lib/uploads/browser";
 import { IMAGE_SNIFF_BYTES, imageContentProblem, sniffImageType, validateFile } from "@/lib/studio/file-rules";
 import { readImageSize } from "@/lib/studio/image-size";
 import { socialUrl } from "@/lib/social-links";
+import { supportLinkProblem } from "@/lib/creator-support";
 import { SocialLinksPanel, getSocialPlatform } from "@/components/ui/social-links-panel";
 import { TextAreaField, TextField } from "./upload/fields";
 import { ProfileHero, type ImageKind } from "./studio-profile-hero";
@@ -26,6 +27,8 @@ interface Props {
 }
 
 type Form = { studioName: string; artistName: string; role: string; bio: string; location: string };
+type Support = { paypal: string; patreon: string; bitcoin: string };
+const EMPTY_SUPPORT: Support = { paypal: "", patreon: "", bitcoin: "" };
 
 function Panel({ title, description, className = "", children }: { readonly title: string; readonly description: string; readonly className?: string; readonly children: ReactNode }) {
   return (
@@ -73,6 +76,7 @@ export function ProfileView({ data, onToast }: Props) {
   const initialForm: Form = { studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location };
   const [form, setForm] = useState<Form>(initialForm);
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(c.socials);
+  const [support, setSupport] = useState<Support>(c.support ?? EMPTY_SUPPORT);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [images, setImages] = useState<Record<ImageKind, string | null>>({ avatar: c.avatarUrl ?? null, banner: null });
@@ -83,6 +87,7 @@ export function ProfileView({ data, onToast }: Props) {
     if (isDirty) return;
     setForm({ studioName: c.studioName, artistName: c.artistName, role: c.role, bio: c.bio, location: c.location });
     setSocialLinks(c.socials);
+    setSupport(c.support ?? EMPTY_SUPPORT);
     setImages((prev) => ({ ...prev, avatar: c.avatarUrl ?? null }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c]);
@@ -102,6 +107,7 @@ export function ProfileView({ data, onToast }: Props) {
 
   const set = (key: keyof Form, value: string) => { setForm((f) => ({ ...f, [key]: value })); setIsDirty(true); };
   const setSocial = (key: string, value: string) => { setSocialLinks((s) => ({ ...s, [key]: value })); setIsDirty(true); };
+  const setSupportField = (key: keyof Support, value: string) => { setSupport((s) => ({ ...s, [key]: value })); setIsDirty(true); };
 
   async function saveImage(kind: ImageKind, url: string | null): Promise<boolean> {
     const supabase = getSupabaseBrowserClient();
@@ -141,6 +147,7 @@ export function ProfileView({ data, onToast }: Props) {
   function handleDiscard() {
     setForm(initialForm);
     setSocialLinks(c.socials);
+    setSupport(c.support ?? EMPTY_SUPPORT);
     setIsDirty(false);
   }
 
@@ -150,6 +157,9 @@ export function ProfileView({ data, onToast }: Props) {
     const cleanSocialLinks: Record<string, string> = Object.fromEntries(Object.entries(socialLinks).map(([k, v]) => [k, v.trim()]).filter(([, v]) => !!v));
     const invalidSocial = Object.entries(cleanSocialLinks).find(([key, value]) => !socialUrl(key, value));
     if (invalidSocial) { onToast(`Revisa el enlace de ${getSocialPlatform(invalidSocial[0])?.label ?? invalidSocial[0]}.`, { error: true }); return; }
+
+    const supportProblem = (Object.keys(support) as (keyof Support)[]).map((key) => supportLinkProblem(key, support[key])).find(Boolean);
+    if (supportProblem) { onToast(supportProblem, { error: true }); return; }
 
     setIsSaving(true);
     const supabase = getSupabaseBrowserClient();
@@ -162,10 +172,14 @@ export function ProfileView({ data, onToast }: Props) {
       bio: form.bio.trim(),
       location: form.location.trim() || null,
       social_links: cleanSocialLinks,
+      donacion_paypal: support.paypal.trim() || null,
+      donacion_patreon: support.patreon.trim() || null,
+      donacion_bitcoin: support.bitcoin.trim() || null,
     }).eq("user_id", user.id);
     setIsSaving(false);
     if (error) { onToast("Error al guardar la ficha.", { error: true }); return; }
     setIsDirty(false);
+    void refreshPublicPage(); // la página pública y el QR del final de cada obra muestran ya los métodos nuevos
     onToast("Ficha actualizada");
   }
 
@@ -205,6 +219,15 @@ export function ProfileView({ data, onToast }: Props) {
         <motion.div variants={rise}>
           <Panel title="Sobre ti" description="Unas líneas sobre tu trabajo: qué haces y qué te mueve.">
             <TextAreaField label="Biografía" value={form.bio} onChange={(v) => set("bio", v)} maxLength={BIO_MAX} rows={6} />
+          </Panel>
+        </motion.div>
+        <motion.div variants={rise} className="lg:col-span-2">
+          <Panel title="Apoyo al creador" description="Opcional. Si lo rellenas, el público verá un botón y un código QR para apoyarte al terminar tus obras y en tu página. El dinero va directamente a tu cuenta: GMA no interviene.">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <TextField label="PayPal" value={support.paypal} onChange={(v) => setSupportField("paypal", v)} placeholder="paypal.me/tuusuario" />
+              <TextField label="Patreon" value={support.patreon} onChange={(v) => setSupportField("patreon", v)} placeholder="patreon.com/tuusuario" />
+              <TextField label="Dirección de Bitcoin" value={support.bitcoin} onChange={(v) => setSupportField("bitcoin", v)} placeholder="bc1…" />
+            </div>
           </Panel>
         </motion.div>
         <motion.div variants={rise} className="lg:col-span-2">

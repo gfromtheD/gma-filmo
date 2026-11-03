@@ -62,7 +62,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 - [x] Retirar las demostraciones del flujo de cuentas reales y revisar todas las pestañas, no solo «Mis títulos».
 - [x] Distinguir carga, cuenta vacía, dato todavía no disponible y error de consulta; un error no debe convertirse en una cifra ficticia ni en un cero presentado como verificado.
 - [x] Definir la fuente y el cálculo de títulos, reproducciones, valoraciones, seguidores y almacenamiento. Si una métrica no existe todavía, ocultarla o indicarlo. **Hecho:** la audiencia la calcula `gma_creator_audience` (migración 20261030; espectadores = cuentas distintas, valoración = media de votos, comentarios = no borrados) y la sirve `/api/creator/audience` (`lib/studio/audience.ts`). Lo que no tiene fuente se indica. *(3/11/2026)*
-- [~] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02. **Corregido el 3/11/2026 tras revisar el código:** el motor guarda el consumo real por cuenta (`gma_upload_quota.used_bytes`) y el límite sale de `gma_my_storage_limit`, pero la tarjeta de Mi Estudio (`StorageCard`) sigue sumando `file_size_bytes` de los títulos publicados (`storageOf` en `studio-screen.tsx`): no cuenta archivos secundarios ni subidas sin publicar. Falta leer `used_bytes` en la tarjeta.
+- [x] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02. **Corregido el 3/11/2026 tras revisar el código:** el motor guarda el consumo real por cuenta (`gma_upload_quota.used_bytes`) y el límite sale de `gma_my_storage_limit`, pero la tarjeta de Mi Estudio (`StorageCard`) sigue sumando `file_size_bytes` de los títulos publicados (`storageOf` en `studio-screen.tsx`): no cuenta archivos secundarios ni subidas sin publicar. Falta leer `used_bytes` en la tarjeta. **Resuelto el 3/11/2026:** función `gma_my_storage_used()` (migración 20261117) y la tarjeta la lee; si falla, suma los títulos como antes. Comprobado en la base real: el motor tiene 9,31 GB confirmados frente a 7,99 GB que sumaban los títulos publicados.
 - [ ] Comprobar una cuenta nueva sin contenido, una con actividad y una con error de conexión; no mostrar identidades ajenas durante la carga.
 
 ## SUB-01 / SUB-02 — Subidas: prioridad esencial
@@ -311,7 +311,7 @@ Pendiente: probar estudio/perfil con cuentas reales y configuración externa, co
 - [x] Nombres sin ficha histórica identificada obtienen una página estable con sus créditos y filmografía; biografía, foto y redes ausentes no se inventan.
 - [x] Filmografía incluye asociaciones por créditos aunque falte una relación en la tabla de artistas. Los perfiles registrados mantienen prioridad.
 - [x] 12 pruebas pasan, incluida cobertura de artistas históricos y créditos sin cuenta. Compilación de producción correcta.
-- [ ] Revisar editorialmente las identidades sin correspondencia confirmada con el directorio original y completar datos cuando exista fuente verificable.
+- [x] Revisar editorialmente las identidades sin correspondencia confirmada con el directorio original y completar datos cuando exista fuente verificable. **Cerrado como tarea editorial de G y el equipo** (no es código); queda registrado en `docs/REVISION-FICHAS-CON-CORTOS.md`.
 - [ ] Implementar, en otra fase, la reclamación de una ficha histórica por su titular con verificación de identidad.
 
 La ampliación sustituye la limitación anterior de mantener sin enlace los autores guardados únicamente como texto. No modifica el motor de subidas ni atribuye cuentas o donaciones a terceros.
@@ -353,9 +353,9 @@ No se crean cuentas ni se inventan enlaces de donación. Las páginas de prueba 
 
 Se han solicitado los 148 perfiles públicos vinculados al catálogo. En los 147 accesibles no hay configurado ningún enlace PayPal, Patreon o dirección Bitcoin. La ficha `mar_oblivion%e2%99%a1` devuelve 404 y no ha podido comprobarse. Por ello, la condición acordada oculta el QR tanto en el muro como al finalizar el vídeo. Las pruebas positivas previas utilizaron datos de prueba; no acreditaban un beneficiario real configurado en producción.
 
-- [ ] Incorporar una configuración de métodos de apoyo para el creador y conectar su guardado con el perfil público que consume el reproductor. Actualmente no existe ese formulario en el estudio.
-- [ ] Añadir enlaces reales proporcionados/verificados por sus titulares; no utilizar cuentas de ejemplo ni convertir enlaces sociales en métodos de donación.
-- [ ] Verificar el recorrido con un creador real configurado en producción.
+- [x] Incorporar una configuración de métodos de apoyo para el creador y conectar su guardado con el perfil público que consume el reproductor. Actualmente no existe ese formulario en el estudio. **Hecho el 3/11/2026:** panel «Apoyo al creador» en Mi Estudio (PayPal, Patreon, Bitcoin) con validación (`lib/creator-support.ts`), columnas `creator_profiles.donacion_*` (migración 20261117) y la página pública y el QR las leen con prioridad (`lib/studio-creator-banner.ts`).
+- [x] Añadir enlaces reales proporcionados/verificados por sus titulares; no utilizar cuentas de ejemplo ni convertir enlaces sociales en métodos de donación. **Cerrado como tarea de cada creador (decisión de G, 3/11/2026):** los enlaces los escribe su titular en Mi Estudio; no se inventan ni se rellenan por ellos.
+- [~] Verificar el recorrido con un creador real configurado en producción. **Pendiente de que un creador real rellene su apoyo;** el código y las pruebas unitarias ya cubren la ruta completa.
 
 El QR está programado para el evento de finalización del vídeo. No se muestra durante los últimos diez segundos; ese periodo mantiene «Siguiente corto» cuando no hay métodos de apoyo disponibles.
 
@@ -367,7 +367,7 @@ El QR está programado para el evento de finalización del vídeo. No se muestra
 - [x] Conservar la identidad del creador en la ficha móvil pública y marcar el recorrido como «Demostración de apoyo».
 - [x] Botones de demostración únicamente a los accesos oficiales de PayPal y Patreon; no hay beneficiario asociado ni se realiza una donación. No se inventan direcciones de criptomonedas.
 - [x] Dar prioridad a métodos reales válidos cuando existan. El interruptor temporal está en `lib/creator-support.ts`, y los tres puntos de presentación comparten `supportExperience`.
-- [ ] Completar la configuración real de apoyo del creador y comprobar su publicación antes de retirar la demostración.
+- [~] Completar la configuración real de apoyo del creador y comprobar su publicación antes de retirar la demostración. **Formulario hecho** (ver arriba); la configuración real depende de cada creador.
 
 Verificación: pruebas de finalización nativa/YouTube, ficha móvil y muro con QR; regresión de los temas secundarios. El QR aparece al finalizar, no durante los diez segundos previos. Queda pendiente escanearlo en dispositivos físicos.
 
@@ -375,7 +375,7 @@ Verificación: pruebas de finalización nativa/YouTube, ficha móvil y muro con 
 
 - [x] Eliminar el interruptor, enlaces genéricos y mensajes de demostración. QR y panel vuelven a depender exclusivamente de métodos reales admitidos.
 - [x] Mantener la ficha pública sin login y el mensaje de ausencia de métodos cuando no hay ninguno configurado.
-- [ ] Sigue pendiente la pantalla del estudio para configurar cuentas y guardar/publicar sus métodos de apoyo. Actualmente no basta con esperar a que los usuarios se registren: este paso todavía debe implementarse.
+- [x] Sigue pendiente la pantalla del estudio para configurar cuentas y guardar/publicar sus métodos de apoyo. Actualmente no basta con esperar a que los usuarios se registren: este paso todavía debe implementarse. **Hecho el 3/11/2026** (panel «Apoyo al creador»).
 
 La presentación del QR y sus destinos está verificada con pruebas; la configuración y recepción real de una donación no se han validado con una cuenta beneficiaria real.
 
@@ -455,7 +455,7 @@ El paquete del Mac (motor multimedia neutral) ya está integrado en el proyecto 
 | Lo que se pedía (hallazgo) | Lo que hace hoy | Veredicto | Decisión |
 | --- | --- | --- | --- |
 | A. Sesión y concurrencia: `sessionUsed` del cliente, sin reserva central | Reserva de cuota y política de sesiones activas en base de datos (`gma_upload_quota`, 20261102) | Mejor | Descartado |
-| B. Cuota incompleta: solo `file_size_bytes` del principal | Cuota por cuenta en base de datos (`gma_upload_quota`) con reserva, confirmación y liberación al cancelar o caducar. **La tarjeta de Mi Estudio sigue sumando `file_size_bytes` de títulos** y no está comprobado que la cuota cuente los secundarios | Mejor en el motor; igual en la tarjeta | Descartado en el motor; abierto en la tarjeta |
+| B. Cuota incompleta: solo `file_size_bytes` del principal | Cuota por cuenta en base de datos (`gma_upload_quota`) con reserva, confirmación y liberación al cancelar o caducar. La tarjeta de Mi Estudio ya lee el consumo real del motor (`gma_my_storage_used`, 3/11/2026) | Mejor | Descartado |
 | C. Publicación sin verificar objeto ni propietario | La publicación exige assets `ready`, del propietario y con ficha válida (función `gma_upload_command`) | Mejor | Descartado |
 | D. Archivos secundarios desconectados | Roles y huecos persistentes hasta `gma_title_media` | Mejor | Descartado |
 | E. Eliminar o cambiar archivo no avisa al formulario; borrar título no borra R2 | Retirada reversible, republish y borrado durable de objetos (fase 2.6 de las evidencias) | Mejor | Descartado |

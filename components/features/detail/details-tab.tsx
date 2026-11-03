@@ -1,9 +1,10 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { AudioCard, CreditsCard, InfoCard } from "@/components/features/detail/detail-cards";
+import { AudioCard, CreditsCard, FichaDataCard, FichaThemesAwardsCard, InfoCard } from "@/components/features/detail/detail-cards";
 import { SynopsisCard } from "@/components/features/detail/synopsis-card";
 import type { MovieMedia } from "@/types/catalog";
+import type { PublicFicha } from "@/lib/media/public-ficha";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 const GRID_GAP = 24; // gap-6
@@ -13,7 +14,7 @@ const GRID_GAP = 24; // gap-6
  * Plegada, la sinopsis no pasa de la altura natural de la columna derecha: si el texto sobra, se corta
  * con «…» y un «Más». Desplegada, la tarjeta crece y la columna derecha se estira para acompañarla.
  */
-export function DetailsTab({ movie, donation }: { movie: MovieMedia; donation: ReactNode }) {
+export function DetailsTab({ movie, donation, ficha = null }: { movie: MovieMedia; donation: ReactNode; ficha?: PublicFicha | null }) {
   const [expanded, setExpanded] = useState(false);
   const [targetHeight, setTargetHeight] = useState<number | null>(null);
   const asideRef = useRef<HTMLElement>(null);
@@ -61,6 +62,8 @@ export function DetailsTab({ movie, donation }: { movie: MovieMedia; donation: R
       <aside ref={asideRef} className={`flex flex-col gap-6 ${expanded ? "lg:self-stretch" : "lg:self-start"}`}>
         <CreditsCard movie={movie} />
         <AudioCard movie={movie} />
+        <FichaDataCard ficha={ficha} />
+        <FichaThemesAwardsCard ficha={ficha} />
         <InfoCard movie={movie} />
       </aside>
     </div>
