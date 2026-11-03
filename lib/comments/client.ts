@@ -1,12 +1,8 @@
 "use client";
 
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { authHeaders } from "@/lib/api/auth-headers";
 
-/** Cabeceras con la sesión actual para llamar a `/api/comments`. */
-export async function authHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
-  return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" };
-}
+export { authHeaders };
 
 export interface PatchResult {
   readonly ok: boolean;
