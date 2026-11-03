@@ -9,6 +9,7 @@
  */
 
 import type { MediaItem } from "@/types/catalog";
+import { popularityScore, type PopularityByNumericId } from "@/lib/recommendation/popularity";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS — change these before touching the algorithm
@@ -114,6 +115,8 @@ export interface HomeRow {
 
 export interface RecommendOptions {
   count: number;
+  /** Popularidad real (0–1 por `numericId`); sin ella manda la posición en la lista, como antes. */
+  popularity?:     PopularityByNumericId;
   /** Stable per-session value from sessionStorage — keeps order consistent within a session */
   sessionSeed?:    number;
   /** Set true to include already-watched items (e.g. for a "continue watching" row) */
@@ -486,7 +489,7 @@ export function recommendItems(
   const scored: ScoredItem[] = candidates.map((item, i) => ({
     item,
     // Position in the source array as popularity proxy (earlier = more popular)
-    score: scoreCandidate(item, affinity, seed, i, 1 - i / Math.max(total - 1, 1)),
+    score: scoreCandidate(item, affinity, seed, i, popularityScore(1 - i / Math.max(total - 1, 1), options.popularity?.get(item.numericId))),
   }));
 
   scored.sort((a, b) => b.score - a.score);
@@ -511,13 +514,14 @@ export function buildHomeRows(
   profile:     UserProfile,
   sessionSeed?: number,
   now: number = Date.now(),
+  popularity?: PopularityByNumericId,
 ): HomeRow[] {
   const seed       = sessionSeed ?? getPageLoadSeed();
   const affinity   = buildUserAffinity(profile.events, allItems);
   const hasHistory = affinity.signalEventCount >= REC.MIN_EVENTS_TO_PERSONALISE;
   const indexById  = new Map(allItems.map((item, i) => [item.id, i]));
   const positionOf  = (item: MediaItem) => indexById.get(item.id) ?? 0;
-  const popularityOf = (item: MediaItem) => 1 - positionOf(item) / Math.max(allItems.length - 1, 1);
+  const popularityOf = (item: MediaItem) => popularityScore(1 - positionOf(item) / Math.max(allItems.length - 1, 1), popularity?.get(item.numericId));
   const unseen     = allItems.filter((item) => !affinity.viewedIds.has(item.id));
   const rows: HomeRow[] = [];
 

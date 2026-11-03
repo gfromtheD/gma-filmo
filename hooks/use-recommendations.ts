@@ -14,40 +14,57 @@ import {
 import { useProgress }  from "@/hooks/use-progress";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
+import { useActiveProfileId } from "@/hooks/use-active-profile-id";
+import { usePopularity } from "@/hooks/use-popularity";
+import { authHeaders } from "@/lib/api/auth-headers";
+import { markShown, mergeShown, SHOWN_BATCH_MAX, type ShownMap } from "@/lib/recommendation/shown-memory";
 import type { MediaItem } from "@/types/catalog";
 
 // ── Shown-on-home persistence (localStorage) ──────────────────────────────────
 
-function shownKey(userId: string) { return `gma-home-shown:${userId}`; }
+// Cada perfil tiene su memoria: la de la cuenta (`profileId` vacío) y la de cada perfil secundario.
+function shownKey(memoryId: string) { return `gma-home-shown:${memoryId}`; }
 
-function loadShownOnHome(userId: string): Record<string, number> {
+function loadShownOnHome(memoryId: string): ShownMap {
   try {
-    const raw = localStorage.getItem(shownKey(userId));
-    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    const raw = localStorage.getItem(shownKey(memoryId));
+    return raw ? (JSON.parse(raw) as ShownMap) : {};
   } catch { return {}; }
 }
 
-function saveShownOnHome(userId: string, items: MediaItem[]) {
-  const existing = loadShownOnHome(userId);
-  const now = Date.now();
-  for (const item of items) existing[item.id] = now;
-  // Prune entries older than 48 hours to keep localStorage lean
-  const cutoff = now - 48 * 3_600_000;
-  for (const [id, ts] of Object.entries(existing)) {
-    if (ts < cutoff) delete existing[id];
-  }
-  try { localStorage.setItem(shownKey(userId), JSON.stringify(existing)); } catch { /* quota */ }
+function saveShownOnHome(memoryId: string, items: MediaItem[]) {
+  const next = markShown(loadShownOnHome(memoryId), items.map((item) => item.id), Date.now());
+  try { localStorage.setItem(shownKey(memoryId), JSON.stringify(next)); } catch { /* quota */ }
+}
+
+/** Anota en la base de datos lo enseñado, para que no se pierda al cambiar de navegador. Nunca rompe la portada. */
+async function syncShownToServer(profileId: string, items: MediaItem[]) {
+  const ids = [...new Set(items.map((item) => item.id))].slice(0, SHOWN_BATCH_MAX);
+  if (ids.length === 0) return;
+  try {
+    await fetch(`/api/home-shown?profile=${encodeURIComponent(profileId)}`, { method: "POST", headers: await authHeaders(), body: JSON.stringify({ items: ids }) });
+  } catch { /* sin red: la memoria local sigue valiendo */ }
+}
+
+/** Lo que la base de datos recuerda de este perfil (vacío si falla). */
+async function fetchShownFromServer(profileId: string): Promise<ShownMap> {
+  try {
+    const res = await fetch(`/api/home-shown?profile=${encodeURIComponent(profileId)}`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const body = (await res.json()) as { shown?: ShownMap };
+    return body.shown ?? {};
+  } catch { return {}; }
 }
 
 // Lo mostrado en visitas anteriores se lee una sola vez por carga de página: así la portada no cambia de
 // sitio mientras navegas, pero al recargar o volver otro día rota lo que ya se enseñó.
-const shownBeforeThisLoad = new Map<string, Record<string, number>>();
+const shownBeforeThisLoad = new Map<string, ShownMap>();
 
-function shownBeforeLoad(userId: string): Record<string, number> {
-  const cached = shownBeforeThisLoad.get(userId);
+function shownBeforeLoad(memoryId: string): ShownMap {
+  const cached = shownBeforeThisLoad.get(memoryId);
   if (cached) return cached;
-  const loaded = loadShownOnHome(userId);
-  shownBeforeThisLoad.set(userId, loaded);
+  const loaded = loadShownOnHome(memoryId);
+  shownBeforeThisLoad.set(memoryId, loaded);
   return loaded;
 }
 
@@ -71,6 +88,8 @@ export function useRecommendations(
   pickCount = 8,
 ): UseRecommendationsResult {
   const userId                            = useSupabaseUserId();
+  const profileId                         = useActiveProfileId();
+  const popularity                        = usePopularity();
   const { entries: progressByNumericId }  = useProgress();
   // La lista tal como llegó al cargar: si se usara la viva, cada «guardar» recalcularía todas las filas y las
   // tarjetas se reordenarían bajo el cursor (la tarjeta flotante desaparecía). Lo guardado cuenta en la próxima visita.
@@ -81,10 +100,26 @@ export function useRecommendations(
   const [newArrivals, setNewArrivals] = useState<MediaItem[]>(() => allItems.slice(0, NEW_ARRIVALS_COUNT));
   const [categoryWeights, setCategoryWeights] = useState<Record<string, number>>({});
   const [sessionSeed, setSessionSeed]         = useState(0.5);
+  // Sube una vez la memoria de la base de datos a esta página (solo si este navegador no recordaba nada de este perfil).
+  const [serverShownVersion, setServerShownVersion] = useState(0);
+
+  const memoryId = `${userId ?? "anonymous"}:${profileId}`;
+  useEffect(() => {
+    if (!userId || Object.keys(shownBeforeLoad(memoryId)).length > 0) return;
+    let cancelled = false;
+    void fetchShownFromServer(profileId).then((remote) => {
+      if (cancelled || Object.keys(remote).length === 0) return;
+      const merged = mergeShown(shownBeforeLoad(memoryId), remote, Date.now());
+      shownBeforeThisLoad.set(memoryId, merged);
+      try { localStorage.setItem(shownKey(memoryId), JSON.stringify(merged)); } catch { /* quota */ }
+      setServerShownVersion((v) => v + 1);
+    });
+    return () => { cancelled = true; };
+  }, [userId, profileId, memoryId]);
 
   useEffect(() => {
     const uid = userId ?? "anonymous";
-    const shownOnHome = shownBeforeLoad(uid);
+    const shownOnHome = shownBeforeLoad(memoryId);
 
     const profile = buildUserProfileFromSupabase({
       userId:              uid,
@@ -94,17 +129,19 @@ export function useRecommendations(
       shownOnHome,
     });
 
-    const rows = buildHomeRows(allItems, profile);
+    const rows = buildHomeRows(allItems, profile, undefined, undefined, popularity);
     const arrivals = pickNewArrivals(allItems, getPageLoadSeed(), shownOnHome, NEW_ARRIVALS_COUNT);
     setHomeRows(rows);
     setNewArrivals(arrivals);
-    setPicks(recommendItems(allItems, profile, { count: pickCount }));
+    setPicks(recommendItems(allItems, profile, { count: pickCount, popularity }));
     setCategoryWeights(buildUserAffinity(profile.events, allItems).categoryWeights);
     setSessionSeed(getOrCreateSessionSeed(uid));
 
     // Mark every item in these rows as shown so they rotate out next time
-    saveShownOnHome(uid, [...arrivals, ...rows.flatMap((r) => r.items)]);
-  }, [userId, allItems, progressByNumericId, watchlistNumericIds, pickCount]);
+    const shownNow = [...arrivals, ...rows.flatMap((r) => r.items)];
+    saveShownOnHome(memoryId, shownNow);
+    if (userId) void syncShownToServer(profileId, shownNow);
+  }, [userId, profileId, memoryId, allItems, progressByNumericId, watchlistNumericIds, pickCount, popularity, serverShownVersion]);
 
   return { homeRows, newArrivals, picks, categoryWeights, sessionSeed };
 }
