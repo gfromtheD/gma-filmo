@@ -39,7 +39,8 @@ async function startRecording(page: Page) {
         image: image ? image.getBoundingClientRect() : null,
         panel: panel.getBoundingClientRect(),
         clip: cs.clipPath,
-        bodyOpacity: body ? Number(getComputedStyle(body).opacity) : 1,
+        // El texto aparece escalonado: la opacidad se anima en cada hijo del cuerpo, no en el cuerpo. Vale la del que menos se ve.
+        bodyOpacity: body ? Math.min(...Array.from(body.children).map((child) => Number(getComputedStyle(child).opacity))) : 1,
         count: document.querySelectorAll("[data-hover-preview]").length,
       });
     }, 8);
