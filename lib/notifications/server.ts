@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { shouldNotifyRating, starsToTen } from "@/lib/notifications/rules";
+import { commentNotificationTargets, shouldNotifyRating, starsToTen } from "@/lib/notifications/rules";
 
 // La tabla notifications aún no está en types/database.ts (migración 20261023_notifications).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,10 +32,33 @@ export async function notifyRating({ peliculaId, raterUserId, raterProfileId, st
         created_at: new Date().toISOString(),
         read_at: null,
       },
-      { onConflict: "user_id,kind,pelicula_id,actor_user_id,actor_profile_id" },
+      { onConflict: "user_id,kind,pelicula_id,actor_user_id,actor_profile_id,comment_id" },
     );
     if (error) console.error("[notifications] notifyRating", error.code, error.message);
   } catch (error) {
     console.error("[notifications] notifyRating", error);
+  }
+}
+
+/**
+ * Avisa de que han respondido a un comentario: a quien recibe la respuesta y, si es otra persona, a quien abrió el hilo.
+ * Nunca hace fallar la publicación del comentario: si algo sale mal (o la migración aún no está aplicada) solo se registra.
+ */
+export async function notifyCommentReply({ commentId, peliculaId, actorUserId, actorProfileId, actorName, replyTargetUserId, threadOwnerUserId }: {
+  commentId: number; peliculaId: number; actorUserId: string; actorProfileId: string; actorName: string;
+  replyTargetUserId: string; threadOwnerUserId: string;
+}): Promise<void> {
+  try {
+    const targets = commentNotificationTargets({ actorUserId, replyTargetUserId, threadOwnerUserId });
+    if (targets.length === 0) return;
+    const now = new Date().toISOString();
+    const rows = targets.map(({ userId, kind }) => ({
+      user_id: userId, kind, pelicula_id: peliculaId, actor_user_id: actorUserId, actor_profile_id: actorProfileId,
+      comment_id: commentId, actor_name: actorName.slice(0, 60), created_at: now, read_at: null,
+    }));
+    const { error } = await notificationsDb().from("notifications").upsert(rows, { onConflict: "user_id,kind,pelicula_id,actor_user_id,actor_profile_id,comment_id" });
+    if (error) console.error("[notifications] notifyCommentReply", error.code, error.message);
+  } catch (error) {
+    console.error("[notifications] notifyCommentReply", error);
   }
 }

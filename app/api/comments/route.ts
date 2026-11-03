@@ -10,6 +10,7 @@ import { parseRuntimeSeconds } from "@/lib/comments/timestamp";
 import { hasLiked, ownsStoredComment, requestProfileId } from "@/lib/comments/ownership";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserId } from "@/lib/api/auth";
+import { notifyCommentReply } from "@/lib/notifications/server";
 import { rateLimit } from "@/lib/api/rate-limit";
 
 type LikeRow = { user_id: string; profile_id: string | null };
@@ -96,16 +97,18 @@ export async function POST(request: Request) {
   }
 
   // Solo se responde a un comentario principal, vivo y de la misma obra.
+  let threadOwnerUserId: string | null = null;
   if (parentId !== null) {
     const { data: parent } = await admin
       .from("comments")
-      .select("id, pelicula_id, parent_id, is_deleted")
+      .select("id, pelicula_id, parent_id, is_deleted, user_id")
       .eq("id", parentId)
       .maybeSingle();
     const check = checkParent((parent as ParentRow | null) ?? null, peliculaId);
     if (!check.ok) {
       return NextResponse.json({ error: "parent_invalid", reason: check.reason }, { status: PARENT_STATUS[check.reason] });
     }
+    threadOwnerUserId = (parent as { user_id?: string } | null)?.user_id ?? null;
   }
 
   // La mención: el comentario concreto del mismo hilo al que se responde (se guarda la referencia, no el nombre).
@@ -156,6 +159,13 @@ export async function POST(request: Request) {
   if (error || !data) {
     console.error("[api/comments POST]", error?.code, error?.message);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
+  }
+  // Aviso a quien recibe la respuesta y al dueño del hilo. No bloquea ni hace fallar la publicación.
+  if (parentId !== null && threadOwnerUserId) {
+    await notifyCommentReply({
+      commentId: data.id, peliculaId, actorUserId: userId, actorProfileId: authorProfileId, actorName: row.display_name,
+      replyTargetUserId: replyTarget?.user_id ?? threadOwnerUserId, threadOwnerUserId,
+    });
   }
   const authors = await loadAuthors([
     { user_id: userId, profile_id: authorProfileId },

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { notificationText, relativeTime, shouldNotifyRating, starsToTen } from "../../lib/notifications/rules";
+import { commentNotificationTargets, notificationText, relativeTime, shouldNotifyRating, starsToTen } from "../../lib/notifications/rules";
 
 test.describe("notificaciones de valoraciones", () => {
   test("avisa al creador, pero no si se valora su propia obra o la obra no tiene creador", () => {
@@ -24,5 +24,31 @@ test.describe("notificaciones de valoraciones", () => {
     expect(relativeTime(now - 5 * 60_000, now)).toBe("hace 5 min");
     expect(relativeTime(now - 3 * 3_600_000, now)).toBe("hace 3 h");
     expect(relativeTime(now - 2 * 86_400_000, now)).toBe("hace 2 d");
+  });
+});
+
+test.describe("notificaciones de respuestas a comentarios", () => {
+  test("responder directamente a un comentario principal avisa solo a su autor", () => {
+    expect(commentNotificationTargets({ actorUserId: "yo", replyTargetUserId: "ana", threadOwnerUserId: "ana" }))
+      .toEqual([{ userId: "ana", kind: "reply" }]);
+  });
+
+  test("responder dentro de un hilo avisa a quien recibe la respuesta y al dueño del hilo, cada uno una vez", () => {
+    expect(commentNotificationTargets({ actorUserId: "yo", replyTargetUserId: "luis", threadOwnerUserId: "ana" }))
+      .toEqual([{ userId: "luis", kind: "reply" }, { userId: "ana", kind: "thread" }]);
+  });
+
+  test("nunca se avisa a la propia cuenta, ni siquiera si es el dueño del hilo o el destinatario", () => {
+    expect(commentNotificationTargets({ actorUserId: "yo", replyTargetUserId: "yo", threadOwnerUserId: "yo" })).toEqual([]);
+    expect(commentNotificationTargets({ actorUserId: "yo", replyTargetUserId: "luis", threadOwnerUserId: "yo" }))
+      .toEqual([{ userId: "luis", kind: "reply" }]);
+    expect(commentNotificationTargets({ actorUserId: "yo", replyTargetUserId: "yo", threadOwnerUserId: "ana" }))
+      .toEqual([{ userId: "ana", kind: "thread" }]);
+  });
+
+  test("los textos nombran a quien responde y la obra", () => {
+    expect(notificationText({ kind: "reply", score: null, title: "Simón", actorName: "@ana" })).toBe("@ana ha respondido a tu comentario en «Simón»");
+    expect(notificationText({ kind: "thread", score: null, title: "Simón", actorName: "@ana" })).toBe("@ana ha respondido en un hilo tuyo en «Simón»");
+    expect(notificationText({ kind: "reply", score: null, title: "Simón" })).toBe("Alguien ha respondido a tu comentario en «Simón»");
   });
 });
