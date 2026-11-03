@@ -12,6 +12,7 @@ import { DataStep } from "./steps/data-step";
 import { useFooterHiddenStore } from "@/store/use-footer-hidden-store";
 import type { SubmitResult } from "@/lib/studio/engine";
 import { useUploadDraftStore } from "@/store/use-upload-draft-store";
+import { useSupabaseUserId } from "@/components/providers/supabase-auth-provider";
 import { processingResume, sharedUploadEngine, uploadControllers } from "./shared-uploads";
 import { UPLOAD_STEPS, processingAssets, reviewDraft, setAsset, type UploadDraft, type UploadStepId } from "@/lib/studio/upload-draft";
 
@@ -61,7 +62,9 @@ export function UploadWizard({ onGoToTitles, isActive = true }: UploadWizardProp
   const skipFocus = useRef(true);
 
   // El borrador se lee en el navegador la primera vez (en el servidor no existe `localStorage`); se guarda solo al cambiar.
-  useEffect(() => { useUploadDraftStore.getState().load(); }, []);
+  // Cada cuenta tiene su borrador: se espera a saber quién es antes de leerlo.
+  const userId = useSupabaseUserId();
+  useEffect(() => { if (userId) useUploadDraftStore.getState().load(userId); }, [userId]);
 
   // Al cambiar de paso o de pantalla, el foco pasa al contenido (accesibilidad) y se sube al principio.
   useEffect(() => {

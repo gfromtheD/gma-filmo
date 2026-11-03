@@ -80,6 +80,7 @@ test("la página «Películas» (/peliculas) usa la misma cuadrícula que los co
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/peliculas", { waitUntil: "load" });
   await expect(page.getByRole("heading", { name: "Películas", level: 1 })).toBeVisible({ timeout: 20_000 });
-  const cols = await page.locator("div.grid").first().evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+  // La cuadrícula del catálogo se reconoce por su clase de 4 columnas (el primer `div.grid` de la página es la barra superior).
+  const cols = await page.locator('div.grid[class*="min-[1150px]:grid-cols-4"]').first().evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
   expect(cols).toBe(4);
 });

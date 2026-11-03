@@ -19,6 +19,8 @@ export interface AppNotification {
 
 /** Cada cuánto se miran las notificaciones nuevas mientras la pestaña está visible. */
 const POLL_MS = 60_000;
+/** Quien no es creador solo recibe respuestas a sus comentarios: se mira con menos frecuencia (menos carga en la base). */
+const POLL_MS_VIEWER = 180_000;
 
 async function authHeader(): Promise<Record<string, string>> {
   const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
@@ -29,7 +31,7 @@ async function authHeader(): Promise<Record<string, string>> {
  * Notificaciones del usuario (valoraciones de sus obras, si es creador, y respuestas a sus comentarios). Se cargan al
  * entrar, cada minuto con la pestaña visible y al volver a ella. `enabled`: los invitados no las tienen, así que no se pide nada.
  */
-export function useNotifications(enabled: boolean) {
+export function useNotifications(enabled: boolean, isCreator = false) {
   const userId = useSupabaseUserId();
   const [items, setItems] = useState<readonly AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
@@ -52,11 +54,11 @@ export function useNotifications(enabled: boolean) {
   useEffect(() => {
     if (!isActive) { setItems([]); setUnread(0); setIsLoaded(false); return; }
     void refresh();
-    const timer = setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, POLL_MS);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, isCreator ? POLL_MS : POLL_MS_VIEWER);
     const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [isActive, refresh]);
+  }, [isActive, isCreator, refresh]);
 
   /** Marca todas como leídas (al abrir la lista). El cambio se ve al momento. */
   const markAllRead = useCallback(async () => {

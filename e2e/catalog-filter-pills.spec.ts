@@ -20,14 +20,14 @@ test("ya no existe el botón «Filtros» y aparecen las píldoras", async ({ pag
   for (const name of [/^Categoría/, /^Año/, /^Duración/, /^Orden/]) await expect(pill(page, name)).toBeVisible();
 });
 
-test("las píldoras tienen forma de píldora y el mismo alto", async ({ page }) => {
+test("las píldoras tienen el mismo alto y el mismo radio rectangular (4 px, desde el rediseño de botones rectangulares)", async ({ page }) => {
   await openCatalog(page);
   const heights: number[] = [];
   for (const name of [/^Categoría/, /^Año/, /^Duración/, /^Orden/]) {
     const box = (await pill(page, name).boundingBox())!;
     heights.push(Math.round(box.height));
     const radius = await pill(page, name).evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
-    expect(radius).toBeGreaterThanOrEqual(box.height / 2 - 1);
+    expect(radius).toBe(4);
   }
   expect(new Set(heights).size).toBe(1);
   expect(heights[0]).toBeGreaterThanOrEqual(38);

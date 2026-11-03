@@ -10,6 +10,14 @@ export interface DraftStorage {
 export const DRAFT_STORAGE_KEY = "gma-studio-upload-draft";
 
 /**
+ * Clave del borrador de una cuenta: cada persona tiene el suyo, así en un equipo compartido nadie ve los textos del anterior.
+ * Sin cuenta (pruebas) se usa la clave común de siempre.
+ */
+export function draftKey(userId?: string | null): string {
+  return userId ? `${DRAFT_STORAGE_KEY}:${userId}` : DRAFT_STORAGE_KEY;
+}
+
+/**
  * Un archivo que se guardó con un enlace temporal del navegador (`blob:`) o a medio subir ya no existe al volver. Uno que ya
  * se envió entero y el servidor estaba convirtiendo («processing») sigue vivo: la pasarela lo vuelve a vigilar al montar.
  */
@@ -36,9 +44,9 @@ function reviveDraft(draft: UploadDraft): UploadDraft {
 }
 
 /** Lee el borrador guardado; si no hay, está corrupto o es de otra versión, devuelve uno vacío. */
-export function loadDraft(storage: DraftStorage): UploadDraft {
+export function loadDraft(storage: DraftStorage, userId?: string | null): UploadDraft {
   try {
-    const raw = storage.getItem(DRAFT_STORAGE_KEY);
+    const raw = storage.getItem(draftKey(userId));
     if (!raw) return emptyDraft();
     const parsed = JSON.parse(raw) as Partial<UploadDraft> | null;
     if (!parsed || parsed.version !== 7) return emptyDraft();
@@ -49,17 +57,17 @@ export function loadDraft(storage: DraftStorage): UploadDraft {
 }
 
 /** Guarda el borrador; si el navegador lo impide (lleno, modo privado) se ignora sin romper la página. */
-export function saveDraft(storage: DraftStorage, draft: UploadDraft): void {
+export function saveDraft(storage: DraftStorage, draft: UploadDraft, userId?: string | null): void {
   try {
-    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    storage.setItem(draftKey(userId), JSON.stringify(draft));
   } catch {
     /* sin almacenamiento disponible: el borrador sigue en memoria */
   }
 }
 
-export function clearDraft(storage: DraftStorage): void {
+export function clearDraft(storage: DraftStorage, userId?: string | null): void {
   try {
-    storage.removeItem(DRAFT_STORAGE_KEY);
+    storage.removeItem(draftKey(userId));
   } catch {
     /* nada que borrar */
   }
