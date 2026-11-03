@@ -1,8 +1,11 @@
 import { unstable_cache } from "next/cache";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { attachCommunityScores, summarizeRatings, type CommunityScoreSummary, type RatingRow } from "@/lib/ratings/summary";
+import { attachCommunityScores, summariesFromAggregates, summarizeRatings, type CommunityScoreSummary, type RatingAggregateRow, type RatingRow } from "@/lib/ratings/summary";
 
-/** Solo servidor. Lee todas las valoraciones (por páginas, la API devuelve 1.000 como máximo) y calcula las medias. */
+/**
+ * Solo servidor. Las medias las agrega la base (`community_rating_summaries()`, migración 20261115). Si esa función aún no
+ * existe o falla, se leen todas las valoraciones por páginas (la API devuelve 1.000 como máximo) y se calculan aquí.
+ */
 const PAGE_SIZE = 1000;
 
 async function fetchAllRatings(): Promise<RatingRow[]> {
@@ -24,8 +27,15 @@ async function fetchAllRatings(): Promise<RatingRow[]> {
   }
 }
 
+async function fetchSummaries(): Promise<Map<number, CommunityScoreSummary>> {
+  const { data, error } = await getSupabaseAdminClient().rpc("community_rating_summaries");
+  if (!error && Array.isArray(data)) return summariesFromAggregates(data as unknown as RatingAggregateRow[]);
+  console.error("[ratings summary] sin agregado en la base, se calcula en el servidor:", error?.code, error?.message);
+  return summarizeRatings(await fetchAllRatings());
+}
+
 const getSummariesCached = unstable_cache(
-  async (): Promise<[number, CommunityScoreSummary][]> => [...summarizeRatings(await fetchAllRatings())],
+  async (): Promise<[number, CommunityScoreSummary][]> => [...(await fetchSummaries())],
   ["community-rating-summaries"],
   { revalidate: 120, tags: ["ratings"] },
 );

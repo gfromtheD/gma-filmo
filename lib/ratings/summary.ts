@@ -37,6 +37,24 @@ export function summarizeRatings(rows: readonly RatingRow[]): Map<number, Commun
   return result;
 }
 
+/** Una fila de `community_rating_summaries()`: la media (0–10, un decimal) y los votos de un título, ya agregados en la base. */
+export interface RatingAggregateRow {
+  readonly pelicula_id: number;
+  readonly average: number;
+  readonly votes: number | string;
+}
+
+/** Mapa de resúmenes a partir de las filas agregadas por la base. Descarta filas con valores no válidos. */
+export function summariesFromAggregates(rows: readonly RatingAggregateRow[]): Map<number, CommunityScoreSummary> {
+  const result = new Map<number, CommunityScoreSummary>();
+  for (const row of rows) {
+    const votes = Number(row.votes);
+    if (!Number.isFinite(row.average) || row.average <= 0 || !Number.isInteger(votes) || votes <= 0) continue;
+    result.set(Number(row.pelicula_id), { average: Math.min(10, row.average), votes });
+  }
+  return result;
+}
+
 /** «8.4»: siempre con un decimal y entre 0 y 10. */
 export function formatCommunityScore(average: number): string {
   return Math.min(10, Math.max(0, average)).toFixed(1);
