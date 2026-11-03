@@ -271,7 +271,9 @@ export function HoverPreviewCard({
         tabIndex={-1}
         aria-hidden="true"
         data-preview-hit-area
-        className="absolute inset-x-0 bottom-0 top-[var(--preview-image-h)]"
+        // z-[1]: los textos de debajo se animan con `translate` y `opacity` (cada uno crea su propio contexto de apilado) y, sin
+        // esto, quedaban por encima de la zona clicable y un clic sobre la sinopsis no hacía nada. Los botones y el título llevan z-10.
+        className="absolute inset-x-0 bottom-0 top-[var(--preview-image-h)] z-[1]"
       />
 
       <div
