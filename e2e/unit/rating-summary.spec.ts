@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { attachCommunityScores, formatCommunityScore, summarizeRatings } from "../../lib/ratings/summary";
+import { attachCommunityScores, formatCommunityScore, summariesFromAggregates, summarizeRatings } from "../../lib/ratings/summary";
 
 test.describe("summarizeRatings (nota media de la gente)", () => {
   test("la nota es la media de las estrellas puesta en escala de 0 a 10 con un decimal", () => {
@@ -85,5 +85,27 @@ test.describe("attachCommunityScores", () => {
     expect(attachCommunityScores(items, summarizeRatings([]))[0]).not.toHaveProperty("communityScore");
     const later = attachCommunityScores(items, summarizeRatings([{ pelicula_id: 1, score: 4.5 }]));
     expect(later[0]).toHaveProperty("communityScore");
+  });
+});
+
+test.describe("summariesFromAggregates (medias agregadas por la base)", () => {
+  test("convierte las filas de la base (votos pueden llegar como texto) y descarta las no válidas", () => {
+    const result = summariesFromAggregates([
+      { pelicula_id: 1, average: 8.4, votes: "5" },
+      { pelicula_id: 2, average: 10, votes: 1 },
+      { pelicula_id: 3, average: 0, votes: 4 },
+      { pelicula_id: 4, average: Number.NaN, votes: 2 },
+      { pelicula_id: 5, average: 7, votes: 0 },
+    ]);
+    expect([...result.keys()]).toEqual([1, 2]);
+    expect(result.get(1)).toEqual({ average: 8.4, votes: 5 });
+    expect(result.get(2)).toEqual({ average: 10, votes: 1 });
+  });
+
+  test("coincide con el cálculo en el servidor para los mismos votos", () => {
+    const rows = [{ pelicula_id: 1, score: 4.5 }, { pelicula_id: 1, score: 4.5 }, { pelicula_id: 1, score: 5 }];
+    const local = summarizeRatings(rows).get(1);
+    const fromDb = summariesFromAggregates([{ pelicula_id: 1, average: 9.3, votes: "3" }]).get(1);
+    expect(fromDb).toEqual(local);
   });
 });
