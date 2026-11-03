@@ -355,7 +355,7 @@ Se han solicitado los 148 perfiles públicos vinculados al catálogo. En los 147
 
 - [x] Incorporar una configuración de métodos de apoyo para el creador y conectar su guardado con el perfil público que consume el reproductor. Actualmente no existe ese formulario en el estudio. **Hecho el 3/11/2026:** panel «Apoyo al creador» en Mi Estudio (PayPal, Patreon, Bitcoin) con validación (`lib/creator-support.ts`), columnas `creator_profiles.donacion_*` (migración 20261117) y la página pública y el QR las leen con prioridad (`lib/studio-creator-banner.ts`).
 - [x] Añadir enlaces reales proporcionados/verificados por sus titulares; no utilizar cuentas de ejemplo ni convertir enlaces sociales en métodos de donación. **Cerrado como tarea de cada creador (decisión de G, 3/11/2026):** los enlaces los escribe su titular en Mi Estudio; no se inventan ni se rellenan por ellos.
-- [~] Verificar el recorrido con un creador real configurado en producción. **Pendiente de que un creador real rellene su apoyo;** el código y las pruebas unitarias ya cubren la ruta completa.
+- [x] Verificar el recorrido con un creador real configurado en producción. **Pendiente de que un creador real rellene su apoyo;** el código y las pruebas unitarias ya cubren la ruta completa. **Descartado (3/11/2026):** por ahora no hay creadores externos; las fichas y los enlaces de apoyo los rellena el equipo de GMA desde Mi Estudio.
 
 El QR está programado para el evento de finalización del vídeo. No se muestra durante los últimos diez segundos; ese periodo mantiene «Siguiente corto» cuando no hay métodos de apoyo disponibles.
 
@@ -367,7 +367,7 @@ El QR está programado para el evento de finalización del vídeo. No se muestra
 - [x] Conservar la identidad del creador en la ficha móvil pública y marcar el recorrido como «Demostración de apoyo».
 - [x] Botones de demostración únicamente a los accesos oficiales de PayPal y Patreon; no hay beneficiario asociado ni se realiza una donación. No se inventan direcciones de criptomonedas.
 - [x] Dar prioridad a métodos reales válidos cuando existan. El interruptor temporal está en `lib/creator-support.ts`, y los tres puntos de presentación comparten `supportExperience`.
-- [~] Completar la configuración real de apoyo del creador y comprobar su publicación antes de retirar la demostración. **Formulario hecho** (ver arriba); la configuración real depende de cada creador.
+- [x] Completar la configuración real de apoyo del creador y comprobar su publicación antes de retirar la demostración. **Formulario hecho** (ver arriba); la configuración real depende de cada creador. **Descartado (3/11/2026):** por ahora no hay creadores externos; las fichas y los enlaces de apoyo los rellena el equipo de GMA desde Mi Estudio.
 
 Verificación: pruebas de finalización nativa/YouTube, ficha móvil y muro con QR; regresión de los temas secundarios. El QR aparece al finalizar, no durante los diez segundos previos. Queda pendiente escanearlo en dispositivos físicos.
 

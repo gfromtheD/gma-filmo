@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Xmark as X, Check, WarningTriangle as AlertTriangle } from "@/components/ui/icons";
 import { C, row, StatusBadge, Poster, useStudioDialog } from "./studio-ui";
 import type { StudioTitle } from "./studio-types";
+import { StudioExtrasEditor } from "./studio-extras-editor";
 import { editLanguageOptions, editProblem, editYearOptions, type TitleEditForm } from "@/lib/studio/title-edit";
 
 interface Props {
@@ -93,6 +94,8 @@ export function EditModal({ title: t, onClose, onToast, onSave }: Props) {
             </div>
           </div>
         </div>
+
+        {Number.isInteger(Number(t.id)) && <StudioExtrasEditor titleId={Number(t.id)} onToast={onToast} />}
 
         {t.status === "rechazado" && (
           <div style={{ margin: "0 24px 4px", padding: 14, borderRadius: 12,
