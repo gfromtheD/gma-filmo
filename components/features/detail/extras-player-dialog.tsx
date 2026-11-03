@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog } from "radix-ui";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { ExtraVideoPlayer } from "@/components/features/detail/extra-video-player";
@@ -77,6 +77,9 @@ function RowArrow({ direction, label, onClick, disabled }: NavArrowProps & { rea
   );
 }
 
+/** Margen tras salir de pantalla completa durante el que un Escape no cierra el visor. */
+const FULLSCREEN_ESCAPE_GRACE_MS = 400;
+
 /** Visor de extras (vídeo o imagen) con flechas para recorrer el resto sin cerrar. */
 export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlayerDialogProps) {
   const extra = index === null ? null : (extras[index] ?? null);
@@ -87,6 +90,18 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
 
   // Cada extra se abre con el texto plegado.
   useEffect(() => setInfoOpen(false), [index]);
+
+  // Salir de pantalla completa con Escape no debe cerrar también el visor: se ignora el Escape mientras hay pantalla completa
+  // y durante un instante después de salir (algunos navegadores entregan la tecla tras cerrar la pantalla completa).
+  const leftFullscreenAt = useRef(0);
+  useEffect(() => {
+    const onChange = () => { if (!document.fullscreenElement) leftFullscreenAt.current = performance.now(); };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  const handleEscape = (event: KeyboardEvent) => {
+    if (document.fullscreenElement || performance.now() - leftFullscreenAt.current < FULLSCREEN_ESCAPE_GRACE_MS) event.preventDefault();
+  };
 
   const counter = index !== null && extras.length > 1 ? `${index + 1} / ${extras.length}` : null;
   const goPrev = () => onIndexChange(index! - 1);
@@ -109,6 +124,7 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
+          onEscapeKeyDown={handleEscape}
           className={`${styles.content} fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain px-[var(--g)] outline-none [scrollbar-width:thin] [--reserve:210px] [@media(max-height:500px)_and_(min-width:760px)]:[--reserve:104px] [@media(max-height:500px)_and_(max-width:759px)]:[--reserve:172px] [--g:clamp(0px,calc(40vw_-_240px),104px)] w-[min(calc(100vw-32px),calc(1040px+2*var(--g)),calc((100dvh-var(--reserve))*1.7778+2*var(--g)))]`}
         >
           <div className="mb-3 flex items-center justify-between gap-4">
@@ -187,7 +203,7 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
               </button>
               <div id="extra-info" className={styles.info} data-open={infoOpen}>
                 <div className={styles.infoInner}>
-                  <p lang="es" className={`mt-4 w-full whitespace-pre-line break-words text-justify text-[15px] leading-[1.7] text-white/75 hyphens-auto md:text-left md:text-[16px] md:hyphens-none md:[text-wrap:pretty] [@media(max-height:500px)]:hidden`}>
+                  <p lang="es" className={`mt-4 w-full md:max-w-[75ch] whitespace-pre-line break-words text-justify text-[15px] leading-[1.7] text-white/75 hyphens-auto md:text-left md:text-[16px] md:hyphens-none md:[text-wrap:pretty] [@media(max-height:500px)]:hidden`}>
                     {extra.description}
                   </p>
                 </div>
