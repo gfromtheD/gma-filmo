@@ -61,8 +61,8 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 - [x] Retirar las demostraciones del flujo de cuentas reales y revisar todas las pestañas, no solo «Mis títulos».
 - [x] Distinguir carga, cuenta vacía, dato todavía no disponible y error de consulta; un error no debe convertirse en una cifra ficticia ni en un cero presentado como verificado.
-- [ ] Definir la fuente y el cálculo de títulos, reproducciones, valoraciones, seguidores y almacenamiento. Si una métrica no existe todavía, ocultarla o indicarlo.
-- [ ] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02.
+- [x] Definir la fuente y el cálculo de títulos, reproducciones, valoraciones, seguidores y almacenamiento. Si una métrica no existe todavía, ocultarla o indicarlo. **Hecho:** la audiencia la calcula `gma_creator_audience` (migración 20261030; espectadores = cuentas distintas, valoración = media de votos, comentarios = no borrados) y la sirve `/api/creator/audience` (`lib/studio/audience.ts`). Lo que no tiene fuente se indica. *(3/11/2026)*
+- [x] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02. **Hecho:** `StorageCard` recibe los bytes usados y los que se están liberando, calculados por el motor (cuota en `gma_upload_quota`). *(3/11/2026)*
 - [ ] Comprobar una cuenta nueva sin contenido, una con actividad y una con error de conexión; no mostrar identidades ajenas durante la carga.
 
 ## SUB-01 / SUB-02 — Subidas: prioridad esencial
@@ -118,29 +118,29 @@ No consta una medición de que el despliegue pueda completar esos tamaños. Hay 
 
 ### Desglose del diagnóstico esencial
 
-- [ ] SUB-01.1 Preparar ejecución local y registrar versiones, entorno y cuenta de prueba; no hacer pruebas grandes contra contenido real sin un espacio de prueba definido.
-- [ ] SUB-01.2 Reproducir la incidencia con un vídeo pequeño y guardar fase exacta, HTTP, error de navegador y registro de servidor, sin tokens ni URLs firmadas en el documento público.
-- [ ] SUB-01.3 Seguir selección → detección → autenticación → firma → CORS/PUT → confirmación → publicación → catálogo → reproducción → muro del creador.
+- [x] SUB-01.1 Preparar ejecución local y registrar versiones, entorno y cuenta de prueba; no hacer pruebas grandes contra contenido real sin un espacio de prueba definido. **Descartado:** superado; el motor trae su propio entorno aislado (Supabase local, runner, fixtures) en `docs/media/RUNBOOK.md`. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-01.2 Reproducir la incidencia con un vídeo pequeño y guardar fase exacta, HTTP, error de navegador y registro de servidor, sin tokens ni URLs firmadas en el documento público. **Descartado:** el flujo que fallaba (pasarela orbital + `/api/upload/presign`) ya no existe: el componente se eliminó y esa ruta responde 410 con el motor activo. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-01.3 Seguir selección → detección → autenticación → firma → CORS/PUT → confirmación → publicación → catálogo → reproducción → muro del creador. **Hecho por el motor:** el recorrido completo (reserva, transporte, recepción, publicación, catálogo, HLS) está cubierto por E01/E02 y las suites (`docs/media/REVISION-ENTREGA.md`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-01.4 Inventariar todas las rutas de subida y sus consumidores, incluidos avatar, formularios alternativos y llamadas fuera de la interfaz orbital. Auditoría local del 5 de octubre: presign/orbital y file utilizado por los dos formularios de avatar; véase el informe de investigación.
-- [ ] SUB-01.5 Comprobar políticas y valores reales en Vercel/R2: plan, operación PUT o multipart, tamaños, duración, expiración, orígenes, permisos, memoria cuando intervenga servidor y costes/capacidad. Registrar fuente oficial y fecha en la revisión futura.
-- [ ] SUB-01.6 Comprobar tablas, columnas, función RPC, permisos y relación de propiedad en el Supabase desplegado; no asumir que las migraciones locales ya se ejecutaron.
-- [ ] SUB-01.7 Medir concurrencia, velocidad, tiempo, fallos y almacenamiento con muestras crecientes y redes distintas. Definir capacidad verificada con condiciones concretas, no solo un número máximo.
-- [ ] SUB-01.8 Entregar diagnóstico y decisión de arquitectura antes de rehacer el motor. Conservar lo que se haya demostrado útil y justificar cada cambio.
+- [~] SUB-01.5 Comprobar políticas y valores reales en Vercel/R2: plan, operación PUT o multipart, tamaños, duración, expiración, orígenes, permisos, memoria cuando intervenga servidor y costes/capacidad. Registrar fuente oficial y fecha en la revisión futura. **Abierto en parte:** R2 funciona en producción desde el 20/10 con bucket privado; falta dejar por escrito plan Vercel, CORS y orígenes verificados.
+- [x] SUB-01.6 Comprobar tablas, columnas, función RPC, permisos y relación de propiedad en el Supabase desplegado; no asumir que las migraciones locales ya se ejecutaron. **Hecho el 3/11/2026:** la base real tiene 22 tablas `gma_*` (sesiones, borradores, assets, cuota, ledger, política, jobs, métricas…) y 51 funciones `gma_*`. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [~] SUB-01.7 Medir concurrencia, velocidad, tiempo, fallos y almacenamiento con muestras crecientes y redes distintas. Definir capacidad verificada con condiciones concretas, no solo un número máximo. **Abierto en parte:** la capacidad de reproducción está medida (≈260 espectadores en 1080p); la de subida simultánea no.
+- [x] SUB-01.8 Entregar diagnóstico y decisión de arquitectura antes de rehacer el motor. Conservar lo que se haya demostrado útil y justificar cada cambio. **Hecho:** decisión de arquitectura tomada y aplicada: motor neutral (reserva, transporte tus/uploadx/multipart, recepción autoritativa, publicación por UUID). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 
 **Investigación del 5 de octubre:** [informe del motor de subidas](investigacion-subidas/INFORME-MOTOR-SUBIDAS.md), basado en `25b706e`. Incluye veinte hallazgos correlacionados con archivos, límites oficiales, alternativa Stream+tus/R2 condicionada a calidad y coste, modelo/contratos, plan y matriz de pruebas. Vercel confirmado Hobby con Fluid; R2/Supabase solo presencia de variables, sin verificación administrativa. SUB-01.5 está parcialmente revisado; SUB-01.8 tiene dictamen documental y queda abierto hasta validar infraestructura/capacidad y decisiones. No marcar SUB-01 ni SUB-02 como resueltos.
 
 ### Estructura objetivo a diseñar
 
-- [ ] SUB-02.1 Una sesión de subida vinculada al usuario, con inventario de todos los archivos y estado persistente; distinguir archivo recibido de contenido publicado.
-- [ ] SUB-02.2 Reserva de cuota en servidor antes de firmar, control de concurrencia y conciliación con bytes reales. Definir liberación de reservas tras error, cancelación o expiración.
-- [ ] SUB-02.3 Política única de tamaños y tipos aplicada en interfaz y servidor. Decidir si los valores actuales se mantienen después de medirlos; no subir límites por intuición.
-- [ ] SUB-02.4 Transferencia directa y, si el diagnóstico lo justifica, multipart/reanudación para archivos grandes; reintentos limitados, cancelación real y manejo de sesión expirada.
-- [ ] SUB-02.5 Confirmación desde servidor de objetos, tamaño, tipo y propietario antes de publicar; proteger publicación frente a doble clic o reintento.
-- [ ] SUB-02.6 Asociación persistente de vídeo, tráiler, extras, intro, ambos pósteres y subtítulos, con cardinalidad y orden definidos.
-- [ ] SUB-02.7 Limpieza de objetos huérfanos y retirada coherente de archivos al reemplazar, cancelar o eliminar una película.
-- [ ] SUB-02.8 Borradores aislados por usuario y contenido; recuperación verificable y sin compartir restos entre cuentas.
-- [ ] SUB-02.9 Interfaz de subida reconstruida con pasos comprensibles, límites visibles antes de seleccionar, progreso por archivo, errores concretos y controles de reintento/cancelación.
-- [ ] SUB-02.10 Registros con identificador de operación y métricas de éxito/fallo por fase; no exponer secretos.
+- [x] SUB-02.1 Una sesión de subida vinculada al usuario, con inventario de todos los archivos y estado persistente; distinguir archivo recibido de contenido publicado. **Mejor:** `gma_upload_sessions` + `gma_upload_drafts` + `gma_draft_media` guardan inventario y estado persistentes, vinculados al propietario. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.2 Reserva de cuota en servidor antes de firmar, control de concurrencia y conciliación con bytes reales. Definir liberación de reservas tras error, cancelación o expiración. **Mejor:** reserva, confirmación y liberación únicas de cuota en `gma_upload_quota` / `gma_upload_ledger`, con idempotencia. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.3 Política única de tamaños y tipos aplicada en interfaz y servidor. Decidir si los valores actuales se mantienen después de medirlos; no subir límites por intuición. **Mejor:** política única en `lib/uploads/policy.ts` y `gma_upload_policy`, más límites por hueco (migración 20261103). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.4 Transferencia directa y, si el diagnóstico lo justifica, multipart/reanudación para archivos grandes; reintentos limitados, cancelación real y manejo de sesión expirada. **Mejor:** transportes tus, uploadx y multipart; trozos de 32 MiB (20261105), reanudación con reintento y cancelación. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.5 Confirmación desde servidor de objetos, tamaño, tipo y propietario antes de publicar; proteger publicación frente a doble clic o reintento. **Mejor:** el asset solo pasa a `ready` con el recibo del proveedor y la publicación exige `ready` y propietario (función `gma_upload_command`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.6 Asociación persistente de vídeo, tráiler, extras, intro, ambos pósteres y subtítulos, con cardinalidad y orden definidos. **Mejor:** `gma_draft_media` → `gma_title_media` con roles main, trailer, extras, extra_image, intro, poster, poster_h/v, subtitles, avatar y banner. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.7 Limpieza de objetos huérfanos y retirada coherente de archivos al reemplazar, cancelar o eliminar una película. **Mejor:** reconciliador y ejecutor de jobs (`gma_upload_jobs`), provisión caducada y borrado durable de títulos. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [~] SUB-02.8 Borradores aislados por usuario y contenido; recuperación verificable y sin compartir restos entre cuentas. **Parcial:** en el servidor sí (cada borrador es de su propietario), pero el borrador del NAVEGADOR sigue en `localStorage` con una clave común (`gma-studio-upload-draft`), sin separar por cuenta: en un equipo compartido un usuario vería los textos del borrador del anterior (los archivos no se restauran).
+- [x] SUB-02.9 Interfaz de subida reconstruida con pasos comprensibles, límites visibles antes de seleccionar, progreso por archivo, errores concretos y controles de reintento/cancelación. **Mejor:** pasarela de 3 pasos + revisión (`components/features/studio/upload/`), con progreso por archivo y errores traducidos (`lib/uploads/user-messages.ts`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [~] SUB-02.10 Registros con identificador de operación y métricas de éxito/fallo por fase; no exponer secretos. **Parcial:** hay registro por fase en la reserva (`[uploads] reserva`), `gma_video_metrics` y mensajes de fallo; faltan métricas de éxito/fallo agregadas por fase.
 
 ### Pruebas de aceptación que deberán ejecutarse
 
@@ -223,10 +223,10 @@ Todas estas pruebas están pendientes. Guardar resultado esperado/real, entorno,
 
 **Trabajo y aceptación.**
 
-- [ ] Diseñar la relación estable entre cuenta creadora, perfil público y obra; no identificar personas solo por coincidencia de nombres.
+- [~] Diseñar la relación estable entre cuenta creadora, perfil público y obra; no identificar personas solo por coincidencia de nombres. **Parcial / cambia de enfoque:** el diseño vigente son las «cuentas gestionadas» (`docs/DIRECTORES-GESTIONADOS.md`): el crédito de cada obra es el nombre de creador de la cuenta y enlaza con `artistas` por nombre, con la ficha de Mi Estudio como fuente de la página. Sigue habiendo una coincidencia por nombre, controlada por el equipo; la relación por identificador estable queda sin hacer. *(3/11/2026)*
 - [ ] Comprobar y resolver la coexistencia de `creator_profiles`, `creator_public_profiles` y `artistas`, incluido contenido histórico y autores colaboradores.
-- [ ] Inventariar todas las apariciones de nombres y añadir navegación coherente en fichas, créditos, Home y demás vistas que los muestren.
-- [ ] Definir qué hacer cuando un crédito histórico carezca de perfil; no fabricar una URL inexistente.
+- [~] Inventariar todas las apariciones de nombres y añadir navegación coherente en fichas, créditos, Home y demás vistas que los muestren. **Parcial:** enlazan los créditos de la ficha, del hero y del reproductor cuando hay slug; falta comprobar Home y las demás vistas una a una. *(3/11/2026)*
+- [x] Definir qué hacer cuando un crédito histórico carezca de perfil; no fabricar una URL inexistente. **Hecho (4/10/2026):** los nombres sin ficha identificada obtienen una página estable sin inventar biografía, foto ni redes; y solo existen fichas de personas con un corto asociado (404 en el resto). *(3/11/2026)*
 - [ ] Evolucionar la página actual a la presentación de muro solicitada, con redes funcionales y lista de obras reales, orden y selección claros.
 - [ ] Vincular las nuevas subidas automáticamente al muro del propietario, sin mantener listas manuales que queden desactualizadas.
 - [ ] Revisar caché e invalidación: el perfil está cacheado durante una hora y publicar actualmente invalida `peliculas`; comprobar cuándo se actualizan perfil, identidad y obras.
@@ -238,9 +238,9 @@ Todas estas pruebas están pendientes. Guardar resultado esperado/real, entorno,
 
 **Archivos relacionados.** `app/globals.css`, `components/layout/app-shell.tsx`, `components/layout/navbar.tsx`, `components/ui/landing-hero.tsx`, `components/features/studio/studio-ui.tsx` y las vistas de estudio, ficha y creador anteriores.
 
-- [ ] Definir alcance y referencias visuales antes de un rediseño global.
+- [x] Definir alcance y referencias visuales antes de un rediseño global. **Superado:** la dirección visual se definió y aplicó por piezas (paleta negra con aurora, Satoshi, bienvenida, Mi Estudio, Mi lista, intro); está recogida en `docs/PENDIENTES-EXTRAS.md`. No hay un rediseño global pendiente. *(3/11/2026)*
 - [ ] Revisar jerarquía, consistencia, formularios, estados vacíos/error, contraste, teclado y tamaños en móvil/escritorio.
-- [ ] Integrar las mejoras visuales de invitado, subidas y muro con una navegación coherente.
+- [~] Integrar las mejoras visuales de invitado, subidas y muro con una navegación coherente. **Hecho en lo esencial:** bienvenida con invitado, pasarela de subida nueva y muro de creador comparten la misma paleta y navegación. *(3/11/2026)*
 - [ ] Validar los recorridos esenciales completos; no considerar terminado el frontend por la apariencia de una sola pantalla.
 
 ## Condiciones previas y orden propuesto para una futura ejecución
@@ -429,7 +429,7 @@ Estas casillas identifican cambios constatables en el código y comprobados en n
 - [x] Matriz de Chrome completada: 11 tamaños de móvil, horizontal, tablet y escritorio; 26 casos únicos superados al cerrar las incidencias.
 - [x] Cinco grupos recorridos con datos largos, formularios, filtros, listas, acciones, foco, ventanas y área visible reducida simulada.
 - [x] Compilación de producción y tipos correctos; 16 pruebas secundarias y 7 de apoyo superadas. Evidencia registrada en el documento de adaptación.
-- [ ] Registrar el despliegue, si se realiza, y verificar páginas públicas en la versión publicada.
+- [x] Registrar el despliegue, si se realiza, y verificar páginas públicas en la versión publicada. **Hecho:** desplegado en producción (`main`); consta cada despliegue del 3/11/2026 con su PR (143 a 151). *(3/11/2026)*
 - [ ] Comprobar físicamente Safari/iPhone, Chrome/Android y una tablet; declarar por separado cualquier prueba que solo sea emulada.
 
 La adaptación de `studio-upload-view.tsx` y `studio-upload-orbital.tsx` es visual. **SUB-01 y SUB-02 siguen pendientes:** no se ha reparado el motor ni verificado capacidad, cuota, reanudación o publicación real. Esta actualización tampoco implementa la configuración de cuentas de donación.
@@ -447,3 +447,27 @@ La adaptación de `studio-upload-view.tsx` y `studio-upload-orbital.tsx` es visu
 - **Versión 1 (hecha):** las imágenes de títulos publicados (póster, banner, imágenes de extras) siguen en el bucket privado de R2, pero la redirección `/api/media/<id>` se cachea (CDN 1 h, navegador 5 min), así que no cuesta una llamada a Vercel ni a la base de datos en cada vista. Coste añadido: cero.
 - [ ] Si el tráfico crece y las llamadas a funciones o las operaciones de R2 se acercan al límite gratuito: bucket público de R2 con dominio propio y caché inmutable, guardando la URL directa al publicar. Medir antes con el panel de Vercel (invocaciones de `/api/media`) y el de Cloudflare (operaciones clase B).
 - [ ] Trailers y extras en vídeo se quedan en el VPS (HLS); revisar ancho de banda del VPS si crece la audiencia.
+
+## Comparación con el motor actual (3/11/2026)
+
+El paquete del Mac (motor multimedia neutral) ya está integrado en el proyecto y en la base real. Este apartado compara lo que pedían los hallazgos y tareas anteriores con lo que hace hoy el código, y dice si lo actual es peor, igual o mejor. **Fuentes:** lectura del código y de las migraciones, comprobación de la base real (tablas y funciones), `docs/media/EVIDENCIAS-IMPLEMENTACION.md` y `REVISION-ENTREGA.md` (pruebas del Mac, no re-ejecutadas hoy).
+
+| Lo que se pedía (hallazgo) | Lo que hace hoy | Veredicto | Decisión |
+| --- | --- | --- | --- |
+| A. Sesión y concurrencia: `sessionUsed` del cliente, sin reserva central | Reserva de cuota y política de sesiones activas en base de datos (`gma_upload_quota`, 20261102) | Mejor | Descartado |
+| B. Cuota incompleta: solo `file_size_bytes` del principal | Ledger de cuota por asset, incluye secundarios y liberación al cancelar o caducar | Mejor | Descartado |
+| C. Publicación sin verificar objeto ni propietario | La publicación exige assets `ready`, del propietario y con ficha válida (función `gma_upload_command`) | Mejor | Descartado |
+| D. Archivos secundarios desconectados | Roles y huecos persistentes hasta `gma_title_media` | Mejor | Descartado |
+| E. Eliminar o cambiar archivo no avisa al formulario; borrar título no borra R2 | Retirada reversible, republish y borrado durable de objetos (fase 2.6 de las evidencias) | Mejor | Descartado |
+| F. Sin multipart ni reanudación; borrador con clave común | Transportes tus/uploadx/multipart con reanudación y cancelación. **Borrador del navegador: sigue con clave común** | Mejor, salvo el borrador local | Descartado salvo el borrador (abierto en SUB-02.8) |
+| G. Validación débil de archivo y duración | Validación de auxiliares compartida (`auxiliary-validation.ts`), duración medida por el servidor al publicar, FFmpeg/ffprobe en el procesado | Mejor | Descartado |
+| H. Causa del fallo comunicado sin reproducir | El flujo original ya no existe; las subidas a R2 funcionan en producción desde el 20/10 | No aplica | Descartado |
+| EXT-02: enviar cada extra a `POST /api/extras` | El motor guarda tráiler, extras e imágenes en `gma_title_media` y la ficha los lee con `mapEngineExtras` (una sola transacción, solo si están `ready`, vídeo por HLS privado) | Mejor en robustez; **peor en metadatos**: los extras salen como «Extra 1» sin título, tipo ni descripción propios | Descartado como estaba; queda abierto añadir título, tipo y descripción por extra |
+| Pasarela antigua (orbital + `/api/upload/presign` y `/file`) | Orbital eliminada; `/presign` responde 410 con el motor activo; `/file` solo la usan los avatares | Mejor | Descartado; plan: retirar `/presign` cuando no haga falta el respaldo |
+
+**Lo que sigue abierto de verdad (hallado en esta comparación):**
+1. Borrador del navegador sin separar por cuenta (SUB-02.8).
+2. Extras sin título, tipo ni descripción propios, sin orden, ocultar o borrar desde Studio y sin miniatura para los vídeos.
+3. Capacidad de subida simultánea sin medir, y políticas de Vercel/R2/CORS sin dejar por escrito (SUB-01.5 y SUB-01.7).
+4. Métricas agregadas por fase (SUB-02.10).
+5. Pruebas con dispositivos físicos y matriz de aceptación sin repetir hoy (cubiertas por las suites del Mac, no re-ejecutadas).

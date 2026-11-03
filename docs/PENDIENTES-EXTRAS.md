@@ -9,7 +9,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 | ID | Sección | Prioridad | Estado | Dependencias |
 | --- | --- | --- | --- | --- |
 | EXT-01 | Eliminar los extras de muestra antes de publicar | Esencial | **Resuelto (3/11/2026)** | Ninguna |
-| EXT-02 | Conectar Studio y la publicación con los extras | Esencial | Bloqueado | Paquete del Mac (motor de subidas / MediaProvider) |
+| EXT-02 | Conectar Studio y la publicación con los extras | Esencial | **Resuelto por el motor (3/11/2026)**; abierto: título, tipo y descripción por extra | Ninguna |
 | EXT-03 | Revisiones y pruebas antes de desplegar | Alta | Pendiente | EXT-01 |
 | EXT-04 | Tipo de archivo explícito (imagen o vídeo) | Normal | Pendiente | EXT-02 |
 | EXT-05 | Validación en dispositivos reales | Alta | Pendiente | Ninguna |
@@ -41,11 +41,11 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 **Trabajo y aceptación.**
 
-- [ ] Tras publicar el título (o al añadir extras a uno existente), enviar cada extra subido a `POST /api/extras` con `peliculaId`, `title`, `kind`, `videoUrl` (la `publicUrl` de la subida), `provider`, `mediaRef`, `posterUrl`, `durationSeconds` y `fileSizeBytes`.
-- [ ] Decidir si la creación va dentro de la RPC de publicación (una sola transacción) o como llamadas posteriores a la API.
-- [ ] Alinear con el `MediaProvider` del paquete del Mac: `provider` (`r2`, `stream`, `peertube`, `external`) y `media_ref` ya están en la tabla para no depender de R2.
+- [x] Tras publicar el título (o al añadir extras a uno existente), enviar cada extra subido a `POST /api/extras` con `peliculaId`, `title`, `kind`, `videoUrl` (la `publicUrl` de la subida), `provider`, `mediaRef`, `posterUrl`, `durationSeconds` y `fileSizeBytes`. **Descartado:** el motor ya guarda los extras en `gma_title_media` (roles `extras` y `extra_image`) y la ficha los lee con `mapEngineExtras`; no hace falta llamar a `POST /api/extras`. *(3/11/2026)*
+- [x] Decidir si la creación va dentro de la RPC de publicación (una sola transacción) o como llamadas posteriores a la API. **Decidido:** dentro de la publicación del motor (una sola transacción). *(3/11/2026)*
+- [x] Alinear con el `MediaProvider` del paquete del Mac: `provider` (`r2`, `stream`, `peertube`, `external`) y `media_ref` ya están en la tabla para no depender de R2. **Hecho:** roles y proveedores neutrales en el motor. *(3/11/2026)*
 - [ ] Permitir en Studio editar el orden, ocultar o borrar extras (la API ya admite PATCH y DELETE).
-- [ ] Generar miniatura y duración del vídeo al subirlo (hoy el póster es opcional y la duración puede quedar vacía).
+- [~] Generar miniatura y duración del vídeo al subirlo (hoy el póster es opcional y la duración puede quedar vacía). **Parcial:** la duración ya se guarda por asset (`duration_seconds`); falta la miniatura de los vídeos. *(3/11/2026)*
 - [ ] Probar el flujo completo: subir, publicar, ver el extra en la ficha, borrarlo.
 
 ## EXT-03 — Revisiones y pruebas antes de desplegar
