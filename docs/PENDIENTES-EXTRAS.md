@@ -79,9 +79,9 @@ Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.1
 
 - [ ] Deslizar el dedo para cambiar de extra en móvil (en imágenes es sencillo; en vídeos choca con los gestos del reproductor).
 - [ ] El vídeo arranca solo y con sonido al abrir un extra; valorar empezar en pausa.
-- [ ] Salir de pantalla completa con Escape también cierra el visor.
+- [x] (3/11/2026, sin probar en navegador real) Salir de pantalla completa con Escape ya no cierra el visor: se ignora el Escape durante la pantalla completa y 400 ms después de salir (`extras-player-dialog.tsx`). Comprobar en Chrome, Firefox y Safari.
 - [ ] El tipo del extra (Making of, Entrevista…) ya no se ve en las tarjetas, solo «Vídeo» o «Imagen»; sigue guardado en la base de datos.
-- [ ] Descripción en escritorio: una sola columna a todo el ancho (líneas largas, unos 120 caracteres). Valorar un ancho máximo.
+- [x] (3/11/2026) Descripción en escritorio: ancho máximo de 75 caracteres por línea.
 - [ ] La descripción admite 500 caracteres como máximo (límite de la tabla).
 - [ ] Revisión de accesibilidad completa del visor (foco al abrir y al cerrar, lectores de pantalla).
 
