@@ -11,7 +11,7 @@ async function openHome(page: Page) {
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
 
-const topTen = (page: Page) => page.locator('section[aria-label="Top 10 en GMA"]');
+const topTen = (page: Page) => page.locator('section[aria-label="Selección de GMA"]');
 
 async function slotWidths(page: Page): Promise<number[]> {
   return topTen(page).locator("article").evaluateAll((els) =>
@@ -75,8 +75,8 @@ test("orden de las filas: recién llegados, Top 10, recomendaciones y, al final,
   const titles = await page.getByRole("main").getByRole("heading", { level: 2 }).allInnerTexts();
   const at = (text: string) => titles.findIndex((t) => t.trim() === text);
   expect(at("Recién llegados")).toBeGreaterThanOrEqual(0);
-  expect(at("Recién llegados")).toBeLessThan(at("Top 10 en GMA"));
-  expect(at("Top 10 en GMA")).toBeLessThan(at("Colecciones para ti"));
+  expect(at("Recién llegados")).toBeLessThan(at("Selección de GMA"));
+  expect(at("Selección de GMA")).toBeLessThan(at("Colecciones para ti"));
   // Cualquier fila recomendada (Porque viste…, Más de…, Creemos que…) queda entre el Top 10 y las colecciones.
   expect(titles.at(-1)?.trim()).toBe("Colecciones para ti");
 });
