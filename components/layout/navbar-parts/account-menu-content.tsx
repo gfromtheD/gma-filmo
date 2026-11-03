@@ -25,7 +25,7 @@ interface AccountMenuContentProps {
   readonly avatarIconId?: string;
   readonly isCreator: boolean;
   readonly isSigningOut: boolean;
-  /** Solo para creadores: avisos de valoraciones de sus obras. */
+  /** Avisos: respuestas a sus comentarios y, para creadores, valoraciones de sus obras. */
   readonly notifications: { readonly items: readonly AppNotification[]; readonly unread: number; readonly isLoaded: boolean; readonly onMarkAllRead: () => void };
   readonly onSignOut: () => void;
 }
@@ -121,12 +121,10 @@ export function AccountMenuContent({
               </Link>
             </DropdownMenu.Item>
           )}
-          {isCreator && (
-            <NotificationsSubmenu
-              items={notifications.items} unread={notifications.unread} isLoaded={notifications.isLoaded}
-              itemClassName={ITEM_CLASS} onMarkAllRead={notifications.onMarkAllRead}
-            />
-          )}
+          <NotificationsSubmenu
+            items={notifications.items} unread={notifications.unread} isLoaded={notifications.isLoaded} isCreator={isCreator}
+            itemClassName={ITEM_CLASS} onMarkAllRead={notifications.onMarkAllRead}
+          />
           <DropdownMenu.Item asChild>
             <Link href="/configuracion" className={ITEM_CLASS}>
               <Settings {...ICON_PROPS} />

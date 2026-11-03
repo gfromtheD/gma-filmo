@@ -9,6 +9,9 @@ export interface AppNotification {
   readonly id: string;
   readonly kind: NotificationKind;
   readonly score: number | null;
+  /** Comentario nuevo (solo en avisos de respuestas) y @ de quien respondió. */
+  readonly commentId: number | null;
+  readonly actorName: string | null;
   readonly createdAt: string;
   readonly isRead: boolean;
   readonly film: { readonly slug: string; readonly title: string };
@@ -23,8 +26,8 @@ async function authHeader(): Promise<Record<string, string>> {
 }
 
 /**
- * Notificaciones del usuario (hoy: valoraciones de sus obras). Se cargan al entrar, cada minuto con la pestaña
- * visible y al volver a ella. `enabled`: solo los creadores las reciben, así que para el resto no se pide nada.
+ * Notificaciones del usuario (valoraciones de sus obras, si es creador, y respuestas a sus comentarios). Se cargan al
+ * entrar, cada minuto con la pestaña visible y al volver a ella. `enabled`: los invitados no las tienen, así que no se pide nada.
  */
 export function useNotifications(enabled: boolean) {
   const userId = useSupabaseUserId();

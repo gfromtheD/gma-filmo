@@ -39,7 +39,7 @@ export function Navbar() {
   const isGuest      = useIsGuest();
   const isKnownDevice = useIsKnownDevice();
   const { isCreator } = useIsCreator();
-  const notifications = useNotifications(isCreator && !isGuest);
+  const notifications = useNotifications(!isGuest);
   const setChipPos   = useTransitionStore((s) => s.setChipPos);
   const phase        = useTransitionStore((s) => s.phase);
   const chipBtnRef   = useRef<HTMLButtonElement>(null);
