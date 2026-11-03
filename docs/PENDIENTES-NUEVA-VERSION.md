@@ -138,7 +138,7 @@ No consta una medición de que el despliegue pueda completar esos tamaños. Hay 
 - [x] SUB-02.5 Confirmación desde servidor de objetos, tamaño, tipo y propietario antes de publicar; proteger publicación frente a doble clic o reintento. **Mejor:** el asset solo pasa a `ready` con el recibo del proveedor y la publicación exige `ready` y propietario (función `gma_upload_command`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-02.6 Asociación persistente de vídeo, tráiler, extras, intro, ambos pósteres y subtítulos, con cardinalidad y orden definidos. **Mejor:** `gma_draft_media` → `gma_title_media` con roles main, trailer, extras, extra_image, intro, poster, poster_h/v, subtitles, avatar y banner. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-02.7 Limpieza de objetos huérfanos y retirada coherente de archivos al reemplazar, cancelar o eliminar una película. **Mejor:** reconciliador y ejecutor de jobs (`gma_upload_jobs`), provisión caducada y borrado durable de títulos. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
-- [~] SUB-02.8 Borradores aislados por usuario y contenido; recuperación verificable y sin compartir restos entre cuentas. **Parcial:** en el servidor sí (cada borrador es de su propietario), pero el borrador del NAVEGADOR sigue en `localStorage` con una clave común (`gma-studio-upload-draft`), sin separar por cuenta: en un equipo compartido un usuario vería los textos del borrador del anterior (los archivos no se restauran).
+- [x] SUB-02.8 Borradores aislados por usuario y contenido; recuperación verificable y sin compartir restos entre cuentas. **Resuelto el 3/11/2026:** el borrador del navegador se guarda ahora por cuenta (`gma-studio-upload-draft:<id>`); el antiguo, de clave común y dueño desconocido, se borra al primer acceso (`lib/studio/draft-storage.ts`, `store/use-upload-draft-store.ts`, tests en `e2e/unit/draft-per-account.spec.ts`). En el servidor ya era por propietario.
 - [x] SUB-02.9 Interfaz de subida reconstruida con pasos comprensibles, límites visibles antes de seleccionar, progreso por archivo, errores concretos y controles de reintento/cancelación. **Mejor:** pasarela de 3 pasos + revisión (`components/features/studio/upload/`), con progreso por archivo y errores traducidos (`lib/uploads/user-messages.ts`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [~] SUB-02.10 Registros con identificador de operación y métricas de éxito/fallo por fase; no exponer secretos. **Parcial:** hay registro por fase en la reserva (`[uploads] reserva`), `gma_video_metrics` y mensajes de fallo; faltan métricas de éxito/fallo agregadas por fase.
 
@@ -459,17 +459,28 @@ El paquete del Mac (motor multimedia neutral) ya está integrado en el proyecto 
 | C. Publicación sin verificar objeto ni propietario | La publicación exige assets `ready`, del propietario y con ficha válida (función `gma_upload_command`) | Mejor | Descartado |
 | D. Archivos secundarios desconectados | Roles y huecos persistentes hasta `gma_title_media` | Mejor | Descartado |
 | E. Eliminar o cambiar archivo no avisa al formulario; borrar título no borra R2 | Retirada reversible, republish y borrado durable de objetos (fase 2.6 de las evidencias) | Mejor | Descartado |
-| F. Sin multipart ni reanudación; borrador con clave común | Transportes tus/uploadx/multipart con reanudación y cancelación. **Borrador del navegador: sigue con clave común** | Mejor, salvo el borrador local | Descartado salvo el borrador (abierto en SUB-02.8) |
+| F. Sin multipart ni reanudación; borrador con clave común | Transportes tus/uploadx/multipart con reanudación y cancelación. Borrador del navegador: ya por cuenta (3/11/2026) | Mejor | Descartado |
 | G. Validación débil de archivo y duración | Validación de auxiliares compartida (`auxiliary-validation.ts`), duración medida por el servidor al publicar, FFmpeg/ffprobe en el procesado | Mejor | Descartado |
 | H. Causa del fallo comunicado sin reproducir | El flujo original ya no existe; las subidas a R2 funcionan en producción desde el 20/10 | No aplica | Descartado |
 | EXT-02: enviar cada extra a `POST /api/extras` | El motor guarda tráiler, extras e imágenes en `gma_title_media` y la ficha los lee con `mapEngineExtras` (una sola transacción, solo si están `ready`, vídeo por HLS privado) | Mejor en robustez; **peor en metadatos**: los extras salen como «Extra 1» sin título, tipo ni descripción propios | Descartado como estaba; queda abierto añadir título, tipo y descripción por extra |
 | Pasarela antigua (orbital + `/api/upload/presign` y `/file`) | Orbital eliminada; `/presign` responde 410 si `UPLOAD_ENGINE_V2` está activo (la variable existe en producción; su valor está oculto); **`/api/upload/file` no tiene ningún llamador en el código** (los avatares se reducen en el navegador y van por `/api/avatar`) | Mejor | Descartado; candidatas a retirar `/presign` y `/file` |
 
 **Lo que sigue abierto de verdad (hallado en esta comparación):**
-1. Borrador del navegador sin separar por cuenta (SUB-02.8).
+1. ~~Borrador del navegador sin separar por cuenta~~ (resuelto el 3/11/2026).
 2. Extras sin título, tipo ni descripción propios, sin orden, ocultar o borrar desde Studio y sin miniatura para los vídeos.
 3. Tarjeta de almacenamiento de Mi Estudio sin leer el consumo real del motor (`used_bytes`).
 3b. Capacidad de subida simultánea sin medir, y políticas de Vercel/R2/CORS sin dejar por escrito (SUB-01.5 y SUB-01.7).
 4. Métricas agregadas por fase (SUB-02.10).
 5. Rutas antiguas sin uso (`/api/upload/file`, `/api/upload/presign`) por retirar.
 6. Pruebas con dispositivos físicos y matriz de aceptación sin repetir hoy (cubiertas por las suites del Mac, no re-ejecutadas).
+
+## Pruebas de navegador sobre lo desplegado el 3/11/2026
+
+Se ejecutaron 152 pruebas (carruseles, filas, catálogo, extras, comentarios, valoraciones, tipografía, avatares) en la copia de pruebas con el código de `main`: **143 pasaron; 9 fallaron al principio y quedaron 4 tras repetirlas**. Las 4 también fallan en `454dc51`, antes del trabajo de hoy, así que **no las causó el trabajo de hoy**:
+
+| Prueba | Causa | Estado |
+| --- | --- | --- |
+| `catalog-grid-sizes` · Películas usa la misma cuadrícula | El primer `div.grid` de la página es la barra superior (3 columnas), no el catálogo | **Arreglada** (el selector busca la cuadrícula del catálogo) |
+| `catalog-filter-pills` · forma de píldora | Pruebas antiguas: el rediseño de botones rectangulares (`c9f3a2e`) pasó las píldoras a 4 px | **Actualizada** a «mismo alto y radio de 4 px» |
+| `catalog-filter-pills` · sin «N resultados» por defecto | Tiempo de espera de 60 s al abrir la página en el servidor de desarrollo | Sin arreglar: parece lentitud del primer arranque, falta repetirla |
+| `filmin-layout` · panel flotante clicable | El clic en la zona de texto del panel no lleva a la ficha (se queda en `/inicio`) | **Sin resolver:** no he podido decidir si es un fallo de la web o del tiempo de la animación |

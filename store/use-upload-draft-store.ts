@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/studio/draft-storage";
+import { clearDraft, DRAFT_STORAGE_KEY, loadDraft, saveDraft } from "@/lib/studio/draft-storage";
 import { emptyDraft, type UploadDraft } from "@/lib/studio/upload-draft";
 
 /** Como mucho un guardado en `localStorage` cada medio segundo, también mientras una subida cambia el borrador sin parar. */
@@ -16,10 +16,12 @@ interface UploadDraftStore {
   draft: UploadDraft;
   /** Ya se leyó de `localStorage` (en el servidor no existe). */
   isReady: boolean;
+  /** Cuenta dueña del borrador cargado (cada cuenta tiene el suyo en `localStorage`). */
+  ownerId: string | null;
   /** Último guardado en `localStorage` (ms). */
   savedAt: number | null;
-  /** Lee el borrador guardado; solo la primera vez en la vida de la pestaña. */
-  load: () => void;
+  /** Lee el borrador guardado de esa cuenta; solo una vez por cuenta en la vida de la pestaña. */
+  load: (userId: string) => void;
   setDraft: (next: UploadDraft | ((current: UploadDraft) => UploadDraft)) => void;
   /** Vacía el borrador (y lo guardado) para empezar otra obra. */
   reset: () => void;
@@ -33,7 +35,7 @@ export const useUploadDraftStore = create<UploadDraftStore>()((set, get) => {
     if (saveTimer) return;
     saveTimer = setTimeout(() => {
       saveTimer = null;
-      saveDraft(window.localStorage, get().draft);
+      saveDraft(window.localStorage, get().draft, get().ownerId);
       lastSave = Date.now();
       set({ savedAt: lastSave });
     }, Math.max(0, SAVE_DELAY_MS - (Date.now() - lastSave)));
@@ -41,10 +43,16 @@ export const useUploadDraftStore = create<UploadDraftStore>()((set, get) => {
   return {
     draft: emptyDraft(),
     isReady: false,
+    ownerId: null,
     savedAt: null,
-    load: () => {
-      if (get().isReady) return;
-      set({ draft: loadDraft(window.localStorage), isReady: true });
+    load: (userId) => {
+      if (get().isReady && get().ownerId === userId) return;
+      // Otra cuenta en la misma pestaña: se descarta lo pendiente de guardar de la anterior para no mezclar borradores.
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = null;
+      // El borrador de antes de separar por cuenta tenía una clave común: no se sabe de quién era, se borra.
+      try { window.localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* sin almacenamiento */ }
+      set({ draft: loadDraft(window.localStorage, userId), ownerId: userId, isReady: true });
     },
     setDraft: (next) => {
       set((state) => ({ draft: typeof next === "function" ? next(state.draft) : next }));
@@ -53,7 +61,7 @@ export const useUploadDraftStore = create<UploadDraftStore>()((set, get) => {
     reset: () => {
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = null;
-      clearDraft(window.localStorage);
+      clearDraft(window.localStorage, get().ownerId);
       set({ draft: emptyDraft() });
     },
   };
