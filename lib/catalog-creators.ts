@@ -77,7 +77,10 @@ export function addCatalogCredits(filmSlug: string, credits: readonly ArtistCred
   return result;
 }
 
-export function keepCreatorLinks(items: readonly MovieMedia[], catalog: readonly MovieMedia[]): MovieMedia[] {
-  const eligible = new Set(catalog.filter(film => film.genre === "Cortometraje").flatMap(film => film.artistas ?? []).map(credit => credit.slug));
+export function keepCreatorLinks(items: readonly MovieMedia[], catalog: readonly MovieMedia[], accountSlugs: ReadonlySet<string> = new Set()): MovieMedia[] {
+  const eligible = new Set([
+    ...catalog.filter(film => film.genre === "Cortometraje").flatMap(film => film.artistas ?? []).map(credit => credit.slug),
+    ...accountSlugs,
+  ]);
   return items.map(film => ({ ...film, artistas: film.artistas?.map(credit => ({ ...credit, slug: credit.slug && eligible.has(credit.slug) ? credit.slug : null })) }));
 }

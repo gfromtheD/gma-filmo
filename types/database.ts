@@ -41,6 +41,7 @@ export type Database = {
         Row: {
           user_id: string
           creator_name: string
+          slug: string | null
           donacion_bitcoin: string | null
           donacion_patreon: string | null
           donacion_paypal: string | null
@@ -61,6 +62,7 @@ export type Database = {
         Insert: {
           user_id: string
           creator_name: string
+          slug?: string | null
           donacion_bitcoin?: string | null
           donacion_patreon?: string | null
           donacion_paypal?: string | null
