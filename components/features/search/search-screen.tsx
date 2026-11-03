@@ -5,7 +5,7 @@ import { workPath } from "@/lib/catalog/work-path";
 import Link from "next/link";
 import { PosterCard } from "@/components/ui/poster-card";
 import { GmaIcon } from "@/components/ui/gma-icon";
-import { useCatalogFilters } from "@/hooks/use-catalog-filters";
+import { useSearchQueryStore } from "@/store/use-search-query-store";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { searchCreators, searchItems, suggestCorrection, tokenize } from "@/lib/search/search-engine";
 import type { MovieMedia } from "@/types/catalog";
@@ -26,8 +26,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function SearchScreen({ items }: SearchScreenProps) {
-  const { filters, updateFilters } = useCatalogFilters();
-  const query = filters.query;
+  const query = useSearchQueryStore((state) => state.query);
+  const setQuery = useSearchQueryStore((state) => state.setQuery);
   const deferredQuery = useDeferredValue(query);
   const inputRef = useRef<HTMLInputElement>(null);
   const { recent, remember, forget, clear } = useRecentSearches();
@@ -60,10 +60,6 @@ export function SearchScreen({ items }: SearchScreenProps) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
-
-  function setQuery(value: string) {
-    updateFilters({ query: value });
-  }
 
   function clearQuery() {
     setQuery("");
