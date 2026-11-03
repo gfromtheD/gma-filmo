@@ -5,7 +5,7 @@ import { getUserId } from "@/lib/api/auth";
 import { rateLimit } from "@/lib/api/rate-limit";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EXTRA_COLUMNS, fetchPublishedExtras } from "@/lib/extras/queries";
-import { ExtraInputSchema, inferMediaType, rowToExtra, type ExtraRow } from "@/lib/extras/extras";
+import { EXTRAS_MAX_PER_TITLE, ExtraInputSchema, inferMediaType, rowToExtra, type ExtraRow } from "@/lib/extras/extras";
 
 const PeliculaIdSchema = z.coerce.number().int().positive();
 const CreateSchema = ExtraInputSchema.extend({ peliculaId: z.number().int().positive() });
@@ -85,6 +85,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient();
+  const { count: existing } = await supabase
+    .from("pelicula_extras")
+    .select("id", { count: "exact", head: true })
+    .eq("pelicula_id", input.peliculaId);
+  if ((existing ?? 0) >= EXTRAS_MAX_PER_TITLE) {
+    return NextResponse.json({ ok: false, error: "Too many extras" }, { status: 409 });
+  }
   const { data: last } = await supabase
     .from("pelicula_extras")
     .select("sort_order")
