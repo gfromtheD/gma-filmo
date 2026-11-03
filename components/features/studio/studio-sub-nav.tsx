@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Dashboard as LayoutDashboard, Folder as Folders, CloudUpload, User } from "@/components/ui/icons";
+import { Dashboard as LayoutDashboard, Folder as Folders, CloudUpload, User, ChatBubble } from "@/components/ui/icons";
 import { C, row } from "./studio-ui";
 import type { StudioTabId } from "./studio-types";
 
@@ -10,6 +10,7 @@ export const STUDIO_TABS: { id: StudioTabId; label: string; icon: React.ReactNod
   { id: "inicio",       label: "Panel",        icon: <LayoutDashboard size={15} /> },
   { id: "titulos",      label: "Mis títulos",  icon: <Folders size={15} /> },
   { id: "subir",        label: "Subir",        icon: <CloudUpload size={15} /> },
+  { id: "comentarios",  label: "Comentarios",  icon: <ChatBubble size={15} /> },
   { id: "perfil",       label: "Ficha",        icon: <User size={15} /> },
 ];
 

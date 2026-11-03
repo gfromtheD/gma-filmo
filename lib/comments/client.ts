@@ -26,3 +26,44 @@ export async function patchComment(body: Record<string, unknown>): Promise<Patch
     return { ok: false, status: 0, error: "network", data: {} };
   }
 }
+
+/** `POST /api/comments/report`: denunciar un comentario ajeno. Denunciar dos veces el mismo cuenta como hecho. */
+export async function reportComment(commentId: number): Promise<boolean> {
+  try {
+    const res = await fetch("/api/comments/report", { method: "POST", headers: await authHeaders(), body: JSON.stringify({ commentId }) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** `POST /api/creator/moderation`: el creador descarta las denuncias de un comentario suyo o lo oculta. */
+export async function moderateComment(body: { commentId: number; action: "dismiss" | "hide" }): Promise<boolean> {
+  try {
+    const res = await fetch("/api/creator/moderation", { method: "POST", headers: await authHeaders(), body: JSON.stringify(body) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export interface ModerationQueueItem {
+  readonly commentId: number;
+  readonly content: string;
+  readonly authorName: string;
+  readonly reportCount: number;
+  readonly lastReportAt: string;
+  readonly film: { readonly slug: string; readonly title: string };
+}
+
+/** `GET /api/creator/moderation`: comentarios con denuncias pendientes en las obras del creador; `null` si falla. */
+export async function fetchModerationQueue(): Promise<ModerationQueueItem[] | null> {
+  try {
+    const res = await fetch("/api/creator/moderation", { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { items?: ModerationQueueItem[] };
+    return body.items ?? [];
+  } catch {
+    return null;
+  }
+}

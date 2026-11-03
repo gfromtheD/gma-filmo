@@ -20,6 +20,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { applyAudience, audienceSchema } from "@/lib/studio/audience";
 import { toStudioTitleStatus } from "@/lib/studio-media/title-status";
 import { editMetadata, type TitleEditForm } from "@/lib/studio/title-edit";
+import { ModerationView } from "./studio-moderation-view";
 import type { StudioTitle, StudioTabId, StudioData, TitleStatus } from "./studio-types";
 export type { StudioTabId };
 
@@ -328,6 +329,9 @@ export function StudioScreen() {
           <div hidden={active !== "subir"}>
             <UploadWizard isActive={active === "subir"} onGoToTitles={() => { handlePublished(); nav("titulos"); }} />
           </div>
+        )}
+        {active === "comentarios" && (
+          <ModerationView onToast={showToast} />
         )}
         {active === "perfil" && (
           <ProfileView data={data} onToast={showToast} />
