@@ -62,7 +62,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 - [x] Retirar las demostraciones del flujo de cuentas reales y revisar todas las pestañas, no solo «Mis títulos».
 - [x] Distinguir carga, cuenta vacía, dato todavía no disponible y error de consulta; un error no debe convertirse en una cifra ficticia ni en un cero presentado como verificado.
 - [x] Definir la fuente y el cálculo de títulos, reproducciones, valoraciones, seguidores y almacenamiento. Si una métrica no existe todavía, ocultarla o indicarlo. **Hecho:** la audiencia la calcula `gma_creator_audience` (migración 20261030; espectadores = cuentas distintas, valoración = media de votos, comentarios = no borrados) y la sirve `/api/creator/audience` (`lib/studio/audience.ts`). Lo que no tiene fuente se indica. *(3/11/2026)*
-- [x] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02. **Hecho:** `StorageCard` recibe los bytes usados y los que se están liberando, calculados por el motor (cuota en `gma_upload_quota`). *(3/11/2026)*
+- [~] Calcular almacenamiento desde los archivos reales y conectarlo con SUB-02. **Corregido el 3/11/2026 tras revisar el código:** el motor guarda el consumo real por cuenta (`gma_upload_quota.used_bytes`) y el límite sale de `gma_my_storage_limit`, pero la tarjeta de Mi Estudio (`StorageCard`) sigue sumando `file_size_bytes` de los títulos publicados (`storageOf` en `studio-screen.tsx`): no cuenta archivos secundarios ni subidas sin publicar. Falta leer `used_bytes` en la tarjeta.
 - [ ] Comprobar una cuenta nueva sin contenido, una con actividad y una con error de conexión; no mostrar identidades ajenas durante la carga.
 
 ## SUB-01 / SUB-02 — Subidas: prioridad esencial
@@ -132,7 +132,7 @@ No consta una medición de que el despliegue pueda completar esos tamaños. Hay 
 ### Estructura objetivo a diseñar
 
 - [x] SUB-02.1 Una sesión de subida vinculada al usuario, con inventario de todos los archivos y estado persistente; distinguir archivo recibido de contenido publicado. **Mejor:** `gma_upload_sessions` + `gma_upload_drafts` + `gma_draft_media` guardan inventario y estado persistentes, vinculados al propietario. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
-- [x] SUB-02.2 Reserva de cuota en servidor antes de firmar, control de concurrencia y conciliación con bytes reales. Definir liberación de reservas tras error, cancelación o expiración. **Mejor:** reserva, confirmación y liberación únicas de cuota en `gma_upload_quota` / `gma_upload_ledger`, con idempotencia. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
+- [x] SUB-02.2 Reserva de cuota en servidor antes de firmar, control de concurrencia y conciliación con bytes reales. Definir liberación de reservas tras error, cancelación o expiración. **Mejor en lo verificado:** reserva, confirmación y liberación de cuota por sesión y cuenta en `gma_upload_quota` (usados y reservados) y `gma_upload_ledger` (eventos), con idempotencia según las evidencias del Mac. No he comprobado que el consumo incluya los archivos secundarios. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-02.3 Política única de tamaños y tipos aplicada en interfaz y servidor. Decidir si los valores actuales se mantienen después de medirlos; no subir límites por intuición. **Mejor:** política única en `lib/uploads/policy.ts` y `gma_upload_policy`, más límites por hueco (migración 20261103). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-02.4 Transferencia directa y, si el diagnóstico lo justifica, multipart/reanudación para archivos grandes; reintentos limitados, cancelación real y manejo de sesión expirada. **Mejor:** transportes tus, uploadx y multipart; trozos de 32 MiB (20261105), reanudación con reintento y cancelación. *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
 - [x] SUB-02.5 Confirmación desde servidor de objetos, tamaño, tipo y propietario antes de publicar; proteger publicación frente a doble clic o reintento. **Mejor:** el asset solo pasa a `ready` con el recibo del proveedor y la publicación exige `ready` y propietario (función `gma_upload_command`). *(3/11/2026, comparado con el motor actual; ver «Comparación con el motor actual» al final)*
@@ -455,7 +455,7 @@ El paquete del Mac (motor multimedia neutral) ya está integrado en el proyecto 
 | Lo que se pedía (hallazgo) | Lo que hace hoy | Veredicto | Decisión |
 | --- | --- | --- | --- |
 | A. Sesión y concurrencia: `sessionUsed` del cliente, sin reserva central | Reserva de cuota y política de sesiones activas en base de datos (`gma_upload_quota`, 20261102) | Mejor | Descartado |
-| B. Cuota incompleta: solo `file_size_bytes` del principal | Ledger de cuota por asset, incluye secundarios y liberación al cancelar o caducar | Mejor | Descartado |
+| B. Cuota incompleta: solo `file_size_bytes` del principal | Cuota por cuenta en base de datos (`gma_upload_quota`) con reserva, confirmación y liberación al cancelar o caducar. **La tarjeta de Mi Estudio sigue sumando `file_size_bytes` de títulos** y no está comprobado que la cuota cuente los secundarios | Mejor en el motor; igual en la tarjeta | Descartado en el motor; abierto en la tarjeta |
 | C. Publicación sin verificar objeto ni propietario | La publicación exige assets `ready`, del propietario y con ficha válida (función `gma_upload_command`) | Mejor | Descartado |
 | D. Archivos secundarios desconectados | Roles y huecos persistentes hasta `gma_title_media` | Mejor | Descartado |
 | E. Eliminar o cambiar archivo no avisa al formulario; borrar título no borra R2 | Retirada reversible, republish y borrado durable de objetos (fase 2.6 de las evidencias) | Mejor | Descartado |
@@ -463,11 +463,13 @@ El paquete del Mac (motor multimedia neutral) ya está integrado en el proyecto 
 | G. Validación débil de archivo y duración | Validación de auxiliares compartida (`auxiliary-validation.ts`), duración medida por el servidor al publicar, FFmpeg/ffprobe en el procesado | Mejor | Descartado |
 | H. Causa del fallo comunicado sin reproducir | El flujo original ya no existe; las subidas a R2 funcionan en producción desde el 20/10 | No aplica | Descartado |
 | EXT-02: enviar cada extra a `POST /api/extras` | El motor guarda tráiler, extras e imágenes en `gma_title_media` y la ficha los lee con `mapEngineExtras` (una sola transacción, solo si están `ready`, vídeo por HLS privado) | Mejor en robustez; **peor en metadatos**: los extras salen como «Extra 1» sin título, tipo ni descripción propios | Descartado como estaba; queda abierto añadir título, tipo y descripción por extra |
-| Pasarela antigua (orbital + `/api/upload/presign` y `/file`) | Orbital eliminada; `/presign` responde 410 con el motor activo; `/file` solo la usan los avatares | Mejor | Descartado; plan: retirar `/presign` cuando no haga falta el respaldo |
+| Pasarela antigua (orbital + `/api/upload/presign` y `/file`) | Orbital eliminada; `/presign` responde 410 si `UPLOAD_ENGINE_V2` está activo (la variable existe en producción; su valor está oculto); **`/api/upload/file` no tiene ningún llamador en el código** (los avatares se reducen en el navegador y van por `/api/avatar`) | Mejor | Descartado; candidatas a retirar `/presign` y `/file` |
 
 **Lo que sigue abierto de verdad (hallado en esta comparación):**
 1. Borrador del navegador sin separar por cuenta (SUB-02.8).
 2. Extras sin título, tipo ni descripción propios, sin orden, ocultar o borrar desde Studio y sin miniatura para los vídeos.
-3. Capacidad de subida simultánea sin medir, y políticas de Vercel/R2/CORS sin dejar por escrito (SUB-01.5 y SUB-01.7).
+3. Tarjeta de almacenamiento de Mi Estudio sin leer el consumo real del motor (`used_bytes`).
+3b. Capacidad de subida simultánea sin medir, y políticas de Vercel/R2/CORS sin dejar por escrito (SUB-01.5 y SUB-01.7).
 4. Métricas agregadas por fase (SUB-02.10).
-5. Pruebas con dispositivos físicos y matriz de aceptación sin repetir hoy (cubiertas por las suites del Mac, no re-ejecutadas).
+5. Rutas antiguas sin uso (`/api/upload/file`, `/api/upload/presign`) por retirar.
+6. Pruebas con dispositivos físicos y matriz de aceptación sin repetir hoy (cubiertas por las suites del Mac, no re-ejecutadas).
