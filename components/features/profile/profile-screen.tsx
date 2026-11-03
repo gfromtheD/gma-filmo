@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { EditPencil as Pencil } from "@/components/ui/icons";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useRatings } from "@/hooks/use-ratings";
 import { useProgress } from "@/hooks/use-progress";
@@ -22,7 +23,7 @@ const COLORS = [
 
 export function ProfileScreen() {
   const router = useRouter();
-  const { displayName, email, memberSince, avatarColor, updateDisplayName, updateAvatarColor } = useUserProfile();
+  const { displayName, email, memberSince, avatarColor, avatarImageUrl, avatarIconId, updateDisplayName, updateAvatarColor } = useUserProfile();
   const { mediaIds }   = useWatchlist();
   const { entries: ratings }  = useRatings();
   const { entries: progress } = useProgress();
@@ -34,7 +35,6 @@ export function ProfileScreen() {
 
   const ratingCount  = Object.keys(ratings).length;
   const watchedCount = Object.values(progress).filter((e) => e.currentTime > 10).length;
-  const initial      = displayName[0]?.toUpperCase() ?? "U";
 
   function formatSince(d: Date | null) {
     if (!d) return "";
@@ -85,11 +85,9 @@ export function ProfileScreen() {
             aria-controls="profile-color-picker"
             className="relative group shrink-0"
           >
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-[16px] text-[32px] font-extrabold text-[#031A0E] transition-colors"
-              style={{ background: avatarColor }}
-            >
-              {initial}
+            {/* El mismo avatar que en el resto del sitio (foto, icono o inicial); el color solo cambia la inicial y el fondo. */}
+            <div className="h-20 w-20 overflow-hidden rounded-[16px]">
+              <ProfileAvatar size="fill" name={displayName} url={avatarImageUrl || null} iconId={avatarIconId || null} color={avatarColor} />
             </div>
             <span className="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/40 opacity-100 transition-opacity md:[@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 text-[11px] font-bold text-white">
               Color
