@@ -24,7 +24,7 @@ test("título y datos bajo las portadas de las filas", async ({ page }) => {
 
 test("Top 10: título y datos de las tarjetas recogidas, y descripción de la activa", async ({ page }) => {
   await openHome(page);
-  const top = page.locator("section[aria-label='Top 10 en GMA']");
+  const top = page.locator("section[aria-label='Selección de GMA']");
   await top.scrollIntoViewIfNeeded();
   const articles = top.locator("article");
   await expect(articles.first()).toBeVisible({ timeout: 20_000 });
@@ -42,7 +42,7 @@ for (const width of [1024, 1280, 1440, 1920]) {
   test(`a ${width}px el texto agrandado del Top 10 cabe dentro de la tarjeta activa`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await openHome(page);
-    const top = page.locator("section[aria-label='Top 10 en GMA']");
+    const top = page.locator("section[aria-label='Selección de GMA']");
     await top.scrollIntoViewIfNeeded();
     const active = top.locator("article").first();
     await expect(active).toBeVisible({ timeout: 20_000 });

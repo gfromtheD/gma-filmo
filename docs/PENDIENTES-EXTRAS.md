@@ -78,7 +78,7 @@ Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.1
 ## EXT-06 — Mejoras de diseño que se dejaron fuera
 
 - [ ] Deslizar el dedo para cambiar de extra en móvil (en imágenes es sencillo; en vídeos choca con los gestos del reproductor).
-- [ ] El vídeo arranca solo y con sonido al abrir un extra; valorar empezar en pausa.
+- [x] (3/11/2026, decidido) El vídeo sigue arrancando solo al abrir un extra: quien lo abre acaba de pulsar para verlo, así que es la expectativa normal (como al abrir cualquier vídeo). Reabrir si G lo prefiere en pausa.
 - [x] (3/11/2026, sin probar en navegador real) Salir de pantalla completa con Escape ya no cierra el visor: se ignora el Escape durante la pantalla completa y 400 ms después de salir (`extras-player-dialog.tsx`). Comprobar en Chrome, Firefox y Safari.
 - [ ] El tipo del extra (Making of, Entrevista…) ya no se ve en las tarjetas, solo «Vídeo» o «Imagen»; sigue guardado en la base de datos.
 - [x] (3/11/2026) Descripción en escritorio: ancho máximo de 75 caracteres por línea.
@@ -133,7 +133,7 @@ Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.1
   - [ ] **Popularidad real** (reproducciones y finalizaciones de los últimos 7 días) en lugar de la posición en la lista.
   - [ ] **Similitud más rica:** duración, tono, director y año, además de la categoría; filtrado colaborativo cuando haya suficientes usuarios.
   - [ ] **Métricas:** repetición entre visitas, cobertura del catálogo a 7 días, títulos que nunca se muestran.
-  - [ ] **«Top 10 en GMA» no es un top:** son 8 títulos del héroe (azar con sesgo por gustos); usar un ranking real o renombrar la fila.
+  - [x] **«Top 10 en GMA» no es un top (3/11/2026, decidido por Claude con la delegación de G):** la fila se renombra «Selección de GMA» (el subtítulo ya decía «títulos más destacados»); un top real queda para cuando haya reproducciones medidas. Actualizados los 3 tests que la buscaban por nombre (`carruseles`, `home-text-sizes`, `top-ten-size`; no ejecutados).
   - [ ] Opcional: que el héroe también use la memoria de lo mostrado.
 - **Nota media en el catálogo y efecto de Filmin (16/10/2026).** Hecho: la nota media de la gente (0–10, un decimal) sale solo en la capa de descripción, al pasar el cursor, abajo a la izquierda: «★ 8.4 · N valoraciones». Se probó una insignia gris fuera de la portada y se quitó. Los títulos sin valoraciones no muestran nada. Se calcula desde la tabla `ratings` (`lib/ratings/summary-server.ts`, caché de 2 min). Efecto al pasar el cursor como el de Filmin: la capa negra al 80 % entra en 350 ms y sale en 250 ms, y el título de debajo se desenfoca 3 px. Cuadrícula con los cambios de columnas de Filmin (1 / 2 / 3 / 4 / 5 en 720 / 1000 / 1150 / 1500 px).
   - [ ] **Con muchas valoraciones, calcular las medias en la base de datos** (vista o función SQL) en vez de leerlas todas por páginas; hoy son 12 valoraciones en 11 títulos y no importa. Requiere migración.
@@ -142,7 +142,7 @@ Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.1
   - [ ] **Filmin muestra en la capa:** «solo para suscriptores», clasificación por edad (12+) y el botón de guardar. En GMA falta la edad (no hay dato real) y el guardar sigue siendo el botón de la esquina.
 - **Observaciones de Cinejoy y Movy (16/10/2026): lo que vi y no implementé.** Medido solo con geometría y comportamiento, sin copiar nada. Ya hecho: filtros en píldoras (Categoría, Año, Duración, Orden, «En mi lista», «Sorpréndeme») y cuadrícula de portadas con columnas que cambian antes (banda 215–410 px; movy.sx mantiene 282–357).
   - [ ] **Comprueba el zoom de tu navegador en `localhost:3000`.** Al medir, el navegador de pruebas tenía `localhost` al 90 % (devicePixelRatio 0,9): todo se ve un 10 % más pequeño que en otra web a 100 %. Pulsa Ctrl+0 en la pestaña de GMA. Puede explicar parte de la sensación de «más pequeños».
-  - [ ] **Movy muestra texto bajo cada portada** (título y «★ nota · año · tipo»). En el catálogo de GMA el título va encima de la imagen y no hay año ni colección a la vista. Ya pasa en las filas de la portada de GMA; falta en el catálogo.
+  - [x] (3/11/2026, decidido: se mantiene el diseño de GMA, con el título sobre la imagen) **Movy muestra texto bajo cada portada** (título y «★ nota · año · tipo»). En el catálogo de GMA el título va encima de la imagen y no hay año ni colección a la vista. Ya pasa en las filas de la portada de GMA; falta en el catálogo.
   - [ ] **Movy cambia a portadas verticales (2 columnas, ratio 0,6) por debajo de ~600 px.** En GMA seguimos con horizontales (1 columna por debajo de 480 px, 2 hasta 879 px) porque aún no hay verticales. Cuando existan, decidir si se usan en móvil.
   - [ ] **Márgenes y espaciado:** movy usa 96 px laterales en pantalla ancha y 6 px entre columnas (24 px entre filas, por el texto de debajo). GMA usa 64 px y 16 px. Se mantuvo el nuestro porque la cabecera y los carruseles de GMA ya usan 64 px.
   - [ ] **Filas de la portada:** las tarjetas de GMA ya miden 320 px a partir de 768 px, igual que las de movy (320×223 con texto, 6 px de separación). No se tocó.
@@ -152,7 +152,7 @@ Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.1
   - [ ] **El filtro de duración no funcionaba:** entendía «12 min» pero no «1m 36s», el formato real de los cortos, así que con una duración elegida no salía ninguno. Corregido, con tests.
   - [ ] **Las «categorías» del filtro son las colecciones de GMA** (+18, 3D, Stop Motion, TOP…), no géneros de cine. Si más adelante se separan colecciones y géneros, el filtro debería ofrecer ambos.
   - [ ] **El buscador (`/buscar`) tiene sus propios filtros** (`use-catalog-filters` y chips), distintos de las nuevas píldoras. Conviene unificarlos.
-  - [ ] **«La Película»** aparece como una opción más en Categoría. Si se quiere un filtro de tipo (cortos / películas), mejor como píldora aparte.
+  - [x] (3/11/2026, decidido: se deja como está hasta que haya varias películas) **«La Película»** aparece como una opción más en Categoría. Si se quiere un filtro de tipo (cortos / películas), mejor como píldora aparte.
   - [ ] **Carruseles:** si las tarjetas de una fila se reordenan al cargar los datos del usuario, ahora la fila vuelve sola al principio (antes «Colecciones para ti» arrancaba en la 2.ª o 4.ª tarjeta). Está en el componente común, así que sirve para todas las filas.
 - **Denunciar comentarios: botón retirado de la interfaz (15/10/2026); decidir cómo incluirlo.** Se probó junto a «Responder», abajo a la derecha y arriba a la derecha, con bandera y con escudo, y ninguna opción convenció (arriba no queda claro de qué comentario es cada botón). La API (`/api/comments/report`, tabla `comment_reports`) sigue activa y sin uso.
   - [ ] Buscar un sitio claro dentro del comentario (por ejemplo, un menú «⋯» con varias acciones) o una vía externa (denunciar al perfil desde su página).

@@ -207,7 +207,7 @@ export function HomeScreen({ items, colecciones = [] }: HomeScreenProps) {
 
         {featuredItems.length >= 4 && (
           <TopTenRow
-            title="Top 10 en GMA"
+            title="Selección de GMA"
             subtitle="Los títulos más destacados ahora mismo"
             items={featuredItems.slice(0, 10)}
             hrefFor={hrefFor}

@@ -11,13 +11,13 @@ async function measure(page: Page, width: number) {
   await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.setViewportSize({ width, height: 900 });
   await page.goto("/inicio", { waitUntil: "load" });
-  const topTen = page.locator("section[aria-label='Top 10 en GMA']");
+  const topTen = page.locator("section[aria-label='Selección de GMA']");
   await topTen.scrollIntoViewIfNeeded();
   await expect(topTen.locator("article").first()).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(700); // la animación de ancho dura 500 ms
   return page.evaluate(() => {
     const art = (section: Element) => section.querySelector("a > div") as HTMLElement | null; // la portada de una tarjeta normal
-    const topTenEl = document.querySelector("section[aria-label='Top 10 en GMA']")!;
+    const topTenEl = document.querySelector("section[aria-label='Selección de GMA']")!;
     const articles = [...topTenEl.querySelectorAll("article")] as HTMLElement[];
     const imageBox = (a: HTMLElement) => (a.querySelector("div.relative") as HTMLElement).getBoundingClientRect();
     const row = [...document.querySelectorAll("section.group\\/row")].find((s) => s.querySelector("h2")?.textContent === "Recién llegados")!;
@@ -55,7 +55,7 @@ test("por debajo de 1024 px el Top 10 mantiene su formato móvil (140×210)", as
   await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.setViewportSize({ width: 900, height: 900 });
   await page.goto("/inicio", { waitUntil: "load" });
-  const first = page.locator("section[aria-label='Top 10 en GMA'] article").first();
+  const first = page.locator("section[aria-label='Selección de GMA'] article").first();
   await first.scrollIntoViewIfNeeded();
   const box = (await first.locator("div.relative").first().boundingBox())!;
   expect(Math.round(box.width)).toBe(140);
@@ -66,7 +66,7 @@ test("al pasar el cursor por otra tarjeta sigue expandiéndose y la anterior se 
   await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/inicio", { waitUntil: "load" });
-  const topTen = page.locator("section[aria-label='Top 10 en GMA']");
+  const topTen = page.locator("section[aria-label='Selección de GMA']");
   await topTen.scrollIntoViewIfNeeded();
   const articles = topTen.locator("article");
   const width = async (i: number) => (await articles.nth(i).locator("div.relative").first().boundingBox())!.width;
@@ -77,7 +77,7 @@ test("al pasar el cursor por otra tarjeta sigue expandiéndose y la anterior se 
 });
 
 test.describe("la marca verde «TOP N» de la esquina crece con la tarjeta", () => {
-  const rankOf = (page: Page) => page.locator("section[aria-label='Top 10 en GMA'] article").first().locator("[data-top-rank]");
+  const rankOf = (page: Page) => page.locator("section[aria-label='Selección de GMA'] article").first().locator("[data-top-rank]");
 
   for (const width of [1280, 1440, 1920, 2560]) {
     test(`a ${width}px mide 30×36 por el mismo factor que la tarjeta, y su texto también`, async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe("la marca verde «TOP N» de la esquina crece con la tarjeta", () 
     await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto("/inicio", { waitUntil: "load" });
-    const first = page.locator("section[aria-label='Top 10 en GMA'] article").first();
+    const first = page.locator("section[aria-label='Selección de GMA'] article").first();
     await first.scrollIntoViewIfNeeded();
     const box = (await first.locator("[data-top-rank]").boundingBox())!;
     expect(Math.round(box.width)).toBe(30);
