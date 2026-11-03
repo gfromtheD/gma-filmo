@@ -109,9 +109,12 @@ export function CatalogScreen({ items: allItems, section = "cortos", heading = s
           <h2 className="mb-4 text-[24px] font-bold text-white">
             Colecciones
           </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          {/* Móvil: una fila que se desliza (así los filtros no quedan casi 2.000 px más abajo); desde `sm`, cuadrícula. */}
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:grid sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 xl:grid-cols-4 2xl:grid-cols-5 [&::-webkit-scrollbar]:hidden">
             {withContent.map(({ col, filmCount }) => (
-              <ColeccionCard key={col.slug} col={col} filmCount={filmCount} accent={appearance.get(col.slug)?.accent ?? "#1c4d5e"} coverUrl={appearance.get(col.slug)?.coverUrl ?? null} />
+              <div key={col.slug} className="min-w-0 shrink-0 basis-[78%] snap-start sm:basis-auto">
+                <ColeccionCard col={col} filmCount={filmCount} accent={appearance.get(col.slug)?.accent ?? "#1c4d5e"} coverUrl={appearance.get(col.slug)?.coverUrl ?? null} />
+              </div>
             ))}
           </div>
         </section>

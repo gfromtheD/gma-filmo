@@ -68,6 +68,8 @@ type PeliculaRow = {
   created_at: string;
   genre: string | null;
   language?: string | null;
+  /** Frase corta del creador (máx. 180 caracteres); vacía en los títulos que aún no la tienen. */
+  tagline?: string | null;
 };
 
 type PeliculaWithRelations = PeliculaRow & {
@@ -194,7 +196,8 @@ function toMovieMedia(
     categories,
     synopsis: p.synopsis || content?.synopsis || "",
     fullSynopsis: FILM_LONG_SYNOPSES[p.slug],
-    tagline: content?.tagline,
+    // La frase del creador (columna `tagline`) manda; si no hay, la del archivo estático.
+    tagline: p.tagline?.trim() || content?.tagline,
     runtime: p.duration ?? "Corto",
     genre: (p.slug === "la-pelicula" || p.genre === "Película") ? "Película" : "Cortometraje",
     imageUrl,

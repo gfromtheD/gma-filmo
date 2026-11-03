@@ -223,7 +223,7 @@ function CommentForm({
               {validation && !validation.ok && (
                 <span role="alert" className="text-[12px] text-red-300">
                   {validation.reason === "beyond"
-                    ? `El ${noun.name} dura ${formatTimestamp(validation.maxSeconds)}`
+                    ? `${noun.article} ${noun.name} dura ${formatTimestamp(validation.maxSeconds)}`
                     : "Formato: m:ss"}
                 </span>
               )}

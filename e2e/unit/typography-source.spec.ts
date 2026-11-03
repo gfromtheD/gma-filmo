@@ -45,12 +45,15 @@ test.describe("tipografía única: Satoshi", () => {
     });
   }
 
-  test("el layout carga Satoshi en local (next/font/local) con peso variable y cursiva", () => {
+  test("el layout carga Satoshi desde Fontshare (variable, con cursiva) y la CSP lo permite", () => {
     const layout = fs.readFileSync(path.join(ROOT, "app", "layout.tsx"), "utf8");
-    expect(layout).toMatch(/next\/font\/local/);
-    expect(layout).toMatch(/Satoshi-Variable\.woff2/);
-    expect(layout).toMatch(/Satoshi-VariableItalic\.woff2/);
-    expect(layout).toMatch(/--font-satoshi/);
+    expect(layout).toMatch(/api\.fontshare\.com\/v2\/css\?f\[\]=satoshi@1,2/);
+    const config = fs.readFileSync(path.join(ROOT, "next.config.mjs"), "utf8");
+    const policy = (directive: string) => config.split("\n").find((l) => l.includes(`"${directive} `)) ?? "";
+    expect(policy("style-src")).toContain("https://api.fontshare.com");
+    expect(policy("font-src")).toContain("https://cdn.fontshare.com");
+    const css = fs.readFileSync(path.join(ROOT, "app", "globals.css"), "utf8");
+    expect(css).toMatch(/--font-satoshi:\s*"Satoshi"/);
   });
 
   test("las variables de fuente de Tailwind apuntan todas a Satoshi", () => {

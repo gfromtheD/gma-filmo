@@ -193,6 +193,7 @@ export type Database = {
           slug: string
           source_page: string | null
           synopsis: string | null
+          tagline: string | null
           thumbnail_url: string | null
           title: string
           year: string | null
@@ -214,6 +215,7 @@ export type Database = {
           slug: string
           source_page?: string | null
           synopsis?: string | null
+          tagline?: string | null
           thumbnail_url?: string | null
           title: string
           year?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           slug?: string
           source_page?: string | null
           synopsis?: string | null
+          tagline?: string | null
           thumbnail_url?: string | null
           title?: string
           year?: string | null
