@@ -4,7 +4,7 @@ import { rowToExtra, sortExtras, type ExtraRow } from "@/lib/extras/extras";
 import type { MovieExtra } from "@/types/catalog";
 
 export const EXTRA_COLUMNS =
-  "id, pelicula_id, title, description, kind, provider, video_url, media_ref, poster_url, duration_seconds, file_size_bytes, sort_order, status";
+  "id, pelicula_id, title, description, kind, provider, video_url, media_ref, poster_url, duration_seconds, file_size_bytes, sort_order, status, media_type";
 
 /** Extras publicados de un título, ya ordenados. Nunca lanza: ante cualquier fallo devuelve []. */
 export async function fetchPublishedExtras(peliculaId: number): Promise<MovieExtra[]> {
