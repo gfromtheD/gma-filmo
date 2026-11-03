@@ -125,15 +125,17 @@ export function StudioScreen() {
     void (async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const [profileResult, titlesResult, limitResult] = await Promise.all([
+        const [profileResult, titlesResult, limitResult, usedResult] = await Promise.all([
           supabase.from("creator_profiles")
-            .select("creator_name, studio_name, bio, location, role, avatar_url, social_links")
+            .select("creator_name, studio_name, bio, location, role, avatar_url, social_links, donacion_paypal, donacion_patreon, donacion_bitcoin")
             .eq("user_id", userId).maybeSingle(),
           supabase.from("peliculas")
             .select("slug, title, synopsis, year, duration, genre, language, r2_poster_url, r2_poster_vertical_url, created_at, status, file_size_bytes, media_delete_state")
             .eq("creator_user_id", userId).order("created_at", { ascending: false }).returns<StudioTitleRow[]>(),
           // Cupo real de la cuenta (5 GB, o el del equipo en una cuenta gestionada); si falla, el panel usa los 5 GB.
           (supabase.rpc as unknown as (fn: string) => PromiseLike<{ data: number | null }>)("gma_my_storage_limit"),
+          // Consumo real confirmado por el motor (todo lo subido, esté publicado o no); si falla, se suman los títulos.
+          (supabase.rpc as unknown as (fn: string) => PromiseLike<{ data: number | null }>)("gma_my_storage_used"),
         ]);
         if (profileResult.error || titlesResult.error || !profileResult.data) {
           throw new Error("No se pudo cargar el estudio");
@@ -165,11 +167,12 @@ export function StudioScreen() {
             studioName: profile.studio_name ?? "", artistName: profile.creator_name ?? "",
             bio: profile.bio ?? "", location: profile.location ?? "", role: profile.role ?? "",
             avatarUrl: profile.avatar_url ?? "", socials: (profile.social_links ?? {}) as Record<string, string>,
+            support: { paypal: profile.donacion_paypal ?? "", patreon: profile.donacion_patreon ?? "", bitcoin: profile.donacion_bitcoin ?? "" },
             stats: { ...STUDIO_DATA.creator.stats, titles: realTitles.length,
               published: realTitles.filter(t => t.status === "publicado").length },
           },
           titles: realTitles,
-          storageUsedBytes: storageOf(realTitles),
+          storageUsedBytes: usedResult.data !== null && Number(usedResult.data) >= 0 ? Number(usedResult.data) : storageOf(realTitles),
           storageLimitBytes: Number(limitResult.data) > 0 ? Number(limitResult.data) : undefined,
           freeing,
         };

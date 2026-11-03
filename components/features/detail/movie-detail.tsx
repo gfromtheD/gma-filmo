@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { workPath } from "@/lib/catalog/work-path";
 import { useRouter } from "next/navigation";
 import { DetailsTab } from "@/components/features/detail/details-tab";
+import type { PublicFicha } from "@/lib/media/public-ficha";
 import { DETAIL_TERTIARY_ACTION, DetailHeader } from "@/components/features/detail/detail-header";
 import { AddToListMenu } from "@/components/features/space/add-to-list-menu";
 import { List } from "@/components/ui/icons";
@@ -31,6 +32,8 @@ interface MovieDetailProps {
   readonly related: readonly MovieMedia[];
   readonly creator?: CreatorProfile | null;
   readonly extras?: readonly MovieExtra[];
+  /** Datos de la ficha que el creador rellenó en Mi Estudio (país, idiomas, temas, premios); `null` en títulos anteriores. */
+  readonly ficha?: PublicFicha | null;
   /** Sección de la ficha: «cortometraje» (por defecto) o «película». */
   readonly workType?: WorkType;
   readonly autoOpenRating?: boolean;
@@ -45,7 +48,7 @@ function isDetailTabId(value: string): value is DetailTabId {
   return (TAB_IDS as readonly string[]).includes(value);
 }
 
-export function MovieDetail({ movie, related, creator, extras: initialExtras = [], workType = "cortometraje", autoOpenRating }: MovieDetailProps) {
+export function MovieDetail({ movie, related, creator, extras: initialExtras = [], ficha = null, workType = "cortometraje", autoOpenRating }: MovieDetailProps) {
   const router = useRouter();
   const isGuest = useIsGuest();
   const { addMedia, removeMedia, hasMedia, canSave } = useWatchlist();
@@ -146,7 +149,7 @@ export function MovieDetail({ movie, related, creator, extras: initialExtras = [
         aria-labelledby={`${TAB_PREFIX}-tab-${activeTab}`}
         className={`pb-20 pt-10 lg:pt-12 ${isGridTab ? CATALOG_PAGE_PADDING_CLASS : "mx-auto max-w-[1240px] px-4 lg:px-6"}`}
       >
-        {activeTab === "detalles" && <DetailsTab movie={movie} donation={<DonationRow creator={creator ?? null} />} />}
+        {activeTab === "detalles" && <DetailsTab movie={movie} donation={<DonationRow creator={creator ?? null} />} ficha={ficha} />}
 
         {activeTab === "extras" && extras.length > 0 && <ExtrasPanel extras={extras} />}
 

@@ -41,6 +41,9 @@ export type Database = {
         Row: {
           user_id: string
           creator_name: string
+          donacion_bitcoin: string | null
+          donacion_patreon: string | null
+          donacion_paypal: string | null
           bio: string | null
           status: string
           created_at: string
@@ -58,6 +61,9 @@ export type Database = {
         Insert: {
           user_id: string
           creator_name: string
+          donacion_bitcoin?: string | null
+          donacion_patreon?: string | null
+          donacion_paypal?: string | null
           bio?: string | null
           status?: string
           created_at?: string
@@ -75,6 +81,9 @@ export type Database = {
         Update: {
           user_id?: string
           creator_name?: string
+          donacion_bitcoin?: string | null
+          donacion_patreon?: string | null
+          donacion_paypal?: string | null
           bio?: string | null
           status?: string
           created_at?: string
@@ -655,6 +664,38 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pelicula_ficha: {
+        Row: {
+          ficha: Json
+          pelicula_id: number
+          schema_version: number
+          source_draft_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ficha: Json
+          pelicula_id: number
+          schema_version: number
+          source_draft_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ficha?: Json
+          pelicula_id?: number
+          schema_version?: number
+          source_draft_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pelicula_ficha_pelicula_id_fkey"
+            columns: ["pelicula_id"]
+            isOneToOne: true
+            referencedRelation: "peliculas"
             referencedColumns: ["id"]
           },
         ]

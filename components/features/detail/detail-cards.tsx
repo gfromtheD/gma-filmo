@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { MovieMedia } from "@/types/catalog";
+import type { PublicFicha } from "@/lib/media/public-ficha";
 
 /**
  * Tarjetas de la pestaña «Detalles» (estilo Filmin): cada bloque en su tarjeta, con filas «Etiqueta: valor».
@@ -22,7 +23,7 @@ export function DetailCard({ title, children, className = "" }: { title: string;
   );
 }
 
-function InfoLine({ label, children, accent = false }: { label: string; children: ReactNode; accent?: boolean }) {
+export function InfoLine({ label, children, accent = false }: { label: string; children: ReactNode; accent?: boolean }) {
   return (
     <p className="text-[15px] leading-[1.8] text-white">
       <span className="text-[#949494]">{label}:</span>{" "}
@@ -123,6 +124,50 @@ export function InfoCard({ movie }: { movie: MovieMedia }) {
       {genres.length > 0 && <InfoLine label="Géneros">{genres.join(", ")}</InfoLine>}
       {movie.tag && <InfoLine label="Producción" accent>{movie.tag}</InfoLine>}
       {quality.length > 0 && <InfoLine label="Calidad">{quality.join(", ")}</InfoLine>}
+    </DetailCard>
+  );
+}
+
+// ─── Datos de la ficha del creador ───────────────────────────────────────────
+
+/** País, idioma original, subtítulos y marcas que el creador indicó al subir la obra. Sin datos, no hay tarjeta. */
+export function FichaDataCard({ ficha }: { ficha: PublicFicha | null }) {
+  if (!ficha) return null;
+  const hasRows = Boolean(
+    ficha.originalTitle || ficha.country || ficha.language || ficha.subtitleLanguages.length > 0 || ficha.firstFilm || ficha.usesAi,
+  );
+  if (!hasRows) return null;
+  return (
+    <DetailCard title="Datos de la obra">
+      {ficha.originalTitle && <InfoLine label="Título original">{ficha.originalTitle}</InfoLine>}
+      {ficha.country && <InfoLine label="País">{ficha.country}</InfoLine>}
+      {ficha.language && <InfoLine label="Idioma original">{ficha.language}</InfoLine>}
+      {ficha.subtitleLanguages.length > 0 && <InfoLine label="Subtítulos">{ficha.subtitleLanguages.join(", ")}</InfoLine>}
+      {ficha.firstFilm && <InfoLine label="Obra">Ópera prima</InfoLine>}
+      {ficha.usesAi && <InfoLine label="Inteligencia artificial">Usada en la obra</InfoLine>}
+    </DetailCard>
+  );
+}
+
+/** Temas (pastillas) y premios o selecciones de festivales. */
+export function FichaThemesAwardsCard({ ficha }: { ficha: PublicFicha | null }) {
+  if (!ficha || (ficha.themes.length === 0 && ficha.awards.length === 0)) return null;
+  return (
+    <DetailCard title="Temas y premios">
+      {ficha.themes.length > 0 && (
+        <ul className="mb-4 flex flex-wrap gap-2" aria-label="Temas">
+          {ficha.themes.map((theme) => (
+            <li key={theme} className="rounded-[3px] border border-white/30 px-2 py-0.5 text-[12px] font-bold uppercase text-white">
+              {theme}
+            </li>
+          ))}
+        </ul>
+      )}
+      {ficha.awards.map((award, index) => (
+        <InfoLine key={`${award.festival}-${award.award}-${index}`} label={award.festival || "Premio"}>
+          {award.award || "Selección oficial"}
+        </InfoLine>
+      ))}
     </DetailCard>
   );
 }
