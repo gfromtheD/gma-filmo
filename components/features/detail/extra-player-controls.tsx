@@ -147,6 +147,8 @@ export function DragSlider({ value, onChange, label, valueText, buffered = 0, ke
       className={`relative flex cursor-pointer select-none items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B] ${className}`}
       style={{ height: isProgress ? 32 : 20, width: isProgress ? undefined : 56, touchAction: "none" }}
     >
+      {/* Zona táctil de 44 px sin mover nada: la barra visible sigue siendo fina y mide 32 px de alto. */}
+      {isProgress && <span aria-hidden="true" className="absolute inset-x-0 -inset-y-1.5 [@media(pointer:fine)]:hidden" />}
       {tooltipFor && active && hover !== null && (
         <div
           className="pointer-events-none absolute rounded-md border border-white/15 bg-black/85 px-2 py-0.5 text-[12px] tabular-nums text-white"

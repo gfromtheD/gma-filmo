@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { manageableExtras, mapEngineExtras } from "../../lib/media/engine-extras";
 import { moveItem } from "../../lib/studio/extras-order";
+import { swipeDirection } from "../../lib/extras/extras";
 import { refreshExtras } from "../../hooks/use-extras";
 
 const row = (role: string, position: number, state = "ready", duration: number | null = null) => ({
@@ -78,6 +79,24 @@ test.describe("metadatos de extras", () => {
       [meta("extras-2", 0, { hidden: true })]);
     expect(list.map((e) => [e.label, e.hidden])).toEqual([["Tráiler", false], ["Extra 1", true], ["Imagen 1", false]]);
   });
+});
+
+test.describe("orden con extras nuevos", () => {
+  test("lo subido después de ordenar va detrás de lo ya ordenado, sea cual sea su tipo", () => {
+    const metas = [{ assetId: "extra_image-1", label: null, description: null, hidden: false, sortOrder: 0 }, { assetId: "extras-2", label: null, description: null, hidden: false, sortOrder: 1 }];
+    const rows = [row("extras", 3), row("extras", 2), row("extra_image", 1)];
+    const ids = () => manageableExtras(rows, metas).map((e) => e.assetId);
+    expect(ids()).toEqual(["extra_image-1", "extras-2", "extras-3"]);
+    rows.reverse();
+    expect(ids()).toEqual(["extra_image-1", "extras-2", "extras-3"]);
+  });
+});
+
+test("deslizar cambia de extra solo si el gesto es horizontal y largo", () => {
+  expect(swipeDirection(-80, 10)).toBe("next");
+  expect(swipeDirection(80, 10)).toBe("prev");
+  expect(swipeDirection(-20, 0)).toBeNull();
+  expect(swipeDirection(-60, 90)).toBeNull();
 });
 
 test.describe("moveItem", () => {

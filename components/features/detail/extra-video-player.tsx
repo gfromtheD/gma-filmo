@@ -20,9 +20,9 @@ interface ExtraVideoPlayerProps {
 
 /** Botones táctiles de 44 px en el móvil; más compactos cuando el reproductor es ancho. */
 const ROUND_BUTTON =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/65 transition-[background-color,color] duration-150 hover:bg-[#22B16B]/15 hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-[#22B16B] @[640px]:h-9 @[640px]:w-9";
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/65 transition-[background-color,color] duration-150 hover:bg-[#22B16B]/15 hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-[#22B16B] [@media(pointer:fine)]:@[640px]:h-9 [@media(pointer:fine)]:@[640px]:w-9";
 const TIME_BUTTON =
-  "text-[12px] tabular-nums text-white/60 transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-[#22B16B] @[640px]:text-[13px] @[640px]:text-white/50";
+  "min-h-11 [@media(pointer:fine)]:min-h-0 text-[12px] tabular-nums text-white/60 transition-colors hover:text-[#22B16B] focus-visible:outline-2 focus-visible:outline-[#22B16B] @[640px]:text-[13px] @[640px]:text-white/50";
 
 /**
  * Reproductor de un extra con los controles y atajos del reproductor principal
@@ -174,7 +174,7 @@ export function ExtraVideoPlayer({ src, managedEndpoint, poster, heading }: Extr
           sobre el vídeo si es horizontal (el contenedor ocupa toda la pantalla). */}
       {isFullscreen && heading && (
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-[max(12px,env(safe-area-inset-top))] transition-opacity duration-300"
+          className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent px-4 pb-8 pt-[max(12px,env(safe-area-inset-top))] transition-opacity duration-300 motion-reduce:transition-none"
           style={{ opacity: controlsVisible ? 1 : 0 }}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#22B16B]">
@@ -186,7 +186,7 @@ export function ExtraVideoPlayer({ src, managedEndpoint, poster, heading }: Extr
       )}
 
       <div
-        className="absolute inset-x-0 bottom-0 px-3 pb-1.5 pt-12 transition-opacity duration-300 @[640px]:px-5 @[640px]:pb-4 @[640px]:pt-20"
+        className="absolute inset-x-0 bottom-0 px-3 pb-1.5 pt-12 transition-opacity duration-300 @[640px]:px-5 @[640px]:pb-4 @[640px]:pt-20 motion-reduce:transition-none"
         style={{
           background: "linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)",
           opacity: controlsVisible ? 1 : 0,
@@ -226,7 +226,7 @@ export function ExtraVideoPlayer({ src, managedEndpoint, poster, heading }: Extr
               type="button"
               onClick={togglePlay}
               aria-label={playing ? "Pausar" : "Reproducir"}
-              className="flex h-12 w-12 shrink-0 items-center justify-center text-white outline-none transition-transform duration-100 hover:scale-110 focus-visible:outline-2 focus-visible:outline-[#22B16B] active:scale-95 @[640px]:order-2 @[640px]:h-[52px] @[640px]:w-[52px]"
+              className="flex h-12 w-12 shrink-0 items-center justify-center text-white outline-none transition-transform duration-100 hover:scale-110 focus-visible:outline-2 focus-visible:outline-[#22B16B] active:scale-95 motion-reduce:transition-none motion-reduce:transform-none @[640px]:order-2 @[640px]:h-[52px] @[640px]:w-[52px]"
             >
               {playing ? <GmaIcon name="pause" size={24} /> : <PlayTriangle size={28} />}
             </button>

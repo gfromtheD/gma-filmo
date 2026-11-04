@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject, type TouchEvent } from "react";
 import { Dialog } from "radix-ui";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { ExtraVideoPlayer } from "@/components/features/detail/extra-video-player";
+import { swipeDirection } from "@/lib/extras/extras";
 import type { MovieExtra } from "@/types/catalog";
 import styles from "./extras-player-dialog.module.css";
 
@@ -12,6 +13,8 @@ interface ExtrasPlayerDialogProps {
   /** Posición del extra abierto; `null` con el diálogo cerrado. */
   readonly index: number | null;
   readonly onIndexChange: (index: number | null) => void;
+  /** Elemento que abrió el visor: recupera el foco al cerrarlo (el diálogo no tiene `Dialog.Trigger`). */
+  readonly returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -63,7 +66,7 @@ function SideArrow({ direction, label, onClick }: NavArrowProps) {
   // Centrada en el hueco lateral (--g); con --g = 64 px queda a 8 px del vídeo y a 8 px del borde de la ventana.
   const edge = direction === "left" ? "left-[calc((var(--g)_+_48px)_/_-2)]" : "right-[calc((var(--g)_+_48px)_/_-2)]";
   return (
-    <button type="button" aria-label={label} onClick={onClick} className={`${SIDE_ARROW} ${edge}`}>
+    <button type="button" data-extra-nav aria-label={label} onClick={onClick} className={`${SIDE_ARROW} ${edge}`}>
       <TallChevron direction={direction} size={SIDE_CHEVRON} />
     </button>
   );
@@ -71,7 +74,7 @@ function SideArrow({ direction, label, onClick }: NavArrowProps) {
 
 function RowArrow({ direction, label, onClick, disabled }: NavArrowProps & { readonly disabled: boolean }) {
   return (
-    <button type="button" aria-label={label} onClick={onClick} disabled={disabled} className={ROW_ARROW}>
+    <button type="button" data-extra-nav aria-label={label} onClick={onClick} disabled={disabled} className={ROW_ARROW}>
       <TallChevron direction={direction} size={ROW_CHEVRON} strokeWidth={7} />
     </button>
   );
@@ -81,7 +84,7 @@ function RowArrow({ direction, label, onClick, disabled }: NavArrowProps & { rea
 const FULLSCREEN_ESCAPE_GRACE_MS = 400;
 
 /** Visor de extras (vídeo o imagen) con flechas para recorrer el resto sin cerrar. */
-export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlayerDialogProps) {
+export function ExtrasPlayerDialog({ extras, index, onIndexChange, returnFocusRef }: ExtrasPlayerDialogProps) {
   const extra = index === null ? null : (extras[index] ?? null);
   const hasPrev = index !== null && index > 0;
   const hasNext = index !== null && index < extras.length - 1;
@@ -118,15 +121,49 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [extra, index, hasPrev, hasNext, onIndexChange]);
 
+  // En una imagen se puede deslizar el dedo para cambiar de extra (en un vídeo chocaría con los gestos del reproductor).
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const handleImageTouchEnd = (event: TouchEvent<HTMLImageElement>) => {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+    if (!start || !touch) return;
+    const direction = swipeDirection(touch.clientX - start.x, touch.clientY - start.y);
+    if (direction === "next" && hasNext) goNext();
+    if (direction === "prev" && hasPrev) goPrev();
+  };
+
+  // Al llegar al primero o al último, la flecha que tenía el foco desaparece o se desactiva: el foco pasa a la que queda.
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previousIndex = useRef<number | null>(null);
+  useEffect(() => {
+    const wasOpen = previousIndex.current !== null;
+    previousIndex.current = index;
+    const dialog = contentRef.current;
+    if (!wasOpen || index === null || !dialog) return;
+    const active = document.activeElement;
+    const lostFocus = active === document.body || active === dialog || (active instanceof HTMLButtonElement && active.disabled);
+    if (!lostFocus) return;
+    const arrows = Array.from(dialog.querySelectorAll<HTMLButtonElement>("[data-extra-nav]"));
+    arrows.find((arrow) => !arrow.disabled && arrow.offsetParent !== null)?.focus();
+  }, [index]);
+
   return (
     <Dialog.Root open={extra !== null} onOpenChange={(open) => { if (!open) onIndexChange(null); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" />
         <Dialog.Content
+          ref={contentRef}
           aria-describedby={undefined}
           onEscapeKeyDown={handleEscape}
+          onCloseAutoFocus={(event) => {
+            if (!returnFocusRef?.current) return;
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }}
           className={`${styles.content} fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain px-[var(--g)] outline-none [scrollbar-width:thin] [--reserve:210px] [@media(max-height:500px)_and_(min-width:760px)]:[--reserve:104px] [@media(max-height:500px)_and_(max-width:759px)]:[--reserve:172px] [--g:clamp(0px,calc(40vw_-_240px),104px)] w-[min(calc(100vw-32px),calc(1040px+2*var(--g)),calc((100dvh-var(--reserve))*1.7778+2*var(--g)))]`}
         >
+          <p className="sr-only" aria-live="polite">{extra?.title}{counter ? `, ${counter}` : ""}</p>
           <div className="mb-3 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#22B16B]">
@@ -154,6 +191,11 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
                 key={extra.id}
                 src={extra.videoUrl}
                 alt={extra.title}
+                onTouchStart={(event) => {
+                  const touch = event.touches[0];
+                  touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+                }}
+                onTouchEnd={handleImageTouchEnd}
                 className="aspect-video w-full rounded-2xl bg-black object-contain"
               />
             ) : (
@@ -192,7 +234,6 @@ export function ExtrasPlayerDialog({ extras, index, onIndexChange }: ExtrasPlaye
                 type="button"
                 aria-expanded={infoOpen}
                 aria-controls="extra-info"
-                aria-label={infoOpen ? "Ocultar información" : "Mostrar más información"}
                 onClick={() => setInfoOpen((open) => !open)}
                 className={`${styles.moreButton} mx-auto mb-1 mt-7 min-h-11 items-center gap-1.5 rounded-[4px] border border-white/15 bg-white/5 px-4 text-[13px] font-semibold text-white/70 backdrop-blur-md transition-[color,background-color,border-color] duration-300 hover:border-[#22B16B]/45 hover:bg-[#22B16B]/12 hover:text-[#22B16B] motion-reduce:transition-none [@media(hover:none)_and_(pointer:coarse)]:!mt-1 [@media(hover:none)_and_(pointer:coarse)]:!border-transparent [@media(hover:none)_and_(pointer:coarse)]:!bg-transparent [@media(hover:none)_and_(pointer:coarse)]:!backdrop-blur-none ${infoOpen ? "[@media(hover:none)_and_(pointer:coarse)]:!text-white/55" : "[@media(hover:none)_and_(pointer:coarse)]:!text-[#22B16B]"} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#22B16B]`}
               >

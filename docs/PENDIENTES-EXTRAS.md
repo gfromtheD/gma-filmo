@@ -51,7 +51,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 ## EXT-03 — Revisiones y pruebas antes de desplegar
 
 - [x] Revisión de seguridad de `app/api/extras/route.ts` (escribe en la base de datos con permisos de servidor): autenticación, comprobación de autoría, validación de entrada, límite de peticiones. **Hecho 3/11/2026 (lectura del código):** autenticación por token, autoría por `creator_user_id`, validación con zod y solo https, límite de peticiones por IP/usuario y errores sin detalles internos: correcto. Hueco encontrado y cerrado: no había tope de extras por título; ahora el servidor impone 24 (`EXTRAS_MAX_PER_TITLE`, responde 409). Conocido y aceptado: `videoUrl` admite cualquier https (la CSP `media-src` impide reproducir lo ajeno); el límite de peticiones sigue en memoria.
-- [ ] Revisión de código de los componentes nuevos y de la migración (RLS, índices, restricciones).
+- [x] Revisión de código de los componentes nuevos y de la migración (RLS, índices, restricciones). **Hecho (4/11/2026):** revisión sin fallos graves. Corregido: orden inestable al subir un extra después de ordenar, topes de `sortOrder` y `fileSizeBytes`, y `pelicula_extras` cerrada a escritura desde la web y sin `created_by` en la lectura pública (migración 20261122). Se acepta: dos altas simultáneas pueden pasar el tope de 24 por 1 o 2.
 - [x] El límite de peticiones (`lib/api/rate-limit.ts`) es en memoria y por instancia: no es fiable con varias instancias en Vercel; valorar uno distribuido. **Cerrado por decisión (3/11/2026):** se acepta: a la escala actual el riesgo es bajo y un limitador distribuido exige un servicio externo; se revisa si crece el tráfico.
 - [~] Suite completa de Playwright en `streaming-app-base` (puerto 3100) y `npm run test:responsive` con servidor limpio. Tras los últimos cambios solo se repitieron los tests de Extras. Ejecutadas hoy 152 pruebas de navegador (143 en verde, 9 fallos de los que 5 se arreglaron o eran del servidor de desarrollo y 2 son previos de animación). Sin ejecutar: `test:responsive` completo (necesita servidor limpio dedicado).
 - [x] Commit, push, PR, vista previa, merge a `main` y comprobar el despliegue de producción. La tabla ya existe en producción, no hace falta volver a aplicar la migración. (hecho en cada despliegue del 3/11/2026)
@@ -71,19 +71,19 @@ Todo el diseño móvil se comprobó con simulación de pantalla táctil y captur
 - [ ] Abrir el visor en un móvil real (vertical y horizontal): pill de navegación, animación de nacimiento, «+ Más info» con el degradado, margen de 16 px a los lados.
 - [ ] Reproducción con un vídeo real: controles compactos, pantalla completa con el título arriba a la izquierda, volumen oculto en táctil.
 - [ ] Comprobar tabletas y ventanas de escritorio estrechas (cambio de flechas laterales a pill).
-- [ ] Revisar la «mancha oscura» detrás del reproductor en escritorio que se comentó: se quitó la sombra grande del vídeo como causa probable, pero no se llegó a reproducir; falta confirmar dónde se ve y con qué ventana.
+- [~] Revisar la «mancha oscura» detrás del reproductor en escritorio que se comentó: se quitó la sombra grande del vídeo como causa probable, pero no se llegó a reproducir; falta confirmar dónde se ve y con qué ventana. **De G (4/11/2026):** no se reproduce aquí; G debe decir dónde la ve si vuelve a salir.
 
 Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.142:3000` (puede requerir abrir el puerto 3000 en el cortafuegos de Windows) o por Tailscale en `http://100.90.143.117:3000`.
 
 ## EXT-06 — Mejoras de diseño que se dejaron fuera
 
-- [ ] Deslizar el dedo para cambiar de extra en móvil (en imágenes es sencillo; en vídeos choca con los gestos del reproductor).
+- [x] Deslizar el dedo para cambiar de extra en móvil (en imágenes es sencillo; en vídeos choca con los gestos del reproductor). **Hecho en imágenes (4/11/2026)** (`swipeDirection`, con prueba unitaria); no se ha probado en un móvil real. En vídeos no se añade: chocaría con los gestos del reproductor, y las flechas ya sirven.
 - [x] (3/11/2026, decidido) El vídeo sigue arrancando solo al abrir un extra: quien lo abre acaba de pulsar para verlo, así que es la expectativa normal (como al abrir cualquier vídeo). Reabrir si G lo prefiere en pausa.
 - [x] (3/11/2026, sin probar en navegador real) Salir de pantalla completa con Escape ya no cierra el visor: se ignora el Escape durante la pantalla completa y 400 ms después de salir (`extras-player-dialog.tsx`). Comprobar en Chrome, Firefox y Safari.
 - [x] El tipo del extra (Making of, Entrevista…) ya no se ve en las tarjetas, solo «Vídeo» o «Imagen»; sigue guardado en la base de datos. **Cerrado por decisión (3/11/2026):** las tarjetas muestran «Vídeo» o «Imagen» (más claro); el tipo sigue guardado por si se quiere usar.
 - [x] (3/11/2026) Descripción en escritorio: ancho máximo de 75 caracteres por línea.
 - [x] La descripción admite 500 caracteres como máximo (límite de la tabla). Es el límite de la tabla `pelicula_extras`; basta para una descripción corta y está validado en cliente y servidor.
-- [ ] Revisión de accesibilidad completa del visor (foco al abrir y al cerrar, lectores de pantalla).
+- [x] Revisión de accesibilidad completa del visor (foco al abrir y al cerrar, lectores de pantalla). **Hecho (4/11/2026):** el foco vuelve a la tarjeta al cerrar y no se pierde al llegar al último extra (prueba en `e2e/extras.spec.ts`), el cambio de extra se anuncia, zonas táctiles de 44 px y movimiento reducido en los controles. Falta probar con un lector de pantalla real.
 
 ## EXT-07 — Extras también en las películas (largometrajes)
 
