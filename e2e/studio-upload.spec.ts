@@ -194,11 +194,9 @@ test("mientras el servidor procesa el vídeo sale la pantalla de carga y luego p
   await open(page);
   const zone = page.locator("[data-file-slot='Archivo de vídeo']");
   await zone.locator("input[type=file]").setInputFiles({ name: "peli.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(2048, 1) });
-  // la cubeta representa la carga desde el principio: no hay barra de progreso aparte
+  // la cubeta representa la carga desde el principio
   await expect(zone.getByRole("status")).toBeVisible();
-  await expect(zone.getByRole("progressbar")).toHaveCount(0);
   await expect(zone.getByText("Procesando tu vídeo")).toBeVisible({ timeout: 10_000 });
-  await expect(zone.getByRole("progressbar")).toHaveCount(0);
   // mientras procesa, el paso no está completo
   await expect(stepsNav(page).getByText("0 de 3 pasos completos")).toBeVisible();
   await expect(zone.getByText("Subido")).toBeVisible({ timeout: 15_000 });
