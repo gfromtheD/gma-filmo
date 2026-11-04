@@ -6,7 +6,7 @@ import { cachedFilmRowBySlug } from "@/lib/supabase/film-by-slug";
 import type { MovieMedia, ArtistCredit } from "@/types/catalog";
 import type { MotifName, PosterStyle } from "@/types/catalog";
 import type { CreatorProfile } from "@/types/creator";
-import { addCatalogCredits, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorWorks, creditNameKey } from "@/lib/catalog-creators";
+import { addCatalogCredits, storedCreatorSlug, keepCreatorLinks, catalogCreators, catalogCredit, catalogProfile, completeCatalogProfile, creatorWorks, creditNameKey } from "@/lib/catalog-creators";
 import { FILM_CONTENT } from "@/lib/data/film-taglines";
 import { getStudioProfile } from "@/lib/supabase/studio-banner";
 import { getAccountCreatorBySlug, getOwnedFilmSlugs, fetchAccountCreators } from "@/lib/supabase/creator-identity";
@@ -470,7 +470,8 @@ export async function getPeliculasByColeccion(slug: string): Promise<MovieMedia[
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = ReturnType<typeof getSupabasePublicClient> & { from: (t: string) => any };
 
-export async function getCreatorBySlug(slug: string): Promise<CreatorProfile | null> {
+export async function getCreatorBySlug(received: string): Promise<CreatorProfile | null> {
+  const slug = storedCreatorSlug(received);
   return unstable_cache(
     async () => {
       // La cuenta dueña del slug (si la hay) manda: sus obras salen de su id y su ficha de Mi Estudio, no de coincidir nombres.

@@ -26,6 +26,23 @@ export function catalogCredit(name: string, role: string): ArtistCredit {
   return { name, role, slug: creator?.slug ?? catalogCreditSlug(name), photoUrl: cachedImageUrl(creator?.r2_photo_url ?? null) };
 }
 
+/**
+ * Algunos slugs históricos llevan caracteres especiales ya codificados (`mar_oblivion%e2%99%a1`). Según cómo llegue la URL
+ * (codificada una vez, dos o ya decodificada) y según el navegador (mayúsculas o minúsculas en el %XX), el mismo creador
+ * se escribe distinto. Devuelve el slug tal y como está guardado; si no hay ninguno equivalente, el recibido.
+ */
+export function storedCreatorSlug(received: string): string {
+  const canonical = (value: string) => {
+    let decoded = value;
+    for (let i = 0; i < 2; i++) {
+      try { decoded = decodeURIComponent(decoded); } catch { break; }
+    }
+    return decoded.toLowerCase();
+  };
+  const key = canonical(received);
+  return catalogCreators.find(creator => canonical(creator.slug) === key)?.slug ?? received;
+}
+
 /** Obras acreditadas a un creador: cortos y largometrajes (antes solo cortos; los directores también publican películas). */
 export function creatorWorks(slug: string, films: readonly MovieMedia[]): MovieMedia[] {
   return films.filter(film => film.artistas?.some(artist => artist.slug === slug));

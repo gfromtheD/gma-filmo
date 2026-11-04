@@ -40,9 +40,9 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 - [x] Mostrar «Continuar como invitado» directamente en la bienvenida, claramente visible en móvil y escritorio.
 - [x] Explicar brevemente que permite explorar sin crear cuenta; conservar las opciones de registro e inicio de sesión.
-- [ ] Revisar cierre de sesión, cookies y posibles restos del onboarding de creador para evitar redirecciones inesperadas.
-- [ ] Verificar navegación, catálogo y reproducción como invitado; las acciones que sí requieran cuenta deben explicarlo al usarlas.
-- [ ] Verificar entrada desde un navegador limpio y desde una sesión previa, sin pedir datos para explorar.
+- [x] Revisar cierre de sesión, cookies y posibles restos del onboarding de creador para evitar redirecciones inesperadas. **Comprobado (3/11/2026):** entrar como invitado borra las cookies pendientes del alta de creador (`lib/auth/guest-access.ts`) y la de confirmación caduca a los 10 minutos.
+- [x] Verificar navegación, catálogo y reproducción como invitado; las acciones que sí requieran cuenta deben explicarlo al usarlas. **Comprobado (3/11/2026):** `/inicio`, `/cortos`, `/peliculas`, `/ver/...` y `/configuracion` responden 200 con la cookie de invitado; `/mi-estudio` lleva a `/mi-espacio`. Es comprobación de respuesta del servidor, no de reproducir el vídeo en pantalla.
+- [x] Verificar entrada desde un navegador limpio y desde una sesión previa, sin pedir datos para explorar. **Comprobado (3/11/2026):** sin cookies, todas las rutas privadas llevan a la portada `/`, sin pedir datos para explorar.
 
 ## EST-01 — Limpiar el estudio del creador
 
@@ -359,7 +359,7 @@ Se han solicitado los 148 perfiles públicos vinculados al catálogo. En los 147
 
 El QR está programado para el evento de finalización del vídeo. No se muestra durante los últimos diez segundos; ese periodo mantiene «Siguiente corto» cuando no hay métodos de apoyo disponibles.
 
-- [ ] Corregir y comprobar la ficha histórica `mar_oblivion%e2%99%a1`, detectada con respuesta 404 en esta auditoría.
+- [x] Corregir y comprobar la ficha histórica `mar_oblivion%e2%99%a1`, detectada con respuesta 404 en esta auditoría. **Hecho (3/11/2026):** el slug guardado lleva el corazón ya codificado y no coincidía al llegar por URL. `storedCreatorSlug` encuentra la ficha en todas las formas de escribirla; comprobado en local con 3 variantes (200).
 
 ### Demostración pública de apoyo — 4 de octubre de 2026
 
