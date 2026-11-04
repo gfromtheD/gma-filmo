@@ -46,7 +46,7 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 - [x] Alinear con el `MediaProvider` del paquete del Mac: `provider` (`r2`, `stream`, `peertube`, `external`) y `media_ref` ya están en la tabla para no depender de R2. **Hecho:** roles y proveedores neutrales en el motor. *(3/11/2026)*
 - [x] Permitir en Studio editar el orden, ocultar o borrar extras (la API ya admite PATCH y DELETE). **Hecho (3/11/2026):** en «Editar metadatos» aparece la sección Extras con nombre, descripción, orden y ocultar por extra (`/api/creator/extras`, tabla `gma_extra_meta`, migración 20261119 aplicada); la ficha pública lo respeta y el tráiler va siempre primero. El borrado de un extra sigue siendo quitarlo en la pasarela de subida.
 - [x] Generar miniatura y duración del vídeo al subirlo (hoy el póster es opcional y la duración puede quedar vacía). **Parcial:** la duración ya se guarda por asset (`duration_seconds`); falta la miniatura de los vídeos. *(3/11/2026)* **Cerrado por decisión (3/11/2026):** la duración se guarda; la miniatura de vídeo exigiría procesar en el VPS y no compensa: el visor muestra nombre, descripción y duración, y las imágenes ya son su propia miniatura.
-- [ ] Probar el flujo completo: subir, publicar, ver el extra en la ficha, borrarlo.
+- [~] Probar el flujo completo: subir, publicar, ver el extra en la ficha, borrarlo. **De G (4/11/2026):** G hace la prueba de subida.
 
 ## EXT-03 — Revisiones y pruebas antes de desplegar
 
@@ -68,9 +68,9 @@ Estados: **pendiente**, **en análisis**, **en implementación**, **en validaci�
 
 Todo el diseño móvil se comprobó con simulación de pantalla táctil y capturas, **no en un móvil físico**.
 
-- [ ] Abrir el visor en un móvil real (vertical y horizontal): pill de navegación, animación de nacimiento, «+ Más info» con el degradado, margen de 16 px a los lados.
-- [ ] Reproducción con un vídeo real: controles compactos, pantalla completa con el título arriba a la izquierda, volumen oculto en táctil.
-- [ ] Comprobar tabletas y ventanas de escritorio estrechas (cambio de flechas laterales a pill).
+- [~] Abrir el visor en un móvil real (vertical y horizontal): pill de navegación, animación de nacimiento, «+ Más info» con el degradado, margen de 16 px a los lados. **De G (4/11/2026).**
+- [~] Reproducción con un vídeo real: controles compactos, pantalla completa con el título arriba a la izquierda, volumen oculto en táctil. **De G (4/11/2026).**
+- [~] Comprobar tabletas y ventanas de escritorio estrechas (cambio de flechas laterales a pill). **De G (4/11/2026).**
 - [~] Revisar la «mancha oscura» detrás del reproductor en escritorio que se comentó: se quitó la sombra grande del vídeo como causa probable, pero no se llegó a reproducir; falta confirmar dónde se ve y con qué ventana. **De G (4/11/2026):** no se reproduce aquí; G debe decir dónde la ve si vuelve a salir.
 
 Cómo ver la versión local en el móvil: misma red Wi-Fi en `http://192.168.1.142:3000` (puede requerir abrir el puerto 3000 en el cortafuegos de Windows) o por Tailscale en `http://100.90.143.117:3000`.

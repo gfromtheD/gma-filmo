@@ -36,7 +36,8 @@ export function socialUrl(platform: string, value: string): string | null {
     const href = externalUrl(text);
     if (!href) return null;
     const host = new URL(href).hostname.toLowerCase().replace(/^www\./, "");
-    return hosts.includes(host) ? href : null;
+    // También sus subdominios: los enlaces copiados del móvil son m.facebook.com, vm.tiktok.com, mobile.twitter.com…
+    return hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`)) ? href : null;
   }
   // A handle must not be interpreted as another host, URL or executable scheme.
   const handle = text.replace(/^@/, "");

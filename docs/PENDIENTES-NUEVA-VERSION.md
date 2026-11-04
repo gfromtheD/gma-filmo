@@ -177,11 +177,11 @@ Todas estas pruebas están pendientes. Guardar resultado esperado/real, entorno,
 **Trabajo y aceptación.**
 
 - [x] Definir un formato canónico por red y convertir usuario, `@usuario` o URL completa al enlace correcto sin duplicar prefijos.
-- [ ] Revisar especialmente YouTube con rutas de canal, TikTok, Facebook, Vimeo, X, Threads y web propia; definir formatos admitidos.
+- [x] Revisar especialmente YouTube con rutas de canal, TikTok, Facebook, Vimeo, X, Threads y web propia; definir formatos admitidos. **Hecho (4/11/2026):** admitidos usuario, @usuario y URL en cada red, todas las rutas de canal de YouTube y los enlaces copiados del móvil (`m.facebook.com`, `vm.tiktok.com`, `mobile.twitter.com`), que antes se rechazaban. Los dominios que solo se parecen a la red siguen rechazados. Pruebas en `e2e/unit/social-links.spec.ts`.
 - [x] Crear enlaces reales en las vistas de lectura y conservar los controles de edición en el formulario.
-- [ ] Conectar los datos editados con el perfil público; comprobar si hay mecanismos de sincronización fuera del repo antes de migrar nada.
+- [x] Conectar los datos editados con el perfil público; comprobar si hay mecanismos de sincronización fuera del repo antes de migrar nada. **Hecho (4/11/2026):** la página del creador lee la ficha de su cuenta por el slug (`lib/creator-identity.ts`), sin sincronizaciones externas.
 - [x] Validar esquema y destino, impedir protocolos inesperados y dar mensajes concretos si el enlace es inválido.
-- [ ] Guardar, recargar y comprobar el destino real de cada plataforma en móvil y escritorio; campos vacíos no deben producir botones muertos.
+- [~] Guardar, recargar y comprobar el destino real de cada plataforma en móvil y escritorio; campos vacíos no deben producir botones muertos. **Parcial (4/11/2026):** un valor vacío o inválido no genera botón (comprobado en el código y en las pruebas). Falta abrir cada red en el móvil: lo hace G.
 
 ## DON-01 — Donaciones y escaneo móvil del QR
 
@@ -199,12 +199,12 @@ Todas estas pruebas están pendientes. Guardar resultado esperado/real, entorno,
 **Trabajo y aceptación.**
 
 - [x] Sustituir el destino de prueba por la página pública del creador correcto y verificar el dominio según entorno.
-- [ ] Comprobar que QR, película, nombre y beneficiario corresponden a la misma identidad.
-- [ ] Revisar captura/edición de datos de donación y su disponibilidad en el perfil público.
-- [ ] Resolver como decisión de producto si se exige cuenta GMA para apoyar; el prototipo la exige, pero no se ha solicitado expresamente mantener esa condición. Separar esa decisión del login que pida la plataforma externa.
+- [x] Comprobar que QR, película, nombre y beneficiario corresponden a la misma identidad. **Hecho (4/11/2026):** nombre, QR y métodos salen del mismo perfil, y el QR apunta a `/creadores/<slug>/apoyar`, que resuelve ese mismo slug. Comprobado leyendo el código; no se ha escaneado con un móvil.
+- [x] Revisar captura/edición de datos de donación y su disponibilidad en el perfil público. **Hecho (3/11/2026):** panel «Apoyo al creador» de Mi Estudio, validado y leído por la página pública.
+- [x] Resolver como decisión de producto si se exige cuenta GMA para apoyar; el prototipo la exige, pero no se ha solicitado expresamente mantener esa condición. Separar esa decisión del login que pida la plataforma externa. **Decidido:** no se exige. La página de apoyo responde sin sesión (comprobado sin cookies) y el panel lo dice; el login que pida PayPal o Patreon es cosa suya.
 - [x] Evitar destinos de demostración o genéricos presentados como donación al creador; tratar claramente la ausencia de opciones de apoyo.
-- [ ] Probar QR desde iPhone y Android, con y sin sesión; retorno desde proveedor/OAuth y apertura sin depender de ventanas emergentes bloqueadas.
-- [ ] Verificar URL y perfil receptor sin realizar pagos reales durante la validación ordinaria.
+- [~] Probar QR desde iPhone y Android, con y sin sesión; retorno desde proveedor/OAuth y apertura sin depender de ventanas emergentes bloqueadas. **De G (4/11/2026):** G hace las pruebas en el móvil.
+- [x] Verificar URL y perfil receptor sin realizar pagos reales durante la validación ordinaria. **Hecho (4/11/2026):** solo se aceptan enlaces válidos de PayPal, Patreon y direcciones Bitcoin (`lib/creator-support.ts`, con pruebas). Sin pagos reales.
 
 ## CRE-01 — Nombre clicable y muro público del creador
 
@@ -430,7 +430,7 @@ Estas casillas identifican cambios constatables en el código y comprobados en n
 - [x] Cinco grupos recorridos con datos largos, formularios, filtros, listas, acciones, foco, ventanas y área visible reducida simulada.
 - [x] Compilación de producción y tipos correctos; 16 pruebas secundarias y 7 de apoyo superadas. Evidencia registrada en el documento de adaptación.
 - [x] Registrar el despliegue, si se realiza, y verificar páginas públicas en la versión publicada. **Hecho:** desplegado en producción (`main`); consta cada despliegue del 3/11/2026 con su PR (143 a 151). *(3/11/2026)*
-- [ ] Comprobar físicamente Safari/iPhone, Chrome/Android y una tablet; declarar por separado cualquier prueba que solo sea emulada.
+- [~] Comprobar físicamente Safari/iPhone, Chrome/Android y una tablet; declarar por separado cualquier prueba que solo sea emulada. **De G (4/11/2026).**
 
 La adaptación de `studio-upload-view.tsx` y `studio-upload-orbital.tsx` es visual. **SUB-01 y SUB-02 siguen pendientes:** no se ha reparado el motor ni verificado capacidad, cuota, reanudación o publicación real. Esta actualización tampoco implementa la configuración de cuentas de donación.
 
