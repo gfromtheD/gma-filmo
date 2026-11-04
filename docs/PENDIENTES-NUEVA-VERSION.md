@@ -4,6 +4,10 @@ Fecha: 3 de octubre de 2026. Base inspeccionada: rama `main`, commit `41494c6289
 
 Este documento registra lo solicitado y lo relaciona con la copia local del código de GitHub. El diagnóstico original fue estático. Tras la autorización posterior se han aplicado y publicado correcciones de temas secundarios en la rama `mejora/temas-secundarios`; véase el registro de implementación al final. El 5 de octubre se completó la auditoría documental del motor de subidas y se consultó configuración de Vercel en lectura. No se han ejecutado subidas reales ni reconstruido el motor. Los errores comunicados siguen pendientes de reproducción salvo cuando su comportamiento se ve directamente en el código; capacidad, configuración R2 y esquema Supabase efectivo siguen sin verificar.
 
+## ⚠️ Incidencia abierta (4/11/2026): portadas de R2 con error 503
+
+Las imágenes servidas por `/api/media/<id>` (portadas de las obras subidas con el motor nuevo) devuelven 503 en producción porque R2 rechaza la llave (`Unauthorized`, 401 también con la de `.env.local`). Las variables de Vercel no cambian desde el 20/10, así que la causa está en Cloudflare (no comprobada desde aquí). **Solución, a cargo de G:** crear una llave nueva con permiso Object Read & Write sobre `gma-uploads-private` y actualizar `R2_ACCESS_KEY_ID` y `R2_SECRET_ACCESS_KEY` en Vercel (y volver a desplegar), en `.env.local` y, si la usa, en `media.env` del VPS.
+
 ## Seguimiento
 
 Marcar cada casilla solo después de comprobar su resultado. Una tarea revisada no equivale a una tarea arreglada. Conservar las tareas terminadas y añadir fecha, commit y evidencia; no borrarlas del historial.

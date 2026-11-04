@@ -51,6 +51,9 @@ export function useHeroTrailer(trailerUrl: string | undefined, isSuspended = fal
   const { prefs } = useSettingsPrefs();
   const reduceMotion = useReducedMotion();
   const [saveData, setSaveData] = useState(false);
+  // El servidor no sabe si se pidió menos movimiento: hasta montar, el botón no depende de ello. Si no, la primera pintura del
+  // navegador no coincide con la del servidor y React rehace toda la página.
+  const [isHydrated, setIsHydrated] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -62,6 +65,8 @@ export function useHeroTrailer(trailerUrl: string | undefined, isSuspended = fal
   const [isDismissed, setIsDismissed] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const resumeOnReturn = useRef(false);
+
+  useEffect(() => setIsHydrated(true), []);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
@@ -129,7 +134,7 @@ export function useHeroTrailer(trailerUrl: string | undefined, isSuspended = fal
     isMounted,
     isVisible: isVisible && !hasEnded && !isDismissed,
     isPlaying,
-    showControl: hasTrailer && (isMounted || !canAutoplay),
+    showControl: isHydrated && hasTrailer && (isMounted || !canAutoplay),
     isActive: hasTrailer && isMounted && !hasEnded && !isDismissed,
     hasEnded,
     toggle,

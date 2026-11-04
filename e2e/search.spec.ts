@@ -55,7 +55,7 @@ test("tolera una errata y, sin resultados, ofrece alternativas", async ({ page }
   await typeQuery(page, "zzzzqq");
   await expect(summary(page)).toContainText("Sin resultados para «zzzzqq»");
   await expect(page.getByText("No hemos encontrado")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Stop Motion" }).first()).toBeVisible();
+  await expect(page.getByText("Prueba con otro título").locator("xpath=following-sibling::ul//button").first()).toBeVisible();
 });
 
 test("Escape borra lo escrito, '/' enfoca el campo y el botón de borrar vacía la búsqueda", async ({ page }) => {

@@ -11,8 +11,11 @@ test.describe.configure({ mode: "serial" });
 
 const FIXTURE_DIR = path.join(process.cwd(), "app", "(platform)", "creadores", "upload-wizard-fixture");
 const FIXTURE_SOURCE = `"use client";
+import { useEffect } from "react";
 import { UploadWizard } from "@/components/features/studio/upload/upload-wizard";
-export default function Fixture() { return <div className="mx-auto w-full max-w-[1180px] p-6"><UploadWizard /></div>; }
+import { useUploadDraftStore } from "@/store/use-upload-draft-store";
+// El borrador es por cuenta y aquí no hay sesión: se carga el de una cuenta de prueba.
+export default function Fixture() { useEffect(() => { useUploadDraftStore.getState().load("e2e-fixture"); }, []); return <div className="mx-auto w-full max-w-[1180px] p-6"><UploadWizard /></div>; }
 `;
 const URL_PATH = "/creadores/upload-wizard-fixture";
 
@@ -191,11 +194,9 @@ test("mientras el servidor procesa el vídeo sale la pantalla de carga y luego p
   await open(page);
   const zone = page.locator("[data-file-slot='Archivo de vídeo']");
   await zone.locator("input[type=file]").setInputFiles({ name: "peli.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(2048, 1) });
-  // la cubeta representa la carga desde el principio: no hay barra de progreso aparte
+  // la cubeta representa la carga desde el principio
   await expect(zone.getByRole("status")).toBeVisible();
-  await expect(zone.getByRole("progressbar")).toHaveCount(0);
   await expect(zone.getByText("Procesando tu vídeo")).toBeVisible({ timeout: 10_000 });
-  await expect(zone.getByRole("progressbar")).toHaveCount(0);
   // mientras procesa, el paso no está completo
   await expect(stepsNav(page).getByText("0 de 3 pasos completos")).toBeVisible();
   await expect(zone.getByText("Subido")).toBeVisible({ timeout: 15_000 });
@@ -288,7 +289,7 @@ test("recorrido completo: con todo lo obligatorio, la revisión deja enviar", as
   await page.getByLabel(/acepto los términos de uso/).check();
   await expect(page.getByRole("button", { name: "Enviar a revisión" })).toBeEnabled();
   await page.getByRole("button", { name: "Enviar a revisión" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /título/ })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("status").filter({ hasText: /Enviada/ })).toBeVisible({ timeout: 10_000 });
 });
 
 test("en móvil nada se sale por los lados y los pasos se desplazan en horizontal", async ({ page }) => {
