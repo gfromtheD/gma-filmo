@@ -12,7 +12,7 @@ const CreateSchema = ExtraInputSchema.extend({ peliculaId: z.number().int().posi
 const UpdateSchema = ExtraInputSchema.partial().extend({
   id: z.number().int().positive(),
   status: z.enum(["published", "draft", "hidden"]).optional(),
-  sortOrder: z.number().int().min(0).optional(),
+  sortOrder: z.number().int().min(0).max(1_000_000).optional(),
 });
 const DeleteSchema = z.object({ id: z.number().int().positive() });
 

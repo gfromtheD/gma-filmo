@@ -54,6 +54,15 @@ export interface ExtraRow {
   readonly media_type?: string | null;
 }
 
+/** Distancia mínima (px) para que un deslizamiento cuente como cambio de extra. */
+const SWIPE_MIN_PX = 50;
+
+/** Deslizar en horizontal sobre una imagen: `next` hacia la izquierda, `prev` hacia la derecha; `null` si es un toque o un scroll. */
+export function swipeDirection(dx: number, dy: number): "next" | "prev" | null {
+  if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy)) return null;
+  return dx < 0 ? "next" : "prev";
+}
+
 export function isExtraKind(value: string): value is ExtraKind {
   return (EXTRA_KINDS as readonly string[]).includes(value);
 }
@@ -128,7 +137,7 @@ export const ExtraInputSchema = z.object({
   mediaRef: z.string().trim().max(512).nullish(),
   posterUrl: httpsUrl.nullish(),
   durationSeconds: z.number().int().min(0).max(86_400).nullish(),
-  fileSizeBytes: z.number().int().min(0).nullish(),
+  fileSizeBytes: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullish(),
 });
 export type ExtraInput = z.infer<typeof ExtraInputSchema>;
 

@@ -60,6 +60,8 @@ export function compareExtraRows(a: TitleMediaRow, b: TitleMediaRow, metaOf: Rea
   if (aTrailer !== bTrailer) return aTrailer ? -1 : 1;
   const aMeta = metaOf.get(a.asset_id);
   const bMeta = metaOf.get(b.asset_id);
+  // Lo subido después de ordenar (sin fila todavía) va detrás de lo ya ordenado: mezclar los dos criterios no da un orden estable.
+  if (Boolean(aMeta) !== Boolean(bMeta)) return aMeta ? -1 : 1;
   if (aMeta && bMeta) return aMeta.sortOrder - bMeta.sortOrder;
   return (ROLE_RANK[a.role] ?? 9) - (ROLE_RANK[b.role] ?? 9) || a.position - b.position;
 }

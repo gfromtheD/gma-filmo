@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { GmaIcon } from "@/components/ui/gma-icon";
 import { ExtrasPlayerDialog } from "@/components/features/detail/extras-player-dialog";
 import type { MovieExtra } from "@/types/catalog";
@@ -11,6 +11,7 @@ interface ExtrasPanelProps {
 
 export function ExtrasPanel({ extras }: ExtrasPanelProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   return (
     <section aria-label="Extras">
@@ -19,7 +20,10 @@ export function ExtrasPanel({ extras }: ExtrasPanelProps) {
           <li key={extra.id}>
             <button
               type="button"
-              onClick={() => setOpenIndex(index)}
+              onClick={(event) => {
+                openerRef.current = event.currentTarget;
+                setOpenIndex(index);
+              }}
               aria-label={`Ver ${extra.title}`}
               className="group/card block w-full rounded-[8px] text-left outline-offset-2 focus-visible:outline-2 focus-visible:outline-[#22B16B]"
             >
@@ -58,7 +62,7 @@ export function ExtrasPanel({ extras }: ExtrasPanelProps) {
         ))}
       </ul>
 
-      <ExtrasPlayerDialog extras={extras} index={openIndex} onIndexChange={setOpenIndex} />
+      <ExtrasPlayerDialog extras={extras} index={openIndex} onIndexChange={setOpenIndex} returnFocusRef={openerRef} />
     </section>
   );
 }

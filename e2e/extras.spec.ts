@@ -47,6 +47,28 @@ test("con extras aparece la pestaña con todos juntos (sin filtros) y abre el re
   await expect(dialog).toBeHidden();
 });
 
+test("el foco vuelve a la tarjeta al cerrar y no se pierde al llegar al último extra", async ({ page }) => {
+  await mockExtras(page, EXTRAS);
+  await openFicha(page);
+  await page.getByRole("tab", { name: "Extras" }).click();
+  const card = page.getByRole("button", { name: "Ver Así se hizo" });
+  await card.click();
+  const dialog = page.getByRole("dialog");
+  const next = dialog.getByRole("button", { name: "Extra siguiente" });
+
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(dialog.getByRole("heading", { name: "Charla con el director" })).toBeVisible();
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(dialog.getByRole("heading", { name: "Foto del rodaje" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Extra anterior" })).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(card).toBeFocused();
+});
+
 test("las flechas del visor recorren el resto de extras, vídeos e imágenes", async ({ page }) => {
   await mockExtras(page, EXTRAS);
   await openFicha(page);
