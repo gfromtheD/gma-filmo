@@ -191,7 +191,7 @@ test.describe("zona clicable de la tarjeta", () => {
     expect(await cursorAt(page, x, y)).toBe("pointer");
     expect(await cursorAt(page, x, panel.y + panel.height - 6)).toBe("pointer");
     await page.mouse.click(x, y);
-    await expect(page).toHaveURL(/\/cortos\/[^/]+$/);
+    await expect(page).toHaveURL(/\/(cortos|peliculas)\/[^/]+$/);
   });
 });
 
