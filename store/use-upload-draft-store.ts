@@ -31,15 +31,24 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let lastSave = 0;
 
 export const useUploadDraftStore = create<UploadDraftStore>()((set, get) => {
+  const saveNow = () => {
+    saveTimer = null;
+    saveDraft(window.localStorage, get().draft, get().ownerId);
+    lastSave = Date.now();
+    set({ savedAt: lastSave });
+  };
   const scheduleSave = () => {
     if (saveTimer) return;
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
-      saveDraft(window.localStorage, get().draft, get().ownerId);
-      lastSave = Date.now();
-      set({ savedAt: lastSave });
-    }, Math.max(0, SAVE_DELAY_MS - (Date.now() - lastSave)));
+    saveTimer = setTimeout(saveNow, Math.max(0, SAVE_DELAY_MS - (Date.now() - lastSave)));
   };
+  // Al recargar o cerrar la pestaña con un guardado pendiente, se guarda ya: si no, se perdería lo último que se escribió.
+  if (typeof window !== "undefined") {
+    window.addEventListener("pagehide", () => {
+      if (!saveTimer) return;
+      clearTimeout(saveTimer);
+      saveNow();
+    });
+  }
   return {
     draft: emptyDraft(),
     isReady: false,
