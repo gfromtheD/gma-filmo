@@ -11,8 +11,11 @@ test.describe.configure({ mode: "serial" });
 
 const FIXTURE_DIR = path.join(process.cwd(), "app", "(platform)", "creadores", "upload-wizard-fixture");
 const FIXTURE_SOURCE = `"use client";
+import { useEffect } from "react";
 import { UploadWizard } from "@/components/features/studio/upload/upload-wizard";
-export default function Fixture() { return <div className="mx-auto w-full max-w-[1180px] p-6"><UploadWizard /></div>; }
+import { useUploadDraftStore } from "@/store/use-upload-draft-store";
+// El borrador es por cuenta y aquí no hay sesión: se carga el de una cuenta de prueba.
+export default function Fixture() { useEffect(() => { useUploadDraftStore.getState().load("e2e-fixture"); }, []); return <div className="mx-auto w-full max-w-[1180px] p-6"><UploadWizard /></div>; }
 `;
 const URL_PATH = "/creadores/upload-wizard-fixture";
 
