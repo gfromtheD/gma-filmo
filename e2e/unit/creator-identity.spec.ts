@@ -48,3 +48,15 @@ test.describe("identidad del creador", () => {
     expect(kept[0]!.artistas!.map((c) => c.slug)).toEqual(["ana-lopez", null]);
   });
 });
+
+test.describe("slugs históricos con caracteres especiales", () => {
+  test("la misma ficha se encuentra con la URL codificada una o dos veces, o ya decodificada", async () => {
+    const { storedCreatorSlug } = await import("../../lib/catalog-creators");
+    const stored = "mar_oblivion%e2%99%a1";
+    for (const received of [stored, "mar_oblivion%E2%99%A1", "mar_oblivion♡", "mar_oblivion%25e2%2599%25a1"]) {
+      expect(storedCreatorSlug(received)).toBe(stored);
+    }
+    expect(storedCreatorSlug("pablo-pares")).toBe("pablo-pares");
+    expect(storedCreatorSlug("%E0%A4%A")).toBe("%E0%A4%A");
+  });
+});
