@@ -63,15 +63,14 @@ test("en una página corta el pie se queda abajo del todo de la ventana", async 
   expect(Math.round(bottom)).toBeGreaterThanOrEqual(1399);
 });
 
-test("en móvil el pie no queda tapado por la barra inferior", async ({ page }) => {
+test("en móvil el último enlace del pie cabe en la pantalla", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   const footer = await visit(page, "/inicio");
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const privacy = footer.getByRole("link", { name: "Política de privacidad" });
-  const tabBar = page.locator("nav[aria-label]").filter({ has: page.getByRole("link", { name: "Cortos" }) }).last();
   const linkBox = (await privacy.boundingBox())!;
-  const tabBox = await tabBar.boundingBox();
-  if (tabBox) expect(linkBox.y + linkBox.height).toBeLessThanOrEqual(tabBox.y + 1);
+  // Ya no hay barra inferior (la navegación es el cajón): el enlace debe caber en la pantalla.
+  expect(linkBox.y + linkBox.height).toBeLessThanOrEqual(800);
   // Y nada se sale por los lados.
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

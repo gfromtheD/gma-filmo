@@ -98,15 +98,15 @@ test.describe("movimiento normal", () => {
     expect(position).not.toBe("fixed");
   });
 
-  test("en móvil el contenido fijo respeta la barra inferior (el último enlace queda sobre ella)", async ({ page }) => {
+  test("en móvil el último enlace del contenido fijo cabe en la pantalla", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     const wrapper = await open(page, "/inicio");
     await expect(wrapper).toHaveAttribute("data-footer-reveal", "on", { timeout: 15_000 });
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(300);
     const link = (await page.getByRole("contentinfo").getByRole("link", { name: "Política de privacidad" }).boundingBox())!;
-    const tab = await page.locator("nav").filter({ has: page.getByRole("link", { name: "Cortos" }) }).last().boundingBox();
-    if (tab) expect(link.y + link.height).toBeLessThanOrEqual(tab.y + 1);
+    // Ya no hay barra inferior (la navegación es el cajón): el último enlace debe caber en la pantalla.
+    expect(link.y + link.height).toBeLessThanOrEqual(900);
   });
 });
 

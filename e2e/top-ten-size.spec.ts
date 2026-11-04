@@ -12,7 +12,7 @@ async function measure(page: Page, width: number) {
   await page.setViewportSize({ width, height: 900 });
   await page.goto("/inicio", { waitUntil: "load" });
   const topTen = page.locator("section[aria-label='Selección de GMA']");
-  await topTen.scrollIntoViewIfNeeded();
+  await expect(async () => { await topTen.scrollIntoViewIfNeeded({ timeout: 2_000 }); }).toPass({ timeout: 20_000 });
   await expect(topTen.locator("article").first()).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(700); // la animación de ancho dura 500 ms
   return page.evaluate(() => {

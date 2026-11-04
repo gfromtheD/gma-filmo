@@ -10,7 +10,8 @@ async function openHome(page: Page) {
   await page.context().addCookies([{ name: "gma_guest", value: "1", url: `http://localhost:${process.env.E2E_PORT ?? 3000}` }]);
   await page.goto("/inicio", { waitUntil: "load" });
   const row = page.locator("section.group\\/row", { has: page.getByRole("heading", { name: "Recién llegados" }) });
-  await row.scrollIntoViewIfNeeded();
+  // La fila se vuelve a montar si su orden cambia al leer lo ya mostrado: se reintenta en vez de fallar por esa carrera.
+  await expect(async () => { await row.scrollIntoViewIfNeeded({ timeout: 2_000 }); }).toPass({ timeout: 20_000 });
   await expect(row.locator("[class*='group/card']").first()).toBeVisible({ timeout: 20_000 });
   return row;
 }

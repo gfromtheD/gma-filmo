@@ -356,7 +356,7 @@ test.describe("abrir un menú con la página desplazada no rompe la cabecera", (
     const trigger = page.getByRole("button", { name: /^Año/ }).first();
     // Se baja hasta la píldora (así la página queda bien desplazada) y se anota esa posición.
     await trigger.scrollIntoViewIfNeeded();
-    await page.evaluate(() => window.scrollBy(0, 200));
+    await page.evaluate(() => window.scrollBy(0, 400));
     const scrolled = await page.evaluate(() => Math.round(window.scrollY));
     expect(scrolled).toBeGreaterThan(300);
     await expect(async () => {
