@@ -289,7 +289,7 @@ test("recorrido completo: con todo lo obligatorio, la revisión deja enviar", as
   await page.getByLabel(/acepto los términos de uso/).check();
   await expect(page.getByRole("button", { name: "Enviar a revisión" })).toBeEnabled();
   await page.getByRole("button", { name: "Enviar a revisión" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /título/ })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("status").filter({ hasText: /Enviada/ })).toBeVisible({ timeout: 10_000 });
 });
 
 test("en móvil nada se sale por los lados y los pasos se desplazan en horizontal", async ({ page }) => {
